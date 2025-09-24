@@ -1,0 +1,56 @@
+@startuml Real_Package_Structure
+!theme plain
+
+package "machine" {
+    package "backend" {
+        [constants.py] 
+        [database.py]
+        [index_hnsw.py]
+        [predictor_ml.py] 
+        [trainer_ml.py]
+    }
+    
+    package "common" {
+        [logger.py]
+    }
+    
+    package "gui" {
+        [routing_gui.py]
+    }
+    
+    package "models" {
+        [save_load.py]
+    }
+    
+    package "routing_data" {
+        file "*.accdb Files" as ACCDB
+    }
+    
+    package "logs" {
+        file "routing_ml_*.log" as LOGS
+    }
+    
+    [main.py]
+}
+
+' 실제 import 관계
+predictor_ml --> constants
+predictor_ml --> trainer_ml
+predictor_ml --> database  
+predictor_ml --> logger
+
+trainer_ml --> constants
+trainer_ml --> index_hnsw
+trainer_ml --> logger
+
+routing_gui --> predictor_ml
+routing_gui --> database
+routing_gui --> trainer_ml
+routing_gui --> logger
+
+database --> logger
+index_hnsw --> "faiss library"
+
+save_load --> trainer_ml
+
+@enduml

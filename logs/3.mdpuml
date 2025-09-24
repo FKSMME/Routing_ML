@@ -1,0 +1,68 @@
+﻿@startuml Real_Training_Sequence
+!theme plain
+
+actor User
+participant RoutingGUI
+participant TrainerModule
+participant MemoryEfficientPreprocessor
+participant DatabaseModule
+participant HNSWSearch
+participant Logger
+
+User -> RoutingGUI: "🚀 Start Training" 클릭
+RoutingGUI -> RoutingGUI: _toggle_ui("disabled")
+RoutingGUI -> RoutingGUI: stop_training.clear()
+
+RoutingGUI -> Logger: info("[시작] Access → 품목 마스터 로딩…")
+RoutingGUI -> DatabaseModule: fetch_item_master()
+
+DatabaseModule -> DatabaseModule: _latest_db(ACCESS_DIR)
+DatabaseModule -> DatabaseModule: _connect()
+DatabaseModule -> DatabaseModule: _run_query("SELECT * FROM dbo_BI_ITEM_INFO_VIEW")
+DatabaseModule --> RoutingGUI: df (321,010행)
+
+RoutingGUI -> TrainerModule: train_model_with_ml_optimized(df, progress_cb, stop_flag)
+
+TrainerModule -> MemoryEfficientPreprocessor: __init__(feature_weights)
+TrainerModule -> RoutingGUI: progress_cb(5)
+
+TrainerModule -> MemoryEfficientPreprocessor: fit(df, TRAIN_FEATURES, sample_frac=0.1)
+
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: _check_memory()
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: df[cat_cols].astype("category")
+
+' 범주형 처리
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: _safe_string(df_cat)
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: OrdinalEncoder.fit_transform(df_cat)
+
+' 수치형 처리  
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: _safe_numeric(df_num)
+MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: StandardScaler.fit(combined_data)
+
+TrainerModule -> RoutingGUI: progress_cb(30)
+
+TrainerModule -> MemoryEfficientPreprocessor: process_all(df, n_jobs=12, chunk_size=8000)
+
+loop 40개 청크 (8000개씩)
+    MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: Parallel(n_jobs=12)(process_one)
+    MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: transform(group).mean(axis=0)
+    MemoryEfficientPreprocessor -> MemoryEfficientPreprocessor: _check_memory()
+    MemoryEfficientPreprocessor -> Logger: info("임베딩 진행 ▸ {i:,} 개")
+end
+
+MemoryEfficientPreprocessor --> TrainerModule: (vec_mat, codes) - shape=(321010, 41)
+
+TrainerModule -> RoutingGUI: progress_cb(90)
+
+TrainerModule -> HNSWSearch: __init__(vecs, codes)
+HNSWSearch -> HNSWSearch: faiss.IndexHNSWFlat(dim=41, M=16)
+HNSWSearch -> HNSWSearch: index.hnsw.efConstruction = 40
+HNSWSearch -> HNSWSearch: index.add(normalize(vectors))
+
+TrainerModule -> RoutingGUI: progress_cb(100)
+TrainerModule --> RoutingGUI: (searcher, encoder, scaler, feature_columns)
+
+RoutingGUI -> Logger: info("[완료] 학습 성공 – 특성 차원: 41개")
+RoutingGUI -> RoutingGUI: _toggle_ui("normal")
+
+@enduml

@@ -1,0 +1,4 @@
+2025-07-15 07:36:17 | gui | INFO     | [routing_gui.py:169] | _on_mode_change | MainThread | [설정] 예측 모드 변경: 상세 라우팅 테이블 (다중 행)
+2025-07-15 07:36:34 | gui | INFO     | [routing_gui.py:1581] | _load_model | MainThread | [완료] Enhanced 모델 로드: D:/routing/machine/models
+2025-07-15 07:36:34 | gui | INFO     | [routing_gui.py:1582] | _load_model | MainThread | [정보] Enhanced: True, PCA: False, Features: 37개
+2025-07-15 07:36:39 | gui | INFO     | [routing_gui.py:781] | _open_model_info | MainThread | [ML] Enhanced 모델 정보 뷰어가 열렸습니다

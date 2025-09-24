@@ -1,0 +1,148 @@
+@startuml Real_Class_Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+
+' Backend Classes
+class MemoryEfficientPreprocessor {
+    +feature_columns: list[str]
+    +encoder: OrdinalEncoder
+    +scaler: StandardScaler  
+    +feature_weights: dict[str, float]
+    +fit(df, feature_columns, sample_frac)
+    +transform(df): np.ndarray
+    +process_all(df, item_col, n_jobs, chunk_size)
+    -_safe_numeric(col): pd.Series
+    -_safe_string(col): pd.Series
+    -_check_memory(): None
+}
+
+class EfficientSimilaritySearch {
+    +vectors: np.ndarray
+    +item_codes: np.ndarray
+    +__init__(vectors, item_codes)
+    +find_similar(query, top_k): tuple
+}
+
+class HNSWSearch {
+    +item_codes: np.ndarray
+    +index: faiss.IndexHNSWFlat
+    +__init__(vectors, item_codes, M, ef_construction, ef_search)
+    +find_similar(query, top_k): tuple
+}
+
+' GUI Classes
+class RoutingGUI {
+    +root: tk.Tk
+    +searcher: EfficientSimilaritySearch | HNSWSearch
+    +encoder: OrdinalEncoder
+    +scaler: StandardScaler
+    +feature_columns: list[str]
+    +model_dir: str
+    +stop_training: threading.Event
+    +current_routing: pd.DataFrame
+    +current_candidates: pd.DataFrame
+    +topk_var: tk.IntVar
+    +training_progress: int
+    
+    +__init__(root)
+    +_setup_window()
+    +_build_modern_layout()
+    +_train_model()
+    +_save_model()
+    +_load_model()
+    +_run_prediction()
+    +_predict_single_item()
+    +_set_results(routing_df, cand_df)
+    -_toggle_ui(state)
+    -_update_progress(pct)
+    -_start_resource_monitoring()
+}
+
+class ThemeColors {
+    +PRIMARY: str = "#667eea"
+    +SECONDARY: str = "#f093fb"
+    +WHITE: str = "#ffffff"
+    +SUCCESS: str = "#10b981"
+    +WARNING: str = "#f59e0b"
+    +ERROR: str = "#ef4444"
+}
+
+class ModernStyle {
+    +{static} configure_button(btn, style)
+    +{static} create_card_frame(parent, title): tk.Frame
+    +{static} create_gradient_frame(parent, height): tk.Frame
+}
+
+class ModernTextHandler {
+    +widget: tk.Text
+    +capacity: int
+    +__init__(widget, capacity)
+    +emit(record)
+    -_setup_tags()
+}
+
+' Database & Utility Classes
+class DatabaseModule <<module>> {
+    +VIEW_ITEM_MASTER: str
+    +VIEW_ROUTING: str
+    +VIEW_WORK_RESULT: str
+    +fetch_item_master(): pd.DataFrame
+    +fetch_single_item(item_cd): pd.DataFrame
+    +fetch_routing_for_item(item_cd): pd.DataFrame
+    +_connect(): pyodbc.Connection
+    +_run_query(query, params): pd.DataFrame
+    +_latest_db(path): Path
+}
+
+class Constants <<module>> {
+    +TRAIN_FEATURES: list[str]
+    +NUMERIC_FEATURES: set[str]
+    +ROUTING_OUTPUT_COLS: list[str]
+}
+
+class PredictorModule <<module>> {
+    +DEFAULT_TOP_K: int = 10
+    +MISSING_RATIO_THRESHOLD: float = 0.50
+    +predict_single_item_with_ml(): tuple
+    +predict_items_with_ml(): tuple
+    +_clean_and_encode(): tuple
+    +_choose_reference_item(): tuple
+    +_safe_numeric(col): pd.Series
+    +_safe_string(col): pd.Series
+}
+
+class TrainerModule <<module>> {
+    +MEM_THRESHOLD: int = 75
+    +DEFAULT_N_JOBS: int
+    +CHUNK_SIZE: int = 8000
+    +train_model_with_ml_optimized(): tuple
+    +save_optimized_model()
+    +load_optimized_model(): tuple
+}
+
+' 관계 정의
+RoutingGUI *-- ModernTextHandler
+RoutingGUI --> EfficientSimilaritySearch
+RoutingGUI --> HNSWSearch
+RoutingGUI --> DatabaseModule
+RoutingGUI --> PredictorModule
+RoutingGUI --> TrainerModule
+RoutingGUI ..> ThemeColors
+RoutingGUI ..> ModernStyle
+
+MemoryEfficientPreprocessor --> Constants
+EfficientSimilaritySearch --> "numpy"
+HNSWSearch --> "faiss"
+
+PredictorModule --> TrainerModule
+PredictorModule --> DatabaseModule
+PredictorModule --> Constants
+
+TrainerModule --> MemoryEfficientPreprocessor
+TrainerModule --> EfficientSimilaritySearch
+TrainerModule --> HNSWSearch
+TrainerModule --> Constants
+
+DatabaseModule --> "pyodbc"
+
+@enduml

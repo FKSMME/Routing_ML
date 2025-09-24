@@ -1,0 +1,48 @@
+@startuml Real_Data_Flow
+!theme plain
+
+skinparam rectangle {
+    BackgroundColor LightBlue
+    BorderColor Blue
+}
+
+rectangle "routing_data/*.accdb" as ACCDB
+rectangle "dbo_BI_ITEM_INFO_VIEW\n(321,010 rows)" as ITEM_VIEW
+rectangle "dbo_BI_ROUTING_VIEW" as ROUTING_VIEW
+
+rectangle "MemoryEfficientPreprocessor" as PREP {
+    rectangle "_safe_string()" as STR_CLEAN
+    rectangle "_safe_numeric()" as NUM_CLEAN
+    rectangle "OrdinalEncoder" as ENCODER
+    rectangle "StandardScaler" as SCALER
+}
+
+rectangle "임베딩 생성\n(8000개씩 40청크)" as EMBEDDING
+rectangle "HNSW 인덱스\n(M=16, ef=300)" as HNSW_INDEX
+rectangle "벡터 검색\n(Top-k=10)" as VECTOR_SEARCH
+rectangle "라우팅 존재 확인" as ROUTING_CHECK
+rectangle "최종 예측 결과" as RESULT
+
+ACCDB --> ITEM_VIEW : "pyodbc 연결"
+ACCDB --> ROUTING_VIEW : "품목별 라우팅"
+
+ITEM_VIEW --> STR_CLEAN : "범주형 41개 피처"
+ITEM_VIEW --> NUM_CLEAN : "수치형 피처"
+
+STR_CLEAN --> ENCODER : "문자열 정제"
+NUM_CLEAN --> SCALER : "수치 정제"
+ENCODER --> SCALER : "인코딩된 범주형"
+
+SCALER --> EMBEDDING : "표준화된 피처"
+EMBEDDING --> HNSW_INDEX : "품목별 평균 벡터\n(321,010 x 41)"
+
+HNSW_INDEX --> VECTOR_SEARCH : "쿼리 벡터 입력"
+VECTOR_SEARCH --> ROUTING_CHECK : "유사 품목 10개"
+ROUTING_CHECK --> ROUTING_VIEW : "라우팅 정보 조회"
+ROUTING_VIEW --> RESULT : "최종 라우팅 정보"
+
+note right of EMBEDDING : "multiprocessing.cpu_count()=14\nParallel(n_jobs=12)\nRAM 사용률 모니터링"
+note right of HNSW_INDEX : "faiss.IndexHNSWFlat\ncosine similarity\nL2 정규화"
+note right of VECTOR_SEARCH : "1 - L2_distance²/2\n= cosine similarity"
+
+@enduml

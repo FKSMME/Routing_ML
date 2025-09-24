@@ -1,0 +1,960 @@
+# backend/trainer_ml.py
+
+from __future__ import annotations
+
+# ── 표준 라이브러리
+import gc
+import threading
+import warnings
+from pathlib import Path
+from typing import Callable, List, Tuple, Dict, Optional, Union
+import joblib
+from joblib import Parallel, delayed
+import multiprocessing
+import time
+import json
+
+# ── 서드-파티
+import numpy as np
+import pandas as pd
+import psutil
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler, normalize
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import VarianceThreshold
+
+# ── 사내 모듈
+from backend.constants import TRAIN_FEATURES, NUMERIC_FEATURES
+from backend.index_hnsw import HNSWSearch
+from backend.feature_weights import FeatureWeightManager  # 추가
+from common.logger import get_logger
+
+logger = get_logger("trainer_ml")
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*Downcasting behavior in `replace` is deprecated.*",
+    category=FutureWarning,
+    module="backend.trainer_ml",
+)
+
+# ════════════════════════════════════════════════
+# 하이퍼 파라미터
+# ════════════════════════════════════════════════
+MEM_THRESHOLD = 75  # RAM 사용률 75% 초과 시 GC 실행
+DEFAULT_N_JOBS = min(12, multiprocessing.cpu_count())
+CHUNK_SIZE = 8000  # 배치 처리 크기
+
+# 개선된 기본 파라미터
+DEFAULT_STD_THRESHOLD = 0.01  # Dead dimension 제거 임계값
+DEFAULT_VARIANCE_THRESHOLD = 0.001  # 분산 기반 feature 선택 임계값
+DEFAULT_MAX_FEATURES = 50  # PCA 적용 전 최대 feature 수
+
+# ════════════════════════════════════════════════
+# Feature Importance 계산기 (FeatureWeightManager로 대체)
+# ════════════════════════════════════════════════
+class FeatureImportanceCalculator:
+    """Feature importance를 계산하여 가중치 결정 - FeatureWeightManager 활용"""
+    
+    def __init__(self, model_dir: Optional[Path] = None):
+        self.weight_manager = FeatureWeightManager(model_dir)
+    
+    @staticmethod
+    def calculate_variance_importance(df: pd.DataFrame, features: List[str]) -> Dict[str, float]:
+        """분산 기반 중요도 계산"""
+        importance = {}
+        
+        for feature in features:
+            if feature in NUMERIC_FEATURES:
+                # 숫자형: 표준편차 / 평균
+                col_data = pd.to_numeric(df[feature], errors='coerce').fillna(0)
+                mean_val = col_data.mean()
+                std_val = col_data.std()
+                cv = std_val / (abs(mean_val) + 1e-8)  # 변동계수
+                importance[feature] = min(cv, 2.0)  # 최대 2.0으로 제한
+            else:
+                # 범주형: 엔트로피 기반
+                value_counts = df[feature].value_counts()
+                probabilities = value_counts / len(df)
+                entropy = -sum(p * np.log2(p + 1e-8) for p in probabilities)
+                max_entropy = np.log2(len(value_counts))
+                importance[feature] = entropy / (max_entropy + 1e-8) if max_entropy > 0 else 0.5
+        
+        # 정규화 (합이 feature 수가 되도록)
+        total = sum(importance.values())
+        if total > 0:
+            factor = len(features) / total
+            importance = {k: v * factor for k, v in importance.items()}
+        
+        return importance
+    
+    @staticmethod
+    def calculate_correlation_penalty(df: pd.DataFrame, features: List[str], 
+                                    importance: Dict[str, float]) -> Dict[str, float]:
+        """높은 상관관계를 가진 feature들의 가중치 감소"""
+        numeric_features = [f for f in features if f in NUMERIC_FEATURES]
+        
+        if len(numeric_features) > 1:
+            # 상관관계 매트릭스 계산
+            numeric_df = df[numeric_features].apply(pd.to_numeric, errors='coerce').fillna(0)
+            corr_matrix = numeric_df.corr().abs()
+            
+            # 각 feature에 대해 다른 feature들과의 평균 상관관계 계산
+            for i, feat1 in enumerate(numeric_features):
+                high_corr_count = 0
+                for j, feat2 in enumerate(numeric_features):
+                    if i != j and corr_matrix.loc[feat1, feat2] > 0.8:
+                        high_corr_count += 1
+                
+                # 높은 상관관계를 가진 feature가 많을수록 가중치 감소
+                if high_corr_count > 0:
+                    penalty = 1.0 / (1 + high_corr_count * 0.2)
+                    importance[feat1] *= penalty
+        
+        return importance
+
+# ════════════════════════════════════════════════
+# 개선된 전처리기
+# ════════════════════════════════════════════════
+class ImprovedPreprocessor:
+    """개선된 전처리 파이프라인 - FeatureWeightManager 통합"""
+    
+    def __init__(
+        self,
+        feature_weights: Optional[Dict[str, float]] = None,
+        *,
+        normalize_output: bool = True,
+        std_prune_threshold: float = DEFAULT_STD_THRESHOLD,
+        variance_threshold: float = DEFAULT_VARIANCE_THRESHOLD,
+        use_pca: bool = False,
+        pca_components: Optional[int] = None,
+        auto_feature_weights: bool = True,
+        balance_dimensions: bool = True,
+        optimize_for_seal: bool = True,  # 씰 제조 최적화 추가
+        model_dir: Optional[Path] = None,  # 모델 디렉토리 추가
+    ) -> None:
+        self.feature_columns: List[str] = []
+        self.encoder: Optional[OrdinalEncoder] = None
+        self.scaler: Optional[StandardScaler] = None
+        self.feature_weights = feature_weights
+        self.normalize_output = normalize_output
+        self.std_prune_threshold = std_prune_threshold
+        self.variance_threshold = variance_threshold
+        self.use_pca = use_pca
+        self.pca_components = pca_components
+        self.pca: Optional[PCA] = None
+        self.variance_selector: Optional[VarianceThreshold] = None
+        self.auto_feature_weights = auto_feature_weights
+        self.balance_dimensions = balance_dimensions
+        self.optimize_for_seal = optimize_for_seal
+        self.active_features: Optional[np.ndarray] = None
+        self.feature_metadata: Dict[str, any] = {}
+        
+        # FeatureWeightManager 초기화
+        self.weight_manager = FeatureWeightManager(model_dir)
+        
+        logger.debug(
+            "ImprovedPreprocessor 초기화 – normalize: %s, std_threshold: %.4f, "
+            "variance_threshold: %.4f, use_pca: %s, auto_weights: %s, seal_optimized: %s",
+            normalize_output, std_prune_threshold, variance_threshold, 
+            use_pca, auto_feature_weights, optimize_for_seal
+        )
+
+    @staticmethod
+    def _safe_numeric(col: pd.Series) -> pd.Series:
+        """안전한 숫자 변환"""
+        col = col.replace(["", " ", "-", "--", "nan", "NaN", "null", "NULL", "None"], np.nan)
+        num = pd.to_numeric(col, errors="coerce")
+        return num.fillna(0).replace([np.inf, -np.inf], 0).infer_objects(copy=False).astype(np.float32)
+
+    @staticmethod
+    def _safe_string(col: pd.Series) -> pd.Series:
+        """안전한 문자열 변환"""
+        return (
+            col.astype(str)
+               .str.strip()
+               .str.strip("'\"")
+               .replace(
+                   {r"^\s*$": "missing", r"^(nan|NaN|null|NULL|None|-{1,2})$": "missing"},
+                   regex=True,
+               )
+        )
+
+    def _check_memory(self) -> None:
+        """메모리 사용량 체크"""
+        mem_usage = psutil.virtual_memory().percent
+        if mem_usage > MEM_THRESHOLD:
+            logger.warning("RAM 사용률 %.1f%% -- GC 실행", mem_usage)
+            gc.collect()
+
+    def fit(self, df: pd.DataFrame, feature_columns: List[str], sample_frac: float = 0.1) -> None:
+        """개선된 fit 메서드 - FeatureWeightManager 활용 (중복 임베딩 제거)"""
+        self.feature_columns = feature_columns
+        logger.info("Improved fit 시작, 데이터 행 수: %d", len(df))
+        start_time = time.time()
+
+        self._check_memory()
+
+        # Feature 타입 분리
+        cat_cols = [c for c in feature_columns if c not in NUMERIC_FEATURES]
+        num_cols = [c for c in feature_columns if c in NUMERIC_FEATURES]
+        
+        # 씰 제조 최적화 가중치 적용
+        if self.optimize_for_seal and self.feature_weights is None:
+            logger.info("씰 제조 도메인 최적화 가중치 적용 중...")
+            self.weight_manager.optimize_for_seal_manufacturing()
+            self.feature_weights = self.weight_manager.feature_weights
+        
+        # 자동 feature 가중치 계산
+        if self.auto_feature_weights and self.feature_weights is None:
+            logger.info("Feature importance 자동 계산 중...")
+            importance_calc = FeatureImportanceCalculator(self.weight_manager.model_dir)
+            self.feature_weights = importance_calc.calculate_variance_importance(df, feature_columns)
+            self.feature_weights = importance_calc.calculate_correlation_penalty(df, feature_columns, self.feature_weights)
+            
+            # FeatureWeightManager와 병합
+            for feature, weight in self.feature_weights.items():
+                if feature in self.weight_manager.DEFAULT_WEIGHTS:
+                    # 도메인 지식과 데이터 기반 가중치의 조화평균
+                    domain_weight = self.weight_manager.DEFAULT_WEIGHTS[feature]
+                    self.feature_weights[feature] = 2 * (weight * domain_weight) / (weight + domain_weight)
+            
+            # 가중치 로그 출력
+            top_features = sorted(self.feature_weights.items(), key=lambda x: x[1], reverse=True)[:10]
+            logger.info("Top 10 feature weights: %s", top_features)
+        
+        # 범주형 인코딩
+        df[cat_cols] = df[cat_cols].astype("category")
+        df_sample = df.sample(frac=sample_frac, random_state=42) if sample_frac < 1.0 else df
+        df_cat = df_sample[cat_cols].apply(self._safe_string) if cat_cols else pd.DataFrame()
+        df_num = df[num_cols].apply(self._safe_numeric) if num_cols else pd.DataFrame()
+
+        if cat_cols:
+            self.encoder = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, dtype=np.float32)
+            enc_cat = self.encoder.fit_transform(df_cat)
+            enc_cat_df = pd.DataFrame(enc_cat, columns=cat_cols, index=df_cat.index)
+        else:
+            self.encoder = OrdinalEncoder(dtype=np.float32)
+            enc_cat_df = pd.DataFrame(index=df_sample.index)
+
+        # 전체 데이터에 대해 인코딩 적용
+        df_cat_full = df[cat_cols].apply(self._safe_string) if cat_cols else pd.DataFrame()
+        if cat_cols:
+            enc_cat_full = self.encoder.transform(df_cat_full)
+            enc_cat_df_full = pd.DataFrame(enc_cat_full, columns=cat_cols, index=df.index)
+        else:
+            enc_cat_df_full = pd.DataFrame(index=df.index)
+
+        # 결합 및 가중치 적용
+        fit_mat = pd.concat([enc_cat_df_full, df_num], axis=1).astype(np.float32)
+        
+        if self.feature_weights:
+            weights = np.array([self.feature_weights.get(col, 1.0) for col in fit_mat.columns], dtype=np.float32)
+            fit_mat *= weights
+            
+            # 가중치를 weight_manager에도 저장
+            self.weight_manager.feature_weights = self.feature_weights
+        
+        # Variance 기반 feature 선택
+        if self.variance_threshold > 0:
+            self.variance_selector = VarianceThreshold(threshold=self.variance_threshold)
+            fit_mat_filtered = self.variance_selector.fit_transform(fit_mat)
+            selected_features = fit_mat.columns[self.variance_selector.get_support()]
+            logger.info("Variance 기반 feature 선택: %d -> %d", len(fit_mat.columns), len(selected_features))
+            fit_mat = pd.DataFrame(fit_mat_filtered, columns=selected_features, index=fit_mat.index)
+        
+        # 스케일링
+        self.scaler = StandardScaler().fit(fit_mat)
+        
+        # PCA (옵션)
+        if self.use_pca and fit_mat.shape[1] > DEFAULT_MAX_FEATURES:
+            scaled_data = self.scaler.transform(fit_mat)
+            if self.pca_components is None:
+                # 95% 분산 유지
+                self.pca = PCA(n_components=0.95, random_state=42)
+            else:
+                self.pca = PCA(n_components=self.pca_components, random_state=42)
+            self.pca.fit(scaled_data)
+            logger.info("PCA 적용: %d -> %d 차원", fit_mat.shape[1], self.pca.n_components_)
+
+        # Feature 메타데이터 저장
+        self._save_feature_metadata(df, feature_columns)
+        
+        # ============ 중복 임베딩 제거 ============
+        # optimize_for_seal이 True여도 여기서는 임베딩을 생성하지 않음
+        # 대신 나중에 train_model_with_ml_improved에서 생성된 임베딩을 활용
+        # ==========================================
+        
+        # 단순히 가중치만 저장
+        if self.optimize_for_seal and self.weight_manager.model_dir:
+            self.weight_manager.save_weights()
+
+        elapsed_time = time.time() - start_time
+        logger.info(
+            "Improved Preprocessor fit 완료 – rows=%d, features=%d, 소요 시간: %.2f초",
+            len(df), fit_mat.shape[1], elapsed_time
+        )
+
+    def transform(self, df: pd.DataFrame) -> np.ndarray:
+        """개선된 transform 메서드"""
+        if self.encoder is None or self.scaler is None:
+            raise RuntimeError("fit() 먼저 호출하세요.")
+
+        cat_cols = [c for c in self.feature_columns if c not in NUMERIC_FEATURES]
+        num_cols = [c for c in self.feature_columns if c in NUMERIC_FEATURES]
+
+        df_cat = df[cat_cols].apply(self._safe_string) if cat_cols else pd.DataFrame()
+        df_num = df[num_cols].apply(self._safe_numeric) if num_cols else pd.DataFrame()
+
+        if cat_cols:
+            enc_cat = self.encoder.transform(df_cat)
+            enc_cat_df = pd.DataFrame(enc_cat, columns=cat_cols, index=df.index)
+        else:
+            enc_cat_df = pd.DataFrame(index=df.index)
+
+        mat = pd.concat([enc_cat_df, df_num], axis=1).astype(np.float32)
+        
+        # 가중치 적용
+        if self.feature_weights:
+            weights = np.array([self.feature_weights.get(col, 1.0) for col in mat.columns], dtype=np.float32)
+            mat *= weights
+        
+        # Variance selector 적용
+        if self.variance_selector is not None:
+            mat = self.variance_selector.transform(mat)
+        
+        # 스케일링
+        transformed = self.scaler.transform(mat)
+        
+        # PCA 적용
+        if self.pca is not None:
+            transformed = self.pca.transform(transformed)
+        
+        # 차원 밸런싱 (옵션)
+        if self.balance_dimensions:
+            # 각 차원의 표준편차를 균등하게 조정
+            dim_stds = np.std(transformed, axis=0) + 1e-8
+            target_std = np.median(dim_stds)
+            scale_factors = target_std / dim_stds
+            scale_factors = np.clip(scale_factors, 0.5, 2.0)  # 극단적인 스케일링 방지
+            transformed *= scale_factors
+        
+        return transformed
+
+    def process_all(
+        self,
+        df: pd.DataFrame,
+        item_col: str = "ITEM_CD",
+        n_jobs: int = DEFAULT_N_JOBS,
+        chunk_size: int = CHUNK_SIZE
+    ) -> Tuple[np.ndarray, List[str]]:
+        """개선된 process_all 메서드"""
+        self._check_memory()
+        grouped = df.groupby(item_col)
+        total_groups = len(grouped)
+        logger.info("Improved process_all 시작, 총 그룹 수: %d", total_groups)
+
+        codes, vecs = [], []
+        start_time = time.time()
+
+        def process_one(code: str, group: pd.DataFrame) -> Optional[Tuple[str, np.ndarray]]:
+            try:
+                self._check_memory()
+                vec = self.transform(group).mean(axis=0)
+                return code, vec.astype(np.float32)
+            except Exception as e:
+                logger.error("품목 %s 처리 중 오류 발생: %s", code, str(e), exc_info=True)
+                return None
+
+        grouped_list = list(grouped)
+        for i in range(0, len(grouped_list), chunk_size):
+            chunk = grouped_list[i:i + chunk_size]
+            chunk_start_time = time.time()
+            results = Parallel(n_jobs=n_jobs, prefer="processes")(
+                delayed(process_one)(code, group) for code, group in chunk
+            )
+            results = [r for r in results if r is not None]
+            if results:
+                chunk_codes, chunk_vecs = zip(*results)
+                codes.extend(chunk_codes)
+                vecs.append(np.vstack(chunk_vecs))
+            self._check_memory()
+            logger.info("임베딩 진행 ▸ %s 개, 처리된 그룹: %d/%d, 청크 소요 시간: %.2f초",
+                        f"{i + len(chunk):,}", i + len(chunk), total_groups, time.time() - chunk_start_time)
+
+        if not codes:
+            raise RuntimeError("유효한 품목 벡터가 생성되지 않았습니다.")
+
+        vec_mat = np.vstack(vecs)
+
+        # Dead dimension 제거
+        if self.std_prune_threshold > 0:
+            dim_stds = np.std(vec_mat, axis=0)
+            active_dims = dim_stds >= self.std_prune_threshold
+            removed_dims = (~active_dims).sum()
+            
+            if removed_dims > 0:
+                vec_mat = vec_mat[:, active_dims]
+                self.active_features = active_dims
+                logger.info("Dead dimension 제거: %d개 제거, %d개 유지", 
+                          removed_dims, active_dims.sum())
+
+        # 정규화 (옵션)
+        if self.normalize_output:
+            # L2 정규화 대신 더 부드러운 정규화 적용
+            norms = np.linalg.norm(vec_mat, axis=1, keepdims=True)
+            # Soft normalization: norm을 1.0 근처로 조정하되 완전히 고정하지 않음
+            target_norm = 1.0
+            alpha = 0.9  # 정규화 강도 (0~1)
+            adjusted_norms = alpha * target_norm + (1 - alpha) * norms
+            vec_mat = vec_mat * (adjusted_norms / (norms + 1e-8))
+
+        logger.info("임베딩 완료 – shape=%s, 총 소요 시간: %.2f초", 
+                   vec_mat.shape, time.time() - start_time)
+        
+        return vec_mat, list(codes)
+    
+    def _save_feature_metadata(self, df: pd.DataFrame, feature_columns: List[str]):
+        """Feature 메타데이터 저장"""
+        self.feature_metadata = {
+            "total_samples": len(df),
+            "features": {}
+        }
+        
+        for col in feature_columns:
+            if col not in df.columns:
+                continue
+            
+            feature_info = {
+                "name": col,
+                "type": "numeric" if col in NUMERIC_FEATURES else "categorical",
+                "missing_count": int(df[col].isna().sum()),
+                "missing_ratio": float(df[col].isna().sum() / len(df))
+            }
+            
+            if col not in NUMERIC_FEATURES:
+                # 범주형 feature 정보
+                value_counts = df[col].astype(str).value_counts()
+                feature_info.update({
+                    "unique_count": int(df[col].nunique()),
+                    "top_20_values": value_counts.head(20).to_dict()
+                })
+            else:
+                # 숫자형 feature 정보
+                col_data = pd.to_numeric(df[col], errors='coerce')
+                if not col_data.isna().all():
+                    feature_info.update({
+                        "mean": float(col_data.mean()),
+                        "std": float(col_data.std()),
+                        "min": float(col_data.min()),
+                        "max": float(col_data.max()),
+                        "q25": float(col_data.quantile(0.25)),
+                        "q50": float(col_data.quantile(0.50)),
+                        "q75": float(col_data.quantile(0.75))
+                    })
+            
+            if self.feature_weights and col in self.feature_weights:
+                feature_info["weight"] = float(self.feature_weights[col])
+            
+            self.feature_metadata["features"][col] = feature_info
+
+# ════════════════════════════════════════════════
+# 개선된 학습 파이프라인
+# ════════════════════════════════════════════════
+def train_model_with_ml_improved(
+    df: pd.DataFrame,
+    *,
+    progress_cb: Optional[Callable[[int], None]] = None,
+    stop_flag: Optional[threading.Event] = None,
+    save_dir: Optional[Union[str, Path]] = None,
+    save_metadata: bool = True,
+    optimize_for_seal: bool = False,
+    auto_feature_weights: bool = True,
+    variance_threshold: float = 0.001,
+    balance_dimensions: bool = True,
+    export_tb_projector: bool = False,                      # ← 추가
+    projector_metadata_cols: Optional[List[str]] = None,     # ← 추가
+) -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
+
+    logger.info("🚀 개선된 ML 모델 학습 시작")
+
+    def update_progress(pct: int):
+        if progress_cb:
+            progress_cb(pct)
+        if stop_flag and stop_flag.is_set():
+            logger.info("학습이 중단되었습니다")
+            return False
+        return True
+
+    if not update_progress(5):
+        return None
+
+    # 1) 모델 디렉터리
+    model_dir = Path(save_dir) if save_dir else None
+    if model_dir:
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+    # 2) Feature Manager (옵션)
+    feature_manager = FeatureWeightManager(model_dir) if model_dir else None
+    if feature_manager and optimize_for_seal:
+        feature_manager.optimize_for_seal_manufacturing()
+
+    # 3) Feature 컬럼
+    feature_cols = [c for c in df.columns if c not in ["ITEM_CD", "ITEM_NM"]]
+    logger.info(f"전체 피처 수: {len(feature_cols)}개")
+
+    if not update_progress(10):
+        return None
+
+    # 5) 데이터 전처리
+    df_subset = df[["ITEM_CD"] + feature_cols].copy()
+    logger.info(f"학습 데이터: {len(df_subset)}행 × {len(feature_cols)}열")
+
+    cat_cols = [c for c in feature_cols if c not in NUMERIC_FEATURES]
+    num_cols = [c for c in feature_cols if c in NUMERIC_FEATURES]
+
+    if cat_cols:
+        df_subset[cat_cols] = df_subset[cat_cols].apply(lambda x: x.astype(str).str.strip())
+    if num_cols:
+        for col in num_cols:
+            df_subset[col] = pd.to_numeric(df_subset[col], errors='coerce').fillna(0)
+
+    if not update_progress(20):
+        return None
+
+    # 7) Label Encoding
+    encoder = LabelEncoder()
+    encoded_cat = pd.DataFrame(index=df_subset.index)
+    if cat_cols:
+        for col in cat_cols:
+            try:
+                encoded_cat[col] = encoder.fit_transform(df_subset[col].astype(str))
+            except Exception as e:
+                logger.warning(f"인코딩 실패 {col}: {e}")
+                encoded_cat[col] = 0
+
+    # 8) 병합
+    final_data = pd.concat([encoded_cat, df_subset[num_cols]], axis=1)[feature_cols]
+    if not update_progress(30):
+        return None
+
+    # 9) Feature weights (선택)
+    if feature_manager:
+        weights = feature_manager.get_weights_as_array(feature_cols, apply_active_mask=False)
+        logger.info(f"Feature weights 적용: min={weights.min():.2f}, max={weights.max():.2f}")
+        final_data = final_data * weights
+
+    # 10) Scaling
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(final_data)
+    if not update_progress(40):
+        return None
+
+    # 11) Variance threshold
+    if variance_threshold > 0:
+        from sklearn.feature_selection import VarianceThreshold
+        selector = VarianceThreshold(threshold=variance_threshold)
+        scaled_data = selector.fit_transform(scaled_data)
+        selected_features = [feature_cols[i] for i in selector.get_support(indices=True)]
+        removed_count = len(feature_cols) - len(selected_features)
+        if removed_count > 0:
+            logger.info(f"Variance threshold 적용: {removed_count}개 피처 제거됨")
+            feature_cols = selected_features
+
+    if not update_progress(50):
+        return None
+
+    # 12) Dimension balancing → 128 고정
+    target_dim, current_dim = 128, scaled_data.shape[1]
+    if balance_dimensions and current_dim != target_dim:
+        if current_dim > target_dim:
+            from sklearn.decomposition import PCA
+            pca = PCA(n_components=target_dim, random_state=42)
+            scaled_data = pca.fit_transform(scaled_data)
+            logger.info(f"PCA 차원 축소: {current_dim} → {target_dim}")
+        else:
+            padding = np.zeros((scaled_data.shape[0], target_dim - current_dim))
+            scaled_data = np.hstack([scaled_data, padding])
+            logger.info(f"차원 패딩: {current_dim} → {target_dim}")
+
+    # 13) 최종 벡터
+    vectors = scaled_data.astype(np.float32)
+    if not update_progress(70):
+        return None
+
+    # 14) HNSW 인덱스
+    logger.info(f"HNSW 인덱스 생성 중... (벡터 차원: {vectors.shape[1]})")
+    searcher = HNSWSearch(vectors, df_subset["ITEM_CD"].tolist(), M=32, ef_construction=200, ef_search=None)
+    if not update_progress(90):
+        return None
+
+    # 15) Feature importance (옵션)
+    if auto_feature_weights and feature_manager:
+        try:
+            feature_manager.analyze_feature_importance(vectors, feature_cols, df_subset["ITEM_CD"].tolist())
+            logger.info("Feature importance 분석 완료")
+        except Exception as e:
+            logger.warning(f"Feature importance 분석 실패: {e}")
+
+    # 16) 저장 & (옵션) Projector 로그
+    if save_dir and model_dir:
+        try:
+            save_optimized_model(searcher, encoder, scaler, feature_cols, str(model_dir))
+            if feature_manager:
+                feature_manager.save_weights()
+
+            if save_metadata:
+                metadata = {
+                    'total_items': len(df_subset),
+                    'total_features': len(feature_cols),
+                    'original_features': len(df.columns) - 2,
+                    'vector_dimension': vectors.shape[1],
+                    'training_date': pd.Timestamp.now().isoformat(),
+                    'optimize_for_seal': optimize_for_seal,
+                    'variance_threshold': variance_threshold,
+                    'balance_dimensions': balance_dimensions,
+                    'target_dimension': 128,
+                    'note': 'Active features are applied only during prediction'
+                }
+                (model_dir / "training_metadata.json").write_text(
+                    json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
+                )
+            logger.info(f"모델 저장 완료: {model_dir}")
+
+            # ← 추가: TensorBoard Projector 내보내기
+            if export_tb_projector:
+                try:
+                    from models.export_tb_projector import export_for_tensorboard_projector
+                    tb_dir = model_dir / "tb_projector"
+                    export_for_tensorboard_projector(
+                        vectors=vectors,
+                        item_codes=df_subset["ITEM_CD"].tolist(),
+                        log_dir=str(tb_dir),
+                        metadata_df=df,
+                        metadata_cols=projector_metadata_cols or ["ITEM_NM"]
+                    )
+                    logger.info(f"TensorBoard Projector logs created at: {tb_dir}")
+                except Exception as e:
+                    logger.warning(f"Projector 로그 생성 실패: {e}")
+
+        except Exception as e:
+            logger.error(f"모델 저장 실패: {e}")
+
+    if not update_progress(100):
+        return None
+
+    logger.info("✅ ML 모델 학습 완료!")
+    return searcher, encoder, scaler, feature_cols
+
+def train_model_with_ml_improved(
+    df: pd.DataFrame,
+    *,
+    progress_cb: Optional[Callable[[int], None]] = None,
+    stop_flag: Optional[threading.Event] = None,
+    save_dir: Optional[Union[str, Path]] = None,
+    save_metadata: bool = True,
+    optimize_for_seal: bool = False,
+    auto_feature_weights: bool = True,
+    variance_threshold: float = 0.001,
+    balance_dimensions: bool = True,
+) -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
+    """
+    개선된 ML 학습 함수 - 모든 피처 사용 (active features는 예측 시에만 적용)
+    """
+    logger.info("🚀 개선된 ML 모델 학습 시작")
+    
+    # Progress callback
+    def update_progress(pct: int):
+        if progress_cb:
+            progress_cb(pct)
+        if stop_flag and stop_flag.is_set():
+            logger.info("학습이 중단되었습니다")
+            return False
+        return True
+    
+    if not update_progress(5):
+        return None
+    
+    # 1. 모델 디렉토리 설정
+    if save_dir:
+        model_dir = Path(save_dir)
+        model_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        model_dir = None
+    
+    # 2. Feature Manager 초기화
+    feature_manager = None
+    if model_dir:
+        feature_manager = FeatureWeightManager(model_dir)
+        if optimize_for_seal:
+            feature_manager.optimize_for_seal_manufacturing()
+    
+    # 3. Feature 컬럼 결정
+    feature_cols = [c for c in df.columns if c not in ["ITEM_CD", "ITEM_NM"]]
+    logger.info(f"전체 피처 수: {len(feature_cols)}개")
+    
+    if not update_progress(10):
+        return None
+    
+    # 5. 데이터 전처리
+    df_subset = df[["ITEM_CD"] + feature_cols].copy()
+    logger.info(f"학습 데이터: {len(df_subset)}행 × {len(feature_cols)}열")
+    
+    # 6. Categorical/Numeric 분리
+    cat_cols = [c for c in feature_cols if c not in NUMERIC_FEATURES]
+    num_cols = [c for c in feature_cols if c in NUMERIC_FEATURES]
+    
+    # 전처리
+    if cat_cols:
+        df_subset[cat_cols] = df_subset[cat_cols].apply(lambda x: x.astype(str).str.strip())
+    if num_cols:
+        for col in num_cols:
+            df_subset[col] = pd.to_numeric(df_subset[col], errors='coerce').fillna(0)
+    
+    if not update_progress(20):
+        return None
+    
+    # 7. Label Encoding
+    encoder = LabelEncoder()
+    encoded_cat = pd.DataFrame(index=df_subset.index)
+    
+    if cat_cols:
+        for col in cat_cols:
+            try:
+                encoded_cat[col] = encoder.fit_transform(df_subset[col].astype(str))
+            except Exception as e:
+                logger.warning(f"인코딩 실패 {col}: {e}")
+                encoded_cat[col] = 0
+    
+    # 8. 데이터 병합
+    final_data = pd.concat([encoded_cat, df_subset[num_cols]], axis=1)[feature_cols]
+    
+    if not update_progress(30):
+        return None
+    
+    # 9. Feature weights 적용 (학습 시에는 active mask 적용하지 않음)
+    if feature_manager:
+        weights = feature_manager.get_weights_as_array(feature_cols, apply_active_mask=False)
+        logger.info(f"Feature weights 적용: min={weights.min():.2f}, max={weights.max():.2f}")
+        final_data = final_data * weights
+    
+    # 10. Scaling
+    scaler = StandardScaler()
+    scaled_data = scaler.fit_transform(final_data)
+    
+    if not update_progress(40):
+        return None
+    
+    # 11. Variance threshold (active features에만 적용)
+    if variance_threshold > 0:
+        from sklearn.feature_selection import VarianceThreshold
+        selector = VarianceThreshold(threshold=variance_threshold)
+        scaled_data = selector.fit_transform(scaled_data)
+        
+        # 선택된 피처 업데이트
+        selected_features = [feature_cols[i] for i in selector.get_support(indices=True)]
+        removed_count = len(feature_cols) - len(selected_features)
+        
+        if removed_count > 0:
+            logger.info(f"Variance threshold 적용: {removed_count}개 피처 제거됨")
+            feature_cols = selected_features
+    
+    if not update_progress(50):
+        return None
+    
+    # 12. Dimension balancing
+    target_dim = 128
+    current_dim = scaled_data.shape[1]
+    
+    if balance_dimensions and current_dim != target_dim:
+        if current_dim > target_dim:
+            # PCA로 차원 축소
+            from sklearn.decomposition import PCA
+            pca = PCA(n_components=target_dim, random_state=42)
+            scaled_data = pca.fit_transform(scaled_data)
+            logger.info(f"PCA 차원 축소: {current_dim} → {target_dim}")
+        else:
+            # 패딩 추가
+            padding = np.zeros((scaled_data.shape[0], target_dim - current_dim))
+            scaled_data = np.hstack([scaled_data, padding])
+            logger.info(f"차원 패딩: {current_dim} → {target_dim}")
+    
+    # 13. 최종 벡터 준비
+    vectors = scaled_data.astype(np.float32)
+    
+    if not update_progress(70):
+        return None
+    
+    # 14. HNSW 인덱스 생성
+    logger.info(f"HNSW 인덱스 생성 중... (벡터 차원: {vectors.shape[1]})")
+    
+    searcher = HNSWSearch(
+        vectors,
+        df_subset["ITEM_CD"].tolist(),
+        M=32,
+        ef_construction=200,
+        ef_search=None
+    )
+    
+    if not update_progress(90):
+        return None
+    
+    # 15. Feature importance 분석 (active features만)
+    if auto_feature_weights and feature_manager:
+        try:
+            # 임베딩 벡터로 중요도 분석
+            feature_manager.analyze_feature_importance(
+                vectors, 
+                feature_cols,
+                df_subset["ITEM_CD"].tolist()
+            )
+            logger.info("Feature importance 분석 완료")
+        except Exception as e:
+            logger.warning(f"Feature importance 분석 실패: {e}")
+    
+    # 16. 모델 저장
+    if save_dir and model_dir:
+        try:
+            # 기본 컴포넌트 저장
+            save_optimized_model(searcher, encoder, scaler, feature_cols, str(model_dir))
+            
+            # Feature manager 저장 (active features 포함)
+            if feature_manager:
+                feature_manager.save_weights()
+            
+            # 메타데이터 저장
+            if save_metadata:
+                metadata = {
+                    'total_items': len(df_subset),
+                    'total_features': len(feature_cols),
+                    'original_features': len(df.columns) - 2,  # ITEM_CD, ITEM_NM 제외
+                    'vector_dimension': vectors.shape[1],
+                    'training_date': pd.Timestamp.now().isoformat(),
+                    'optimize_for_seal': optimize_for_seal,
+                    'variance_threshold': variance_threshold,
+                    'balance_dimensions': balance_dimensions,
+                    'target_dimension': target_dim if balance_dimensions else None,
+                    'note': 'Active features are applied only during prediction'
+                }
+                
+                metadata_path = model_dir / "training_metadata.json"
+                with open(metadata_path, 'w', encoding='utf-8') as f:
+                    json.dump(metadata, f, indent=2, ensure_ascii=False)
+                
+            logger.info(f"모델 저장 완료: {model_dir}")
+            
+        except Exception as e:
+            logger.error(f"모델 저장 실패: {e}")
+    
+    if not update_progress(100):
+        return None
+    
+    logger.info("✅ ML 모델 학습 완료!")
+    return searcher, encoder, scaler, feature_cols
+
+# ════════════════════════════════════════════════
+# 기존 함수들 (호환성 유지)
+# ════════════════════════════════════════════════
+
+# 기존 train_model_with_ml_optimized 함수를 개선된 버전으로 리다이렉트
+def train_model_with_ml_optimized(
+    df: pd.DataFrame,
+    feature_columns: Optional[List[str]] = None,
+    progress_cb: Optional[Callable[[int], None]] = None,
+    stop_flag: Optional[threading.Event] = None,
+    *,
+    use_hnsw: bool = True,
+    feature_weights: Optional[Dict[str, float]] = None,
+    normalize_output: bool = True,
+    std_prune_threshold: float = 0.0,
+) -> Optional[Tuple[
+    Union['EfficientSimilaritySearch', 'HNSWSearch'],
+    OrdinalEncoder,
+    StandardScaler,
+    List[str],
+]]:
+    """기존 API 호환성을 위한 래퍼 함수"""
+    return train_model_with_ml_improved(
+        df=df,
+        feature_columns=feature_columns,
+        progress_cb=progress_cb,
+        stop_flag=stop_flag,
+        use_hnsw=use_hnsw,
+        feature_weights=feature_weights,
+        normalize_output=normalize_output,
+        std_prune_threshold=std_prune_threshold if std_prune_threshold > 0 else DEFAULT_STD_THRESHOLD,
+        variance_threshold=0.0,  # 기존 버전은 variance threshold 사용 안 함
+        use_pca=False,  # 기존 버전은 PCA 사용 안 함
+        auto_feature_weights=False,  # 기존 버전은 자동 가중치 사용 안 함
+        balance_dimensions=False,  # 기존 버전은 차원 밸런싱 사용 안 함
+        save_metadata=False,
+        optimize_for_seal=False,  # 기존 버전은 씰 최적화 사용 안 함
+    )
+
+# EfficientSimilaritySearch와 save/load 함수들은 그대로 유지...
+class EfficientSimilaritySearch:
+    """L2 정규화 후 내적 = cosine, 완전 탐색"""
+
+    def __init__(self, vectors: np.ndarray, item_codes: List[str]):
+        self.vectors = normalize(vectors, axis=1)
+        self.item_codes = np.asarray(item_codes)
+        logger.info("EfficientSimilaritySearch 초기화, 벡터 수: %d, 차원: %d", len(item_codes), vectors.shape[1])
+
+    def find_similar(
+        self, query: np.ndarray, top_k: int = 1
+    ) -> Union[Tuple[str, float], Tuple[List[str], List[float]]]:
+        logger.debug("find_similar 시작, top_k: %d", top_k)
+        q = normalize(query.reshape(1, -1))
+        sims = (q @ self.vectors.T).ravel()
+
+        if top_k == 1:
+            idx = int(np.argmax(sims))
+            result = self.item_codes[idx], float(sims[idx])
+            logger.debug("최상위 1개 결과: %s, 점수: %.4f", result[0], result[1])
+            return result
+
+        top_idx = np.argpartition(-sims, top_k - 1)[:top_k]
+        top_idx = top_idx[np.argsort(-sims[top_idx])]
+        codes = [self.item_codes[i] for i in top_idx]
+        scores = [float(sims[i]) for i in top_idx]
+        logger.debug("최상위 %d개 결과: %s, 점수: %s", top_k, codes, scores)
+        return codes, scores
+
+# 모델 저장/로드 함수
+def save_optimized_model(
+    searcher: Union[EfficientSimilaritySearch, HNSWSearch],
+    encoder: OrdinalEncoder,
+    scaler: StandardScaler,
+    feature_columns: List[str],
+    save_dir: str,
+) -> None:
+    logger.info("모델 저장 시작, 디렉토리: %s", save_dir)
+    start_time = time.time()
+    p = Path(save_dir).expanduser()
+    p.mkdir(parents=True, exist_ok=True)
+
+    joblib.dump(searcher, p / "similarity_engine.joblib", compress=3)
+    joblib.dump(encoder, p / "encoder.joblib", compress=3)
+    joblib.dump(scaler, p / "scaler.joblib", compress=3)
+    joblib.dump(feature_columns, p / "feature_columns.joblib")
+
+    elapsed_time = time.time() - start_time
+    logger.info("모델 저장 완료 → %s, 소요 시간: %.2f초", p, elapsed_time)
+
+def load_optimized_model(
+    load_dir: str,
+) -> Tuple[
+    Union[EfficientSimilaritySearch, HNSWSearch],
+    OrdinalEncoder,
+    StandardScaler,
+    List[str],
+]:
+    logger.info("모델 로드 시작, 디렉토리: %s", load_dir)
+    start_time = time.time()
+    p = Path(load_dir).expanduser()
+    searcher = joblib.load(p / "similarity_engine.joblib")
+    encoder = joblib.load(p / "encoder.joblib")
+    scaler = joblib.load(p / "scaler.joblib")
+    feature_columns = joblib.load(p / "feature_columns.joblib")
+    elapsed_time = time.time() - start_time
+    logger.info("모델 로드: %s, 소요 시간: %.2f초", p, elapsed_time)
+    return searcher, encoder, scaler, feature_columns
