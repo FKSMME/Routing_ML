@@ -1,0 +1,32 @@
+# 절대 지령
+# (문서 아님이므로 주석으로 절대 지령 문맥 표시)
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.DS_Store
+.env
+models/**/*.bin
+models/**/*.pkl
+node_modules/
+frontend/node_modules/
+frontend/dist/
+*.sqlite
+*.db
+*.accdb
+*.mdb
+.idea/
+.vscode/
+.DS_Store
+coverage/
+*.coverage
+
+# Vite artifacts
+frontend/.vite
+
+# Python build
+build/
+dist/
+.eggs/
+*.egg-info/

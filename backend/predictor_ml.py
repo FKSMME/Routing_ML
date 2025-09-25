@@ -13,7 +13,8 @@ import json
 from datetime import datetime
 
 # ── 사내 모듈
-from backend.constants import ROUTING_OUTPUT_COLS, NUMERIC_FEATURES
+from backend.constants import NUMERIC_FEATURES, get_routing_alias_map, get_routing_output_columns
+from common.config_store import PredictorRuntimeConfig, workflow_config_store
 from backend.trainer_ml import load_optimized_model
 from backend.feature_weights import FeatureWeightManager
 from backend.database import (
@@ -37,10 +38,118 @@ DEFAULT_TOP_K: int = 10
 MISSING_RATIO_THRESHOLD: float = 0.50
 MIN_SAMPLES_FOR_STATS: int = 1
 CONFIDENCE_THRESHOLD: float = 0.0
-MIN_SIMILARITY_THRESHOLD: float = 0.5
+SIMILARITY_HIGH_THRESHOLD: float = 0.8
+MIN_SIMILARITY_THRESHOLD: float = SIMILARITY_HIGH_THRESHOLD
+MAX_ROUTING_VARIANTS: int = 4
 
 # 제외할 컬럼들 - 일관성 있게 정의
 COLUMNS_TO_EXCLUDE = ['DRAW_USE', 'ITEM_NM_ENG', 'MID_SEALSIZE_UOM', 'ROTATE_CTRCLOCKWISE']
+
+ROUTING_ALIAS_MAP = {
+    'JOB_CD': 'dbo_BI_ROUTING_VIEW_JOB_CD',
+    'CUST_NM': 'dbo_BI_ROUTING_VIEW_CUST_NM',
+    'VIEW_REMARK': 'dbo_BI_ROUTING_VIEW_REMARK',
+}
+
+
+def _active_alias_map() -> Dict[str, str]:
+    """현재 설정 기반 컬럼 별칭을 반환한다."""
+
+    try:
+        return get_routing_alias_map()
+    except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
+        return dict(ROUTING_ALIAS_MAP)
+
+SUMMARY_META_COLUMNS = {
+    'ITEM_CD', 'CANDIDATE_ID', 'ROUTING_SIGNATURE', 'PRIORITY',
+    'SIMILARITY_TIER', 'SIMILARITY_SCORE', 'REFERENCE_ITEM_CD'
+}
+
+
+def build_routing_signature(routing_df: pd.DataFrame) -> str:
+    """공정 목록을 기반으로 라우팅 시그니처 문자열 생성."""
+    if routing_df is None or routing_df.empty:
+        return ""
+
+    job_names = routing_df.get('JOB_NM')
+    tokens: List[str] = []
+    if job_names is not None:
+        tokens = [str(val).strip() for val in job_names if isinstance(val, str) and val.strip()]
+
+    if not tokens:
+        res_names = routing_df.get('RES_DIS')
+        if res_names is not None:
+            tokens = [str(val).strip() for val in res_names if isinstance(val, str) and val.strip()]
+
+    if not tokens:
+        return "ROUTING"
+
+    return '+'.join(tokens[:4])
+
+
+def normalize_routing_frame(
+    target_item: str,
+    candidate_id: str,
+    base_df: pd.DataFrame,
+    *,
+    similarity: float,
+    reference_item: str,
+    priority: str,
+    signature: str,
+) -> pd.DataFrame:
+    """라우팅 DataFrame을 API/SQL 출력 규격에 맞게 정규화."""
+    if base_df is None or base_df.empty:
+        return pd.DataFrame()
+
+    frame = base_df.copy()
+    alias_map = _active_alias_map()
+    frame = frame.rename(columns=alias_map)
+
+    frame['ITEM_CD'] = target_item
+    frame['CANDIDATE_ID'] = candidate_id
+    frame['ROUTING_SIGNATURE'] = signature
+    frame['PRIORITY'] = priority
+    frame['SIMILARITY_TIER'] = 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW'
+    frame['SIMILARITY_SCORE'] = float(similarity)
+    frame['REFERENCE_ITEM_CD'] = reference_item
+
+    if 'MACH_WORKED_HOURS' not in frame.columns:
+        if 'ACT_RUN_TIME' in frame.columns:
+            frame['MACH_WORKED_HOURS'] = pd.to_numeric(frame['ACT_RUN_TIME'], errors='coerce').fillna(0.0)
+        elif 'RUN_TIME' in frame.columns:
+            frame['MACH_WORKED_HOURS'] = pd.to_numeric(frame['RUN_TIME'], errors='coerce').fillna(0.0)
+        else:
+            frame['MACH_WORKED_HOURS'] = 0.0
+
+    numeric_columns = [
+        'MFG_LT', 'QUEUE_TIME', 'SETUP_TIME', 'MACH_WORKED_HOURS',
+        'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
+        'RUN_TIME_QTY', 'SUBCONTRACT_PRC'
+    ]
+    for col in numeric_columns:
+        if col in frame.columns:
+            frame[col] = pd.to_numeric(frame[col], errors='coerce').fillna(0.0)
+        else:
+            frame[col] = 0.0
+
+    for col in SUMMARY_META_COLUMNS:
+        if col not in frame.columns:
+            if col == 'SIMILARITY_SCORE':
+                frame[col] = float(similarity)
+            elif col == 'REFERENCE_ITEM_CD':
+                frame[col] = reference_item
+            elif col == 'PRIORITY':
+                frame[col] = priority
+            elif col == 'SIMILARITY_TIER':
+                frame[col] = 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW'
+            elif col == 'ROUTING_SIGNATURE':
+                frame[col] = signature
+            else:
+                frame[col] = None
+
+    output_columns = get_routing_output_columns()
+    frame = frame.reindex(columns=output_columns, fill_value=None)
+    return frame
 
 # ════════════════════════════════════════════════
 # 🔧 안전한 타입 변환 함수들
@@ -105,6 +214,9 @@ class TimeScenarioConfig:
         self.OUTLIER_DETECTION_ENABLED = True
         self.OUTLIER_Z_SCORE_THRESHOLD = 2.5
         self.SIMILARITY_WEIGHT_POWER = 2.0
+        self.TRIM_STD_ENABLED = True
+        self.TRIM_LOWER_PERCENT = 0.05
+        self.TRIM_UPPER_PERCENT = 0.95
     
     def get_scenario_description(self, cv: float) -> str:
         if cv < self.CV_STABLE:
@@ -140,9 +252,12 @@ class TimeScenarioConfig:
             'process_overlap_threshold': self.PROCESS_OVERLAP_THRESHOLD,
             'outlier_detection_enabled': self.OUTLIER_DETECTION_ENABLED,
             'outlier_z_score_threshold': self.OUTLIER_Z_SCORE_THRESHOLD,
-            'similarity_weight_power': self.SIMILARITY_WEIGHT_POWER
+            'similarity_weight_power': self.SIMILARITY_WEIGHT_POWER,
+            'trim_std_enabled': self.TRIM_STD_ENABLED,
+            'trim_lower_percent': self.TRIM_LOWER_PERCENT,
+            'trim_upper_percent': self.TRIM_UPPER_PERCENT,
         }
-    
+
     def from_dict(self, config_dict: Dict):
         self.OPTIMAL_SIGMA = config_dict.get('optimal_sigma', 0.67)
         self.SAFE_SIGMA = config_dict.get('safe_sigma', 1.28)
@@ -157,6 +272,9 @@ class TimeScenarioConfig:
         self.OUTLIER_DETECTION_ENABLED = config_dict.get('outlier_detection_enabled', True)
         self.OUTLIER_Z_SCORE_THRESHOLD = config_dict.get('outlier_z_score_threshold', 2.5)
         self.SIMILARITY_WEIGHT_POWER = config_dict.get('similarity_weight_power', 2.0)
+        self.TRIM_STD_ENABLED = config_dict.get('trim_std_enabled', True)
+        self.TRIM_LOWER_PERCENT = config_dict.get('trim_lower_percent', 0.05)
+        self.TRIM_UPPER_PERCENT = config_dict.get('trim_upper_percent', 0.95)
 
 # 전역 설정 인스턴스
 SCENARIO_CONFIG = TimeScenarioConfig()
@@ -639,36 +757,79 @@ def filter_by_similarity_threshold(items: List[str], similarities: List[float],
     logger.info(f"유사도 필터링: {len(items)}개 → {len(filtered_items)}개 (임계값: {threshold:.2f})")
     return filtered_items, filtered_sims
 
-def remove_outliers_zscore(values: List[float], weights: List[float], 
-                          z_threshold: float = 2.5) -> Tuple[List[float], List[float]]:
+def remove_outliers_zscore(values: List[float], weights: List[float],
+                          z_threshold: float = 2.5) -> Tuple[List[float], List[float], List[bool]]:
     if len(values) < 3:
-        return values, weights
-    
+        normalized = _normalize_weights_array(weights) if weights else np.ones(len(values)) / max(len(values), 1)
+        return values, normalized.tolist(), [True] * len(values)
+
     values_array = np.array(values)
-    weights_array = np.array(weights)
-    
+    weights_array = _normalize_weights_array(weights if weights else np.ones(len(values_array)))
+
     mean = np.average(values_array, weights=weights_array)
     variance = np.average((values_array - mean)**2, weights=weights_array)
     std = np.sqrt(variance)
-    
+
     if std == 0:
-        return values, weights
-    
+        return values, weights_array.tolist(), [True] * len(values)
+
     z_scores = np.abs((values_array - mean) / std)
     valid_mask = z_scores <= z_threshold
-    
+
     filtered_values = values_array[valid_mask].tolist()
     filtered_weights = weights_array[valid_mask].tolist()
-    
+
     if filtered_weights:
         total_weight = sum(filtered_weights)
         filtered_weights = [w/total_weight for w in filtered_weights]
-    
+
     removed_count = len(values) - len(filtered_values)
     if removed_count > 0:
         logger.debug(f"이상치 제거: {removed_count}개 제거됨 (Z-score > {z_threshold})")
-    
-    return filtered_values, filtered_weights
+
+    return filtered_values, filtered_weights, valid_mask.tolist()
+
+
+def _normalize_weights_array(weights: Union[List[float], np.ndarray]) -> np.ndarray:
+    arr = np.asarray(weights, dtype=np.float64)
+    if arr.size == 0:
+        return arr
+    total = arr.sum()
+    if total <= 0:
+        return np.ones_like(arr) / len(arr)
+    return arr / total
+
+
+def _apply_weighted_trimmed_range(
+    values: np.ndarray,
+    weights: np.ndarray,
+    lower_pct: float,
+    upper_pct: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    if values.size < 3:
+        return values, weights
+
+    lower_pct = float(np.clip(lower_pct, 0.0, 0.5))
+    upper_pct = float(np.clip(upper_pct, 0.5, 1.0))
+    if upper_pct <= lower_pct:
+        return values, weights
+
+    order = np.argsort(values)
+    sorted_values = values[order]
+    sorted_weights = weights[order]
+
+    cumulative = np.cumsum(sorted_weights)
+    lower_bounds = cumulative - sorted_weights
+
+    keep_mask = (cumulative > lower_pct) & (lower_bounds < upper_pct)
+    trimmed_values = sorted_values[keep_mask]
+    trimmed_weights = sorted_weights[keep_mask]
+
+    if trimmed_values.size == 0:
+        return values, weights
+
+    trimmed_weights = _normalize_weights_array(trimmed_weights)
+    return trimmed_values, trimmed_weights
 
 # ════════════════════════════════════════════════
 # 📊 제조 시간 통계 계산
@@ -677,12 +838,16 @@ def remove_outliers_zscore(values: List[float], weights: List[float],
 def calculate_manufacturing_time_stats(
     times_list: List[float],
     weights_list: List[float],
-    config: TimeScenarioConfig = None
+    config: TimeScenarioConfig = None,
+    *,
+    apply_trimmed: bool = False,
+    trim_lower: Optional[float] = None,
+    trim_upper: Optional[float] = None
 ) -> Dict[str, float]:
     """제조 시간 통계 계산"""
     if config is None:
         config = SCENARIO_CONFIG
-    
+
     if not times_list:
         return {
             'mean': 0.0,
@@ -691,21 +856,43 @@ def calculate_manufacturing_time_stats(
             'optimal': 0.0,
             'standard': 0.0,
             'safe': 0.0,
-            'samples': 0
+            'samples': 0,
+            'raw_samples': 0,
         }
-    
-    times = np.array(times_list)
-    weights = np.array(weights_list)
-    
-    mean = np.average(times, weights=weights)
-    variance = np.average((times - mean)**2, weights=weights)
+
+    times = np.array(times_list, dtype=np.float64)
+    weights = _normalize_weights_array(weights_list if weights_list else np.ones(len(times)))
+
+    trimmed_times = times
+    trimmed_weights = weights
+
+    if (
+        apply_trimmed
+        and len(times) >= 3
+        and getattr(config, 'TRIM_STD_ENABLED', True)
+    ):
+        lower = trim_lower if trim_lower is not None else getattr(config, 'TRIM_LOWER_PERCENT', 0.05)
+        upper = trim_upper if trim_upper is not None else getattr(config, 'TRIM_UPPER_PERCENT', 0.95)
+        trimmed_times, trimmed_weights = _apply_weighted_trimmed_range(times, weights, lower, upper)
+        removed = len(times) - len(trimmed_times)
+        if removed > 0:
+            logger.debug(
+                "가중치 트림 적용: 총 %d개 중 %d개 제거 (하위 %.0f%%, 상위 %.0f%%)",
+                len(times),
+                removed,
+                lower * 100,
+                (1 - upper) * 100,
+            )
+
+    mean = np.average(trimmed_times, weights=trimmed_weights)
+    variance = np.average((trimmed_times - mean)**2, weights=trimmed_weights)
     std = np.sqrt(variance)
     cv = std / mean if mean > 0 else 0
-    
+
     optimal_time = mean + config.OPTIMAL_SIGMA * std
     standard_time = mean
     safe_time = mean + config.SAFE_SIGMA * std
-    
+
     return {
         'mean': mean,
         'std': std,
@@ -713,7 +900,8 @@ def calculate_manufacturing_time_stats(
         'optimal': optimal_time,
         'standard': standard_time,
         'safe': safe_time,
-        'samples': len(times)
+        'samples': len(trimmed_times),
+        'raw_samples': len(times)
     }
 
 def calculate_confidence_score(
@@ -880,6 +1068,12 @@ def predict_routing_from_similar_items(
                     'TIME_UNIT': str(row.get('TIME_UNIT', '분(Min.)')),
                     'SETUP_TIME': safe_float_conversion(row.get('SETUP_TIME'), 0.0),
                     'RUN_TIME': safe_float_conversion(row.get('RUN_TIME'), 0.0),
+                    'MACH_WORKED_HOURS': safe_float_conversion(
+                        row.get('MACH_WORKED_HOURS')
+                        or row.get('ACT_RUN_TIME')
+                        or row.get('RUN_TIME'),
+                        0.0,
+                    ),
                     'ACT_SETUP_TIME': safe_float_conversion(row.get('ACT_SETUP_TIME') or row.get('SETUP_TIME'), 0.0),
                     'ACT_RUN_TIME': safe_float_conversion(row.get('ACT_RUN_TIME') or row.get('RUN_TIME'), 0.0),
                     'WAIT_TIME': safe_float_conversion(row.get('WAIT_TIME'), 0.0),
@@ -908,30 +1102,35 @@ def predict_routing_from_similar_items(
             # 시간 데이터 계산
             setup_times = [p['SETUP_TIME'] for p in proc_list]
             run_times = [p['RUN_TIME'] for p in proc_list]
+            mach_times = [p['MACH_WORKED_HOURS'] for p in proc_list]
             wait_times = [p['WAIT_TIME'] for p in proc_list]
             move_times = [p['MOVE_TIME'] for p in proc_list]
             similarities = [p['SIMILARITY'] for p in proc_list]
-            
+
             _, weights = apply_similarity_weights(run_times, similarities, config.SIMILARITY_WEIGHT_POWER)
-            
+
             if config.OUTLIER_DETECTION_ENABLED and len(run_times) >= 3:
-                run_times, weights = remove_outliers_zscore(
+                run_times, weights, valid_mask = remove_outliers_zscore(
                     run_times, weights, config.OUTLIER_Z_SCORE_THRESHOLD
                 )
-                valid_indices = [i for i, t in enumerate(proc_list) if t['RUN_TIME'] in run_times]
-                setup_times = [proc_list[i]['SETUP_TIME'] for i in valid_indices]
-                wait_times = [proc_list[i]['WAIT_TIME'] for i in valid_indices]
-                move_times = [proc_list[i]['MOVE_TIME'] for i in valid_indices]
-            
-            setup_stats = calculate_manufacturing_time_stats(setup_times, weights, config)
+                setup_times = [val for val, keep in zip(setup_times, valid_mask) if keep]
+                mach_times = [val for val, keep in zip(mach_times, valid_mask) if keep]
+                wait_times = [val for val, keep in zip(wait_times, valid_mask) if keep]
+                move_times = [val for val, keep in zip(move_times, valid_mask) if keep]
+                similarities = [val for val, keep in zip(similarities, valid_mask) if keep]
+
+            setup_stats = calculate_manufacturing_time_stats(setup_times, weights, config, apply_trimmed=True)
             run_stats = calculate_manufacturing_time_stats(run_times, weights, config)
+            mach_stats = calculate_manufacturing_time_stats(mach_times, weights, config, apply_trimmed=True)
             wait_stats = calculate_manufacturing_time_stats(wait_times, weights, config)
             move_stats = calculate_manufacturing_time_stats(move_times, weights, config)
-            
+
+            similarity_mean = np.mean(similarities) if similarities else 0.0
+
             confidence = calculate_confidence_score(
-                len(proc_list), np.mean(similarities), run_stats['cv'], config
+                len(proc_list), similarity_mean, mach_stats['cv'], config
             )
-            
+
             prediction = {
                 'ROUT_NO': 'PREDICTED',
                 'ITEM_CD': input_item_cd,
@@ -944,20 +1143,21 @@ def predict_routing_from_similar_items(
                 'TIME_UNIT': time_unit,
                 'SETUP_TIME': round(setup_stats['mean'], 3),
                 'RUN_TIME': round(run_stats['mean'], 3),
+                'MACH_WORKED_HOURS': round(mach_stats['mean'], 3),
                 'ACT_SETUP_TIME': round(setup_stats['mean'], 3),
-                'ACT_RUN_TIME': round(run_stats['mean'], 3),
+                'ACT_RUN_TIME': round(mach_stats['mean'], 3),
                 'WAIT_TIME': round(wait_stats['mean'], 3),
                 'MOVE_TIME': round(move_stats['mean'], 3),
-                'OPTIMAL_TIME': round(run_stats['optimal'], 3),
-                'STANDARD_TIME': round(run_stats['standard'], 3),
-                'SAFE_TIME': round(run_stats['safe'], 3),
-                'TIME_STD': round(run_stats['std'], 3),
-                'TIME_CV': round(run_stats['cv'], 3),
+                'OPTIMAL_TIME': round(mach_stats['optimal'], 3),
+                'STANDARD_TIME': round(mach_stats['standard'], 3),
+                'SAFE_TIME': round(mach_stats['safe'], 3),
+                'TIME_STD': round(mach_stats['std'], 3),
+                'TIME_CV': round(mach_stats['cv'], 3),
                 'SIMILAR_ITEMS_USED': len(proc_list),
-                'AVG_SIMILARITY': round(np.mean(similarities), 3),
+                'AVG_SIMILARITY': round(similarity_mean, 3),
                 'CONFIDENCE': round(confidence, 3),
-                'SCENARIO': config.get_scenario_description(run_stats['cv']),
-                'SCENARIO_EMOJI': config.get_scenario_emoji(run_stats['cv']),
+                'SCENARIO': config.get_scenario_description(mach_stats['cv']),
+                'SCENARIO_EMOJI': config.get_scenario_emoji(mach_stats['cv']),
                 'SOURCE_ITEMS': ','.join([p['SOURCE_ITEM'] for p in proc_list]),
                 'SIMILARITY_SCORES': ','.join([f"{p['SIMILARITY']:.3f}" for p in proc_list]),
                 'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),
@@ -976,7 +1176,7 @@ def predict_routing_from_similar_items(
             base_cols = [
                 'ROUT_NO', 'ITEM_CD', 'PROC_SEQ', 'INSIDE_FLAG', 'JOB_CD', 'JOB_NM',
                 'RES_CD', 'RES_DIS', 'TIME_UNIT', 'SETUP_TIME', 'RUN_TIME',
-                'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
+                'MACH_WORKED_HOURS', 'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
                 'OPTIMAL_TIME', 'STANDARD_TIME', 'SAFE_TIME', 'VALID_FROM_DT', 'VALID_TO_DT', 'INSRT_DT'
             ]
             extra_cols = [col for col in routing_df.columns if col not in base_cols]
@@ -997,9 +1197,10 @@ def predict_routing_from_similar_items(
         total_run_times = []
         total_wait_times = []
         total_move_times = []
+        total_mach_hours = []
         similarities = []
         source_items = []
-        
+
         for item_cd, routing_df in all_routings:
             try:
                 item_index = filtered_items.index(item_cd)
@@ -1012,54 +1213,66 @@ def predict_routing_from_similar_items(
             run_sum = routing_df['RUN_TIME'].sum()
             wait_sum = routing_df['WAIT_TIME'].sum()
             move_sum = routing_df['MOVE_TIME'].sum()
-            
+            if 'MACH_WORKED_HOURS' in routing_df.columns:
+                mach_series = pd.to_numeric(routing_df['MACH_WORKED_HOURS'], errors='coerce').fillna(0.0)
+            elif 'ACT_RUN_TIME' in routing_df.columns:
+                mach_series = pd.to_numeric(routing_df['ACT_RUN_TIME'], errors='coerce').fillna(0.0)
+            else:
+                mach_series = pd.to_numeric(routing_df['RUN_TIME'], errors='coerce').fillna(0.0)
+            mach_sum = float(mach_series.sum())
+
             total_setup_times.append(setup_sum)
             total_run_times.append(run_sum)
             total_wait_times.append(wait_sum)
             total_move_times.append(move_sum)
+            total_mach_hours.append(mach_sum)
             similarities.append(item_similarity)
             source_items.append(item_cd)
-        
+
         _, weights = apply_similarity_weights(total_run_times, similarities, config.SIMILARITY_WEIGHT_POWER)
-        
+
         if config.OUTLIER_DETECTION_ENABLED and len(total_run_times) >= 3:
-            total_run_times, weights = remove_outliers_zscore(
+            total_run_times, weights, valid_mask = remove_outliers_zscore(
                 total_run_times, weights, config.OUTLIER_Z_SCORE_THRESHOLD
             )
-            valid_indices = [i for i, t in enumerate(total_run_times) if t in total_run_times]
-            total_setup_times = [total_setup_times[i] for i in valid_indices]
-            total_wait_times = [total_wait_times[i] for i in valid_indices]
-            total_move_times = [total_move_times[i] for i in valid_indices]
-            similarities = [similarities[i] for i in valid_indices]
-            source_items = [source_items[i] for i in valid_indices]
-        
-        setup_stats = calculate_manufacturing_time_stats(total_setup_times, weights, config)
+            total_setup_times = [val for val, keep in zip(total_setup_times, valid_mask) if keep]
+            total_wait_times = [val for val, keep in zip(total_wait_times, valid_mask) if keep]
+            total_move_times = [val for val, keep in zip(total_move_times, valid_mask) if keep]
+            total_mach_hours = [val for val, keep in zip(total_mach_hours, valid_mask) if keep]
+            similarities = [val for val, keep in zip(similarities, valid_mask) if keep]
+            source_items = [val for val, keep in zip(source_items, valid_mask) if keep]
+
+        setup_stats = calculate_manufacturing_time_stats(total_setup_times, weights, config, apply_trimmed=True)
         run_stats = calculate_manufacturing_time_stats(total_run_times, weights, config)
+        mach_stats = calculate_manufacturing_time_stats(total_mach_hours, weights, config, apply_trimmed=True)
         wait_stats = calculate_manufacturing_time_stats(total_wait_times, weights, config)
         move_stats = calculate_manufacturing_time_stats(total_move_times, weights, config)
-        
+
+        similarity_mean = np.mean(similarities) if similarities else 0.0
+
         confidence = calculate_confidence_score(
-            len(all_routings), np.mean(similarities), run_stats['cv'], config
+            len(all_routings), similarity_mean, mach_stats['cv'], config
         )
-        
+
         prediction = {
             'ITEM_CD': input_item_cd,
             'SETUP_TIME': round(setup_stats['mean'], 3),
             'RUN_TIME': round(run_stats['mean'], 3),
+            'MACH_WORKED_HOURS': round(mach_stats['mean'], 3),
             'ACT_SETUP_TIME': round(setup_stats['mean'], 3),
-            'ACT_RUN_TIME': round(run_stats['mean'], 3),
+            'ACT_RUN_TIME': round(mach_stats['mean'], 3),
             'WAIT_TIME': round(wait_stats['mean'], 3),
             'MOVE_TIME': round(move_stats['mean'], 3),
-            'OPTIMAL_TIME': round(run_stats['optimal'], 3),
-            'STANDARD_TIME': round(run_stats['standard'], 3),
-            'SAFE_TIME': round(run_stats['safe'], 3),
-            'TIME_STD': round(run_stats['std'], 3),
-            'TIME_CV': round(run_stats['cv'], 3),
+            'OPTIMAL_TIME': round(mach_stats['optimal'], 3),
+            'STANDARD_TIME': round(mach_stats['standard'], 3),
+            'SAFE_TIME': round(mach_stats['safe'], 3),
+            'TIME_STD': round(mach_stats['std'], 3),
+            'TIME_CV': round(mach_stats['cv'], 3),
             'SIMILAR_ITEMS_USED': len(all_routings),
-            'AVG_SIMILARITY': round(np.mean(similarities), 3),
+            'AVG_SIMILARITY': round(similarity_mean, 3),
             'CONFIDENCE': round(confidence, 3),
-            'SCENARIO': config.get_scenario_description(run_stats['cv']),
-            'SCENARIO_EMOJI': config.get_scenario_emoji(run_stats['cv']),
+            'SCENARIO': config.get_scenario_description(mach_stats['cv']),
+            'SCENARIO_EMOJI': config.get_scenario_emoji(mach_stats['cv']),
             'SOURCE_ITEMS': ','.join(source_items),
             'SIMILARITY_SCORES': ','.join([f"{s:.3f}" for s in similarities]),
             'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),
@@ -1200,8 +1413,8 @@ def predict_items_with_ml_optimized(
 
     logger.info(f"🚀 Enhanced ML 배치 예측 시작: {len(item_codes)}개 품목")
 
-    all_routing: List[pd.DataFrame] = []
-    all_candidates: List[pd.DataFrame] = []
+    predicted_routings: Dict[str, pd.DataFrame] = {}
+    raw_candidate_frames: List[pd.DataFrame] = []
     routing_cache: Dict[str, pd.DataFrame] = {}
 
     for item_cd in item_codes:
@@ -1209,56 +1422,165 @@ def predict_items_with_ml_optimized(
             item_cd, model_dir, top_k=top_k, miss_thr=miss_thr,
             config=config, mode=mode
         )
-        
-        if not routing_df.empty:
-            all_routing.append(routing_df)
-        
-        elif 'MESSAGE' in routing_df.columns:
-            all_routing.append(routing_df)
-        
+
+        predicted_routings[item_cd] = routing_df if routing_df is not None else pd.DataFrame()
+
         if not cand_df.empty:
-            cand_df['ITEM_CD'] = item_cd  # Ensure ITEM_CD is set correctly
-            all_candidates.append(cand_df)
-        
-        # Cache routing for similar items to avoid redundant DB queries
-        if not cand_df.empty:
+            cand_df['ITEM_CD'] = item_cd
+            raw_candidate_frames.append(cand_df)
             for cand_item in cand_df['CANDIDATE_ITEM_CD']:
                 if cand_item not in routing_cache:
                     routing_cache[cand_item] = fetch_routing_for_item(cand_item)
 
-    # Combine results
-    final_routing_df = pd.concat(all_routing, ignore_index=True) if all_routing else pd.DataFrame()
-    final_cand_df = pd.concat(all_candidates, ignore_index=True) if all_candidates else pd.DataFrame()
+    composed_frames: List[pd.DataFrame] = []
+    enhanced_candidates: List[Dict[str, Any]] = []
+    per_item_counts: Dict[str, int] = defaultdict(int)
 
-    # Add routing info to candidate dataframe
-    if not final_cand_df.empty:
-        has_routing = []
-        routing_counts = []
-        
-        for candidate in final_cand_df['CANDIDATE_ITEM_CD']:
-            routing = routing_cache.get(candidate, pd.DataFrame())
-            if not routing.empty:
-                has_routing.append("✓ 있음")
-                routing_counts.append(len(routing))
-            else:
-                has_routing.append("✗ 없음")
-                routing_counts.append(0)
-        
-        final_cand_df['HAS_ROUTING'] = has_routing
-        final_cand_df['PROCESS_COUNT'] = routing_counts
-        
-        cols = list(final_cand_df.columns)
-        if 'SIMILARITY_SCORE' in cols and 'HAS_ROUTING' in cols:
-            cols.remove('HAS_ROUTING')
-            cols.remove('PROCESS_COUNT')
-            idx = cols.index('SIMILARITY_SCORE') + 1
-            cols.insert(idx, 'HAS_ROUTING')
-            cols.insert(idx + 1, 'PROCESS_COUNT')
-            final_cand_df = final_cand_df[cols]
+    # ML 예측 조합(존재 시) 우선 추가
+    for item_cd, predicted_df in predicted_routings.items():
+        if predicted_df is None or predicted_df.empty:
+            continue
+        signature = build_routing_signature(predicted_df)
+        candidate_id = f"{item_cd}_MLP"
+        normalized = normalize_routing_frame(
+            item_cd,
+            candidate_id,
+            predicted_df,
+            similarity=1.0,
+            reference_item="ML_PREDICTED",
+            priority="primary",
+            signature=signature,
+        )
+        if normalized.empty:
+            continue
+        composed_frames.append(normalized)
+        per_item_counts[item_cd] += 1
+        enhanced_candidates.append({
+            'ITEM_CD': item_cd,
+            'CANDIDATE_ITEM_CD': 'ML_PREDICTED',
+            'SIMILARITY_SCORE': 1.0,
+            'ROUTING_SIGNATURE': signature,
+            'ROUTING_SUMMARY': f"ML 예측 공정 {len(normalized)}개",
+            'PRIORITY': 'primary',
+            'SIMILARITY_TIER': 'HIGH',
+            'HAS_ROUTING': '✓ 있음',
+            'PROCESS_COUNT': len(normalized),
+        })
 
-    logger.info(f"배치 예측 완료: {len(final_routing_df)}개 라우팅, {len(final_cand_df)}개 유사 품목")
+    raw_candidates_df = (
+        pd.concat(raw_candidate_frames, ignore_index=True)
+        if raw_candidate_frames
+        else pd.DataFrame()
+    )
+
+    if not raw_candidates_df.empty:
+        raw_candidates_df = raw_candidates_df.sort_values(
+            ['ITEM_CD', 'SIMILARITY_SCORE'], ascending=[True, False]
+        )
+
+        for _, cand_row in raw_candidates_df.iterrows():
+            item_cd = cand_row.get('ITEM_CD')
+            candidate_item = cand_row.get('CANDIDATE_ITEM_CD')
+            similarity = float(cand_row.get('SIMILARITY_SCORE', 0.0))
+
+            if not item_cd or not candidate_item:
+                continue
+
+            if per_item_counts[item_cd] >= MAX_ROUTING_VARIANTS:
+                continue
+
+            routing = routing_cache.get(candidate_item)
+            if routing is None or routing.empty:
+                continue
+
+            signature = build_routing_signature(routing)
+            priority = 'primary' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'fallback'
+            candidate_index = per_item_counts[item_cd] + 1
+            candidate_id = f"{item_cd}_C{candidate_index:02d}"
+
+            normalized = normalize_routing_frame(
+                item_cd,
+                candidate_id,
+                routing,
+                similarity=similarity,
+                reference_item=candidate_item,
+                priority=priority,
+                signature=signature,
+            )
+
+            if normalized.empty:
+                continue
+
+            composed_frames.append(normalized)
+            per_item_counts[item_cd] += 1
+
+            process_count = len(normalized)
+            summary_text = f"공정 {process_count}개 / 유사도 {similarity:.2f}"
+            enhanced_candidates.append({
+                'ITEM_CD': item_cd,
+                'CANDIDATE_ITEM_CD': candidate_item,
+                'SIMILARITY_SCORE': similarity,
+                'ROUTING_SIGNATURE': signature,
+                'ROUTING_SUMMARY': summary_text,
+                'PRIORITY': priority,
+                'SIMILARITY_TIER': 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW',
+                'HAS_ROUTING': '✓ 있음',
+                'PROCESS_COUNT': process_count,
+            })
+
+    final_routing_df = (
+        pd.concat(composed_frames, ignore_index=True)
+        if composed_frames
+        else pd.DataFrame()
+    )
+
+    final_cand_df = (
+        pd.DataFrame(enhanced_candidates)
+        if enhanced_candidates
+        else pd.DataFrame()
+    )
+
+    logger.info(
+        "배치 예측 완료: %d개 라우팅 조합, %d개 후보",
+        len(final_routing_df),
+        len(final_cand_df),
+    )
 
     return final_routing_df, final_cand_df
+
+# ════════════════════════════════════════════════
+# ⚙️ 런타임 설정 적용 헬퍼
+# ════════════════════════════════════════════════
+
+
+def apply_runtime_config(runtime: PredictorRuntimeConfig) -> None:
+    """워크플로우 저장소에서 전달된 설정을 즉시 반영한다."""
+
+    global SIMILARITY_HIGH_THRESHOLD, MIN_SIMILARITY_THRESHOLD, MAX_ROUTING_VARIANTS
+
+    SIMILARITY_HIGH_THRESHOLD = runtime.similarity_high_threshold
+    MIN_SIMILARITY_THRESHOLD = runtime.similarity_high_threshold
+    MAX_ROUTING_VARIANTS = runtime.max_routing_variants
+
+    SCENARIO_CONFIG.TRIM_STD_ENABLED = runtime.trim_std_enabled
+    SCENARIO_CONFIG.TRIM_LOWER_PERCENT = runtime.trim_lower_percent
+    SCENARIO_CONFIG.TRIM_UPPER_PERCENT = runtime.trim_upper_percent
+
+    logger.info(
+        "런타임 설정 갱신: threshold=%.2f, variants=%d, trim_std=%s (%.2f~%.2f)",
+        SIMILARITY_HIGH_THRESHOLD,
+        MAX_ROUTING_VARIANTS,
+        SCENARIO_CONFIG.TRIM_STD_ENABLED,
+        SCENARIO_CONFIG.TRIM_LOWER_PERCENT,
+        SCENARIO_CONFIG.TRIM_UPPER_PERCENT,
+    )
+
+
+try:  # 모듈 로드 시 초기 설정 적용
+    apply_runtime_config(workflow_config_store.get_predictor_runtime())
+except Exception as exc:  # pragma: no cover - 설정 파일 미존재 등
+    logger.debug("기본 런타임 설정을 사용합니다: %s", exc)
+
 
 # ════════════════════════════════════════════════
 # 🔧 레거시 호환성 함수
@@ -1349,4 +1671,5 @@ __all__ = [
     "apply_similarity_weights",
     "safe_int_conversion",
     "safe_float_conversion",
+    "apply_runtime_config",
 ]
