@@ -682,7 +682,7 @@ class EnhancedTreeview:
                         if separator == ",":
                             # CSV의 경우 쉼표가 포함된 값은 따옴표로 감싸기
                             if "," in safe_val or '"' in safe_val:
-                                safe_val = f'"{safe_val.replace('"', '""')}"'
+                                safe_val = '"' + safe_val.replace('"', '""') + '"'
                         safe_values.append(safe_val)
                         
                 lines.append(separator.join(safe_values))

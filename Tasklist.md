@@ -88,6 +88,20 @@
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
+<<<<<<< codex/review-prd.md-and-tasklist.md
+- [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
+
+- [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
+
+- [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+
+- [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
+
+- [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
+
+- [x] (설계) 아키텍처 다이어그램/문서 구조/온보딩/릴리스 설계 — `docs/stage8_documentation_report.md#1-설계-design`
+=======
 - [ ] (설계) 네트워크/보안/ODBC/시크릿 설계
 
 - [ ] (구현) Dockerfile 2종(trainer/predictor), Compose/Helm(선택)
@@ -101,13 +115,12 @@
 - [x] (문서) 백엔드 운영 개요 및 실행 가이드 — `docs/backend_api_overview.md`
 
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
+>>>>>>> main
 
- (설계) 아키텍처 다이어그램(PlantUML) 업데이트 및 저장(레포에 mdpuml 흔적) 
+- [x] (구현) README/Quickstart/Release Notes/Deliverables 정비 — `README.md`, `docs/quickstart_guide.md`, `docs/release_notes.md`, `deliverables/README.md`
 
-DocumentLayout
+- [x] (테스트) 온보딩 워크스루 점검 — `docs/stage8_documentation_report.md#3-테스트-test`
 
- (구현) README(설치/실행/모델 저장/예측/SQL 출력), 주니어용 “빠른 시작”
+- [x] (배포) 릴리스 노트, 버전 정책, 전달물 공유 — `docs/stage8_documentation_report.md#4-배포-deployment`
 
- (테스트) 온보딩 워크스루 점검
 
- (배포) 릴리스 노트, 버전 정책

@@ -818,7 +818,6 @@ def fetch_routing_by_rout_no(item_cd: str, rout_no: str) -> pd.DataFrame:
 
 def cleanup_connections():
     """연결 풀 정리"""
-    global _connection_pool
     try:
         with _connection_pool.lock:
             for conn in _connection_pool.connections:

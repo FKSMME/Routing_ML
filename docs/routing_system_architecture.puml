@@ -1,0 +1,48 @@
+@startuml
+!theme plain
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam ArrowColor #0B3D91
+skinparam Rectangle {
+  FontName "Noto Sans"
+}
+
+rectangle "사내망 (On-Premises)" {
+  rectangle "사용자 브라우저" as Browser {
+    rectangle "React UI\n(Vite + React + Tailwind)" as ReactUI
+  }
+
+  rectangle "API 레이어" as API {
+    rectangle "Predictor Service\n(FastAPI + Uvicorn)" as Predictor
+    rectangle "Trainer Service\n(Python ML Pipeline)" as Trainer
+  }
+
+  rectangle "데이터 & 모델 스토리지" as Storage {
+    rectangle "Access DB Share\n(ROUTING AUTO TEST.accdb)" as Access
+    rectangle "NAS 모델 볼륨\n(/mnt/models)" as ModelStore
+    rectangle "구성/시크릿 볼륨\n(/mnt/config)" as ConfigStore
+  }
+
+  rectangle "모니터링/배포" as Ops {
+    rectangle "Docker Compose Stack\nrouting-ml-network" as Compose
+    rectangle "Prometheus/Grafana" as Monitoring
+    rectangle "Fluent Bit -> Loki" as Logging
+  }
+}
+
+Browser --> Predictor : HTTPS (Load Balancer)
+Predictor --> Access : ODBC (read-only)
+Predictor --> ModelStore : Load embeddings / routing index
+Trainer --> Access : ODBC (full dataset)
+Trainer --> ModelStore : Persist embeddings/models
+Trainer --> ConfigStore : Read trainer_config.yaml
+Predictor --> ConfigStore : Read predictor_config.yaml
+Compose --> Predictor : Deploy/Health checks
+Compose --> Trainer : Schedule training job
+Monitoring --> Predictor : Scrape /metrics
+Monitoring --> Trainer : Collect job metrics
+Logging --> Predictor : Collect structured logs
+Logging --> Trainer : Collect structured logs
+
+@enduml
