@@ -88,6 +88,7 @@
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
+<<<<<<< codex/review-prd.md-and-tasklist.md
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
@@ -100,6 +101,21 @@
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
 
 - [x] (설계) 아키텍처 다이어그램/문서 구조/온보딩/릴리스 설계 — `docs/stage8_documentation_report.md#1-설계-design`
+=======
+- [ ] (설계) 네트워크/보안/ODBC/시크릿 설계
+
+- [ ] (구현) Dockerfile 2종(trainer/predictor), Compose/Helm(선택)
+
+- [ ] (구현) 프로브, 구조화 로그, 에러 알람
+
+- [ ] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김)
+
+- [ ] (배포) 단계적 롤아웃/롤백 전략
+- [x] (구현) FastAPI 백엔드 런타임 스캐폴드 및 실행 스크립트 — `backend/run_api.py`
+- [x] (문서) 백엔드 운영 개요 및 실행 가이드 — `docs/backend_api_overview.md`
+
+8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
+>>>>>>> main
 
 - [x] (구현) README/Quickstart/Release Notes/Deliverables 정비 — `README.md`, `docs/quickstart_guide.md`, `docs/release_notes.md`, `deliverables/README.md`
 
