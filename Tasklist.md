@@ -298,3 +298,12 @@
 - [x] (배포) 릴리스 노트, 버전 정책, 전달물 공유 — `docs/stage8_documentation_report.md#4-배포-deployment`
 
 
+9. 설치형 배포 연구/준비 — 상세 문서: `docs/stage9_packaging_plan.md`
+
+- [ ] (설계) 파이썬 미설치 Windows 환경 대상 설치 프로그램 요구 정의 및 사용자 시나리오 수립 — `docs/stage9_packaging_plan.md#요구-정의`
+- [ ] (연구) PyInstaller+Inno Setup, MSIX/WiX, SCCM/Chocolatey 스크립트 등 패키징 대안 비교 및 의존성/보안 검토 — `docs/stage9_packaging_plan.md#기술-대안`
+- [ ] (구현) 설치 번들 구조 설계: 백엔드/프런트엔드 빌드, 모델, 설정, ODBC 검증 스크립트 포함 패키지 레이아웃 — `docs/stage9_packaging_plan.md#번들-구성`
+- [ ] (테스트) 설치 후 학습·예측·워크플로우 SAVE 검증 체크리스트와 QA 자동화 계획 수립 — `docs/stage9_packaging_plan.md#테스트-전략`
+- [ ] (문서) Quickstart/운영 매뉴얼 업데이트 계획 및 사내 배포 정책 정리 — `docs/stage9_packaging_plan.md#문서화`
+
+
