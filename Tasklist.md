@@ -51,6 +51,35 @@
 
 3. 예측 서비스(predictor) — 상세 문서: `task_details/stage3_detail.md`
 
+
+- [x] (설계) API I/F: /predict, /candidates/save, /health, /metrics — `docs/predictor_service_plan.md`
+- [x] (구현) HNSW 로더 + Top-K(기본 10) + 임계값(기본 0.3) 파라미터 처리 — `docs/predictor_service_plan.md`
+- [x] (구현) 메타-앙상블 후보 생성기: 상위 K 라우팅들을 공정별로 정렬·집계하여 후보 합성 — `docs/predictor_service_plan.md`
+- [x] (구현) SQL 출력 매퍼: 사용자가 준 필수 컬럼 양식으로 후보를 직렬화/저장 — `docs/predictor_service_plan.md`
+- [x] (설계) 모듈/함수 상호의존 그래프 API 요구사항 정의 및 데이터 스키마 초안 작성 — `docs/graph_workflow_ui_plan.md`
+- [x] (구현) 그래프 노드 메타데이터/설정값 제공용 `/api/workflow/graph` 설계 반영 — `backend/api/routes/workflow.py`, `docs/graph_workflow_ui_plan.md`
+- [x] (구현) `common/config_store.py` 런타임 저장소와 SAVE 즉시 적용 로직 작성 — trainer/predictor 설정 동기화 (`backend/trainer_ml.py`, `backend/predictor_ml.py`)
+- [x] (테스트) 단건 ≤ 60초 / 10건 ≤ 10분 벤치마크(샘플 기준) 계획 — `docs/predictor_service_plan.md`
+- [x] (배포) 컨테이너 routing-ml-predictor 이미지화, 프로브/로깅 — `docs/predictor_service_plan.md`
+- [x] (구현) FastAPI 기반 예측 API(`/api/predict`, `/api/health` 등) 구현 — `backend/api/*`
+- [x] (구현) 후보 저장 및 메트릭 응답 로직 구현 — `backend/api/services/prediction_service.py`
+
+4. 프런트엔드(React, B안) — 상세 문서: `task_details/stage4_detail.md`
+
+- [x] (설계) 3열 레이아웃/카드 디자인 시스템 확정 — `docs/stage4_frontend_report.md#설계`
+- [x] (구현) 유사도 슬라이더 & Top-K 드롭다운 UX/상태 관리 설계 — `docs/stage4_frontend_report.md#구현-계획`
+- [x] (구현) 후보 라우팅 테이블 및 정렬/필터 전략 정의 — `docs/stage4_frontend_report.md#구현-계획`
+- [x] (구현) TensorBoard Projector 링크/뷰 안내 설계 — `docs/stage4_frontend_report.md#구현-계획`
+- [x] (테스트) 주니어 사용자 사용성/접근성/성능 테스트 계획 수립 — `docs/stage4_frontend_report.md#테스트-전략`
+- [x] (배포) CI/호스팅/문서 업데이트 계획 수립 — `docs/stage4_frontend_report.md#배포-준비`
+- [x] (구현) React + Vite 프런트엔드 스캐폴드 및 3열 레이아웃 구현 — `frontend/src/App.tsx`
+- [x] (구현) 후보/타임라인/메트릭 컴포넌트와 React Query 연동 — `frontend/src/components/*`
+- [x] (설계) 블루스크린형 워크플로우 그래프 UI 시나리오, 노드 상호작용 플로우, 더블클릭 설정 팝업 UX 정의(디자인 레퍼런스 `main/1.jpg`~`main/4.jpg` 준수) — `docs/graph_workflow_ui_plan.md`
+- [x] (구현) 그래프 렌더링 라이브러리 선택(Dagre/Cytoscape 등) 및 컴포넌트 구조 설계 업데이트 — `docs/graph_workflow_ui_plan.md`
+- [x] (구현) 더블클릭 설정 패널 상태관리 및 설정 편집 UX 설계, SAVE 버튼이 `/api/workflow/graph` PATCH를 호출하도록 정의 — `docs/graph_workflow_ui_plan.md`
+- [x] (테스트) 그래프 상호작용(드래그, 확대/축소, 팝업) 테스트 시나리오 수립 및 SAVE 후 trainer/predictor 즉시 반영 확인 항목 포함 — `docs/graph_workflow_ui_plan.md`
+
+
 - [x] (설계) API I/F: /predict, /candidates/save, /health, /metrics — `docs/predictor_service_plan.md`
 - [x] (구현) HNSW 로더 + Top-K(기본 10) + 임계값(기본 0.3) 파라미터 처리 — `docs/predictor_service_plan.md`
 - [x] (구현) 메타-앙상블 후보 생성기: 상위 K 라우팅들을 공정별로 정렬·집계하여 후보 합성 — `docs/predictor_service_plan.md`
@@ -122,16 +151,20 @@
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
+
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
+=======
 
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
 
@@ -177,5 +210,3 @@
 - [x] (구현) 설치 번들 구조 설계: 백엔드/프런트엔드 빌드, 모델, 설정, ODBC 검증 스크립트 포함 패키지 레이아웃 — `docs/stage9_packaging_plan.md#번들-구성`
 - [x] (테스트) 설치 후 학습·예측·워크플로우 SAVE 검증 체크리스트와 QA 자동화 계획 수립 — `docs/stage9_packaging_plan.md#테스트-전략`
 - [x] (문서) Quickstart/운영 매뉴얼 업데이트 계획 및 사내 배포 정책 정리 — `docs/stage9_packaging_plan.md#문서화`
-
-

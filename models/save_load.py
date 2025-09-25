@@ -6,22 +6,19 @@ from __future__ import annotations
 
 import joblib
 from pathlib import Path
-from typing import List, Tuple, Dict, Optional, Any
+from typing import List, Tuple, Dict, Optional, Any, Union
 import json
 import logging
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OrdinalEncoder, StandardScaler
-from sklearn.decomposition import PCA
 
 # Import from trainer_ml
 from backend.trainer_ml import (
-    save_optimized_model, 
-    load_optimized_model,
     EfficientSimilaritySearch,
     HNSWSearch,
-    ImprovedPreprocessor
+    ImprovedPreprocessor,
 )
 
 logger = logging.getLogger(__name__)
