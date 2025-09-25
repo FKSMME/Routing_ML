@@ -102,6 +102,16 @@ pip install -r requirements.txt
    ```
 
 ### 7. 설치형 패키지 준비(Windows) — Stage 9 연계
+- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)과 `deploy/installer/build_windows_installer.py`를 사용해 생성한다.
+- 빌드 절차 요약
+  1. Windows 빌드 노드에서 `pip install -r requirements.txt pyinstaller` 및 `npm install --prefix frontend` 실행.
+  2. `python deploy/installer/build_windows_installer.py --clean` → `build/windows/installer` 페이로드와 `build/windows/RoutingMLInstaller.iss` 생성.
+  3. Inno Setup Compiler로 `RoutingMLInstaller.iss` 빌드 → `RoutingMLInstaller_<버전>.exe` 획득.
+- 설치 검증 포인트
+  1. 설치 완료 후 PowerShell 스크립트가 `RoutingMLPredictor` 서비스를 자동 등록/기동하는지 확인 (`install_service.ps1`).
+  2. `%APPDATA%\RoutingML\config\workflow_settings.json`이 템플릿을 기준으로 생성되고, Trimmed-STD/SQL 프로파일이 UI SAVE 즉시 반영되는지 확인.
+  3. `scripts/post_install_test.ps1` 실행 결과 `/api/health` 200 응답 및 TensorBoard Projector 경로 확인.
+- 정식 배포 전 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료한다.
 - 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)에 따라 개발된다.
 - 사내 테스트 빌드는 `dist/RoutingMLInstaller.exe`(PyInstaller + Inno Setup 기반)로 제공되며, 설치 시 다음 항목을 확인한다.
   1. 설치 경로 및 서비스 계정 지정 후 FastAPI 서비스가 Windows 서비스로 등록되는지 확인.

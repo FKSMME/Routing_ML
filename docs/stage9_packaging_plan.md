@@ -85,3 +85,18 @@
 - Stage 9 착수 전 PRD/Tasklist 업데이트 내역 사용자 승인 획득.
 - 패키징 PoC 빌드 환경 준비(Windows 빌드 에이전트, 코드 서명 인증서 확보).
 - Stage 9 진행 중 각 게이트 통과 시 보고 및 승인 절차 준수.
+
+### 구현 산출물 (2025-09-30 업데이트)
+- `deploy/installer/build_windows_installer.py`: PyInstaller 빌드, 프런트엔드 배포본, 모델/설정/PowerShell 스크립트를 묶어 `build/windows/installer` 페이로드와 Inno Setup 스크립트를 자동 생성.
+- `deploy/installer/scripts/*.ps1`: 서비스 등록/제거(`install_service.ps1`), ODBC 검증(`verify_odbc.ps1`), 로그 수집(`collect_logs.ps1`), 설치 후 헬스체크(`post_install_test.ps1`). 모든 스크립트는 `%APPDATA%\RoutingML\logs`에 실행 로그를 남긴다.
+- `config/workflow_settings.template.json`, `config/sql_profiles/access_7_1.json`: 신규 설치 시 기본 설정 및 Power Query 매핑 템플릿 제공.
+- `config/version.json`: 설치 파일 버전 메타데이터 관리.
+- `deploy/installer/templates/installer.iss.tpl`: Inno Setup 설치 마법사 템플릿. 빌드 스크립트에서 실제 경로/버전으로 변환한다.
+- `docs/install_guide_ko.md`, `docs/TROUBLESHOOTING.md`: 설치 절차, 검증, 장애 대응 문서.
+
+### 테스트 권장 시나리오 갱신
+1. Windows 빌드 노드에서 `python deploy/installer/build_windows_installer.py --clean` 실행.
+2. 생성된 `RoutingMLInstaller.iss`를 Inno Setup Compiler로 빌드하여 PoC 인스톨러 획득.
+3. 테스트 PC에 설치 후 PowerShell에서 `post_install_test.ps1` 실행하여 `/api/health` 응답 및 설정 파일 생성 여부 확인.
+4. 워크플로우 UI에서 SAVE → `%APPDATA%\RoutingML\config\workflow_settings.json` 타임스탬프 변경 확인.
+5. `collect_logs.ps1`로 로그 ZIP 생성 및 QA 시스템에 첨부.

@@ -139,6 +139,8 @@ trainer_ml
 - 설정 관리: 설치 마법사에서 `config/workflow_settings.json`, SQL 컬럼 매핑 프로파일, Trimmed-STD 파라미터 초기값을 선택 적용할 수 있도록 마이그레이션 스텝을 제공.
 - 문서화 요구: Quickstart 및 운영 매뉴얼에 설치형 옵션, 사내망 배포 정책, 무중단 업데이트 절차, 롤백 방법을 명시한다.
 - 테스트 요구: 설치 후 학습/예측 서비스 기동, 워크플로우 SAVE 즉시 반영, Access ODBC 연결, SQL export, TensorBoard Projector 접근이 정상 동작하는지 로컬 QA 체크리스트에 포함한다.
+- 빌드 산출물: `deploy/installer/build_windows_installer.py`에서 PyInstaller 빌드·프런트엔드 번들·모델/설정 템플릿·PowerShell 스크립트를 `build/windows/installer`에 모으고, `deploy/installer/templates/installer.iss.tpl` 기반 Inno Setup 스크립트를 생성한다. 설치형 패키지 운영 스크립트는 `deploy/installer/scripts/*.ps1`에 포함한다.
+
 
 D. 비기능 요구
 
