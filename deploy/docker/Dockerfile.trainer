@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1.6
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend ./backend
+COPY common ./common
+COPY models ./models
+
+ENV ROUTING_DATA_PATH=/data/routing_data
+ENV TRAINER_OUTPUT_DIR=/models
+
+VOLUME ["/data", "/models"]
+
+ENTRYPOINT ["python", "backend/trainer_ml.py"]
