@@ -48,7 +48,5 @@
 - 백엔드 운영 개요 문서 초안 작성 — `docs/backend_api_overview.md`
 - Dockerfile/Compose 스택 및 구성 템플릿 추가 — `deploy/docker/*`
 - Stage 7 운영 보고서 작성 및 Tasklist 업데이트 — `docs/stage7_operations_report.md`, `Tasklist.md`
-- Dockerfile/Compose 스택 및 구성 템플릿 추가 — `deploy/docker/*`
-- Stage 7 운영 보고서 작성 및 Tasklist 업데이트 — `docs/stage7_operations_report.md`, `Tasklist.md`
 
 
