@@ -100,8 +100,54 @@
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+
+
+
+5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
+
+- [x] (설계) 대상 스키마 확정(routing_candidates, routing_candidate_operations) — `docs/stage5_sql_report.md#스키마-정의`
+- [x] (구현) DDL/마이그레이션 스크립트 구조 정의 — `docs/stage5_sql_report.md#ddl-구성`
+- [x] (구현) 저장/내보내기(INSERT/CSV) 플로우 설계 — `docs/stage5_sql_report.md#저장-및-내보내기-플로우`
+- [x] (테스트) 샘플 표 대비 컬럼/타입/널 제약 정합성 테스트 계획 — `docs/stage5_sql_report.md#테스트-계획`
+- [x] (배포) 승인/백업/버전 정책 수립 — `docs/stage5_sql_report.md#배포-준비`
+- [x] (구현) 리스트/파워쿼리 방식 SQL 컬럼 매핑 관리(프로파일, active_profile) — `common/config_store.py`, `backend/api/routes/workflow.py`, `docs/stage5_sql_report.md`
+
+6. 평가/모니터링 — 상세 문서: `task_details/stage6_detail.md`
+
+- [x] (설계) KPI 정의서 및 베이스라인 확정 — `docs/stage6_monitoring_report.md#kpi-정의`
+- [x] (구현) 평가 파이프라인 및 대시보드 지표 수집 설계 — `docs/stage6_monitoring_report.md#평가-파이프라인-설계`
+- [x] (구현) 시퀀스 매칭/지표 계산/리포트 자동화 계획 수립 — `docs/stage6_monitoring_report.md#구현-계획`
+- [x] (테스트) 샘플 데이터 및 단위 테스트 계획 수립 — `docs/stage6_monitoring_report.md#테스트-전략`
+- [x] (배포) 주간 리포트 잡/모니터링/권한 계획 수립 — `docs/stage6_monitoring_report.md#배포-준비`
+
+7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
+
+- [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
+- [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
+- [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+- [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
+- [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
+- [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+- [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
+- [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
+8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
+
+- [x] (설계) 아키텍처 다이어그램/문서 구조/온보딩/릴리스 설계 — `docs/stage8_documentation_report.md#1-설계-design`
+
+- [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
+
+- [x] (구현) Dockerfile 2종(trainer/predictor), Compose/Helm(선택) — `deploy/docker/`
+
+- [x] (구현) 프로브, 구조화 로그, 에러 알람 — `docs/stage7_operations_report.md#2-구현-implementation`
+
+
+- [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
+- [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
+
 - [x] (구현) FastAPI 백엔드 런타임 스캐폴드 및 실행 스크립트 — `backend/run_api.py`
 - [x] (문서) 백엔드 운영 개요 및 실행 가이드 — `docs/backend_api_overview.md`
 
@@ -123,3 +169,13 @@
 - [x] (구현) 서비스 등록/검증 PowerShell 스크립트 4종 작성 — `deploy/installer/scripts/*.ps1`
 - [x] (구현) 설치 기본 설정/버전 템플릿 구성 — `config/workflow_settings.template.json`, `config/sql_profiles/access_7_1.json`, `config/version.json`
 - [x] (문서) 설치 가이드 및 문제 해결 문서 추가 — `docs/install_guide_ko.md`, `docs/TROUBLESHOOTING.md`
+
+
+
+- [x] (설계) 파이썬 미설치 Windows 환경 대상 설치 프로그램 요구 정의 및 사용자 시나리오 수립 — `docs/stage9_packaging_plan.md#요구-정의`
+- [x] (연구) PyInstaller+Inno Setup, MSIX/WiX, SCCM/Chocolatey 스크립트 등 패키징 대안 비교 및 의존성/보안 검토 — `docs/stage9_packaging_plan.md#기술-대안`
+- [x] (구현) 설치 번들 구조 설계: 백엔드/프런트엔드 빌드, 모델, 설정, ODBC 검증 스크립트 포함 패키지 레이아웃 — `docs/stage9_packaging_plan.md#번들-구성`
+- [x] (테스트) 설치 후 학습·예측·워크플로우 SAVE 검증 체크리스트와 QA 자동화 계획 수립 — `docs/stage9_packaging_plan.md#테스트-전략`
+- [x] (문서) Quickstart/운영 매뉴얼 업데이트 계획 및 사내 배포 정책 정리 — `docs/stage9_packaging_plan.md#문서화`
+
+
