@@ -52,6 +52,7 @@ ROUTING_ALIAS_MAP = {
 }
 
 
+
 def _active_alias_map() -> Dict[str, str]:
     """현재 설정 기반 컬럼 별칭을 반환한다."""
 
@@ -59,6 +60,8 @@ def _active_alias_map() -> Dict[str, str]:
         return get_routing_alias_map()
     except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
         return dict(ROUTING_ALIAS_MAP)
+
+=======
 
 SUMMARY_META_COLUMNS = {
     'ITEM_CD', 'CANDIDATE_ID', 'ROUTING_SIGNATURE', 'PRIORITY',
@@ -102,8 +105,12 @@ def normalize_routing_frame(
         return pd.DataFrame()
 
     frame = base_df.copy()
+
     alias_map = _active_alias_map()
     frame = frame.rename(columns=alias_map)
+=======
+    frame = frame.rename(columns=ROUTING_ALIAS_MAP)
+
 
     frame['ITEM_CD'] = target_item
     frame['CANDIDATE_ID'] = candidate_id
@@ -147,8 +154,12 @@ def normalize_routing_frame(
             else:
                 frame[col] = None
 
+
     output_columns = get_routing_output_columns()
     frame = frame.reindex(columns=output_columns, fill_value=None)
+=======
+    frame = frame.reindex(columns=ROUTING_OUTPUT_COLS, fill_value=None)
+
     return frame
 
 # ════════════════════════════════════════════════
@@ -1466,6 +1477,15 @@ def predict_items_with_ml_optimized(
             'HAS_ROUTING': '✓ 있음',
             'PROCESS_COUNT': len(normalized),
         })
+
+
+    raw_candidates_df = (
+        pd.concat(raw_candidate_frames, ignore_index=True)
+        if raw_candidate_frames
+        else pd.DataFrame()
+    )
+
+=======
 
     raw_candidates_df = (
         pd.concat(raw_candidate_frames, ignore_index=True)

@@ -28,6 +28,8 @@
 - [x] TensorBoard Projector 안내 UX 문구 확정 — `docs/stage4_frontend_report.md#설계`
 - [x] 주니어 사용자 설명 패널 콘텐츠 초안 확정 — `docs/stage4_frontend_report.md#설계`
 - [x] 블루스크린 스타일 워크플로우 그래프 뷰 시나리오 정의(노드 타입, 에지 관계, 드래그/드롭 동작, 더블클릭 설정 팝업 요구, 디자인 레퍼런스 `main/1.jpg`~`main/4.jpg` 반영) — `docs/graph_workflow_ui_plan.md#ux-시나리오`
+=======
+
 
 ### 구현(Implementation)
 - [x] React 프로젝트 구조 점검 및 라우트/폴더 매핑 정의 — `docs/stage4_frontend_report.md#구현-계획`
@@ -40,6 +42,8 @@
 - [x] 그래프 렌더링 라이브러리 조사 및 선택 기준 정립(Dagre, Cytoscape, React Flow 등) — `docs/graph_workflow_ui_plan.md#기술-선택`
 - [x] 모듈 그래프 컴포넌트 구조 설계(상위 컨테이너, 노드, 에지, 팝업 패널, SAVE → `/api/workflow/graph` PATCH 흐름) — `docs/graph_workflow_ui_plan.md#컴포넌트-구조`
 - [x] 더블클릭 설정 패널 상태 관리/폼 구성 설계 — `docs/graph_workflow_ui_plan.md#설정-패널`
+=======
+
 
 ### 테스트(Test)
 - [x] 주요 인터랙션 테스트 케이스 정의 — `docs/stage4_frontend_report.md#테스트-전략`
@@ -47,14 +51,21 @@
 - [x] 주니어 사용자 피드백 수집 계획 수립 — `docs/stage4_frontend_report.md#테스트-전략`
 - [x] 빌드/렌더링 성능 예비 점검 계획 수립 — `docs/stage4_frontend_report.md#테스트-전략`
 - [x] 그래프 상호작용 테스트 계획 수립(노드 선택/이동, 줌, 팝업 검증, SAVE 이후 trainer/predictor 런타임 재확인) — `docs/graph_workflow_ui_plan.md#테스트-전략`
+=======
+
 
 ### 배포(Deployment)
 - [x] 프런트엔드 백그라운드 CI 파이프라인 정의 — `docs/stage4_frontend_report.md#배포-준비`
 - [x] 정적 호스팅/리버스 프록시 구성안 문서화 — `docs/stage4_frontend_report.md#배포-준비`
 - [x] 사용자 안내 문서 업데이트 계획 정리 — `docs/stage4_frontend_report.md#배포-준비`
 - [x] 단계 완료 보고 및 다음 단계 승인 요청 준비 — `docs/stage4_frontend_report.md#배포-준비`
+
 - [x] 그래프 UI 배포 전략 수립(대상 페이지 라우팅, 점진적 롤아웃, 피쳐 토글, `config/workflow_settings.json` 접근 제어) — `docs/graph_workflow_ui_plan.md#배포-전략`
 
 ### 로그 참고
 - [x] `logs/task_execution_20250925.log` 2025-09-25T07:00Z~07:40Z 구간에 Stage 4 백그라운드 진행 기록 저장
 - [x] 그래프 워크플로우 UI 추가 계획 수립 로그 작성 및 승인 근거 확보 — `logs/task_execution_20250925.log`
+=======
+
+### 로그 참고
+- [x] `logs/task_execution_20250925.log` 2025-09-25T07:00Z~07:40Z 구간에 Stage 4 백그라운드 진행 기록 저장
