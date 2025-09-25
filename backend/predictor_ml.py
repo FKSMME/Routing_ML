@@ -13,7 +13,8 @@ import json
 from datetime import datetime
 
 # ── 사내 모듈
-from backend.constants import ROUTING_OUTPUT_COLS, NUMERIC_FEATURES
+from backend.constants import NUMERIC_FEATURES, get_routing_alias_map, get_routing_output_columns
+from common.config_store import PredictorRuntimeConfig, workflow_config_store
 from backend.trainer_ml import load_optimized_model
 from backend.feature_weights import FeatureWeightManager
 from backend.database import (
@@ -49,6 +50,18 @@ ROUTING_ALIAS_MAP = {
     'CUST_NM': 'dbo_BI_ROUTING_VIEW_CUST_NM',
     'VIEW_REMARK': 'dbo_BI_ROUTING_VIEW_REMARK',
 }
+
+
+
+def _active_alias_map() -> Dict[str, str]:
+    """현재 설정 기반 컬럼 별칭을 반환한다."""
+
+    try:
+        return get_routing_alias_map()
+    except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
+        return dict(ROUTING_ALIAS_MAP)
+
+=======
 
 SUMMARY_META_COLUMNS = {
     'ITEM_CD', 'CANDIDATE_ID', 'ROUTING_SIGNATURE', 'PRIORITY',
@@ -92,7 +105,12 @@ def normalize_routing_frame(
         return pd.DataFrame()
 
     frame = base_df.copy()
+
+    alias_map = _active_alias_map()
+    frame = frame.rename(columns=alias_map)
+=======
     frame = frame.rename(columns=ROUTING_ALIAS_MAP)
+
 
     frame['ITEM_CD'] = target_item
     frame['CANDIDATE_ID'] = candidate_id
@@ -136,7 +154,12 @@ def normalize_routing_frame(
             else:
                 frame[col] = None
 
+
+    output_columns = get_routing_output_columns()
+    frame = frame.reindex(columns=output_columns, fill_value=None)
+=======
     frame = frame.reindex(columns=ROUTING_OUTPUT_COLS, fill_value=None)
+
     return frame
 
 # ════════════════════════════════════════════════
@@ -1455,6 +1478,15 @@ def predict_items_with_ml_optimized(
             'PROCESS_COUNT': len(normalized),
         })
 
+
+    raw_candidates_df = (
+        pd.concat(raw_candidate_frames, ignore_index=True)
+        if raw_candidate_frames
+        else pd.DataFrame()
+    )
+
+=======
+
     raw_candidates_df = (
         pd.concat(raw_candidate_frames, ignore_index=True)
         if raw_candidate_frames
@@ -1535,6 +1567,40 @@ def predict_items_with_ml_optimized(
     )
 
     return final_routing_df, final_cand_df
+
+# ════════════════════════════════════════════════
+# ⚙️ 런타임 설정 적용 헬퍼
+# ════════════════════════════════════════════════
+
+
+def apply_runtime_config(runtime: PredictorRuntimeConfig) -> None:
+    """워크플로우 저장소에서 전달된 설정을 즉시 반영한다."""
+
+    global SIMILARITY_HIGH_THRESHOLD, MIN_SIMILARITY_THRESHOLD, MAX_ROUTING_VARIANTS
+
+    SIMILARITY_HIGH_THRESHOLD = runtime.similarity_high_threshold
+    MIN_SIMILARITY_THRESHOLD = runtime.similarity_high_threshold
+    MAX_ROUTING_VARIANTS = runtime.max_routing_variants
+
+    SCENARIO_CONFIG.TRIM_STD_ENABLED = runtime.trim_std_enabled
+    SCENARIO_CONFIG.TRIM_LOWER_PERCENT = runtime.trim_lower_percent
+    SCENARIO_CONFIG.TRIM_UPPER_PERCENT = runtime.trim_upper_percent
+
+    logger.info(
+        "런타임 설정 갱신: threshold=%.2f, variants=%d, trim_std=%s (%.2f~%.2f)",
+        SIMILARITY_HIGH_THRESHOLD,
+        MAX_ROUTING_VARIANTS,
+        SCENARIO_CONFIG.TRIM_STD_ENABLED,
+        SCENARIO_CONFIG.TRIM_LOWER_PERCENT,
+        SCENARIO_CONFIG.TRIM_UPPER_PERCENT,
+    )
+
+
+try:  # 모듈 로드 시 초기 설정 적용
+    apply_runtime_config(workflow_config_store.get_predictor_runtime())
+except Exception as exc:  # pragma: no cover - 설정 파일 미존재 등
+    logger.debug("기본 런타임 설정을 사용합니다: %s", exc)
+
 
 # ════════════════════════════════════════════════
 # 🔧 레거시 호환성 함수
@@ -1625,4 +1691,5 @@ __all__ = [
     "apply_similarity_weights",
     "safe_int_conversion",
     "safe_float_conversion",
+    "apply_runtime_config",
 ]

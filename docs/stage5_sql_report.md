@@ -37,7 +37,12 @@
 ### 출력 포맷 명세
 - **CSV 내보내기**: UTF-8, 헤더 포함, 구분자 `,`, 날짜 ISO8601. 후보(`routing_candidates.csv`)와 공정(`routing_candidate_operations.csv`) 분리, 컬럼명은 Access 명칭 유지.
 - **INSERT 스크립트**: 트랜잭션 블록 사용(`BEGIN; ... COMMIT;`), 컬럼 순서 7.1 표준에 맞춰 명시적 컬럼 리스트 사용.
+
+- **API ↔ SQL 매핑**: predictor 응답 `items[*].operations[*]` 구조와 7.1 컬럼 매핑 표 제공. `routing_signature`는 UI 요약용. `/api/workflow/graph`에서 설정 가능한 컬럼 별칭과 동기화.
+- **컬럼 매핑/Power Query 프로파일**: `common/config_store.py`의 `SQLColumnConfig`에 프로파일(`Access 7.1 기본` 등)을 정의하고, UI에서 Power Query 스타일 리스트로 선택/저장 가능. `active_profile`은 저장 시 `/api/workflow/graph` 응답에 포함.
+=======
 - **API ↔ SQL 매핑**: predictor 응답 `items[*].operations[*]` 구조와 7.1 컬럼 매핑 표 제공. `routing_signature`는 UI 요약용.
+
 
 ### DDL 구성
 - 마이그레이션 툴: `alembic` 기반, 리비전 네이밍 `20250925_stage5_create_routing_tables`.
@@ -46,12 +51,20 @@
 
 ### 저장 및 내보내기 플로우
 - Predictor 서비스 `/candidates/save` 호출 시 7.1 컬럼 구조로 직렬화 → `routing_candidates` upsert → `routing_candidate_operations` bulk insert. 실패 시 전체 롤백.
+
+- 워크플로우 그래프 UI SAVE → `/api/workflow/graph` PATCH → `config/workflow_settings.json` 갱신 → Predictor/Trainer 런타임과 SQL 매핑 즉시 반영.
+=======
+
 - 내보내기 스크립트는 주간 배치에서 실행, 사내 파일 서버/공유 드라이브로 CSV 업로드. 업로드 전 SHA256 해시 계산 및 0.8 이상 후보 비율 보고.
 - 에러 핸들링: `(item_cd, candidate_id)` 중복 시 `409 Conflict`, 컬럼 매핑 불일치 시 `422` + 매핑 로그. DB 오류 시 재시도(지수 백오프 최대 3회).
 
 ### 테스트 계획
 - **스키마 검증**: Alembic offline 체크, `psql`/`sqlcmd`로 `\d` 또는 `sp_help` 검사, CHECK 제약 위반 케이스 삽입 시도.
 - **데이터 매핑**: 샘플 예측 JSON(3~4 라우팅 조합)을 SQL 인서트로 변환하는 파이썬 단위 테스트, 7.1 컬럼 순서 검증.
+
+- **컬럼 프로파일 검증**: Power Query 프로파일 전환(`Access 7.1 기본` 등) → `/api/workflow/graph` GET으로 active_profile 확인 → 저장 결과 SQL/CSV와 비교.
+=======
+
 - **성능 테스트**: 10,000행 배치 삽입 시간 측정(목표 < 120초), 인덱스 유효성 확인, 0.8 이상 후보 비율 기록.
 - **CSV 정합성**: 해시 비교 및 Null 처리 검증, QA 체크리스트 작성, Access 원본과 샘플 비교.
 

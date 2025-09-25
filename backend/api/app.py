@@ -6,6 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
 from backend.api.routes.prediction import router as prediction_router
+
+from backend.api.routes.workflow import router as workflow_router
+=======
+
 from common.logger import get_logger
 
 
@@ -20,6 +24,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(prediction_router)
+
+    app.include_router(workflow_router)
+=======
+
     get_logger("api.app").info("FastAPI 애플리케이션 초기화 완료")
     return app
 

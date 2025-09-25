@@ -22,6 +22,10 @@
 - **TensorBoard Projector 안내**: Projector 링크는 `tb_projector/index.html?run={model_version}` 포맷으로 안내하며 접근 전 승인 체크리스트 제공.
 - **설명 패널 콘텐츠**: 주니어 작업자용 단계별 안내, 추천 수락 시 주의사항, KPI 영향 요약, 모델 버전 정보 표기.
 
+- **워크플로우 그래프 뷰**: React Flow 기반 블루스크린 레이아웃으로 `main/1.jpg`~`main/4.jpg` 디자인 레퍼런스를 반영, 노드 더블클릭 시 설정 팝업을 띄우고 SAVE 버튼으로 `/api/workflow/graph` PATCH 호출.
+=======
+
+
 ### 구현 계획
 - **프로젝트 구조**: `gui/src` 내 `pages/RecommendationBoard.tsx`, `components/similarity`, `components/candidates`, `components/guidance` 폴더 신설. 라우트는 `/routing/advisor`.
 - **상태 관리**: `React Query` 기반 데이터 패칭, `Zustand` 스토어로 UI 상태(슬라이더 값, Top-K, 선택 후보) 관리.
@@ -29,17 +33,29 @@
 - **테이블 구현**: `AgGrid` 도입 검토, 대안으로 `MUI DataGrid` 사용. 백엔드 응답을 정규화하여 `CandidateRow` 인터페이스로 매핑.
 - **TensorBoard 링크 컴포넌트**: 모델 버전 메타데이터(`model_version`, `trained_at`)를 표시하고, 접근 시 승인 체크박스를 재확인하는 모달 제공.
 
+- **워크플로우 그래프 훅/컴포넌트**: `useWorkflowGraph` 훅이 GET/PATCH(`/api/workflow/graph`)를 호출해 `config/workflow_settings.json`과 동기화, React Flow 노드/에지를 상태로 관리.
+=======
+
+
 ### 테스트 전략
 - **기능 테스트 케이스**: 슬라이더 값 변경 시 후보 재요청, Top-K 조합 변화, 후보 선택 후 상세 카드 업데이트, TensorBoard 링크 접근 모달 동작.
 - **접근성**: 키보드 내비게이션, ARIA 라벨링, 색 대비(AA 기준) 체크리스트 작성. 스크린 리더 텍스트 제공 계획 포함.
 - **사용성 테스트**: 주니어 작업자 3인 대상 리모트 세션, 시나리오(추천 수락/편집, KPI 확인) 정의. 인터뷰 스크립트에 승인 체크 질문 포함.
 - **성능 가드레일**: 초기 로딩 3초 이하, 슬라이더/Top-K 변경 후 UI 업데이트 1초 이하 목표. Lighthouse 백그라운드 실행 계획 수립.
 
+- **워크플로우 그래프 테스트**: 노드 더블클릭 → 설정 변경 → SAVE 후 `/api/workflow/graph` 응답 확인, trainer/predictor 런타임 로그 비교.
+=======
+
+
 ### 배포 준비
 - **CI 파이프라인**: 백그라운드 GitHub Actions 워크플로우(`gui-ci.yml`)에서 lint/test/build 실행, main 병합 전 필수.
 - **호스팅 전략**: `routing-ml-frontend` 정적 빌드 산출물 S3 + CloudFront, 내부 환경은 Nginx 리버스 프록시로 서빙.
 - **문서 업데이트**: README에 UI 사용법 추가, 온보딩 가이드에 스크린샷 삽입 예정. 문서/뷰어 접근 전 승인 절차 명시.
 - **게이트 종료**: Stage 4 완료 보고 후 Stage 5 승인 요청. 선행 단계 오류 미존재 재확인 보고 포함.
+
+- **설정 파일 관리**: `config/workflow_settings.json`은 Stage 7 운영 정책에 따라 백업/권한을 관리하고, 프런트엔드 SAVE 동작은 해당 파일 갱신 여부를 로그로 기록.
+=======
+
 
 ### 위험 및 후속 조치
 - API 응답 지연 시 UI 로딩 처리 필요 → 백그라운드에서 스켈레톤 로더 구현 계획.

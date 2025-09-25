@@ -12,6 +12,11 @@
 | `/health` | GET | - | `{ "status": "ok", "detail": str }` | 헬스체크 |
 | `/metrics` | GET | - | Prometheus text format | 지표 노출 (0.8 이상/미만 비율 포함) |
 
+| `/workflow/graph` | GET | - | `{ "graph": {...}, "trainer": {...}, "predictor": {...}, "sql": {...}, "updated_at": str }` | 워크플로우 그래프/런타임/SQL 매핑 조회 |
+| `/workflow/graph` | PATCH | `{ "graph"?: {...}, "trainer"?: {...}, "predictor"?: {...}, "sql"?: {...} }` | 상동 | SAVE 버튼 → trainer/predictor 런타임 및 SQL 매핑 즉시 적용 |
+=======
+
+
 - 인증: 내부망 JWT 또는 mTLS (Stage 7에서 확정).
 - Rate limit: 30 req/min/user, 100 req/min/service.
 
@@ -24,6 +29,10 @@
   3. 입력 제약(`inside_only`) 또는 `include_external` 옵션에 따라 외주 공정 제외/후순위 큐 처리.
 - 캐싱 전략: 인덱스와 메타데이터는 프로세스 시작 시 단일 로드, 30분마다 갱신 체크. 컬럼 매핑 변경 시 핫 리로드 지원.
 
+- 런타임 설정: `common/config_store.workflow_config_store`에서 유사도 임계, 후보 최대 개수, 트림 표준편차 설정을 읽어와 `apply_runtime_config`로 모듈 전역값 갱신.
+=======
+
+
 ## 3. 메타-앙상블 후보 생성 로직
 1. HNSW 결과 상위 `top_k_raw = max(top_k * 3, 30)` 추출 (유사도 0.8 이상 우선, 미만은 후보 목록 후순위 추가).
 2. 후보 라우팅별 공정 리스트 매핑, 공정별 유사도 가중 평균 계산 + 실적 보정(`MACH_WORKED_HOURS`).
@@ -31,6 +40,10 @@
 4. 후보 점수 산식: `score = 0.6 * similarity + 0.2 * process_alignment + 0.2 * performance_alignment` (실적 대비 차이 최소화).
 5. Top-N(기본 4) 라우팅 조합을 생성: 각 조합은 Job/RES/공정 시퀀스를 문자열로 요약(`CNC선반3차+MCT`, `MTM 3차` 등)하고 7.1 컬럼 구조로 정렬.
 6. `/candidates/save` 요청 시 SQL 매퍼 통해 `routing_candidates`, `routing_candidate_operations` 스키마에 매핑. 명칭 변경은 매핑 파일 참조.
+
+- `/workflow/graph` PATCH 시 `SQLColumnConfig`에 저장된 컬럼/별칭/프로파일이 즉시 반영되어 `/candidates/save` 직렬화 결과가 업데이트된다.
+=======
+
 
 ## 4. SQL 출력 매퍼 설계
 - 매핑 대상 스키마 (7.1 Access 구조)
@@ -49,10 +62,17 @@
 - **계측 지표**: 요청 수, 성공/실패율, 평균/최대 응답시간, 후보 생성 실패 원인, 유사도 분포(0.8 이상/미만), 라우팅 조합 수.
 - **통합 테스트**: Stage 2 학습 결과와 Stage 1 데이터 파이프라인 모킹으로 end-to-end 검증, 7.1 SQL 매핑 검증 포함.
 
+- **워크플로우 API 테스트**: `/workflow/graph` GET/PATCH → `config/workflow_settings.json` 업데이트 확인 → 후속 `/predict` 응답의 임계/컬럼 매핑 반영 여부 검증.
+
+
 ## 6. 컨테이너 및 운영 계획
 - 베이스 이미지: `python:3.12-slim`
 - 런타임 의존성: `fastapi`, `uvicorn`, `pydantic`, `hnswlib`, `pandas`, `pyodbc`
 - 환경 변수: `MODEL_PATH`, `METADATA_PATH`, `DB_DSN`, `DB_USER`, `DB_PASSWORD`, `SIMILARITY_THRESHOLD=0.8`
+
+- 설정 파일: `config/workflow_settings.json` 읽기/쓰기 권한 필요, Stage 7 운영 문서와 연동.
+
+
 - 프로브: liveness(`/health`), readiness(인덱스 로드 및 컬럼 매핑 적용 여부), startup(초기 캐시 로드 + 0.8 임계 적용 확인)
 - 로깅: 구조화 JSON (`request_id`, `item_cd`, `latency_ms`, `candidate_count`, `above_threshold_ratio`)
 - 배포: Stage 7에서 Helm 차트에 readiness/liveness 구성, Access DSN 시크릿 주입, docker-compose 서비스 정의 초안 준비.

@@ -132,6 +132,108 @@ class HealthResponse(BaseModel):
     detail: Optional[str] = None
 
 
+
+class WorkflowGraphNode(BaseModel):
+    id: str
+    label: str
+    type: str
+    category: Optional[str] = None
+    status: Optional[str] = None
+    settings: Dict[str, Any] = Field(default_factory=dict)
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+    doc_refs: List[str] = Field(default_factory=list)
+
+
+class WorkflowGraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    kind: str
+    label: Optional[str] = None
+
+
+class PowerQueryProfileModel(BaseModel):
+    name: str
+    description: Optional[str] = None
+    mapping: Dict[str, str] = Field(default_factory=dict)
+
+
+class SQLConfigModel(BaseModel):
+    output_columns: List[str] = Field(default_factory=list)
+    column_aliases: Dict[str, str] = Field(default_factory=dict)
+    available_columns: List[str] = Field(default_factory=list)
+    profiles: List[PowerQueryProfileModel] = Field(default_factory=list)
+    active_profile: Optional[str] = None
+
+
+class TrainerRuntimeModel(BaseModel):
+    similarity_threshold: float = Field(..., ge=0.0, le=1.0)
+    trim_std_enabled: bool = True
+    trim_lower_percent: float = Field(0.05, ge=0.0, le=1.0)
+    trim_upper_percent: float = Field(0.95, ge=0.0, le=1.0)
+
+
+class PredictorRuntimeModel(BaseModel):
+    similarity_high_threshold: float = Field(..., ge=0.0, le=1.0)
+    max_routing_variants: int = Field(..., ge=1, le=10)
+    trim_std_enabled: bool = True
+    trim_lower_percent: float = Field(0.05, ge=0.0, le=1.0)
+    trim_upper_percent: float = Field(0.95, ge=0.0, le=1.0)
+
+
+class WorkflowGraphModel(BaseModel):
+    nodes: List[WorkflowGraphNode] = Field(default_factory=list)
+    edges: List[WorkflowGraphEdge] = Field(default_factory=list)
+    design_refs: List[str] = Field(default_factory=list)
+    last_saved: Optional[str] = None
+
+
+class WorkflowConfigResponse(BaseModel):
+    graph: WorkflowGraphModel
+    trainer: TrainerRuntimeModel
+    predictor: PredictorRuntimeModel
+    sql: SQLConfigModel
+    updated_at: str
+
+
+class WorkflowGraphPatch(BaseModel):
+    nodes: Optional[List[WorkflowGraphNode]] = None
+    edges: Optional[List[WorkflowGraphEdge]] = None
+    design_refs: Optional[List[str]] = None
+
+
+class TrainerRuntimePatch(BaseModel):
+    similarity_threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
+    trim_std_enabled: Optional[bool] = None
+    trim_lower_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
+    trim_upper_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
+
+
+class PredictorRuntimePatch(BaseModel):
+    similarity_high_threshold: Optional[float] = Field(None, ge=0.0, le=1.0)
+    max_routing_variants: Optional[int] = Field(None, ge=1, le=10)
+    trim_std_enabled: Optional[bool] = None
+    trim_lower_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
+    trim_upper_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
+
+
+class SQLConfigPatch(BaseModel):
+    output_columns: Optional[List[str]] = None
+    column_aliases: Optional[Dict[str, str]] = None
+    available_columns: Optional[List[str]] = None
+    profiles: Optional[List[PowerQueryProfileModel]] = None
+    active_profile: Optional[str] = None
+
+
+class WorkflowConfigPatch(BaseModel):
+    graph: Optional[WorkflowGraphPatch] = None
+    trainer: Optional[TrainerRuntimePatch] = None
+    predictor: Optional[PredictorRuntimePatch] = None
+    sql: Optional[SQLConfigPatch] = None
+
+
+=======
+
 __all__ = [
     "PredictionRequest",
     "PredictionResponse",
@@ -140,4 +242,15 @@ __all__ = [
     "CandidateSaveRequest",
     "CandidateSaveResponse",
     "HealthResponse",
+
+    "WorkflowConfigResponse",
+    "WorkflowConfigPatch",
+    "WorkflowGraphModel",
+    "WorkflowGraphNode",
+    "WorkflowGraphEdge",
+    "TrainerRuntimeModel",
+    "PredictorRuntimeModel",
+    "SQLConfigModel",
+=======
+
 ]
