@@ -18,12 +18,13 @@ import json
 import numpy as np
 import pandas as pd
 import psutil
-from sklearn.preprocessing import OrdinalEncoder, StandardScaler, normalize
+from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler, normalize
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
 
 # ── 사내 모듈
 from backend.constants import TRAIN_FEATURES, NUMERIC_FEATURES
+from common.config_store import TrainerRuntimeConfig, workflow_config_store
 from backend.index_hnsw import HNSWSearch
 from backend.feature_weights import FeatureWeightManager  # 추가
 from common.logger import get_logger
@@ -36,6 +37,37 @@ warnings.filterwarnings(
     category=FutureWarning,
     module="backend.trainer_ml",
 )
+
+# 런타임 설정 기본값 (워크플로우 그래프 SAVE 즉시 반영용)
+TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool] = {
+    "similarity_threshold": 0.8,
+    "trim_std_enabled": True,
+    "trim_lower_percent": 0.05,
+    "trim_upper_percent": 0.95,
+}
+
+
+def apply_trainer_runtime_config(config: TrainerRuntimeConfig) -> None:
+    """워크플로우 저장소 런타임 설정을 트레이너에 반영한다."""
+
+    TRAINER_RUNTIME_SETTINGS["similarity_threshold"] = config.similarity_threshold
+    TRAINER_RUNTIME_SETTINGS["trim_std_enabled"] = config.trim_std_enabled
+    TRAINER_RUNTIME_SETTINGS["trim_lower_percent"] = config.trim_lower_percent
+    TRAINER_RUNTIME_SETTINGS["trim_upper_percent"] = config.trim_upper_percent
+
+    logger.info(
+        "트레이너 런타임 설정 갱신: threshold=%.2f, trim_std=%s (%.2f~%.2f)",
+        TRAINER_RUNTIME_SETTINGS["similarity_threshold"],
+        TRAINER_RUNTIME_SETTINGS["trim_std_enabled"],
+        TRAINER_RUNTIME_SETTINGS["trim_lower_percent"],
+        TRAINER_RUNTIME_SETTINGS["trim_upper_percent"],
+    )
+
+
+try:
+    apply_trainer_runtime_config(workflow_config_store.get_trainer_runtime())
+except Exception as exc:  # pragma: no cover - 설정 파일 미존재 등
+    logger.debug("트레이너 런타임 기본값 사용: %s", exc)
 
 # ════════════════════════════════════════════════
 # 하이퍼 파라미터
@@ -613,7 +645,8 @@ def train_model_with_ml_improved(
                     'variance_threshold': variance_threshold,
                     'balance_dimensions': balance_dimensions,
                     'target_dimension': 128,
-                    'note': 'Active features are applied only during prediction'
+                    'note': 'Active features are applied only during prediction',
+                    'workflow_runtime': dict(TRAINER_RUNTIME_SETTINGS),
                 }
                 (model_dir / "training_metadata.json").write_text(
                     json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -833,7 +866,8 @@ def train_model_with_ml_improved(
                     'variance_threshold': variance_threshold,
                     'balance_dimensions': balance_dimensions,
                     'target_dimension': target_dim if balance_dimensions else None,
-                    'note': 'Active features are applied only during prediction'
+                    'note': 'Active features are applied only during prediction',
+                    'workflow_runtime': dict(TRAINER_RUNTIME_SETTINGS),
                 }
                 
                 metadata_path = model_dir / "training_metadata.json"
