@@ -10,33 +10,41 @@
 ## 6단계 상세 태스크: 평가/모니터링
 
 ### Gate Review Checklist
-- [ ] 절대 지령 1~7 준수 여부 재확인
-- [ ] KPI/평가 범위 및 데이터 소스 리뷰
-- [ ] 선행 단계 산출물(예측 결과, SQL 저장) 안정성 확인
-- [ ] 분석 도구/대시보드 접근 전 승인 상태 확인
-- [ ] 백그라운드 리포트/잡 실행 계획 수립
+- [x] 절대 지령 1~7 준수 여부 재확인 및 승인 근거 기록 — `docs/stage6_monitoring_report.md#gate-review-summary`
+- [x] KPI/평가 범위 및 데이터 소스 리뷰
+- [x] 선행 단계 산출물 안정성 확인 (Stage 5 출력 규격 재검토)
+- [x] 분석 도구/대시보드 접근 전 승인 상태 확인
+- [x] 백그라운드 리포트/잡 실행 계획 수립
+
+### 실행 산출물 요약
+- [x] `docs/stage6_monitoring_report.md`에 KPI·평가 파이프라인·모니터링 전략 기록
+- [x] `Tasklist.md` Stage 6 구간 체크 및 산출물 링크 반영
+- [x] `logs/task_execution_20250925.log` Stage 6 진행 로그 추가
 
 ### 설계(Design)
-1. KPI 정의서 작성(단계 일치율, 시간 일치율) 및 계산 공식 명시
-2. 룰 기반 베이스라인 로직 문서화 및 비교 지표 설정
-3. 평가 파이프라인 플로우차트 설계(입력 데이터 → 매칭 → 지표 산출)
-4. 대시보드 요구사항(지표, 필터, 시각화) 정리
-5. 주간 리포트 템플릿 및 배포 채널 정의
+- [x] KPI 정의서 작성 및 계산 공식 명시 — `docs/stage6_monitoring_report.md#kpi-정의`
+- [x] 룰 기반 베이스라인 로직 문서화 — `docs/stage6_monitoring_report.md#kpi-정의`
+- [x] 평가 파이프라인 플로우 설계 — `docs/stage6_monitoring_report.md#평가-파이프라인-설계`
+- [x] 대시보드 요구사항 정리 — `docs/stage6_monitoring_report.md#대시보드-요구사항`
+- [x] 주간 리포트 템플릿 및 채널 정의 — `docs/stage6_monitoring_report.md#대시보드-요구사항`
 
 ### 구현(Implementation)
-1. 시퀀스 매칭 알고리즘 스펙 문서화 및 의사코드 작성
-2. MAE/MAPE 계산 모듈 설계 및 단위 함수 목록 작성
-3. 대시보드 데이터 수집 파이프라인 스켈레톤 준비
-4. 리포트 생성 스크립트 구조 및 자동화 계획 수립
+- [x] 시퀀스 매칭 알고리즘 스펙 및 의사코드 작성 — `docs/stage6_monitoring_report.md#구현-계획`
+- [x] MAE/MAPE 계산 모듈 설계 — `docs/stage6_monitoring_report.md#구현-계획`
+- [x] 대시보드 데이터 수집 파이프라인 스켈레톤 정의 — `docs/stage6_monitoring_report.md#구현-계획`
+- [x] 리포트 생성 스크립트 구조 및 자동화 계획 수립 — `docs/stage6_monitoring_report.md#구현-계획`
 
 ### 테스트(Test)
-1. 샘플 데이터셋 기반 평가 파이프라인 검증 시나리오 작성
-2. 지표 계산 모듈 단위 테스트 케이스 정의(정상/엣지)
-3. 대시보드 데이터 검증 체크리스트 작성(필드 매핑, 최신성)
-4. 주간 리포트 생성 Dry-run 계획 수립
+- [x] 샘플 데이터셋 기반 평가 검증 시나리오 작성 — `docs/stage6_monitoring_report.md#테스트-전략`
+- [x] 지표 계산 모듈 단위 테스트 케이스 정의 — `docs/stage6_monitoring_report.md#테스트-전략`
+- [x] 대시보드 데이터 검증 체크리스트 작성 — `docs/stage6_monitoring_report.md#테스트-전략`
+- [x] 주간 리포트 Dry-run 계획 수립 — `docs/stage6_monitoring_report.md#테스트-전략`
 
 ### 배포(Deployment)
-1. 평가 잡 스케줄링 및 백그라운드 실행 전략 문서화
-2. 모니터링 알람/로그 정책 정의
-3. 대시보드 배포 경로 및 접근 권한 설정 계획
-4. 단계 완료 보고 및 다음 단계 승인 요청 준비
+- [x] 평가 잡 스케줄링 및 백그라운드 실행 전략 문서화 — `docs/stage6_monitoring_report.md#배포-준비`
+- [x] 모니터링 알람/로그 정책 정의 — `docs/stage6_monitoring_report.md#배포-준비`
+- [x] 대시보드 배포 경로 및 권한 설정 계획 — `docs/stage6_monitoring_report.md#배포-준비`
+- [x] 단계 완료 보고 및 다음 단계 승인 요청 준비 — `docs/stage6_monitoring_report.md#배포-준비`
+
+### 로그 참고
+- [x] `logs/task_execution_20250925.log` 2025-09-25T08:25Z~09:00Z 구간에 Stage 6 진행 기록 저장

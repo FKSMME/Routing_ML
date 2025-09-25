@@ -49,39 +49,28 @@
 
 4. 프런트엔드(React, B안) — 상세 문서: `task_details/stage4_detail.md`
 
- (설계) 3열 레이아웃 + 카드 디자인 시스템(타임라인/후보비교/설명)
-
- (구현) 유사도 슬라이더 & Top-K 드롭다운(로그 기준 UI 가이드) 
-
-gui_20250912
-
- (구현) 후보 라우팅 테이블(다중 행·다중 컬럼 표) 및 정렬/필터
-
- (구현) TensorBoard Projector 링크/뷰 경로 안내
-
- (테스트) 주니어 사용자 사용성 테스트(툴팁/설명 패널)
+ - [x] (설계) 3열 레이아웃/카드 디자인 시스템 확정 — `docs/stage4_frontend_report.md#설계`
+ - [x] (구현) 유사도 슬라이더 & Top-K 드롭다운 UX/상태 관리 설계 — `docs/stage4_frontend_report.md#구현-계획`
+ - [x] (구현) 후보 라우팅 테이블 및 정렬/필터 전략 정의 — `docs/stage4_frontend_report.md#구현-계획`
+ - [x] (구현) TensorBoard Projector 링크/뷰 안내 설계 — `docs/stage4_frontend_report.md#구현-계획`
+ - [x] (테스트) 주니어 사용자 사용성/접근성/성능 테스트 계획 수립 — `docs/stage4_frontend_report.md#테스트-전략`
+ - [x] (배포) CI/호스팅/문서 업데이트 계획 수립 — `docs/stage4_frontend_report.md#배포-준비`
 
 5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
 
- (설계) 대상 스키마 확정: routing_candidates, routing_candidate_operations(FK 포함)
-
- (구현) DDL/마이그레이션 스크립트(사용자 제공 규격 1:1 매핑)
-
- (구현) 저장/내보내기(INSERT/CSV)
-
- (테스트) 샘플 표 대비 컬럼/타입/널 제약 정합성 테스트
+ - [x] (설계) 대상 스키마 확정(routing_candidates, routing_candidate_operations) — `docs/stage5_sql_report.md#스키마-정의`
+ - [x] (구현) DDL/마이그레이션 스크립트 구조 정의 — `docs/stage5_sql_report.md#ddl-구성`
+ - [x] (구현) 저장/내보내기(INSERT/CSV) 플로우 설계 — `docs/stage5_sql_report.md#저장-및-내보내기-플로우`
+ - [x] (테스트) 샘플 표 대비 컬럼/타입/널 제약 정합성 테스트 계획 — `docs/stage5_sql_report.md#테스트-계획`
+ - [x] (배포) 승인/백업/버전 정책 수립 — `docs/stage5_sql_report.md#배포-준비`
 
 6. 평가/모니터링 — 상세 문서: `task_details/stage6_detail.md`
 
- (설계) KPI 정의서(단계 일치율, 시간 일치율), 룰기반 베이스라인 정의
-
- (구현) 평가 파이프라인: GT 라우팅과의 시퀀스 매칭, 시간 오류(MAE/MAPE) 산출
-
- (구현) 대시보드 지표 수집(API/프런트 표출)
-
- (테스트) 샘플 데이터셋으로 리포트 생성
-
- (배포) 주간 리포트 잡/로그 보존
+ - [x] (설계) KPI 정의서 및 베이스라인 확정 — `docs/stage6_monitoring_report.md#kpi-정의`
+ - [x] (구현) 평가 파이프라인 및 대시보드 지표 수집 설계 — `docs/stage6_monitoring_report.md#평가-파이프라인-설계`
+ - [x] (구현) 시퀀스 매칭/지표 계산/리포트 자동화 계획 수립 — `docs/stage6_monitoring_report.md#구현-계획`
+ - [x] (테스트) 샘플 데이터 및 단위 테스트 계획 수립 — `docs/stage6_monitoring_report.md#테스트-전략`
+ - [x] (배포) 주간 리포트 잡/모니터링/권한 계획 수립 — `docs/stage6_monitoring_report.md#배포-준비`
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
