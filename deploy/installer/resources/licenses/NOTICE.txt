@@ -1,0 +1,9 @@
+Routing ML Predictor 설치 패키지에는 다음 구성 요소가 포함됩니다.
+
+1. Python 3.12 런타임 및 표준 라이브러리 (Python Software Foundation License)
+2. FastAPI, Uvicorn, Pydantic 등 MIT License 기반 오픈소스 컴포넌트
+3. React, Vite 및 관련 프런트엔드 라이브러리 (MIT License)
+4. FKSM 사내 개발 코드 및 ML 모델 아티팩트 (사내 전용)
+
+본 설치 프로그램은 사내 배포 전용이며 외부 반출을 금합니다.
+각 서드파티 라이선스 전문은 https://opensource.org/licenses 에서 확인할 수 있습니다.
