@@ -1,83 +1,53 @@
+# 절대 지령
+1. 각 단계는 승인 후에만 진행한다.
+2. 단계 착수 전 이번 단계 전체 범위를 리뷰하고 오류를 식별한다.
+3. 오류 발견 시 수정 전에 승인 재요청한다.
+4. 이전 단계 오류가 없음을 재확인한 뒤 다음 단계 승인을 요청한다.
+5. 모든 단계 작업은 백그라운드 방식으로 수행한다.
+6. 문서/웹뷰어 점검이 필요한 경우 반드시 승인 확인 후 진행한다.
+7. 다음 단계 착수 전에 이전 단계 전반을 재점검하여 미해결 오류가 없는지 확인한다.
+
 상세 Task List (설계 → 구현 → 테스트 → 배포)
 
-* 모든 섹션마다 상단 게이트 체크리스트(승인/리뷰/오류 재요청/재점검/뷰어 승인)를 적용합니다.
+* 모든 섹션마다 상단 게이트 체크리스트(승인/리뷰/오류 재요청/재점검/뷰어 승인/백그라운드 수행)를 적용합니다.
 진행은 한 번에 하나의 태스크만 실행하고, 완료 시 보고 후 사용자 승인 대기합니다.
 
-0. 레포/요건 동기화 (준비)
+0. 레포/요건 동기화 (준비) — 상세 문서: `task_details/stage0_detail.md`
 
- (설계) 현재 레포 구조 점검 및 아키텍처 스냅샷 정리(routing_system_architecture.mdpuml 존재 확인) 
+ - [x] (설계) 현재 레포 구조 점검 및 아키텍처 스냅샷 정리 — `docs/stage0_report.md`
+ - [x] (설계) 요구사항 승인 워크플로우 도표 작성(게이트 포함) — `docs/approval_workflow.puml`
+ - [x] (구현) 이슈/PR 템플릿에 게이트 체크리스트 자동 포함 — `.github/ISSUE_TEMPLATE.md`, `.github/PULL_REQUEST_TEMPLATE.md`
+ - [x] (테스트) 요구 추적표(PRD ↔ 태스크 ↔ 커밋) 초안 — `docs/requirements_traceability_matrix.md`
+ - [x] (배포) 브랜치 보호 규칙/코드 오너 지정 — `docs/code_governance_plan.md`
 
-DocumentLayout
+1. 데이터 파이프라인 — 상세 문서: `task_details/stage1_detail.md`
 
- (설계) 요구사항 승인 워크플로우 도표 작성(게이트 포함)
+ - [x] (설계) ITEM_INFO ↔ ROUTING_VIEW ↔ WORK_ORDER_RESULTS 스키마/조인 정의서(ITEM_CD 기준) — `docs/data_pipeline_spec.md`
+ - [x] (설계) Feature 사전(범주/수치, 결측 규칙, 스케일링) 문서화 — `docs/data_pipeline_spec.md`
+ - [x] (구현) ODBC 커넥터/쿼리 모듈, 안전 형 변환·결측 처리 — `docs/data_pipeline_spec.md`
+ - [x] (구현) 피처 빌더: 인코딩(Label/Ordinal), 표준화, VarianceThreshold, (옵션) PCA — `docs/data_pipeline_spec.md`
+ - [x] (구현) “외주 공정 제외” 필터 파이프라인(후보 라우팅 집계 시 적용) — `docs/data_pipeline_spec.md`
+ - [x] (테스트) 샘플 데이터(비식별)로 스냅샷 테스트 — `docs/data_pipeline_spec.md`
+ - [x] (배포) 데이터 소스/시크릿 주입(.env/Key Vault) — `docs/data_pipeline_spec.md`
 
- (구현) 이슈/PR 템플릿에 게이트 체크리스트 자동 포함
+2. 학습 서비스(trainer) — 상세 문서: `task_details/stage2_detail.md`
 
- (테스트) 요구 추적표(PRD ↔ 태스크 ↔ 커밋) 초안
+ - [x] (설계) 학습 파이프라인 설계서(HNSW, 가중치, 차원균형, 메타데이터, TB Projector export 플로우) — `docs/trainer_service_plan.md`
+ - [x] (구현) trainer_ml.py 개선 항목(혼합 인코딩, 가중치, HNSW 저장, TB Projector 옵션) 정리 — `docs/trainer_service_plan.md`
+ - [x] (구현) 모델/메타 저장 규약: training_metadata.json, tb_projector/ 구조 — `docs/trainer_service_plan.md`
+ - [x] (테스트) 학습 시간/메모리, 재현성(seed) 검증 계획 — `docs/trainer_service_plan.md`
+ - [x] (배포) 컨테이너 routing-ml-trainer 이미지화 계획 — `docs/trainer_service_plan.md`
 
- (배포) 브랜치 보호 규칙/코드 오너 지정
+3. 예측 서비스(predictor) — 상세 문서: `task_details/stage3_detail.md`
 
-1. 데이터 파이프라인
+ - [x] (설계) API I/F: /predict, /candidates/save, /health, /metrics — `docs/predictor_service_plan.md`
+ - [x] (구현) HNSW 로더 + Top-K(기본 10) + 임계값(기본 0.3) 파라미터 처리 — `docs/predictor_service_plan.md`
+ - [x] (구현) 메타-앙상블 후보 생성기: 상위 K 라우팅들을 공정별로 정렬·집계하여 후보 합성 — `docs/predictor_service_plan.md`
+ - [x] (구현) SQL 출력 매퍼: 사용자가 준 필수 컬럼 양식으로 후보를 직렬화/저장 — `docs/predictor_service_plan.md`
+ - [x] (테스트) 단건 ≤ 60초 / 10건 ≤ 10분 벤치마크(샘플 기준) 계획 — `docs/predictor_service_plan.md`
+ - [x] (배포) 컨테이너 routing-ml-predictor 이미지화, 프로브/로깅 — `docs/predictor_service_plan.md`
 
- (설계) ITEM_INFO ↔ ROUTING_VIEW ↔ WORK_ORDER_RESULTS 스키마/조인 정의서(ITEM_CD 기준)
-
- (설계) Feature 사전(범주/수치, 결측 규칙, 스케일링) 문서화
-
- (구현) ODBC 커넥터/쿼리 모듈, 안전 형 변환·결측 처리
-
- (구현) 피처 빌더: 인코딩(Label/Ordinal), 표준화, VarianceThreshold, (옵션) PCA
-
- (구현) “외주 공정 제외” 필터 파이프라인(후보 라우팅 집계 시 적용)
-
- (테스트) 샘플 데이터(비식별)로 스냅샷 테스트
-
- (배포) 데이터 소스/시크릿 주입(.env/Key Vault)
-
-2. 학습 서비스(trainer)
-
- (설계) 학습 파이프라인 설계서(HNSW, 가중치, 차원균형, 메타데이터, TB Projector export 플로우)
-
- (구현) trainer_ml.py 개선:
-
- 카테고리/수치 혼합 인코딩 + 표준화 + 가중치 적용(이미 구조 있음) 
-
-trainer_ml
-
- HNSW 인덱스 빌드/저장(벡터 차원 로깅) 
-
-trainer_ml
-
- export_tb_projector 옵션 노출 및 메타데이터 컬럼 선택 지원 
-
-trainer_ml
-
- 가중치 결합은 데이터 가중치 × 도메인 가중치의 조화평균 기본값 채택 
-
-trainer_ml
-
- (구현) 모델/메타 저장 규약: training_metadata.json, tb_projector/ 구조 
-
-trainer_ml
-
- (테스트) 학습 시간/메모리, 재현성(seed) 검증
-
- (배포) 컨테이너 routing-ml-trainer 이미지화
-
-3. 예측 서비스(predictor)
-
- (설계) API I/F: /predict, /candidates/save, /health, /metrics
-
- (구현) HNSW 로더 + Top-K(기본 10) + 임계값(기본 0.3) 파라미터 처리
-
- (구현) 메타-앙상블 후보 생성기: 상위 K 라우팅들을 공정별로 정렬·집계하여 3~4개의 가능한 라우팅 구조 합성(외주 제외)
-
- (구현) SQL 출력 매퍼: 사용자가 준 필수 컬럼 양식으로 후보를 직렬화/저장
-
- (테스트) 단건 ≤ 60초 / 10건 ≤ 10분 벤치마크(샘플 기준)
-
- (배포) 컨테이너 routing-ml-predictor 이미지화, 프로브/로깅
-
-4. 프런트엔드(React, B안)
+4. 프런트엔드(React, B안) — 상세 문서: `task_details/stage4_detail.md`
 
  (설계) 3열 레이아웃 + 카드 디자인 시스템(타임라인/후보비교/설명)
 
@@ -91,7 +61,7 @@ gui_20250912
 
  (테스트) 주니어 사용자 사용성 테스트(툴팁/설명 패널)
 
-5. 출력/SQL 규격
+5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
 
  (설계) 대상 스키마 확정: routing_candidates, routing_candidate_operations(FK 포함)
 
@@ -101,7 +71,7 @@ gui_20250912
 
  (테스트) 샘플 표 대비 컬럼/타입/널 제약 정합성 테스트
 
-6. 평가/모니터링
+6. 평가/모니터링 — 상세 문서: `task_details/stage6_detail.md`
 
  (설계) KPI 정의서(단계 일치율, 시간 일치율), 룰기반 베이스라인 정의
 
@@ -113,7 +83,7 @@ gui_20250912
 
  (배포) 주간 리포트 잡/로그 보존
 
-7. 운영/배포
+7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
  (설계) 네트워크/보안/ODBC/시크릿 설계
 
@@ -125,7 +95,7 @@ gui_20250912
 
  (배포) 단계적 롤아웃/롤백 전략
 
-8. 문서화/전달물
+8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
 
  (설계) 아키텍처 다이어그램(PlantUML) 업데이트 및 저장(레포에 mdpuml 흔적) 
 

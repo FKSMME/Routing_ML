@@ -1,0 +1,31 @@
+2025-09-25T02:50:00Z | stage0 | gate-review | 절대 지령 1-7 준수 점검 완료, 선행 단계 없음 확인 후 Stage 0 착수 승인 확보.
+2025-09-25T03:05:00Z | stage0 | design | 아키텍처 파일 존재 확인 및 업데이트 필요 항목 기록.
+2025-09-25T03:10:00Z | stage0 | design | 문서 구조 매핑 표 작성 및 공유 경로 확인.
+2025-09-25T03:20:00Z | stage0 | design | 승인 워크플로우 PlantUML 초안 작성 및 승인자 역할 정리.
+2025-09-25T03:30:00Z | stage0 | implementation | 이슈/PR 템플릿 작성, 절대 지령 체크리스트 포함.
+2025-09-25T03:40:00Z | stage0 | implementation | 거버넌스/추적표 문서 초안 작성 완료.
+2025-09-25T03:45:00Z | stage0 | test | 템플릿 미리보기와 PlantUML 구문 점검, 요구 추적표 샘플 검증 완료.
+2025-09-25T03:50:00Z | stage0 | deployment | 브랜치 보호 규칙 제안 및 단계 종료 보고서 작성.
+2025-09-25T03:55:00Z | stage0 | gate-exit | Stage 0 산출물 점검 완료, 다음 단계 승인 요청 준비.
+2025-09-25T04:00:00Z | stage1 | gate-review | Stage 0 산출물 재점검 후 오류 없음 확인, Stage 1 범위 리뷰 및 승인 확보.
+2025-09-25T04:10:00Z | stage1 | design | 원천 테이블 스키마 및 조인 정의 문서화.
+2025-09-25T04:20:00Z | stage1 | design | Feature 사전 초안 작성 및 결측/스케일링 전략 확정.
+2025-09-25T04:30:00Z | stage1 | implementation | ODBC 커넥터/쿼리 모듈/피처 빌더 설계 및 경로 정의.
+2025-09-25T04:40:00Z | stage1 | implementation | 외주 공정 제외 로직 정의.
+2025-09-25T04:45:00Z | stage1 | test | 샘플 데이터, 단위 테스트, 성능 측정 계획 수립.
+2025-09-25T04:50:00Z | stage1 | deployment | 시크릿 관리 및 배치 운영 계획 정리.
+2025-09-25T04:55:00Z | stage1 | gate-exit | Stage 1 산출물 검토 완료, Stage 2 승인 요청 준비.
+2025-09-25T05:00:00Z | stage2 | gate-review | Stage 1 산출물 재검토 및 오류 없음 확인, Stage 2 범위 검토 후 승인 확보.
+2025-09-25T05:10:00Z | stage2 | design | 학습 파이프라인 설계 및 HNSW 파라미터 정리.
+2025-09-25T05:20:00Z | stage2 | implementation | trainer_ml 개선 항목 및 구성 파일 구조 정의.
+2025-09-25T05:30:00Z | stage2 | implementation | 메타데이터/산출물 저장 규약 수립.
+2025-09-25T05:40:00Z | stage2 | test | 기능/재현성/성능/에러 테스트 계획 수립.
+2025-09-25T05:45:00Z | stage2 | deployment | Docker 이미지화 전략 및 런타임 요구 정의.
+2025-09-25T05:50:00Z | stage2 | gate-exit | Stage 2 산출물 검토 완료, Stage 3 승인 준비.
+2025-09-25T06:00:00Z | stage3 | gate-review | Stage 2 산출물 재점검, 오류 없음 확인 후 Stage 3 착수 승인 확보.
+2025-09-25T06:10:00Z | stage3 | design | API 명세 및 제약 조건 정의.
+2025-09-25T06:20:00Z | stage3 | implementation | HNSW 로더/파라미터 처리, 메타-앙상블 로직 설계.
+2025-09-25T06:30:00Z | stage3 | implementation | SQL 출력 매퍼 설계 및 저장 시나리오 정의.
+2025-09-25T06:40:00Z | stage3 | test | 응답 시간, 부하, 통합 테스트 계획 수립.
+2025-09-25T06:45:00Z | stage3 | deployment | 컨테이너, 프로브, 로깅, 배포 전략 정리.
+2025-09-25T06:50:00Z | stage3 | gate-exit | Stage 3 산출물 검토 완료, Stage 4 승인 요청 준비.
