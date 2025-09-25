@@ -101,7 +101,19 @@ pip install -r requirements.txt
    docker compose down
    ```
 
-### 7. 온보딩 체크리스트
+### 7. 설치형 패키지 준비(Windows) — Stage 9 연계
+- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)과 `deploy/installer/build_windows_installer.py`를 사용해 생성한다.
+- 빌드 절차 요약
+  1. Windows 빌드 노드에서 `pip install -r requirements.txt pyinstaller` 및 `npm install --prefix frontend` 실행.
+  2. `python deploy/installer/build_windows_installer.py --clean` → `build/windows/installer` 페이로드와 `build/windows/RoutingMLInstaller.iss` 생성.
+  3. Inno Setup Compiler로 `RoutingMLInstaller.iss` 빌드 → `RoutingMLInstaller_<버전>.exe` 획득.
+- 설치 검증 포인트
+  1. 설치 완료 후 PowerShell 스크립트가 `RoutingMLPredictor` 서비스를 자동 등록/기동하는지 확인 (`install_service.ps1`).
+  2. `%APPDATA%\RoutingML\config\workflow_settings.json`이 템플릿을 기준으로 생성되고, Trimmed-STD/SQL 프로파일이 UI SAVE 즉시 반영되는지 확인.
+  3. `scripts/post_install_test.ps1` 실행 결과 `/api/health` 200 응답 및 TensorBoard Projector 경로 확인.
+- 정식 배포 전 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료한다.
+
+### 8. 온보딩 체크리스트
 - [ ] 절대 지령 준수 여부 확인
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
 - [ ] 예측 API Health OK
@@ -114,7 +126,7 @@ pip install -r requirements.txt
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람)
 
-### 8. 문제 보고 절차
+### 9. 문제 보고 절차
 1. Stage 0 요구 추적표를 참고해 이슈를 기록한다.
 2. Tasklist 단계 상태를 업데이트하고 승인 요청을 한다.
 3. 해결 후 문서/로그에 반영했는지 체크리스트를 다시 확인한다.
