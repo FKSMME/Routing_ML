@@ -141,6 +141,7 @@ trainer_ml
 - 테스트 요구: 설치 후 학습/예측 서비스 기동, 워크플로우 SAVE 즉시 반영, Access ODBC 연결, SQL export, TensorBoard Projector 접근이 정상 동작하는지 로컬 QA 체크리스트에 포함한다.
 - 빌드 산출물: `deploy/installer/build_windows_installer.py`에서 PyInstaller 빌드·프런트엔드 번들·모델/설정 템플릿·PowerShell 스크립트를 `build/windows/installer`에 모으고, `deploy/installer/templates/installer.iss.tpl` 기반 Inno Setup 스크립트를 생성한다. 설치형 패키지 운영 스크립트는 `deploy/installer/scripts/*.ps1`에 포함한다.
 
+
 D. 비기능 요구
 
 성능 목표: 단건 예측 ≤ 1분, 배치 10건 ≤ 10분.

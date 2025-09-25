@@ -113,6 +113,14 @@ pip install -r requirements.txt
   3. `scripts/post_install_test.ps1` 실행 결과 `/api/health` 200 응답 및 TensorBoard Projector 경로 확인.
 - 정식 배포 전 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료한다.
 
+- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)에 따라 개발된다.
+- 사내 테스트 빌드는 `dist/RoutingMLInstaller.exe`(PyInstaller + Inno Setup 기반)로 제공되며, 설치 시 다음 항목을 확인한다.
+  1. 설치 경로 및 서비스 계정 지정 후 FastAPI 서비스가 Windows 서비스로 등록되는지 확인.
+  2. 설치 마법사에서 SQL 컬럼 매핑 프로파일과 Trimmed-STD 파라미터를 선택 적용할 수 있는지 확인.
+  3. 설치 완료 직후 `scripts/post_install_test.ps1` 스모크 테스트가 성공하는지 검증.
+- 정식 배포 전에는 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료해야 한다.
+
+
 ### 8. 온보딩 체크리스트
 - [ ] 절대 지령 준수 여부 확인
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
