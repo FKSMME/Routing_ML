@@ -76,7 +76,6 @@ NUMERIC_FEATURES: set[str] = {
 # ────────────────────────────────────────────────
 # ❷ 예측 결과 출력 열 (GUI & CSV)
 # ────────────────────────────────────────────────
-
 DEFAULT_ROUTING_OUTPUT_COLS: List[str] = list(DEFAULT_SQL_OUTPUT_COLUMNS)
 
 
@@ -96,7 +95,6 @@ def get_routing_alias_map() -> Dict[str, str]:
         return workflow_config_store.get_sql_column_config().column_aliases
     except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
         return ensure_default_aliases({})
-=======
 ROUTING_OUTPUT_COLS: list[str] = [
     # ── 기본 메타 및 식별자
     "ITEM_CD", "CANDIDATE_ID", "ROUTING_SIGNATURE", "PRIORITY", "SIMILARITY_TIER",

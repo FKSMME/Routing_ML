@@ -192,3 +192,8 @@
 - [ ] Stage 3/4 상세 문서에 그래프 항목 반영 사실 보고
 - [ ] 로그 파일에 계획 수립 및 승인 요청 시간 기록
 - [ ] 추가 의존성(React Flow 등) 사내망 배포 정책 검토 보고
+
+## 2025-09-25 구현 메모
+- ReactFlow를 채택해 노드/엣지 기본 스타일을 블루스크린 컨셉으로 구현하고, MiniMap·Controls·Background 조합으로 전체 플로우 탐색을 지원한다.
+- 노드 더블클릭 이벤트에서 trainer/predictor/sql 구간별 설정 폼을 호출하며, SAVE 시 `/api/workflow/graph` PATCH payload에 런타임 파라미터를 포함하도록 처리했다.
+- 레이아웃 저장 버튼은 노드 좌표를 `WorkflowGraphNode.position` 필드로 반영해 config JSON과 런타임 저장소가 동일한 상태를 유지한다.

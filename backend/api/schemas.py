@@ -132,13 +132,13 @@ class HealthResponse(BaseModel):
     detail: Optional[str] = None
 
 
-
 class WorkflowGraphNode(BaseModel):
     id: str
     label: str
     type: str
     category: Optional[str] = None
     status: Optional[str] = None
+    position: Dict[str, float] = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
     settings: Dict[str, Any] = Field(default_factory=dict)
     metrics: Dict[str, Any] = Field(default_factory=dict)
     doc_refs: List[str] = Field(default_factory=list)
@@ -232,8 +232,6 @@ class WorkflowConfigPatch(BaseModel):
     sql: Optional[SQLConfigPatch] = None
 
 
-=======
-
 __all__ = [
     "PredictionRequest",
     "PredictionResponse",
@@ -242,7 +240,6 @@ __all__ = [
     "CandidateSaveRequest",
     "CandidateSaveResponse",
     "HealthResponse",
-
     "WorkflowConfigResponse",
     "WorkflowConfigPatch",
     "WorkflowGraphModel",
@@ -251,6 +248,4 @@ __all__ = [
     "TrainerRuntimeModel",
     "PredictorRuntimeModel",
     "SQLConfigModel",
-=======
-
 ]

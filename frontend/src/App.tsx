@@ -4,6 +4,7 @@ import { CandidatePanel } from "@components/CandidatePanel";
 import { Header } from "@components/Header";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
+import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 
@@ -44,6 +45,7 @@ export default function App() {
           <TimelinePanel routings={data?.items ?? []} loading={isLoading || isFetching} />
         </div>
       </div>
+      <WorkflowGraphPanel />
     </div>
   );
 }

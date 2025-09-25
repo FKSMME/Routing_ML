@@ -1,5 +1,176 @@
 {
   "graph": {
+    "nodes": [
+      {
+        "id": "data-ingest",
+        "label": "데이터 수집",
+        "type": "process",
+        "category": "stage1",
+        "status": "stable",
+        "position": { "x": 40, "y": 180 },
+        "settings": {
+          "description": "Access 원본 3개 뷰를 ITEM_CD 기준으로 조인하여 피처 세트를 구성합니다.",
+          "tables": [
+            "dbo_BI_ITEM_INFO_VIEW",
+            "dbo_BI_ROUTING_VIEW",
+            "dbo_BI_WORK_ORDER_RESULTS"
+          ],
+          "owner": "데이터엔지니어",
+          "refresh_cycle": "매 6시간"
+        },
+        "metrics": {
+          "coverage": 0.98,
+          "last_snapshot": "2025-09-20"
+        },
+        "doc_refs": [
+          "docs/data_pipeline_spec.md"
+        ]
+      },
+      {
+        "id": "feature-embedding",
+        "label": "임베딩/전처리",
+        "type": "processor",
+        "category": "stage2",
+        "status": "stable",
+        "position": { "x": 240, "y": 120 },
+        "settings": {
+          "description": "ImprovedPreprocessor에서 혼합 인코딩과 VarianceThreshold, PCA 옵션을 적용합니다.",
+          "export": [
+            "tb_projector/metadata.tsv",
+            "tb_projector/vectors.tsv"
+          ],
+          "trim_std": "상/하위 5% 제외"
+        },
+        "metrics": {
+          "dimension": 128,
+          "variance_retained": 0.92
+        },
+        "doc_refs": [
+          "docs/trainer_service_plan.md",
+          "docs/trainer_algorithm_report.md"
+        ]
+      },
+      {
+        "id": "trainer",
+        "label": "트레이너",
+        "type": "service",
+        "category": "stage2",
+        "status": "stable",
+        "position": { "x": 460, "y": 120 },
+        "settings": {
+          "description": "HNSW 임베딩 색인 생성 및 TensorBoard Projector 내보내기",
+          "similarity_threshold": 0.8,
+          "trim_std_enabled": true
+        },
+        "metrics": {
+          "last_run": "2025-09-22T06:00:00Z",
+          "build_minutes": 42
+        },
+        "doc_refs": [
+          "docs/trainer_service_plan.md"
+        ]
+      },
+      {
+        "id": "predictor",
+        "label": "예측기",
+        "type": "service",
+        "category": "stage3",
+        "status": "beta",
+        "position": { "x": 680, "y": 200 },
+        "settings": {
+          "description": "Top-K 후보 생성 및 유사도 0.8 이상 조합 추천",
+          "max_routing_variants": 4,
+          "similarity_high_threshold": 0.8
+        },
+        "metrics": {
+          "p95_latency_sec": 48,
+          "last_request": "2025-09-25T07:55:00Z"
+        },
+        "doc_refs": [
+          "docs/predictor_service_plan.md"
+        ]
+      },
+      {
+        "id": "sql-mapper",
+        "label": "SQL 출력",
+        "type": "adapter",
+        "category": "stage5",
+        "status": "stable",
+        "position": { "x": 900, "y": 200 },
+        "settings": {
+          "description": "7.1 스키마로 라우팅 후보를 직렬화하고 Power Query 프로파일을 관리합니다.",
+          "active_profile": "Access 7.1 기본"
+        },
+        "metrics": {
+          "columns": 52,
+          "profiles": 1
+        },
+        "doc_refs": [
+          "docs/stage5_sql_report.md"
+        ]
+      },
+      {
+        "id": "ui-designer",
+        "label": "블루스크린 UI",
+        "type": "ui",
+        "category": "stage4",
+        "status": "design",
+        "position": { "x": 1120, "y": 160 },
+        "settings": {
+          "description": "워크플로우 그래프와 SAVE 버튼이 설정과 SQL 매핑을 즉시 반영합니다.",
+          "design_refs": [
+            "main/1.jpg",
+            "main/2.jpg",
+            "main/3.jpg",
+            "main/4.jpg"
+          ]
+        },
+        "metrics": {
+          "pending_tasks": 2
+        },
+        "doc_refs": [
+          "docs/graph_workflow_ui_plan.md",
+          "docs/stage4_frontend_report.md"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-data-embed",
+        "source": "data-ingest",
+        "target": "feature-embedding",
+        "kind": "data-flow",
+        "label": "ITEM_CD 정규화"
+      },
+      {
+        "id": "edge-embed-trainer",
+        "source": "feature-embedding",
+        "target": "trainer",
+        "kind": "model-flow",
+        "label": "임베딩 벡터"
+      },
+      {
+        "id": "edge-trainer-predictor",
+        "source": "trainer",
+        "target": "predictor",
+        "kind": "model-flow",
+        "label": "HNSW 인덱스"
+      },
+      {
+        "id": "edge-predictor-sql",
+        "source": "predictor",
+        "target": "sql-mapper",
+        "kind": "data-flow",
+        "label": "후보 라우팅"
+      },
+      {
+        "id": "edge-sql-ui",
+        "source": "sql-mapper",
+        "target": "ui-designer",
+        "kind": "ui-flow",
+        "label": "7.1 출력"
+      }
+    ],
     "nodes": [],
     "edges": [],
     "design_refs": [
@@ -150,5 +321,7 @@
     ],
     "active_profile": "Access 7.1 기본"
   },
+  "updated_at": "2025-09-25T18:00:00.000000"
+=======
   "updated_at": "2025-09-25T05:04:33.045099"
 }
