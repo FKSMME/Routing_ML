@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  trainer:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.trainer
+    image: routing-ml-trainer:latest
+    environment:
+      ROUTING_DATA_PATH: /mnt/data/routing_data
+      TRAINER_OUTPUT_DIR: /mnt/models
+      TRAINER_CONFIG_PATH: /mnt/config/trainer_config.yaml
+    volumes:
+      - type: bind
+        source: ./volumes/data
+        target: /mnt/data
+      - type: bind
+        source: ./volumes/models
+        target: /mnt/models
+      - type: bind
+        source: ./volumes/config
+        target: /mnt/config
+    command: ["python", "backend/trainer_ml.py", "--config", "/mnt/config/trainer_config.yaml"]
+
+  predictor:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.predictor
+    image: routing-ml-predictor:latest
+    environment:
+      ROUTING_DATA_PATH: /mnt/data/routing_data
+      MODEL_ARTIFACT_PATH: /mnt/models
+      PREDICTOR_CONFIG_PATH: /mnt/config/predictor_config.yaml
+      ACCESS_CONNECTION_STRING: ${ACCESS_CONNECTION_STRING:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - trainer
+    volumes:
+      - type: bind
+        source: ./volumes/data
+        target: /mnt/data
+      - type: bind
+        source: ./volumes/models
+        target: /mnt/models
+      - type: bind
+        source: ./volumes/config
+        target: /mnt/config
+    command: [
+      "uvicorn",
+      "backend.run_api:app",
+      "--host", "0.0.0.0",
+      "--port", "8000"
+    ]
+
+networks:
+  default:
+    name: routing-ml-network
