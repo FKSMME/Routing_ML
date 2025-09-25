@@ -122,14 +122,31 @@ class PredictionService:
         summaries: List[RoutingSummary] = []
         for item_cd, group in grouped:
             operations = group.to_dict(orient="records")
+            meta = {}
+            for key in [
+                "ITEM_CD",
+                "CANDIDATE_ID",
+                "ROUTING_SIGNATURE",
+                "PRIORITY",
+                "SIMILARITY_TIER",
+                "SIMILARITY_SCORE",
+                "REFERENCE_ITEM_CD",
+            ]:
+                if key in group.columns and not group[key].isna().all():
+                    meta[key] = group[key].iloc[0]
+
+            summary_item_cd = meta.get("ITEM_CD") or (
+                item_cd if item_cd is not None else ""
+            )
             summaries.append(
                 RoutingSummary(
-                    ITEM_CD=item_cd or (group["ITEM_CD"].iloc[0] if "ITEM_CD" in group.columns else ""),
-                    CANDIDATE_ID=(
-                        str(group["CANDIDATE_ID"].iloc[0])
-                        if "CANDIDATE_ID" in group.columns and not group["CANDIDATE_ID"].isna().all()
-                        else None
-                    ),
+                    ITEM_CD=summary_item_cd,
+                    CANDIDATE_ID=str(meta.get("CANDIDATE_ID")) if meta.get("CANDIDATE_ID") else None,
+                    ROUTING_SIGNATURE=meta.get("ROUTING_SIGNATURE"),
+                    PRIORITY=meta.get("PRIORITY"),
+                    SIMILARITY_TIER=meta.get("SIMILARITY_TIER"),
+                    SIMILARITY_SCORE=meta.get("SIMILARITY_SCORE"),
+                    REFERENCE_ITEM_CD=meta.get("REFERENCE_ITEM_CD"),
                     operations=operations,
                 )
             )

@@ -37,10 +37,107 @@ DEFAULT_TOP_K: int = 10
 MISSING_RATIO_THRESHOLD: float = 0.50
 MIN_SAMPLES_FOR_STATS: int = 1
 CONFIDENCE_THRESHOLD: float = 0.0
-MIN_SIMILARITY_THRESHOLD: float = 0.5
+SIMILARITY_HIGH_THRESHOLD: float = 0.8
+MIN_SIMILARITY_THRESHOLD: float = SIMILARITY_HIGH_THRESHOLD
+MAX_ROUTING_VARIANTS: int = 4
 
 # 제외할 컬럼들 - 일관성 있게 정의
 COLUMNS_TO_EXCLUDE = ['DRAW_USE', 'ITEM_NM_ENG', 'MID_SEALSIZE_UOM', 'ROTATE_CTRCLOCKWISE']
+
+ROUTING_ALIAS_MAP = {
+    'JOB_CD': 'dbo_BI_ROUTING_VIEW_JOB_CD',
+    'CUST_NM': 'dbo_BI_ROUTING_VIEW_CUST_NM',
+    'VIEW_REMARK': 'dbo_BI_ROUTING_VIEW_REMARK',
+}
+
+SUMMARY_META_COLUMNS = {
+    'ITEM_CD', 'CANDIDATE_ID', 'ROUTING_SIGNATURE', 'PRIORITY',
+    'SIMILARITY_TIER', 'SIMILARITY_SCORE', 'REFERENCE_ITEM_CD'
+}
+
+
+def build_routing_signature(routing_df: pd.DataFrame) -> str:
+    """공정 목록을 기반으로 라우팅 시그니처 문자열 생성."""
+    if routing_df is None or routing_df.empty:
+        return ""
+
+    job_names = routing_df.get('JOB_NM')
+    tokens: List[str] = []
+    if job_names is not None:
+        tokens = [str(val).strip() for val in job_names if isinstance(val, str) and val.strip()]
+
+    if not tokens:
+        res_names = routing_df.get('RES_DIS')
+        if res_names is not None:
+            tokens = [str(val).strip() for val in res_names if isinstance(val, str) and val.strip()]
+
+    if not tokens:
+        return "ROUTING"
+
+    return '+'.join(tokens[:4])
+
+
+def normalize_routing_frame(
+    target_item: str,
+    candidate_id: str,
+    base_df: pd.DataFrame,
+    *,
+    similarity: float,
+    reference_item: str,
+    priority: str,
+    signature: str,
+) -> pd.DataFrame:
+    """라우팅 DataFrame을 API/SQL 출력 규격에 맞게 정규화."""
+    if base_df is None or base_df.empty:
+        return pd.DataFrame()
+
+    frame = base_df.copy()
+    frame = frame.rename(columns=ROUTING_ALIAS_MAP)
+
+    frame['ITEM_CD'] = target_item
+    frame['CANDIDATE_ID'] = candidate_id
+    frame['ROUTING_SIGNATURE'] = signature
+    frame['PRIORITY'] = priority
+    frame['SIMILARITY_TIER'] = 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW'
+    frame['SIMILARITY_SCORE'] = float(similarity)
+    frame['REFERENCE_ITEM_CD'] = reference_item
+
+    if 'MACH_WORKED_HOURS' not in frame.columns:
+        if 'ACT_RUN_TIME' in frame.columns:
+            frame['MACH_WORKED_HOURS'] = pd.to_numeric(frame['ACT_RUN_TIME'], errors='coerce').fillna(0.0)
+        elif 'RUN_TIME' in frame.columns:
+            frame['MACH_WORKED_HOURS'] = pd.to_numeric(frame['RUN_TIME'], errors='coerce').fillna(0.0)
+        else:
+            frame['MACH_WORKED_HOURS'] = 0.0
+
+    numeric_columns = [
+        'MFG_LT', 'QUEUE_TIME', 'SETUP_TIME', 'MACH_WORKED_HOURS',
+        'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
+        'RUN_TIME_QTY', 'SUBCONTRACT_PRC'
+    ]
+    for col in numeric_columns:
+        if col in frame.columns:
+            frame[col] = pd.to_numeric(frame[col], errors='coerce').fillna(0.0)
+        else:
+            frame[col] = 0.0
+
+    for col in SUMMARY_META_COLUMNS:
+        if col not in frame.columns:
+            if col == 'SIMILARITY_SCORE':
+                frame[col] = float(similarity)
+            elif col == 'REFERENCE_ITEM_CD':
+                frame[col] = reference_item
+            elif col == 'PRIORITY':
+                frame[col] = priority
+            elif col == 'SIMILARITY_TIER':
+                frame[col] = 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW'
+            elif col == 'ROUTING_SIGNATURE':
+                frame[col] = signature
+            else:
+                frame[col] = None
+
+    frame = frame.reindex(columns=ROUTING_OUTPUT_COLS, fill_value=None)
+    return frame
 
 # ════════════════════════════════════════════════
 # 🔧 안전한 타입 변환 함수들
@@ -1200,8 +1297,8 @@ def predict_items_with_ml_optimized(
 
     logger.info(f"🚀 Enhanced ML 배치 예측 시작: {len(item_codes)}개 품목")
 
-    all_routing: List[pd.DataFrame] = []
-    all_candidates: List[pd.DataFrame] = []
+    predicted_routings: Dict[str, pd.DataFrame] = {}
+    raw_candidate_frames: List[pd.DataFrame] = []
     routing_cache: Dict[str, pd.DataFrame] = {}
 
     for item_cd in item_codes:
@@ -1209,54 +1306,129 @@ def predict_items_with_ml_optimized(
             item_cd, model_dir, top_k=top_k, miss_thr=miss_thr,
             config=config, mode=mode
         )
-        
-        if not routing_df.empty:
-            all_routing.append(routing_df)
-        
-        elif 'MESSAGE' in routing_df.columns:
-            all_routing.append(routing_df)
-        
+
+        predicted_routings[item_cd] = routing_df if routing_df is not None else pd.DataFrame()
+
         if not cand_df.empty:
-            cand_df['ITEM_CD'] = item_cd  # Ensure ITEM_CD is set correctly
-            all_candidates.append(cand_df)
-        
-        # Cache routing for similar items to avoid redundant DB queries
-        if not cand_df.empty:
+            cand_df['ITEM_CD'] = item_cd
+            raw_candidate_frames.append(cand_df)
             for cand_item in cand_df['CANDIDATE_ITEM_CD']:
                 if cand_item not in routing_cache:
                     routing_cache[cand_item] = fetch_routing_for_item(cand_item)
 
-    # Combine results
-    final_routing_df = pd.concat(all_routing, ignore_index=True) if all_routing else pd.DataFrame()
-    final_cand_df = pd.concat(all_candidates, ignore_index=True) if all_candidates else pd.DataFrame()
+    composed_frames: List[pd.DataFrame] = []
+    enhanced_candidates: List[Dict[str, Any]] = []
+    per_item_counts: Dict[str, int] = defaultdict(int)
 
-    # Add routing info to candidate dataframe
-    if not final_cand_df.empty:
-        has_routing = []
-        routing_counts = []
-        
-        for candidate in final_cand_df['CANDIDATE_ITEM_CD']:
-            routing = routing_cache.get(candidate, pd.DataFrame())
-            if not routing.empty:
-                has_routing.append("✓ 있음")
-                routing_counts.append(len(routing))
-            else:
-                has_routing.append("✗ 없음")
-                routing_counts.append(0)
-        
-        final_cand_df['HAS_ROUTING'] = has_routing
-        final_cand_df['PROCESS_COUNT'] = routing_counts
-        
-        cols = list(final_cand_df.columns)
-        if 'SIMILARITY_SCORE' in cols and 'HAS_ROUTING' in cols:
-            cols.remove('HAS_ROUTING')
-            cols.remove('PROCESS_COUNT')
-            idx = cols.index('SIMILARITY_SCORE') + 1
-            cols.insert(idx, 'HAS_ROUTING')
-            cols.insert(idx + 1, 'PROCESS_COUNT')
-            final_cand_df = final_cand_df[cols]
+    # ML 예측 조합(존재 시) 우선 추가
+    for item_cd, predicted_df in predicted_routings.items():
+        if predicted_df is None or predicted_df.empty:
+            continue
+        signature = build_routing_signature(predicted_df)
+        candidate_id = f"{item_cd}_MLP"
+        normalized = normalize_routing_frame(
+            item_cd,
+            candidate_id,
+            predicted_df,
+            similarity=1.0,
+            reference_item="ML_PREDICTED",
+            priority="primary",
+            signature=signature,
+        )
+        if normalized.empty:
+            continue
+        composed_frames.append(normalized)
+        per_item_counts[item_cd] += 1
+        enhanced_candidates.append({
+            'ITEM_CD': item_cd,
+            'CANDIDATE_ITEM_CD': 'ML_PREDICTED',
+            'SIMILARITY_SCORE': 1.0,
+            'ROUTING_SIGNATURE': signature,
+            'ROUTING_SUMMARY': f"ML 예측 공정 {len(normalized)}개",
+            'PRIORITY': 'primary',
+            'SIMILARITY_TIER': 'HIGH',
+            'HAS_ROUTING': '✓ 있음',
+            'PROCESS_COUNT': len(normalized),
+        })
 
-    logger.info(f"배치 예측 완료: {len(final_routing_df)}개 라우팅, {len(final_cand_df)}개 유사 품목")
+    raw_candidates_df = (
+        pd.concat(raw_candidate_frames, ignore_index=True)
+        if raw_candidate_frames
+        else pd.DataFrame()
+    )
+
+    if not raw_candidates_df.empty:
+        raw_candidates_df = raw_candidates_df.sort_values(
+            ['ITEM_CD', 'SIMILARITY_SCORE'], ascending=[True, False]
+        )
+
+        for _, cand_row in raw_candidates_df.iterrows():
+            item_cd = cand_row.get('ITEM_CD')
+            candidate_item = cand_row.get('CANDIDATE_ITEM_CD')
+            similarity = float(cand_row.get('SIMILARITY_SCORE', 0.0))
+
+            if not item_cd or not candidate_item:
+                continue
+
+            if per_item_counts[item_cd] >= MAX_ROUTING_VARIANTS:
+                continue
+
+            routing = routing_cache.get(candidate_item)
+            if routing is None or routing.empty:
+                continue
+
+            signature = build_routing_signature(routing)
+            priority = 'primary' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'fallback'
+            candidate_index = per_item_counts[item_cd] + 1
+            candidate_id = f"{item_cd}_C{candidate_index:02d}"
+
+            normalized = normalize_routing_frame(
+                item_cd,
+                candidate_id,
+                routing,
+                similarity=similarity,
+                reference_item=candidate_item,
+                priority=priority,
+                signature=signature,
+            )
+
+            if normalized.empty:
+                continue
+
+            composed_frames.append(normalized)
+            per_item_counts[item_cd] += 1
+
+            process_count = len(normalized)
+            summary_text = f"공정 {process_count}개 / 유사도 {similarity:.2f}"
+            enhanced_candidates.append({
+                'ITEM_CD': item_cd,
+                'CANDIDATE_ITEM_CD': candidate_item,
+                'SIMILARITY_SCORE': similarity,
+                'ROUTING_SIGNATURE': signature,
+                'ROUTING_SUMMARY': summary_text,
+                'PRIORITY': priority,
+                'SIMILARITY_TIER': 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW',
+                'HAS_ROUTING': '✓ 있음',
+                'PROCESS_COUNT': process_count,
+            })
+
+    final_routing_df = (
+        pd.concat(composed_frames, ignore_index=True)
+        if composed_frames
+        else pd.DataFrame()
+    )
+
+    final_cand_df = (
+        pd.DataFrame(enhanced_candidates)
+        if enhanced_candidates
+        else pd.DataFrame()
+    )
+
+    logger.info(
+        "배치 예측 완료: %d개 라우팅 조합, %d개 후보",
+        len(final_routing_df),
+        len(final_cand_df),
+    )
 
     return final_routing_df, final_cand_df
 

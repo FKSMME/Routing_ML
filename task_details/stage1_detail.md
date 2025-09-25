@@ -17,17 +17,17 @@
 - [x] 백그라운드 배치/스크립트 실행 시나리오 수립 — 배치 운영 계획 수립 완료
 
 ### 설계(Design)
-1. ITEM_INFO, ROUTING_VIEW, WORK_ORDER_RESULTS 컬럼 목록과 키 관계 표 작성 → `docs/data_pipeline_spec.md` §1
-2. 조인 조건/필수 필터 정의서 작성(ITEM_CD 기준, 활성/폐기 품목 구분 포함) → `docs/data_pipeline_spec.md` 조인 정의
-3. Feature 사전 초안: 범주/수치/날짜 컬럼 분류, 결측 처리 정책, 스케일링 전략 → `docs/data_pipeline_spec.md` §2
-4. 데이터 품질 리스크 식별 및 데이터 확보 계획 문서화 → 결측 처리/모니터링 항목에 포함
+1. Access 원본(`routing_data/ROUTING AUTO TEST.accdb`)의 `dbo_BI_ITEM_INFO_VIEW` 전체 컬럼을 기준으로 임베딩 피처 목록을 재검토하고, ITEM_CD 기준 키 정의를 문서화 → `docs/data_pipeline_spec.md` §1
+2. `dbo_BI_ITEM_INFO_VIEW` ⇄ `dbo_BI_ROUTING_VIEW` ⇄ `dbo_BI_WORK_ORDER_RESULTS` 3자 조인 조건과 활성/폐기 품목 필터, 외주 공정 식별 로직을 정의 → `docs/data_pipeline_spec.md` 조인 정의
+3. Feature 사전 초안에 Access 뷰의 실제 컬럼명과 데이터 타입(ITEM_CD, OUTDIAMETER 등)을 반영하고, 명칭 변경 시 중앙 매핑으로 흡수하는 전략을 설계 → `docs/data_pipeline_spec.md` §2
+4. 데이터 품질 리스크 식별 시 0.8 미만 유사도 후보 처리(후순위)와 Access ODBC 연결 실패 시 백업 절차를 포함 → 결측 처리/모니터링 항목에 포함
 
 ### 구현(Implementation)
-1. ODBC 커넥터 설정 스크립트 초안 작성 (환경변수, DSN, 에러 핸들링) → `docs/data_pipeline_spec.md` §3.1
-2. 쿼리 모듈 구현 계획 수립: 파라미터화, 재시도 정책, 로깅 항목 정의 → `docs/data_pipeline_spec.md` §3.2
-3. 피처 빌더 설계대로 인코딩(Label/Ordinal) 모듈 구조 초안 작성 → `docs/data_pipeline_spec.md` §3.3
-4. 표준화, VarianceThreshold, PCA 단계별 파이프라인 설계 및 코드 스켈레톤 준비 → `docs/data_pipeline_spec.md` §3.3
-5. 외주 공정 제외 필터 로직 정의(INSIDE_FLAG, 공정 타입 기준) → `docs/data_pipeline_spec.md` §3.4
+1. Access DSN 기반 ODBC 커넥터 설정 스크립트 초안 작성 (환경변수, DSN, 에러 핸들링) → `docs/data_pipeline_spec.md` §3.1
+2. Access SQL 쿼리 템플릿에 ITEM_CD 파라미터와 유사도 0.8 임계 필터를 포함하고, 재시도/로깅 항목을 정의 → `docs/data_pipeline_spec.md` §3.2
+3. 피처 빌더 설계대로 인코딩(Label/Ordinal) 모듈 구조 초안 작성 시 컬럼 명칭 변경에 대비한 매핑 테이블 적용 → `docs/data_pipeline_spec.md` §3.3
+4. 표준화, VarianceThreshold, PCA 단계별 파이프라인 설계 및 코드 스켈레톤 준비(임계값 0.8 기반 로그 기록 포함) → `docs/data_pipeline_spec.md` §3.3
+5. 외주 공정 제외 필터 로직 정의(INSIDE_FLAG, 공정 타입 기준)와 Access 뷰 변경 시에도 유지되는 설정화 → `docs/data_pipeline_spec.md` §3.4
 
 ### 테스트(Test)
 1. 비식별 샘플 데이터 확보 및 스냅샷 테스트 케이스 설계 → `docs/data_pipeline_spec.md` §4

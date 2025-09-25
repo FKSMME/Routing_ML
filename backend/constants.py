@@ -67,33 +67,23 @@ NUMERIC_FEATURES: set[str] = {
 # ❷ 예측 결과 출력 열 (GUI & CSV)
 # ────────────────────────────────────────────────
 ROUTING_OUTPUT_COLS: list[str] = [
-    # ── 주요 공정 메타
-    "ITEM_CD",
+    # ── 기본 메타 및 식별자
+    "ITEM_CD", "CANDIDATE_ID", "ROUTING_SIGNATURE", "PRIORITY", "SIMILARITY_TIER",
+
+    # ── Access 7.1 공정 컬럼
     "PROC_SEQ", "INSIDE_FLAG",
-    "JOB_CD",  "JOB_NM",
+    "dbo_BI_ROUTING_VIEW_JOB_CD", "JOB_NM",
     "RES_CD", "RES_DIS", "TIME_UNIT",
-
-    # ── 소요시간 관련
     "MFG_LT", "QUEUE_TIME", "SETUP_TIME",
-    "RUN_TIME", "ACT_SETUP_TIME", "ACT_RUN_TIME",
+    "MACH_WORKED_HOURS", "ACT_SETUP_TIME", "ACT_RUN_TIME",
     "WAIT_TIME", "MOVE_TIME", "RUN_TIME_QTY", "RUN_TIME_UNIT",
-
-    # ── 배치 · 외주
-    "BATCH_OPER", "BP_CD", "CUST_NM",
+    "BATCH_OPER", "BP_CD", "dbo_BI_ROUTING_VIEW_CUST_NM",
     "CUR_CD", "SUBCONTRACT_PRC", "TAX_TYPE",
-
-    # ── 품질 / 마일스톤
     "MILESTONE_FLG", "INSP_FLG", "ROUT_ORDER",
-
-    # ── 유효 기간 & 비고
-    "VALID_FROM_DT", "VALID_TO_DT", "VIEW_REMARK",
-
-    # ── 도면 · NC 프로그램
+    "VALID_FROM_DT", "VALID_TO_DT", "dbo_BI_ROUTING_VIEW_REMARK",
     "ROUT_DOC", "DOC_INSIDE", "DOC_NO",
     "NC_PROGRAM", "NC_PROGRAM_WRITER", "NC_WRITER_NM", "NC_WRITE_DATE",
     "NC_REVIEWER", "NC_REVIEWER_NM", "NC_REVIEW_DT",
-
-    # ── 기타
     "RAW_MATL_SIZE", "JAW_SIZE", "VALIDITY",
     "PROGRAM_REMARK", "OP_DRAW_NO", "MTMG_NUMB",
 

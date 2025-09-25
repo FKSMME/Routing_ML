@@ -15,28 +15,29 @@
 - [x] 선행 단계 데이터 파이프라인 산출물 품질 확인 — Stage 1 문서 재검토
 - [x] 문서/코드 뷰어 접근 전 승인 상태 확인 — 모델 아티팩트 접근 승인 계획 기록
 - [x] 백그라운드 학습 작업 스케줄 및 자원 계획 수립 — Docker/스케줄 전략 수립 완료
+- [x] Access 원본 기반 임베딩·유사도 0.8 조건, TensorBoard Projector 요구사항 반영 여부 점검 — `docs/trainer_service_plan.md`
 
 ### 설계(Design)
-1. HNSW 기반 학습 파이프라인 순서도 작성 (데이터 준비 → 인코딩 → 인덱스 빌드) → `docs/trainer_service_plan.md` §1
-2. 가중치 전략(데이터/도메인 가중치 조화평균) 명세화 → §1 WeightingModule
-3. 메타데이터 저장 구조 설계(`training_metadata.json`, 로그 디렉터리 구조) → §3 저장 규약
-4. TensorBoard Projector export 플로우 및 파일 구조 정의 → §1 및 §3
+1. HNSW 기반 학습 파이프라인 순서도 작성 (Access `dbo_BI_ITEM_INFO_VIEW` → 인코딩 → 인덱스 빌드) → `docs/trainer_service_plan.md` §1
+2. 가중치 전략(데이터/도메인 가중치 조화평균)과 코사인 유사도 0.8 달성 로드맵 명세화 → §1 WeightingModule
+3. 메타데이터 저장 구조 설계(`training_metadata.json`, 컬럼 매핑 버전, 로그 디렉터리 구조) → §3 저장 규약
+4. TensorBoard Projector export 플로우 및 파일 구조 정의(벡터/메타 파일 검증) → §1 및 §3
 
 ### 구현(Implementation)
-1. `trainer_ml.py` 개선 사항 정리 및 작업 우선순위 결정 → `docs/trainer_service_plan.md` §2
-2. 혼합 인코딩/표준화/가중치 적용 로직 코드 스켈레톤 작성 → §2 함수 정의
-3. HNSW 인덱스 빌드 및 저장 함수 인터페이스 정의 → §2 `train_hnsw_index`
+1. `trainer_ml.py` 개선 사항 정리 및 작업 우선순위 결정(Access 컬럼 매핑, 0.8 유사도 필터) → `docs/trainer_service_plan.md` §2
+2. 혼합 인코딩/표준화/가중치 적용 로직 코드 스켈레톤 작성(컬럼 명칭 변경 대응 매핑 포함) → §2 함수 정의
+3. HNSW 인덱스 빌드 및 저장 함수 인터페이스 정의(코사인 거리, `ef_search` 256) → §2 `train_hnsw_index`
 4. `export_tb_projector` 옵션 플래그와 파라미터 처리 로직 설계 → §2 `export_tb_projector`
-5. 메타데이터 기록(버전, 하이퍼파라미터, 피처 중요도) 코드 초안 작성 → §2 및 §3
+5. 메타데이터 기록(버전, 하이퍼파라미터, 유사도 분포, 컬럼 매핑 버전) 코드 초안 작성 → §2 및 §3
 
 ### 테스트(Test)
-1. 학습 시간/메모리 측정 계획 및 기준 수립 → `docs/trainer_service_plan.md` §4
+1. 학습 시간/메모리 측정 계획 및 기준 수립(사내망 리소스 한정) → `docs/trainer_service_plan.md` §4
 2. 재현성 검증을 위한 seed 고정 전략 문서화 및 테스트 케이스 정의 → §4
-3. HNSW 인덱스 로딩/검색 유닛 테스트 설계 → §4
-4. TensorBoard Projector 출력 파일 검증 체크리스트 작성 → §4
+3. HNSW 인덱스 로딩/검색 유닛 테스트 설계(유사도 0.8 이상 후보 검증 포함) → §4
+4. TensorBoard Projector 출력 파일 검증 체크리스트 작성(프로젝터 로드 테스트) → §4
 
 ### 배포(Deployment)
 1. `routing-ml-trainer` Docker 이미지 구성요소 정의(Dockerfile 구조, 의존성 목록) → `docs/trainer_service_plan.md` §5
-2. 컨테이너 실행 시 백그라운드 작업/로깅 전략 문서화 → §5 및 §2 로깅
-3. 학습 파이프라인 배포 절차(스케줄링, 모니터링) 설계 → §5 런타임 설정
-4. 단계 완료 보고서 및 다음 단계 승인 요청 자료 준비 → §6 Stage 종료 조건 및 로그 제출
+2. 컨테이너 실행 시 백그라운드 작업/로깅 전략 문서화(0.8 미만 후보 로그 분리) → §5 및 §2 로깅
+3. 학습 파이프라인 배포 절차(스케줄링, 모니터링) 설계 — Access DSN 시크릿 회전 절차 포함 → §5 런타임 설정
+4. 단계 완료 보고서 및 다음 단계 승인 요청 자료 준비(절대 조건 체크리스트 포함) → §6 Stage 종료 조건 및 로그 제출
