@@ -46,6 +46,8 @@
  - [x] (구현) SQL 출력 매퍼: 사용자가 준 필수 컬럼 양식으로 후보를 직렬화/저장 — `docs/predictor_service_plan.md`
  - [x] (테스트) 단건 ≤ 60초 / 10건 ≤ 10분 벤치마크(샘플 기준) 계획 — `docs/predictor_service_plan.md`
  - [x] (배포) 컨테이너 routing-ml-predictor 이미지화, 프로브/로깅 — `docs/predictor_service_plan.md`
+ - [x] (구현) FastAPI 기반 예측 API(`/api/predict`, `/api/health` 등) 구현 — `backend/api/*`
+ - [x] (구현) 후보 저장 및 메트릭 응답 로직 구현 — `backend/api/services/prediction_service.py`
 
 4. 프런트엔드(React, B안) — 상세 문서: `task_details/stage4_detail.md`
 
@@ -55,6 +57,8 @@
  - [x] (구현) TensorBoard Projector 링크/뷰 안내 설계 — `docs/stage4_frontend_report.md#구현-계획`
  - [x] (테스트) 주니어 사용자 사용성/접근성/성능 테스트 계획 수립 — `docs/stage4_frontend_report.md#테스트-전략`
  - [x] (배포) CI/호스팅/문서 업데이트 계획 수립 — `docs/stage4_frontend_report.md#배포-준비`
+ - [x] (구현) React + Vite 프런트엔드 스캐폴드 및 3열 레이아웃 구현 — `frontend/src/App.tsx`
+ - [x] (구현) 후보/타임라인/메트릭 컴포넌트와 React Query 연동 — `frontend/src/components/*`
 
 5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
 
@@ -74,15 +78,17 @@
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
- (설계) 네트워크/보안/ODBC/시크릿 설계
+- [ ] (설계) 네트워크/보안/ODBC/시크릿 설계
 
- (구현) Dockerfile 2종(trainer/predictor), Compose/Helm(선택)
+- [ ] (구현) Dockerfile 2종(trainer/predictor), Compose/Helm(선택)
 
- (구현) 프로브, 구조화 로그, 에러 알람
+- [ ] (구현) 프로브, 구조화 로그, 에러 알람
 
- (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김)
+- [ ] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김)
 
- (배포) 단계적 롤아웃/롤백 전략
+- [ ] (배포) 단계적 롤아웃/롤백 전략
+- [x] (구현) FastAPI 백엔드 런타임 스캐폴드 및 실행 스크립트 — `backend/run_api.py`
+- [x] (문서) 백엔드 운영 개요 및 실행 가이드 — `docs/backend_api_overview.md`
 
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
 

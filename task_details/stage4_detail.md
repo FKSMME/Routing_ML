@@ -34,6 +34,8 @@
 - [x] 후보 라우팅 테이블 컴포넌트 데이터 바인딩 전략 수립 — `docs/stage4_frontend_report.md#구현-계획`
 - [x] 설명 패널/툴팁 상태 관리 전략 설계 — `docs/stage4_frontend_report.md#구현-계획`
 - [x] TensorBoard Projector 안내 링크 컴포넌트 초안 작성 — `docs/stage4_frontend_report.md#구현-계획`
+- [x] Vite 기반 실구현(컨트롤·후보·타임라인 컴포넌트) 완료 — `frontend/src/components/*`
+- [x] React Query를 이용한 FastAPI 연동 훅 구현 — `frontend/src/hooks/usePredictRoutings.ts`
 
 ### 테스트(Test)
 - [x] 주요 인터랙션 테스트 케이스 정의 — `docs/stage4_frontend_report.md#테스트-전략`

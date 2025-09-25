@@ -29,6 +29,8 @@
 3. 메타-앙상블 후보 생성기 의사코드 작성 및 입력/출력 정의 → §3
 4. SQL 매퍼 모듈 인터페이스 정의 및 샘플 직렬화 로직 작성 → §4
 5. 로깅/모니터링 훅 설계(요청 ID, 유사도, 후보 요약) → §6 로깅
+6. FastAPI 라우터(`/api/predict`, `/api/health`, `/api/candidates/save`) 실구현 — `backend/api/routes/prediction.py`
+7. PredictionService 계층 작성(DataFrame 직렬화, 후보 저장) — `backend/api/services/prediction_service.py`
 
 ### 테스트(Test)
 1. 단건/배치 벤치마크 시나리오 정의 및 목표 시간표 기록 → `docs/predictor_service_plan.md` §5

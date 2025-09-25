@@ -63,3 +63,8 @@
 - 벤치마크/부하 테스트 계획 승인.
 - Stage 4 착수 전 프런트엔드와 API 계약서 공유.
 
+## 2025-02-15 구현 업데이트
+- FastAPI 앱 팩토리 및 `/api` 라우터 구현 — `backend/api/app.py`, `backend/api/routes/prediction.py`.
+- PredictionService 계층에서 Pandas DataFrame 직렬화 및 후보 저장 로직 구현 — `backend/api/services/prediction_service.py`.
+- 운영 실행 스크립트 추가 (`backend/run_api.py`) 및 설정 모듈 작성 (`backend/api/config.py`).
+
