@@ -202,6 +202,9 @@ class TimeScenarioConfig:
         self.OUTLIER_DETECTION_ENABLED = True
         self.OUTLIER_Z_SCORE_THRESHOLD = 2.5
         self.SIMILARITY_WEIGHT_POWER = 2.0
+        self.TRIM_STD_ENABLED = True
+        self.TRIM_LOWER_PERCENT = 0.05
+        self.TRIM_UPPER_PERCENT = 0.95
     
     def get_scenario_description(self, cv: float) -> str:
         if cv < self.CV_STABLE:
@@ -237,9 +240,12 @@ class TimeScenarioConfig:
             'process_overlap_threshold': self.PROCESS_OVERLAP_THRESHOLD,
             'outlier_detection_enabled': self.OUTLIER_DETECTION_ENABLED,
             'outlier_z_score_threshold': self.OUTLIER_Z_SCORE_THRESHOLD,
-            'similarity_weight_power': self.SIMILARITY_WEIGHT_POWER
+            'similarity_weight_power': self.SIMILARITY_WEIGHT_POWER,
+            'trim_std_enabled': self.TRIM_STD_ENABLED,
+            'trim_lower_percent': self.TRIM_LOWER_PERCENT,
+            'trim_upper_percent': self.TRIM_UPPER_PERCENT,
         }
-    
+
     def from_dict(self, config_dict: Dict):
         self.OPTIMAL_SIGMA = config_dict.get('optimal_sigma', 0.67)
         self.SAFE_SIGMA = config_dict.get('safe_sigma', 1.28)
@@ -254,6 +260,9 @@ class TimeScenarioConfig:
         self.OUTLIER_DETECTION_ENABLED = config_dict.get('outlier_detection_enabled', True)
         self.OUTLIER_Z_SCORE_THRESHOLD = config_dict.get('outlier_z_score_threshold', 2.5)
         self.SIMILARITY_WEIGHT_POWER = config_dict.get('similarity_weight_power', 2.0)
+        self.TRIM_STD_ENABLED = config_dict.get('trim_std_enabled', True)
+        self.TRIM_LOWER_PERCENT = config_dict.get('trim_lower_percent', 0.05)
+        self.TRIM_UPPER_PERCENT = config_dict.get('trim_upper_percent', 0.95)
 
 # 전역 설정 인스턴스
 SCENARIO_CONFIG = TimeScenarioConfig()
@@ -736,36 +745,79 @@ def filter_by_similarity_threshold(items: List[str], similarities: List[float],
     logger.info(f"유사도 필터링: {len(items)}개 → {len(filtered_items)}개 (임계값: {threshold:.2f})")
     return filtered_items, filtered_sims
 
-def remove_outliers_zscore(values: List[float], weights: List[float], 
-                          z_threshold: float = 2.5) -> Tuple[List[float], List[float]]:
+def remove_outliers_zscore(values: List[float], weights: List[float],
+                          z_threshold: float = 2.5) -> Tuple[List[float], List[float], List[bool]]:
     if len(values) < 3:
-        return values, weights
-    
+        normalized = _normalize_weights_array(weights) if weights else np.ones(len(values)) / max(len(values), 1)
+        return values, normalized.tolist(), [True] * len(values)
+
     values_array = np.array(values)
-    weights_array = np.array(weights)
-    
+    weights_array = _normalize_weights_array(weights if weights else np.ones(len(values_array)))
+
     mean = np.average(values_array, weights=weights_array)
     variance = np.average((values_array - mean)**2, weights=weights_array)
     std = np.sqrt(variance)
-    
+
     if std == 0:
-        return values, weights
-    
+        return values, weights_array.tolist(), [True] * len(values)
+
     z_scores = np.abs((values_array - mean) / std)
     valid_mask = z_scores <= z_threshold
-    
+
     filtered_values = values_array[valid_mask].tolist()
     filtered_weights = weights_array[valid_mask].tolist()
-    
+
     if filtered_weights:
         total_weight = sum(filtered_weights)
         filtered_weights = [w/total_weight for w in filtered_weights]
-    
+
     removed_count = len(values) - len(filtered_values)
     if removed_count > 0:
         logger.debug(f"이상치 제거: {removed_count}개 제거됨 (Z-score > {z_threshold})")
-    
-    return filtered_values, filtered_weights
+
+    return filtered_values, filtered_weights, valid_mask.tolist()
+
+
+def _normalize_weights_array(weights: Union[List[float], np.ndarray]) -> np.ndarray:
+    arr = np.asarray(weights, dtype=np.float64)
+    if arr.size == 0:
+        return arr
+    total = arr.sum()
+    if total <= 0:
+        return np.ones_like(arr) / len(arr)
+    return arr / total
+
+
+def _apply_weighted_trimmed_range(
+    values: np.ndarray,
+    weights: np.ndarray,
+    lower_pct: float,
+    upper_pct: float
+) -> Tuple[np.ndarray, np.ndarray]:
+    if values.size < 3:
+        return values, weights
+
+    lower_pct = float(np.clip(lower_pct, 0.0, 0.5))
+    upper_pct = float(np.clip(upper_pct, 0.5, 1.0))
+    if upper_pct <= lower_pct:
+        return values, weights
+
+    order = np.argsort(values)
+    sorted_values = values[order]
+    sorted_weights = weights[order]
+
+    cumulative = np.cumsum(sorted_weights)
+    lower_bounds = cumulative - sorted_weights
+
+    keep_mask = (cumulative > lower_pct) & (lower_bounds < upper_pct)
+    trimmed_values = sorted_values[keep_mask]
+    trimmed_weights = sorted_weights[keep_mask]
+
+    if trimmed_values.size == 0:
+        return values, weights
+
+    trimmed_weights = _normalize_weights_array(trimmed_weights)
+    return trimmed_values, trimmed_weights
 
 # ════════════════════════════════════════════════
 # 📊 제조 시간 통계 계산
@@ -774,12 +826,16 @@ def remove_outliers_zscore(values: List[float], weights: List[float],
 def calculate_manufacturing_time_stats(
     times_list: List[float],
     weights_list: List[float],
-    config: TimeScenarioConfig = None
+    config: TimeScenarioConfig = None,
+    *,
+    apply_trimmed: bool = False,
+    trim_lower: Optional[float] = None,
+    trim_upper: Optional[float] = None
 ) -> Dict[str, float]:
     """제조 시간 통계 계산"""
     if config is None:
         config = SCENARIO_CONFIG
-    
+
     if not times_list:
         return {
             'mean': 0.0,
@@ -788,21 +844,43 @@ def calculate_manufacturing_time_stats(
             'optimal': 0.0,
             'standard': 0.0,
             'safe': 0.0,
-            'samples': 0
+            'samples': 0,
+            'raw_samples': 0,
         }
-    
-    times = np.array(times_list)
-    weights = np.array(weights_list)
-    
-    mean = np.average(times, weights=weights)
-    variance = np.average((times - mean)**2, weights=weights)
+
+    times = np.array(times_list, dtype=np.float64)
+    weights = _normalize_weights_array(weights_list if weights_list else np.ones(len(times)))
+
+    trimmed_times = times
+    trimmed_weights = weights
+
+    if (
+        apply_trimmed
+        and len(times) >= 3
+        and getattr(config, 'TRIM_STD_ENABLED', True)
+    ):
+        lower = trim_lower if trim_lower is not None else getattr(config, 'TRIM_LOWER_PERCENT', 0.05)
+        upper = trim_upper if trim_upper is not None else getattr(config, 'TRIM_UPPER_PERCENT', 0.95)
+        trimmed_times, trimmed_weights = _apply_weighted_trimmed_range(times, weights, lower, upper)
+        removed = len(times) - len(trimmed_times)
+        if removed > 0:
+            logger.debug(
+                "가중치 트림 적용: 총 %d개 중 %d개 제거 (하위 %.0f%%, 상위 %.0f%%)",
+                len(times),
+                removed,
+                lower * 100,
+                (1 - upper) * 100,
+            )
+
+    mean = np.average(trimmed_times, weights=trimmed_weights)
+    variance = np.average((trimmed_times - mean)**2, weights=trimmed_weights)
     std = np.sqrt(variance)
     cv = std / mean if mean > 0 else 0
-    
+
     optimal_time = mean + config.OPTIMAL_SIGMA * std
     standard_time = mean
     safe_time = mean + config.SAFE_SIGMA * std
-    
+
     return {
         'mean': mean,
         'std': std,
@@ -810,7 +888,8 @@ def calculate_manufacturing_time_stats(
         'optimal': optimal_time,
         'standard': standard_time,
         'safe': safe_time,
-        'samples': len(times)
+        'samples': len(trimmed_times),
+        'raw_samples': len(times)
     }
 
 def calculate_confidence_score(
@@ -977,6 +1056,12 @@ def predict_routing_from_similar_items(
                     'TIME_UNIT': str(row.get('TIME_UNIT', '분(Min.)')),
                     'SETUP_TIME': safe_float_conversion(row.get('SETUP_TIME'), 0.0),
                     'RUN_TIME': safe_float_conversion(row.get('RUN_TIME'), 0.0),
+                    'MACH_WORKED_HOURS': safe_float_conversion(
+                        row.get('MACH_WORKED_HOURS')
+                        or row.get('ACT_RUN_TIME')
+                        or row.get('RUN_TIME'),
+                        0.0,
+                    ),
                     'ACT_SETUP_TIME': safe_float_conversion(row.get('ACT_SETUP_TIME') or row.get('SETUP_TIME'), 0.0),
                     'ACT_RUN_TIME': safe_float_conversion(row.get('ACT_RUN_TIME') or row.get('RUN_TIME'), 0.0),
                     'WAIT_TIME': safe_float_conversion(row.get('WAIT_TIME'), 0.0),
@@ -1005,30 +1090,35 @@ def predict_routing_from_similar_items(
             # 시간 데이터 계산
             setup_times = [p['SETUP_TIME'] for p in proc_list]
             run_times = [p['RUN_TIME'] for p in proc_list]
+            mach_times = [p['MACH_WORKED_HOURS'] for p in proc_list]
             wait_times = [p['WAIT_TIME'] for p in proc_list]
             move_times = [p['MOVE_TIME'] for p in proc_list]
             similarities = [p['SIMILARITY'] for p in proc_list]
-            
+
             _, weights = apply_similarity_weights(run_times, similarities, config.SIMILARITY_WEIGHT_POWER)
-            
+
             if config.OUTLIER_DETECTION_ENABLED and len(run_times) >= 3:
-                run_times, weights = remove_outliers_zscore(
+                run_times, weights, valid_mask = remove_outliers_zscore(
                     run_times, weights, config.OUTLIER_Z_SCORE_THRESHOLD
                 )
-                valid_indices = [i for i, t in enumerate(proc_list) if t['RUN_TIME'] in run_times]
-                setup_times = [proc_list[i]['SETUP_TIME'] for i in valid_indices]
-                wait_times = [proc_list[i]['WAIT_TIME'] for i in valid_indices]
-                move_times = [proc_list[i]['MOVE_TIME'] for i in valid_indices]
-            
-            setup_stats = calculate_manufacturing_time_stats(setup_times, weights, config)
+                setup_times = [val for val, keep in zip(setup_times, valid_mask) if keep]
+                mach_times = [val for val, keep in zip(mach_times, valid_mask) if keep]
+                wait_times = [val for val, keep in zip(wait_times, valid_mask) if keep]
+                move_times = [val for val, keep in zip(move_times, valid_mask) if keep]
+                similarities = [val for val, keep in zip(similarities, valid_mask) if keep]
+
+            setup_stats = calculate_manufacturing_time_stats(setup_times, weights, config, apply_trimmed=True)
             run_stats = calculate_manufacturing_time_stats(run_times, weights, config)
+            mach_stats = calculate_manufacturing_time_stats(mach_times, weights, config, apply_trimmed=True)
             wait_stats = calculate_manufacturing_time_stats(wait_times, weights, config)
             move_stats = calculate_manufacturing_time_stats(move_times, weights, config)
-            
+
+            similarity_mean = np.mean(similarities) if similarities else 0.0
+
             confidence = calculate_confidence_score(
-                len(proc_list), np.mean(similarities), run_stats['cv'], config
+                len(proc_list), similarity_mean, mach_stats['cv'], config
             )
-            
+
             prediction = {
                 'ROUT_NO': 'PREDICTED',
                 'ITEM_CD': input_item_cd,
@@ -1041,20 +1131,21 @@ def predict_routing_from_similar_items(
                 'TIME_UNIT': time_unit,
                 'SETUP_TIME': round(setup_stats['mean'], 3),
                 'RUN_TIME': round(run_stats['mean'], 3),
+                'MACH_WORKED_HOURS': round(mach_stats['mean'], 3),
                 'ACT_SETUP_TIME': round(setup_stats['mean'], 3),
-                'ACT_RUN_TIME': round(run_stats['mean'], 3),
+                'ACT_RUN_TIME': round(mach_stats['mean'], 3),
                 'WAIT_TIME': round(wait_stats['mean'], 3),
                 'MOVE_TIME': round(move_stats['mean'], 3),
-                'OPTIMAL_TIME': round(run_stats['optimal'], 3),
-                'STANDARD_TIME': round(run_stats['standard'], 3),
-                'SAFE_TIME': round(run_stats['safe'], 3),
-                'TIME_STD': round(run_stats['std'], 3),
-                'TIME_CV': round(run_stats['cv'], 3),
+                'OPTIMAL_TIME': round(mach_stats['optimal'], 3),
+                'STANDARD_TIME': round(mach_stats['standard'], 3),
+                'SAFE_TIME': round(mach_stats['safe'], 3),
+                'TIME_STD': round(mach_stats['std'], 3),
+                'TIME_CV': round(mach_stats['cv'], 3),
                 'SIMILAR_ITEMS_USED': len(proc_list),
-                'AVG_SIMILARITY': round(np.mean(similarities), 3),
+                'AVG_SIMILARITY': round(similarity_mean, 3),
                 'CONFIDENCE': round(confidence, 3),
-                'SCENARIO': config.get_scenario_description(run_stats['cv']),
-                'SCENARIO_EMOJI': config.get_scenario_emoji(run_stats['cv']),
+                'SCENARIO': config.get_scenario_description(mach_stats['cv']),
+                'SCENARIO_EMOJI': config.get_scenario_emoji(mach_stats['cv']),
                 'SOURCE_ITEMS': ','.join([p['SOURCE_ITEM'] for p in proc_list]),
                 'SIMILARITY_SCORES': ','.join([f"{p['SIMILARITY']:.3f}" for p in proc_list]),
                 'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),
@@ -1073,7 +1164,7 @@ def predict_routing_from_similar_items(
             base_cols = [
                 'ROUT_NO', 'ITEM_CD', 'PROC_SEQ', 'INSIDE_FLAG', 'JOB_CD', 'JOB_NM',
                 'RES_CD', 'RES_DIS', 'TIME_UNIT', 'SETUP_TIME', 'RUN_TIME',
-                'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
+                'MACH_WORKED_HOURS', 'ACT_SETUP_TIME', 'ACT_RUN_TIME', 'WAIT_TIME', 'MOVE_TIME',
                 'OPTIMAL_TIME', 'STANDARD_TIME', 'SAFE_TIME', 'VALID_FROM_DT', 'VALID_TO_DT', 'INSRT_DT'
             ]
             extra_cols = [col for col in routing_df.columns if col not in base_cols]
@@ -1094,9 +1185,10 @@ def predict_routing_from_similar_items(
         total_run_times = []
         total_wait_times = []
         total_move_times = []
+        total_mach_hours = []
         similarities = []
         source_items = []
-        
+
         for item_cd, routing_df in all_routings:
             try:
                 item_index = filtered_items.index(item_cd)
@@ -1109,54 +1201,66 @@ def predict_routing_from_similar_items(
             run_sum = routing_df['RUN_TIME'].sum()
             wait_sum = routing_df['WAIT_TIME'].sum()
             move_sum = routing_df['MOVE_TIME'].sum()
-            
+            if 'MACH_WORKED_HOURS' in routing_df.columns:
+                mach_series = pd.to_numeric(routing_df['MACH_WORKED_HOURS'], errors='coerce').fillna(0.0)
+            elif 'ACT_RUN_TIME' in routing_df.columns:
+                mach_series = pd.to_numeric(routing_df['ACT_RUN_TIME'], errors='coerce').fillna(0.0)
+            else:
+                mach_series = pd.to_numeric(routing_df['RUN_TIME'], errors='coerce').fillna(0.0)
+            mach_sum = float(mach_series.sum())
+
             total_setup_times.append(setup_sum)
             total_run_times.append(run_sum)
             total_wait_times.append(wait_sum)
             total_move_times.append(move_sum)
+            total_mach_hours.append(mach_sum)
             similarities.append(item_similarity)
             source_items.append(item_cd)
-        
+
         _, weights = apply_similarity_weights(total_run_times, similarities, config.SIMILARITY_WEIGHT_POWER)
-        
+
         if config.OUTLIER_DETECTION_ENABLED and len(total_run_times) >= 3:
-            total_run_times, weights = remove_outliers_zscore(
+            total_run_times, weights, valid_mask = remove_outliers_zscore(
                 total_run_times, weights, config.OUTLIER_Z_SCORE_THRESHOLD
             )
-            valid_indices = [i for i, t in enumerate(total_run_times) if t in total_run_times]
-            total_setup_times = [total_setup_times[i] for i in valid_indices]
-            total_wait_times = [total_wait_times[i] for i in valid_indices]
-            total_move_times = [total_move_times[i] for i in valid_indices]
-            similarities = [similarities[i] for i in valid_indices]
-            source_items = [source_items[i] for i in valid_indices]
-        
-        setup_stats = calculate_manufacturing_time_stats(total_setup_times, weights, config)
+            total_setup_times = [val for val, keep in zip(total_setup_times, valid_mask) if keep]
+            total_wait_times = [val for val, keep in zip(total_wait_times, valid_mask) if keep]
+            total_move_times = [val for val, keep in zip(total_move_times, valid_mask) if keep]
+            total_mach_hours = [val for val, keep in zip(total_mach_hours, valid_mask) if keep]
+            similarities = [val for val, keep in zip(similarities, valid_mask) if keep]
+            source_items = [val for val, keep in zip(source_items, valid_mask) if keep]
+
+        setup_stats = calculate_manufacturing_time_stats(total_setup_times, weights, config, apply_trimmed=True)
         run_stats = calculate_manufacturing_time_stats(total_run_times, weights, config)
+        mach_stats = calculate_manufacturing_time_stats(total_mach_hours, weights, config, apply_trimmed=True)
         wait_stats = calculate_manufacturing_time_stats(total_wait_times, weights, config)
         move_stats = calculate_manufacturing_time_stats(total_move_times, weights, config)
-        
+
+        similarity_mean = np.mean(similarities) if similarities else 0.0
+
         confidence = calculate_confidence_score(
-            len(all_routings), np.mean(similarities), run_stats['cv'], config
+            len(all_routings), similarity_mean, mach_stats['cv'], config
         )
-        
+
         prediction = {
             'ITEM_CD': input_item_cd,
             'SETUP_TIME': round(setup_stats['mean'], 3),
             'RUN_TIME': round(run_stats['mean'], 3),
+            'MACH_WORKED_HOURS': round(mach_stats['mean'], 3),
             'ACT_SETUP_TIME': round(setup_stats['mean'], 3),
-            'ACT_RUN_TIME': round(run_stats['mean'], 3),
+            'ACT_RUN_TIME': round(mach_stats['mean'], 3),
             'WAIT_TIME': round(wait_stats['mean'], 3),
             'MOVE_TIME': round(move_stats['mean'], 3),
-            'OPTIMAL_TIME': round(run_stats['optimal'], 3),
-            'STANDARD_TIME': round(run_stats['standard'], 3),
-            'SAFE_TIME': round(run_stats['safe'], 3),
-            'TIME_STD': round(run_stats['std'], 3),
-            'TIME_CV': round(run_stats['cv'], 3),
+            'OPTIMAL_TIME': round(mach_stats['optimal'], 3),
+            'STANDARD_TIME': round(mach_stats['standard'], 3),
+            'SAFE_TIME': round(mach_stats['safe'], 3),
+            'TIME_STD': round(mach_stats['std'], 3),
+            'TIME_CV': round(mach_stats['cv'], 3),
             'SIMILAR_ITEMS_USED': len(all_routings),
-            'AVG_SIMILARITY': round(np.mean(similarities), 3),
+            'AVG_SIMILARITY': round(similarity_mean, 3),
             'CONFIDENCE': round(confidence, 3),
-            'SCENARIO': config.get_scenario_description(run_stats['cv']),
-            'SCENARIO_EMOJI': config.get_scenario_emoji(run_stats['cv']),
+            'SCENARIO': config.get_scenario_description(mach_stats['cv']),
+            'SCENARIO_EMOJI': config.get_scenario_emoji(mach_stats['cv']),
             'SOURCE_ITEMS': ','.join(source_items),
             'SIMILARITY_SCORES': ','.join([f"{s:.3f}" for s in similarities]),
             'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),

@@ -68,3 +68,7 @@
 - PredictionService 계층에서 Pandas DataFrame 직렬화 및 후보 저장 로직 구현(7.1 컬럼 시리얼라이즈, 0.8 임계값 반영) — `backend/api/services/prediction_service.py`.
 - 운영 실행 스크립트 추가 (`backend/run_api.py`) 및 설정 모듈 작성 (`backend/api/config.py`).
 
+## 2025-02-16 품질 업데이트
+- `predictor_ml`에서 `SETUP_TIME`, `MACH_WORKED_HOURS` 예측 시 유사 품목 실적의 상·하위 5%를 제외한 가중 표준편차를 적용해 이상치를 제거하고, `MACH_WORKED_HOURS` 기반 시나리오/신뢰도 산식으로 교체.
+- TimeScenarioConfig에 트림 비율/활성화 옵션을 노출해 UI·API에서 추후 조정 가능하도록 확장.
+
