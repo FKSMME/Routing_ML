@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+left to right direction
+skinparam rectangle {
+  BackgroundColor #f7f7ff
+  BorderColor #4a4a8a
+}
+skinparam note BackgroundColor #fff7e6
+
+rectangle "요청자" as Requester
+rectangle "검토자" as Reviewer
+rectangle "승인자" as Approver
+
+Requester --> Reviewer : 작업 결과 제출
+note on link
+게이트 체크리스트 실행 결과
+- 절대 지령 준수 확인
+- 범위 리뷰/오류 식별 기록
+end note
+
+Reviewer --> Requester : 보완 요청 (오류 발견 시)
+Requester --> Reviewer : 수정 후 재제출 (승인 재요청)
+Reviewer --> Approver : 검토 완료 보고
+Approver --> Reviewer : 승인/보류 결정 공유
+Reviewer --> Requester : 승인 결과 통보
+Requester --> Requester : 다음 단계 착수 전 재점검
+@enduml
