@@ -128,6 +128,19 @@ API: FastAPI로 예측/저장/로그/상태 점검 엔드포인트.
 
 trainer_ml
 
+5) 설치형 배포 전략
+
+- 요구 요약: 최종 사용자는 파이썬 환경이 없으므로 Windows 기반 사내망 환경에서 실행 가능한 설치 파일(Setup.exe/MSI 등)을 제공해야 한다. Docker 미사용 환경을 위한 대체 배포 옵션을 병행한다.
+- 구성 요소: 백엔드(FastAPI), 프런트엔드(React/Vite 빌드 산출물), 모델/설정 파일, Access ODBC 드라이버 검증 스크립트, SQL 컬럼 매핑 프로파일을 포함한 번들.
+- 기술 대안:
+  1. PyInstaller로 FastAPI 실행 바이너리를 만들고, Node 빌드 산출물을 함께 포함한 Inno Setup 기반 설치 파일.
+  2. MSIX 혹은 WiX Toolset을 활용한 MSI 패키지(서비스 등록, 바탕화면/시작 메뉴 바로가기 생성 포함).
+  3. 사내 배포 도구(SCCM/Chocolatey)용 패키지 스크립트 제공으로 중앙 배포 자동화.
+- 설정 관리: 설치 마법사에서 `config/workflow_settings.json`, SQL 컬럼 매핑 프로파일, Trimmed-STD 파라미터 초기값을 선택 적용할 수 있도록 마이그레이션 스텝을 제공.
+- 문서화 요구: Quickstart 및 운영 매뉴얼에 설치형 옵션, 사내망 배포 정책, 무중단 업데이트 절차, 롤백 방법을 명시한다.
+- 테스트 요구: 설치 후 학습/예측 서비스 기동, 워크플로우 SAVE 즉시 반영, Access ODBC 연결, SQL export, TensorBoard Projector 접근이 정상 동작하는지 로컬 QA 체크리스트에 포함한다.
+- 빌드 산출물: `deploy/installer/build_windows_installer.py`에서 PyInstaller 빌드·프런트엔드 번들·모델/설정 템플릿·PowerShell 스크립트를 `build/windows/installer`에 모으고, `deploy/installer/templates/installer.iss.tpl` 기반 Inno Setup 스크립트를 생성한다. 설치형 패키지 운영 스크립트는 `deploy/installer/scripts/*.ps1`에 포함한다.
+
 D. 비기능 요구
 
 성능 목표: 단건 예측 ≤ 1분, 배치 10건 ≤ 10분.

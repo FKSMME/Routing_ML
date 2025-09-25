@@ -13,7 +13,12 @@ import json
 from datetime import datetime
 
 # ── 사내 모듈
-from backend.constants import NUMERIC_FEATURES, get_routing_alias_map, get_routing_output_columns
+from backend.constants import (
+    NUMERIC_FEATURES,
+    ROUTING_OUTPUT_COLS,
+    get_routing_alias_map,
+    get_routing_output_columns,
+)
 from common.config_store import PredictorRuntimeConfig, workflow_config_store
 from backend.trainer_ml import load_optimized_model
 from backend.feature_weights import FeatureWeightManager
