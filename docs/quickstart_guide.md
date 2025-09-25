@@ -48,6 +48,10 @@ pip install -r requirements.txt
   curl http://localhost:8000/api/workflow/graph
   ```
 4. 워크플로우 설정 초기화: `config/workflow_settings.json` 파일이 생성되었는지 확인하고, 필요한 경우 `/api/workflow/graph` PATCH로 임계값/컬럼 매핑을 조정한다.
+   ```bash
+   curl http://localhost:8000/api/health
+   ```
+
 
 ### 4. UI 테스트
 1. 프런트엔드 의존성을 설치한다.
@@ -60,6 +64,9 @@ pip install -r requirements.txt
    - 유사도 슬라이더 기본값이 0.8인지 확인.
    - 후보 라우팅 카드에서 3~4개의 라우팅 조합이 노출되는지 확인.
    - TensorBoard Projector 안내 링크가 정상 동작하는지 확인.
+   - 워크플로우 그래프 탭에서 `main/1.jpg`~`main/4.jpg` 레이아웃과 동일한 블루스크린 UI가 표시되는지, SAVE 버튼 클릭 후 `/api/workflow/graph` 응답에 변경 사항이 반영되는지 확인.
+
+
    - 워크플로우 그래프 탭에서 `main/1.jpg`~`main/4.jpg` 레이아웃과 동일한 블루스크린 UI가 표시되는지, SAVE 버튼 클릭 후 `/api/workflow/graph` 응답에 변경 사항이 반영되는지 확인.
 
 ### 5. SQL 저장 검증
@@ -84,6 +91,11 @@ pip install -r requirements.txt
   curl http://localhost:8000/api/health
   curl http://localhost:8000/api/workflow/graph
   ```
+   ```bash
+   docker compose ps
+   curl http://localhost:8000/api/health
+   ```
+
 4. 종료:
    ```bash
    docker compose down
@@ -95,6 +107,10 @@ pip install -r requirements.txt
 - [ ] 예측 API Health OK
 - [ ] UI에서 후보 라우팅 3건 이상 확인
 - [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
+
+
+- [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
+
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람)
 

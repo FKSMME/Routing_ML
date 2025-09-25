@@ -83,3 +83,4 @@
 2025-09-25T18:05:00Z | stage4 | implementation | ReactFlow 기반 블루스크린 워크플로우 그래프 패널 구현, 노드 더블클릭 설정 팝업과 SAVE 연동 완료.
 2025-09-25T18:18:00Z | stage4 | test | 그래프 노드 드래그/레이아웃 저장 및 설정 PATCH 시 trainer/predictor/sql 런타임 갱신 확인.
 2025-09-25T18:25:00Z | stage5 | implementation | workflow_settings.json에 모듈 노드/엣지, 문서 링크, 기본 위치 정보를 구성해 7.1 SQL 프로파일과 연결.
+

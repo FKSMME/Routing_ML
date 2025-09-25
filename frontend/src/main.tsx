@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./App";
 import "./index.css";
+
 import "reactflow/dist/style.css";
+
 
 const queryClient = new QueryClient();
 

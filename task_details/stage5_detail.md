@@ -34,12 +34,14 @@
 - [x] 샘플 데이터 매핑 스크립트 초안 작성(Access 뷰 → SQL 테이블 매핑) — `docs/stage5_sql_report.md#저장-및-내보내기-플로우`
 - [x] 컬럼 매핑 프로파일/파워쿼리 리스트 정의(`common/config_store.py`, `backend/api/routes/workflow.py` 연동) — `docs/stage5_sql_report.md#컬럼-매핑`
 
+
 ### 테스트(Test)
 - [x] 샘플 표 대비 검증 시나리오 정의(7.1 Access 예시 테이블과 컬럼 일치 여부) — `docs/stage5_sql_report.md#테스트-계획`
 - [x] DDL 적용/롤백 테스트 계획 수립 — `docs/stage5_sql_report.md#테스트-계획`
 - [x] 저장/내보내기 단위 테스트 케이스 정의(3~4개 라우팅 조합·0.8 필터 검증) — `docs/stage5_sql_report.md#테스트-계획`
 - [x] 데이터 검증 리포트 서식 초안 작성(유사도·임계값 로그 포함) — `docs/stage5_sql_report.md#테스트-계획`
 - [x] SQL 컬럼 매핑 프로파일 검증(리스트/파워쿼리 적용, active_profile 전환) — `docs/stage5_sql_report.md#테스트-계획`
+
 
 ### 배포(Deployment)
 - [x] 마이그레이션 실행 계획 문서화 — `docs/stage5_sql_report.md#배포-준비`

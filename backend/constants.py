@@ -95,6 +95,32 @@ def get_routing_alias_map() -> Dict[str, str]:
         return workflow_config_store.get_sql_column_config().column_aliases
     except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
         return ensure_default_aliases({})
+ROUTING_OUTPUT_COLS: list[str] = [
+    # ── 기본 메타 및 식별자
+    "ITEM_CD", "CANDIDATE_ID", "ROUTING_SIGNATURE", "PRIORITY", "SIMILARITY_TIER",
+
+    # ── Access 7.1 공정 컬럼
+    "PROC_SEQ", "INSIDE_FLAG",
+    "dbo_BI_ROUTING_VIEW_JOB_CD", "JOB_NM",
+    "RES_CD", "RES_DIS", "TIME_UNIT",
+    "MFG_LT", "QUEUE_TIME", "SETUP_TIME",
+    "MACH_WORKED_HOURS", "ACT_SETUP_TIME", "ACT_RUN_TIME",
+    "WAIT_TIME", "MOVE_TIME", "RUN_TIME_QTY", "RUN_TIME_UNIT",
+    "BATCH_OPER", "BP_CD", "dbo_BI_ROUTING_VIEW_CUST_NM",
+    "CUR_CD", "SUBCONTRACT_PRC", "TAX_TYPE",
+    "MILESTONE_FLG", "INSP_FLG", "ROUT_ORDER",
+    "VALID_FROM_DT", "VALID_TO_DT", "dbo_BI_ROUTING_VIEW_REMARK",
+    "ROUT_DOC", "DOC_INSIDE", "DOC_NO",
+    "NC_PROGRAM", "NC_PROGRAM_WRITER", "NC_WRITER_NM", "NC_WRITE_DATE",
+    "NC_REVIEWER", "NC_REVIEWER_NM", "NC_REVIEW_DT",
+    "RAW_MATL_SIZE", "JAW_SIZE", "VALIDITY",
+    "PROGRAM_REMARK", "OP_DRAW_NO", "MTMG_NUMB",
+
+    # ── predictor_ml 에서 추가되는 메타
+    "REFERENCE_ITEM_CD",   # 벡터 기준으로 가장 유사한 품목
+    "SIMILARITY_SCORE",    # cosine similarity (0~1)
+]
+
 
 # ────────────────────────────────────────────────
 # (선택) 프로젝트 전역에서 공유할 기타 상수를

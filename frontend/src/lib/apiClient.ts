@@ -1,7 +1,9 @@
 import axios from "axios";
 
 import type { PredictionResponse } from "@types/routing";
+
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@types/workflow";
+
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/api",
@@ -25,6 +27,7 @@ export async function fetchMetrics(): Promise<Record<string, unknown>> {
   const response = await api.get("/metrics");
   return response.data;
 }
+
 
 export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
   const response = await api.get<WorkflowConfigResponse>("/workflow/graph");

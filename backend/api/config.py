@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     model_directory: Path = Field(default=Path("models/latest"), description="학습된 모델 경로")
     default_top_k: int = Field(default=10, ge=1, le=50)
     default_similarity_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
+
+    default_similarity_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
+    default_similarity_threshold: float = Field(default=0.3, ge=0.0, le=1.0)
+
     enable_candidate_persistence: bool = Field(default=True)
     candidate_store_dir: Path = Field(default=Path("logs/candidates"))
     allowed_origins: List[str] = Field(default_factory=lambda: ["*"])
