@@ -42,7 +42,7 @@ ACCESS_CONNECTION_STRING="..." python backend/run_api.py --config predictor_conf
 
 프런트엔드 실행:
 ```bash
-cd frontend
+cd C:\Users\syyun\Documents\GitHub\Routing_ML\frontend
 npm install
 npm run dev -- --host
 ```
