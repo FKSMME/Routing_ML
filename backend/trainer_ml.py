@@ -18,7 +18,7 @@ import json
 import numpy as np
 import pandas as pd
 import psutil
-from sklearn.preprocessing import OrdinalEncoder, StandardScaler, normalize
+from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler, normalize
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
 
