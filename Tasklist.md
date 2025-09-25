@@ -78,7 +78,6 @@
 - [x] (구현) 더블클릭 설정 패널 상태관리 및 설정 편집 UX 설계, SAVE 버튼이 `/api/workflow/graph` PATCH를 호출하도록 정의 — `docs/graph_workflow_ui_plan.md`
 - [x] (테스트) 그래프 상호작용(드래그, 확대/축소, 팝업) 테스트 시나리오 수립 및 SAVE 후 trainer/predictor 즉시 반영 확인 항목 포함 — `docs/graph_workflow_ui_plan.md`
 
-
 5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
 
 - [x] (설계) 대상 스키마 확정(routing_candidates, routing_candidate_operations) — `docs/stage5_sql_report.md#스키마-정의`
@@ -103,6 +102,7 @@
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
 
 
+
 5. 출력/SQL 규격 — 상세 문서: `task_details/stage5_detail.md`
 
 - [x] (설계) 대상 스키마 확정(routing_candidates, routing_candidate_operations) — `docs/stage5_sql_report.md#스키마-정의`
@@ -122,6 +122,11 @@
 
 7. 운영/배포 — 상세 문서: `task_details/stage7_detail.md`
 
+- [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
+- [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
+- [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+- [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
+- [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
@@ -141,6 +146,7 @@
 
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
 
 - [x] (구현) FastAPI 백엔드 런타임 스캐폴드 및 실행 스크립트 — `backend/run_api.py`
 - [x] (문서) 백엔드 운영 개요 및 실행 가이드 — `docs/backend_api_overview.md`
@@ -163,6 +169,7 @@
 - [x] (구현) 서비스 등록/검증 PowerShell 스크립트 4종 작성 — `deploy/installer/scripts/*.ps1`
 - [x] (구현) 설치 기본 설정/버전 템플릿 구성 — `config/workflow_settings.template.json`, `config/sql_profiles/access_7_1.json`, `config/version.json`
 - [x] (문서) 설치 가이드 및 문제 해결 문서 추가 — `docs/install_guide_ko.md`, `docs/TROUBLESHOOTING.md`
+
 
 
 - [x] (설계) 파이썬 미설치 Windows 환경 대상 설치 프로그램 요구 정의 및 사용자 시나리오 수립 — `docs/stage9_packaging_plan.md#요구-정의`
