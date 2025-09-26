@@ -10,12 +10,10 @@ interface UsePredictOptions {
 }
 
 export function usePredictRoutings({ itemCodes, topK, threshold }: UsePredictOptions) {
-  return useQuery<PredictionResponse>(
-    ["predict", itemCodes, topK, threshold],
-    () => predictRoutings({ itemCodes, topK, threshold }),
-    {
-      enabled: itemCodes.length > 0,
-      staleTime: 30_000,
-    }
-  );
+  return useQuery<PredictionResponse>({
+    queryKey: ["predict", itemCodes, topK, threshold],
+    queryFn: () => predictRoutings({ itemCodes, topK, threshold }),
+    enabled: itemCodes.length > 0,
+    staleTime: 30_000,
+  });
 }
