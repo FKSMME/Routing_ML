@@ -4,27 +4,51 @@ from __future__ import annotations
 import hashlib
 import ssl
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional
 from typing import Optional
-
 from ldap3 import ALL, Connection, NTLM, Server, Tls
 from ldap3.core.exceptions import LDAPException
+
+from backend.api.config import Settings, get_settings
+from backend.api.schemas import LoginRequest, LoginResponse
+from common.logger import get_logger
+
+
+if TYPE_CHECKING:
+    from backend.api.security import SessionManager, SessionRecord
+
 
 from backend.api.config import get_settings
 from backend.api.schemas import LoginRequest, LoginResponse
 from backend.api.security import SessionRecord, get_session_manager
 from common.logger import get_logger
 
-
 @dataclass
 class AuthResult:
     success: bool
     message: str
+    session: Optional["SessionRecord"] = None
     session: Optional[SessionRecord] = None
+
 
 
 class WindowsAuthService:
     """Windows/LDAP 인증을 담당한다."""
 
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        session_manager: "SessionManager" | None = None,
+    ) -> None:
+        """서비스 초기화.
+
+        테스트 가능성을 높이기 위해 설정 객체와 세션 매니저를 주입할 수 있도록 한다.
+        """
+
+        self.settings = settings or get_settings()
+        self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
+        self._session_manager = session_manager
     def __init__(self) -> None:
         self.settings = get_settings()
         self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
@@ -77,7 +101,14 @@ class WindowsAuthService:
             extra={"username": username, "client_host": client_host},
         )
         return AuthResult(False, "인증에 실패했습니다")
+    def _get_session_manager(self) -> "SessionManager":
+        if self._session_manager is not None:
+            return self._session_manager
+        from backend.api.security import get_session_manager
 
+        return get_session_manager()
+
+    def _create_session(self, username: str, client_host: Optional[str]) -> "SessionRecord":
     def _create_session(self, username: str, client_host: Optional[str]) -> SessionRecord:
         domain = self.settings.windows_domain
         display_name = username
@@ -85,7 +116,11 @@ class WindowsAuthService:
             qualified_username = f"{domain}\\{username}"
         else:
             qualified_username = username
+
+        session = self._get_session_manager().create_session(
+
         session = get_session_manager().create_session(
+
             username=qualified_username,
             display_name=display_name,
             domain=self.settings.windows_domain,
