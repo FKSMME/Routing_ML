@@ -6,42 +6,29 @@ import ssl
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
-
-
-from typing import Optional
-
 from ldap3 import ALL, Connection, NTLM, Server, Tls
 from ldap3.core.exceptions import LDAPException
 
 from backend.api.config import Settings, get_settings
 from backend.api.schemas import LoginRequest, LoginResponse
-from common.logger import get_logger
-
-
-if TYPE_CHECKING:
-    from backend.api.security import SessionManager, SessionRecord
-
-
-
-from backend.api.config import get_settings
-from backend.api.schemas import LoginRequest, LoginResponse
 from backend.api.security import SessionRecord, get_session_manager
 from common.logger import get_logger
 
+if TYPE_CHECKING:
+    from backend.api.security import SessionManager
 
-@dataclass
+
+@dataclass(slots=True)
 class AuthResult:
+    """인증 결과."""
+
     success: bool
     message: str
-    session: Optional["SessionRecord"] = None
-
-    session: Optional[SessionRecord] = None
-
-
+    session: SessionRecord | None = None
 
 
 class WindowsAuthService:
-    """Windows/LDAP 인증을 담당한다."""
+    """Windows/LDAP 인증 서비스."""
 
     def __init__(
         self,
@@ -49,19 +36,11 @@ class WindowsAuthService:
         settings: Settings | None = None,
         session_manager: "SessionManager" | None = None,
     ) -> None:
-        """서비스 초기화.
-
-        테스트 가능성을 높이기 위해 설정 객체와 세션 매니저를 주입할 수 있도록 한다.
-        """
-
         self.settings = settings or get_settings()
-        self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
+        self.logger = get_logger(
+            "auth.windows", log_dir=self.settings.audit_log_dir, use_json=True
+        )
         self._session_manager = session_manager
-
-    def __init__(self) -> None:
-        self.settings = get_settings()
-        self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
-
 
     def authenticate(self, payload: LoginRequest, client_host: Optional[str]) -> AuthResult:
         username = payload.username.strip()
@@ -102,7 +81,11 @@ class WindowsAuthService:
             session = self._create_session(username, client_host)
             self.logger.info(
                 "폴백 인증 성공",
-                extra={"username": username, "client_host": client_host, "domain": session.domain},
+                extra={
+                    "username": username,
+                    "client_host": client_host,
+                    "domain": session.domain,
+                },
             )
             return AuthResult(True, "로그인 성공", session=session)
 
@@ -115,13 +98,11 @@ class WindowsAuthService:
     def _get_session_manager(self) -> "SessionManager":
         if self._session_manager is not None:
             return self._session_manager
-        from backend.api.security import get_session_manager
-
         return get_session_manager()
 
-    def _create_session(self, username: str, client_host: Optional[str]) -> "SessionRecord":
-
-    def _create_session(self, username: str, client_host: Optional[str]) -> SessionRecord:
+    def _create_session(
+        self, username: str, client_host: Optional[str]
+    ) -> SessionRecord:
         domain = self.settings.windows_domain
         display_name = username
         if domain and "\\" not in username and "@" not in username:
@@ -130,15 +111,9 @@ class WindowsAuthService:
             qualified_username = username
 
         session = self._get_session_manager().create_session(
-
-        session = self._get_session_manager().create_session(
-
-        session = get_session_manager().create_session(
-
-
             username=qualified_username,
             display_name=display_name,
-            domain=self.settings.windows_domain,
+            domain=domain,
             client_host=client_host,
         )
         return session
@@ -146,12 +121,12 @@ class WindowsAuthService:
     def _authenticate_with_ldap(self, username: str, password: str) -> bool:
         server = self._build_server()
         user_dn = self._build_user_dn(username)
-        authentication = NTLM if "\\" in user_dn else None
+        authentication = NTLM if "\\" in user_dn else "SIMPLE"
         connection = Connection(
             server,
             user=user_dn,
             password=password,
-            authentication=authentication or "SIMPLE",
+            authentication=authentication,
             receive_timeout=self.settings.windows_auth_timeout,
             raise_exceptions=True,
         )
@@ -163,7 +138,11 @@ class WindowsAuthService:
     def _build_server(self) -> Server:
         tls_context = None
         if self.settings.windows_ldap_use_ssl:
-            validate = ssl.CERT_REQUIRED if self.settings.windows_ldap_verify_cert else ssl.CERT_NONE
+            validate = (
+                ssl.CERT_REQUIRED
+                if self.settings.windows_ldap_verify_cert
+                else ssl.CERT_NONE
+            )
             tls_context = Tls(validate=validate)
         return Server(
             self.settings.windows_ldap_server,
