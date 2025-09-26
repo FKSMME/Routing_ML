@@ -106,7 +106,7 @@ pip install -r requirements.txt
 ### 7. 설치형 패키지 준비(Windows) — Stage 9 연계
 - 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)과 `deploy/installer/build_windows_installer.py`를 사용해 생성한다.
 - 빌드 절차 요약
-  1. Windows 빌드 노드에서 `pip install -r requirements.txt pyinstaller` 및 `npm install --prefix frontend` 실행.
+  1. Windows 빌드 노드에서 **Python 3.12.x**로 `pip install -r requirements.txt`를 실행한다. PyInstaller가 없으면 빌드 스크립트가 자동으로 설치하므로, 오프라인 환경이라면 `pip install pyinstaller`를 선행한다. 이어서 `npm install --prefix frontend`를 실행한다.
   2. `python deploy/installer/build_windows_installer.py --clean` → `build/windows/installer` 페이로드와 `build/windows/RoutingMLInstaller.iss` 생성.
   3. Inno Setup Compiler로 `RoutingMLInstaller.iss` 빌드 → `RoutingMLInstaller_<버전>.exe` 획득.
 - 설치 검증 포인트

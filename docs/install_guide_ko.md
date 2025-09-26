@@ -35,7 +35,7 @@
 ## 3. 설치 파일 준비 (빌드 담당자용)
 > 설치 파일을 새로 만들 때만 필요합니다. 이미 받은 실행 파일이 있다면 이 단계를 건너뛰세요.
 
-1. Windows 빌드 PC에서 `pip install -r requirements.txt pyinstaller`를 실행합니다.
+1. Windows 빌드 PC에서 **Python 3.12.x** 인터프리터(예: `C:\\Python312\\python.exe`)로 `pip install -r requirements.txt`를 실행합니다. 빌드 스크립트가 PyInstaller 미설치를 감지하면 자동으로 설치하며, 네트워크 제약 시 `pip install pyinstaller`로 미리 준비합니다.
 2. 프런트엔드를 한 번만 준비하면 됩니다.
    - `npm install --prefix frontend`
    - `npm run build --prefix frontend`
@@ -117,7 +117,7 @@
 5. **코드 서명 인증서**: 정식 배포 시 `RoutingMLInstaller_<버전>.exe`에 사내 코드서명 적용.
 
 ## 3. 빌드 절차 (Windows 빌드 에이전트에서 수행)
-1. `pip install -r requirements.txt pyinstaller` 실행.
+1. **Python 3.12.x** 환경에서 `pip install -r requirements.txt` 실행. PyInstaller는 빌드 스크립트가 자동으로 설치하지만, 오프라인 환경이면 `pip install pyinstaller`를 수동 실행합니다.
 2. `npm install --prefix frontend` (최초 1회) 후 `npm run build --prefix frontend`.
 3. `python deploy/installer/build_windows_installer.py --clean` 실행.
    - 결과물: `build/windows/installer` 폴더와 `build/windows/RoutingMLInstaller.iss` 생성.

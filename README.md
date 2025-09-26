@@ -21,7 +21,10 @@
 - **Docs**: `docs/` — Stage별 보고서, 빠른 시작, 릴리스 노트, 아키텍처 다이어그램을 포함합니다.
 
 ## 빠른 시작
+자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다.
+
 자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다. 사내 공유 드라이브(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 가져와 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`에 복사한 뒤, 필요하면 `/mnt/data/routing_data`로 마운트하세요.
+
 
 ```bash
 python -m venv .venv

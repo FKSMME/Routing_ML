@@ -67,6 +67,30 @@ def clean_directory(path: Path) -> None:
     path.mkdir(parents=True, exist_ok=True)
 
 
+def ensure_python_version() -> None:
+    if sys.version_info[:2] != (3, 12):
+        logging.warning(
+            "Python 3.12.x 환경을 권장합니다. 현재 버전: %s.%s",
+            sys.version_info.major,
+            sys.version_info.minor,
+        )
+
+
+def ensure_pyinstaller() -> None:
+    try:
+        import PyInstaller  # type: ignore  # noqa: F401
+    except ModuleNotFoundError as exc:  # pragma: no cover - 외부 의존성 설치
+        logging.info("PyInstaller 미설치 감지, pip를 통해 자동 설치를 시도합니다.")
+        run_command([sys.executable, "-m", "pip", "install", "pyinstaller"])
+        try:
+            import PyInstaller  # type: ignore  # noqa: F401
+        except ModuleNotFoundError as retry_exc:
+            raise CommandError(
+                "PyInstaller 모듈을 자동으로 설치하지 못했습니다. "
+                "수동으로 'pip install pyinstaller'를 실행한 뒤 다시 시도하세요."
+            ) from retry_exc
+
+
 def copy_tree(src: Path, dest: Path) -> None:
     if dest.exists():
         shutil.rmtree(dest)
@@ -90,6 +114,8 @@ def build_backend_executable(payload_dir: Path, args: argparse.Namespace) -> Pat
     else:
         if args.skip_backend_build:
             raise ValueError("--skip-backend-build 옵션과 --backend-binary 중 하나는 반드시 지정해야 합니다.")
+        ensure_python_version()
+        ensure_pyinstaller()
         pyinstaller_cmd = [
             sys.executable,
             "-m",
