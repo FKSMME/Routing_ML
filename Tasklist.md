@@ -6,6 +6,7 @@
 5. 모든 단계 작업은 백그라운드 방식으로 수행한다.
 6. 문서/웹뷰어 점검이 필요한 경우 반드시 승인 확인 후 진행한다.
 7. 다음 단계 착수 전에 이전 단계 전반을 재점검하여 미해결 오류가 없는지 확인한다.
+8. Codex는 PoC 시나리오를 직접 수립·시행하고 모든 테스트 결과·측정값·스크린샷/다이어그램을 기록·보고한다.
 
 ## 학습·예측 절대 조건 (Access 원본 및 사내망 전제)
 - 2025-09-30 전수 점검 보고: `docs/audit_20250930.md` (로그: `logs/audit_20250930.log`)
@@ -198,8 +199,22 @@
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+---
+
+## 2025-02-15 Windows 인증/로그 강화 작업
+- ~~FastAPI 무인증 상태 유지~~
+- Windows 도메인 계정 기반 로그인·세션 발급 기능 구현
+- 인증 세션 검증을 `/api/*` 주요 엔드포인트에 의무화
+- 로그인/로그아웃 및 API 호출 감사 로그를 `logs/audit/` 디렉터리에 JSON 포맷으로 남기는 파이프라인 구축
+- 사용되지 않는 백업/캐시 파일을 정리하여 보안 위험을 제거
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
+
+## 2025-02-16 데스크톱 GUI 정리 및 웹 아키텍처 집중
+- ~~Tkinter GUI(main.py, gui/*) 유지~~
+- FastAPI·React 경로만을 사용자 인터페이스로 인정하고, 레거시 GUI/로그 자산을 식별·삭제한다.
+- 숨은 파일을 포함한 저장소 전체를 재검토하여 웹 아키텍처와 무관한 산출물을 제거하고 근거를 보고한다.
+- Windows 인증·감사 로그 플로우를 후속 테스트/운영 Task에 반영하고 문서화한다.
 
 
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`

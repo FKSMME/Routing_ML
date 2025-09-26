@@ -139,13 +139,49 @@ class SQLColumnConfig:
             ]
         active_profile = data.get("active_profile") or profiles[0].name
         alias_map = ensure_default_aliases(data.get("column_aliases", {}))
-        return cls(
+        instance = cls(
             output_columns=data.get("output_columns") or list(DEFAULT_SQL_OUTPUT_COLUMNS),
             column_aliases=alias_map,
             available_columns=data.get("available_columns") or list(DEFAULT_SQL_OUTPUT_COLUMNS),
             profiles=profiles,
             active_profile=active_profile,
         )
+        instance.validate_columns()
+        return instance
+
+    def validate_columns(self, allowed_columns: Optional[List[str]] = None) -> None:
+        """Ensure configured columns stay within the learned/approved schema."""
+
+        allowed = set(allowed_columns or DEFAULT_SQL_OUTPUT_COLUMNS)
+        missing_in_allowed = [col for col in self.available_columns if col not in allowed]
+        if missing_in_allowed:
+            raise ValueError(
+                "허용되지 않은 컬럼이 available_columns에 포함되어 있습니다: "
+                + ", ".join(sorted(missing_in_allowed))
+            )
+
+        # output_columns must be subset of available_columns and allowed columns
+        available_set = set(self.available_columns)
+        invalid_output = [col for col in self.output_columns if col not in available_set]
+        if invalid_output:
+            raise ValueError(
+                "output_columns에 허용되지 않은 컬럼이 포함되어 있습니다: "
+                + ", ".join(sorted(invalid_output))
+            )
+
+        alias_targets = [value for value in self.column_aliases.values()]
+        invalid_aliases = [alias for alias in alias_targets if alias not in allowed]
+        if invalid_aliases:
+            raise ValueError(
+                "column_aliases가 허용되지 않은 대상 컬럼을 가리킵니다: "
+                + ", ".join(sorted(invalid_aliases))
+            )
+
+        profile_names = {profile.name for profile in self.profiles}
+        if self.active_profile and self.active_profile not in profile_names:
+            raise ValueError(
+                "active_profile이 프로파일 목록에 존재하지 않습니다: " + self.active_profile
+            )
 
 
 @dataclass

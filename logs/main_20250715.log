@@ -1,7 +1,0 @@
-2025-07-15 07:36:16 | main | INFO     | [main.py:29] | main | MainThread | 작업 디렉토리: D:\routing\machine
-2025-07-15 07:36:17 | main | INFO     | [main.py:44] | main | MainThread | [시작] FKSM Routing-ML GUI 시작됨 - ML 최적화 버전
-2025-07-15 07:36:17 | main | INFO     | [main.py:45] | main | MainThread | [설정] 초기 유사도 임계값: 30%
-2025-07-15 07:36:17 | main | INFO     | [main.py:46] | main | MainThread | [설정] 초기 예측 모드: detailed
-2025-07-15 07:36:17 | main | INFO     | [main.py:47] | main | MainThread | [전체화면] F11 키로 전체 화면 전환, ESC 키로 해제
-2025-07-15 07:36:17 | main | INFO     | [main.py:48] | main | MainThread | [복사] Ctrl+C로 테이블 복사, Ctrl+A로 전체 선택
-2025-07-15 07:36:17 | main | INFO     | [main.py:49] | main | MainThread | [ML] ML 모델 기반 유사품 라우팅 예측 시스템

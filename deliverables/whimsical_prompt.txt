@@ -1,0 +1,34 @@
+Create a Whimsical flowchart titled "Routing-ML Windows Auth Workflow" with the following swimlanes and nodes:
+
+1. Data Platform Lane
+   - ITEM_INFO View Cleansing (note: normalize dimensions, materials)
+   - ROUTING History Validation (note: enforce ITEM_CD joins)
+   - WORK_ORDER Metrics Cleanup (note: trim outliers, fill nulls)
+   - Feature Store Snapshots (note: persisted ODBC extracts feeding ML)
+
+2. Training Service Lane
+   - Preprocessing Pipeline (label: weighted scaling + categorical encoding)
+   - HNSW Embedding Index Build (label: cosine metric, top-10)
+   - Meta Ensemble Generator (label: produce 3-4 routing candidates)
+   - Model Registry Update (note: write metadata + TensorBoard projector exports)
+
+3. Prediction Service Lane
+   - Windows Login (label: LDAP primary, fallback hash store)
+   - Session Issuance (label: JSON audit log entries)
+   - /api/workflow Graph Endpoint (label: PATCH applies config to trainer/predictor)
+   - /api/predict Candidate Engine (label: loads HNSW + ensembles)
+   - /api/candidates/save Exporter (label: writes routing_candidates tables)
+
+4. React Frontend Lane
+   - Authenticated Layout Shell (note: token refresh, audit badge)
+   - Workflow Graph Editor (note: Cytoscape layout, double-click node settings)
+   - Similarity Threshold Controls (note: slider 20%~100%)
+   - Candidate Comparison Cards (note: show operations, durations, confidence)
+   - Audit Timeline Drawer (note: stream login/API events)
+
+5. Outputs Lane
+   - SQL Exports (routing_candidates + operations tables)
+   - Audit JSON Files (logs/audit/yyyyMMdd)
+   - TensorBoard Projector (embedding viz)
+
+Use a modern blue-indigo palette (#0f172a background, teal/amber accents) and connect steps with directional arrows showing the flow: Data -> Training -> Prediction -> Frontend -> Outputs. Add side notes for "Security: Windows domain auth" and "Logging: JSON audit trail" attached to the Prediction lane.

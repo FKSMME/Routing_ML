@@ -7,6 +7,36 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, validator
 
 
+class LoginRequest(BaseModel):
+    """Windows 인증 로그인 요청."""
+
+    username: str = Field(..., min_length=1, description="Windows 사용자 ID")
+    password: str = Field(..., min_length=1, description="Windows 비밀번호")
+
+
+class LoginResponse(BaseModel):
+    """로그인 응답."""
+
+    username: str
+    display_name: Optional[str] = None
+    domain: Optional[str] = None
+    token: str
+    issued_at: datetime
+    expires_at: datetime
+
+
+class AuthenticatedUser(BaseModel):
+    """세션 검증 후 FastAPI 라우터가 사용하는 사용자 정보."""
+
+    username: str
+    display_name: Optional[str] = None
+    domain: Optional[str] = None
+    issued_at: datetime
+    expires_at: datetime
+    session_id: str
+    client_host: Optional[str] = None
+
+
 class PredictionRequest(BaseModel):
     """예측 요청 입력."""
 
@@ -125,6 +155,8 @@ class CandidateSaveResponse(BaseModel):
     candidate_id: str
     saved_path: str
     saved_at: datetime
+    sql_preview: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):
@@ -233,6 +265,9 @@ class WorkflowConfigPatch(BaseModel):
 
 
 __all__ = [
+    "LoginRequest",
+    "LoginResponse",
+    "AuthenticatedUser",
     "PredictionRequest",
     "PredictionResponse",
     "RoutingSummary",

@@ -1,0 +1,2 @@
+{"timestamp": "2025-09-26 04:03:02", "name": "auth.windows", "level": "INFO", "message": "폴백 인증 성공", "filename": "auth_service.py", "lineno": 83, "funcName": "authenticate", "threadName": "MainThread", "taskName": null, "username": "codex", "client_host": "127.0.0.1", "domain": "EXAMPLE"}
+{"timestamp": "2025-09-26 04:03:02", "name": "auth.windows", "level": "INFO", "message": "인증 실패", "filename": "auth_service.py", "lineno": 89, "funcName": "authenticate", "threadName": "MainThread", "taskName": null, "username": "intruder", "client_host": null}
