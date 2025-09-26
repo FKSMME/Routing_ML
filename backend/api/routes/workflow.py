@@ -176,7 +176,6 @@ async def patch_workflow_graph(
             ]
         if payload.sql.active_profile is not None:
             sql_cfg.active_profile = payload.sql.active_profile
-
         try:
             sql_cfg.validate_columns(list(DEFAULT_SQL_OUTPUT_COLUMNS))
         except ValueError as exc:
@@ -185,6 +184,7 @@ async def patch_workflow_graph(
                 extra={"error": str(exc), "username": current_user.username},
             )
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
 
         snapshot = workflow_config_store.update_sql_column_config(sql_cfg)
         logger.info(
