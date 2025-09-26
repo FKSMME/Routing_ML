@@ -21,7 +21,7 @@
 - **Docs**: `docs/` — Stage별 보고서, 빠른 시작, 릴리스 노트, 아키텍처 다이어그램을 포함합니다.
 
 ## 빠른 시작
-자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다.
+자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다. 사내 공유 드라이브(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 가져와 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`에 복사한 뒤, 필요하면 `/mnt/data/routing_data`로 마운트하세요.
 
 ```bash
 python -m venv .venv
@@ -50,7 +50,7 @@ npm run dev -- --host 0.0.0.0
 - 사내망 사용자들은 `http://10.204.2.28:5173`(프런트엔드)와 `http://10.204.2.28:8000/api/health`(백엔드)로 접근해 상태를 확인합니다.
 
 ## Docker Compose 배포
-`deploy/docker` 디렉터리에서 Compose 스택을 구성합니다.
+`deploy/docker` 디렉터리에서 Compose 스택을 구성합니다. 이때 Access DB(`ROUTING AUTO TEST.accdb`)를 `deploy/docker/volumes/data`에 복사하거나 공유 경로를 볼륨으로 연결해야 합니다.
 
 ```bash
 cd deploy/docker

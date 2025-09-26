@@ -12,7 +12,7 @@
 ### 1. 환경 준비
 - `python 3.12`와 `node 20` 이상을 설치한다.
 - `requirements.txt`를 사용해 백엔드 의존성을 설치한다.
-- Access DB(`routing_data/ROUTING AUTO TEST.accdb`)가 있는 사내 공유폴더를 `/mnt/data/routing_data`로 마운트한다.
+- 사내 공유폴더(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`로 복사하고, 필요 시 `/mnt/data/routing_data`로 마운트한다.
 - `ACCESS_CONNECTION_STRING` 환경 변수를 `.env` 또는 Compose 시크릿에 설정한다.
 
 ```bash
@@ -80,12 +80,14 @@ pip install -r requirements.txt
    cp volumes/config/trainer_config.example.yaml volumes/config/trainer_config.yaml
    cp volumes/config/predictor_config.example.yaml volumes/config/predictor_config.yaml
    ```
-2. 구성 파일을 편집 후 다음 명령을 실행한다.
+2. `volumes/data` 폴더에 Access DB(`ROUTING AUTO TEST.accdb`)를 복사하거나 공유 폴더 경로를 마운트한다.
+   - 기본 예시: `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`
+3. 구성 파일을 편집 후 다음 명령을 실행한다.
    ```bash
    docker compose build
    ACCESS_CONNECTION_STRING="..." docker compose up -d
    ```
-3. 상태 점검:
+4. 상태 점검:
   ```bash
   docker compose ps
   curl http://10.204.2.28:8000/api/health
@@ -96,7 +98,7 @@ pip install -r requirements.txt
    curl http://10.204.2.28:8000/api/health
    ```
 
-4. 종료:
+5. 종료:
    ```bash
    docker compose down
    ```
