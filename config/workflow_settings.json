@@ -1,176 +1,5 @@
 {
   "graph": {
-    "nodes": [
-      {
-        "id": "data-ingest",
-        "label": "데이터 수집",
-        "type": "process",
-        "category": "stage1",
-        "status": "stable",
-        "position": { "x": 40, "y": 180 },
-        "settings": {
-          "description": "Access 원본 3개 뷰를 ITEM_CD 기준으로 조인하여 피처 세트를 구성합니다.",
-          "tables": [
-            "dbo_BI_ITEM_INFO_VIEW",
-            "dbo_BI_ROUTING_VIEW",
-            "dbo_BI_WORK_ORDER_RESULTS"
-          ],
-          "owner": "데이터엔지니어",
-          "refresh_cycle": "매 6시간"
-        },
-        "metrics": {
-          "coverage": 0.98,
-          "last_snapshot": "2025-09-20"
-        },
-        "doc_refs": [
-          "docs/data_pipeline_spec.md"
-        ]
-      },
-      {
-        "id": "feature-embedding",
-        "label": "임베딩/전처리",
-        "type": "processor",
-        "category": "stage2",
-        "status": "stable",
-        "position": { "x": 240, "y": 120 },
-        "settings": {
-          "description": "ImprovedPreprocessor에서 혼합 인코딩과 VarianceThreshold, PCA 옵션을 적용합니다.",
-          "export": [
-            "tb_projector/metadata.tsv",
-            "tb_projector/vectors.tsv"
-          ],
-          "trim_std": "상/하위 5% 제외"
-        },
-        "metrics": {
-          "dimension": 128,
-          "variance_retained": 0.92
-        },
-        "doc_refs": [
-          "docs/trainer_service_plan.md",
-          "docs/trainer_algorithm_report.md"
-        ]
-      },
-      {
-        "id": "trainer",
-        "label": "트레이너",
-        "type": "service",
-        "category": "stage2",
-        "status": "stable",
-        "position": { "x": 460, "y": 120 },
-        "settings": {
-          "description": "HNSW 임베딩 색인 생성 및 TensorBoard Projector 내보내기",
-          "similarity_threshold": 0.8,
-          "trim_std_enabled": true
-        },
-        "metrics": {
-          "last_run": "2025-09-22T06:00:00Z",
-          "build_minutes": 42
-        },
-        "doc_refs": [
-          "docs/trainer_service_plan.md"
-        ]
-      },
-      {
-        "id": "predictor",
-        "label": "예측기",
-        "type": "service",
-        "category": "stage3",
-        "status": "beta",
-        "position": { "x": 680, "y": 200 },
-        "settings": {
-          "description": "Top-K 후보 생성 및 유사도 0.8 이상 조합 추천",
-          "max_routing_variants": 4,
-          "similarity_high_threshold": 0.8
-        },
-        "metrics": {
-          "p95_latency_sec": 48,
-          "last_request": "2025-09-25T07:55:00Z"
-        },
-        "doc_refs": [
-          "docs/predictor_service_plan.md"
-        ]
-      },
-      {
-        "id": "sql-mapper",
-        "label": "SQL 출력",
-        "type": "adapter",
-        "category": "stage5",
-        "status": "stable",
-        "position": { "x": 900, "y": 200 },
-        "settings": {
-          "description": "7.1 스키마로 라우팅 후보를 직렬화하고 Power Query 프로파일을 관리합니다.",
-          "active_profile": "Access 7.1 기본"
-        },
-        "metrics": {
-          "columns": 52,
-          "profiles": 1
-        },
-        "doc_refs": [
-          "docs/stage5_sql_report.md"
-        ]
-      },
-      {
-        "id": "ui-designer",
-        "label": "블루스크린 UI",
-        "type": "ui",
-        "category": "stage4",
-        "status": "design",
-        "position": { "x": 1120, "y": 160 },
-        "settings": {
-          "description": "워크플로우 그래프와 SAVE 버튼이 설정과 SQL 매핑을 즉시 반영합니다.",
-          "design_refs": [
-            "main/1.jpg",
-            "main/2.jpg",
-            "main/3.jpg",
-            "main/4.jpg"
-          ]
-        },
-        "metrics": {
-          "pending_tasks": 2
-        },
-        "doc_refs": [
-          "docs/graph_workflow_ui_plan.md",
-          "docs/stage4_frontend_report.md"
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "id": "edge-data-embed",
-        "source": "data-ingest",
-        "target": "feature-embedding",
-        "kind": "data-flow",
-        "label": "ITEM_CD 정규화"
-      },
-      {
-        "id": "edge-embed-trainer",
-        "source": "feature-embedding",
-        "target": "trainer",
-        "kind": "model-flow",
-        "label": "임베딩 벡터"
-      },
-      {
-        "id": "edge-trainer-predictor",
-        "source": "trainer",
-        "target": "predictor",
-        "kind": "model-flow",
-        "label": "HNSW 인덱스"
-      },
-      {
-        "id": "edge-predictor-sql",
-        "source": "predictor",
-        "target": "sql-mapper",
-        "kind": "data-flow",
-        "label": "후보 라우팅"
-      },
-      {
-        "id": "edge-sql-ui",
-        "source": "sql-mapper",
-        "target": "ui-designer",
-        "kind": "ui-flow",
-        "label": "7.1 출력"
-      }
-    ],
     "nodes": [],
     "edges": [],
     "design_refs": [
@@ -321,5 +150,114 @@
     ],
     "active_profile": "Access 7.1 기본"
   },
-  "updated_at": "2025-09-25T18:00:00.000000"
+  "updated_at": "2025-09-25T18:00:00.000000",
+  "data_source": {
+    "access_path": "routing_data/ROUTING AUTO TEST.accdb",
+    "default_table": "dbo_BI_ITEM_INFO_VIEW",
+    "backup_paths": [],
+    "table_profiles": [
+      {
+        "name": "dbo_BI_ITEM_INFO_VIEW",
+        "label": "품목 마스터",
+        "role": "features",
+        "required": true,
+        "columns": [
+          "ITEM_CD",
+          "ITEM_NM",
+          "ITEM_TYPE",
+          "RAW_MATL_KIND"
+        ]
+      },
+      {
+        "name": "dbo_BI_ROUTING_VIEW",
+        "label": "라우팅 기준",
+        "role": "routing",
+        "required": true,
+        "columns": [
+          "ITEM_CD",
+          "PROC_SEQ",
+          "JOB_CD",
+          "SETUP_TIME",
+          "MACH_WORKED_HOURS"
+        ]
+      },
+      {
+        "name": "dbo_BI_WORK_ORDER_RESULTS",
+        "label": "실적 로그",
+        "role": "results",
+        "required": false,
+        "columns": [
+          "ITEM_CD",
+          "ACT_SETUP_TIME",
+          "ACT_RUN_TIME",
+          "WAIT_TIME",
+          "MOVE_TIME"
+        ]
+      }
+    ],
+    "column_overrides": {},
+    "allow_gui_override": true,
+    "shading_palette": {
+      "allowed": "oklch(0.94 0.04 235)",
+      "restricted": "oklch(0.88 0.03 235)",
+      "disabled": "oklch(0.78 0.02 235)",
+      "highlight": "oklch(0.70 0.08 235)"
+    },
+    "blueprint_switches": [
+      {
+        "id": "feature-columns",
+        "label": "피처 추출",
+        "enabled": true,
+        "description": "ITEM_INFO_VIEW 기반 피처는 활성화 상태",
+        "shade": "oklch(0.82 0.06 235)",
+        "accent": "oklch(0.68 0.10 235)"
+      },
+      {
+        "id": "routing-columns",
+        "label": "라우팅 기준",
+        "enabled": true,
+        "description": "ROUTING_VIEW는 수정 가능",
+        "shade": "oklch(0.82 0.06 235)",
+        "accent": "oklch(0.68 0.10 235)"
+      },
+      {
+        "id": "workorder-columns",
+        "label": "실적 로그",
+        "enabled": false,
+        "description": "실적 로그는 기본 비활성 (GUI에서 명시적으로 활성화 필요)",
+        "shade": "oklch(0.78 0.02 235)",
+        "accent": "oklch(0.64 0.06 235)"
+      }
+    ],
+    "version_hint": "access-config-v1"
+  },
+  "export": {
+    "enable_cache_save": false,
+    "enable_excel": true,
+    "enable_csv": true,
+    "enable_txt": true,
+    "enable_parquet": true,
+    "enable_json": true,
+    "erp_interface_enabled": false,
+    "erp_protocol": null,
+    "erp_endpoint": null,
+    "default_encoding": "utf-8",
+    "export_directory": "deliverables/exports",
+    "compress_on_save": true
+  },
+  "visualization": {
+    "tensorboard_projector_dir": "logs/tensorboard",
+    "projector_enabled": true,
+    "projector_metadata_columns": [
+      "ITEM_CD",
+      "ITEM_NM",
+      "GROUP1",
+      "ITEM_TYPE"
+    ],
+    "neo4j_enabled": true,
+    "neo4j_browser_url": "http://localhost:7474",
+    "neo4j_workspace": "neo4j+routing",
+    "publish_service_enabled": true,
+    "publish_notes": "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
+  }
 }
