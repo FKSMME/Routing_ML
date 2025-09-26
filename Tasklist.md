@@ -198,6 +198,14 @@
 - [x] (설계) 네트워크/보안/ODBC/시크릿 설계 — `docs/stage7_operations_report.md#1-설계-design`
 - [x] (구현) Dockerfile 2종(trainer/predictor), Compose 스택 — `deploy/docker/`
 - [x] (구현) 프로브, 구조화 로그, 에러 알람 계획 — `docs/stage7_operations_report.md#2-구현-implementation`
+---
+
+## 2025-02-15 Windows 인증/로그 강화 작업
+- ~~FastAPI 무인증 상태 유지~~
+- Windows 도메인 계정 기반 로그인·세션 발급 기능 구현
+- 인증 세션 검증을 `/api/*` 주요 엔드포인트에 의무화
+- 로그인/로그아웃 및 API 호출 감사 로그를 `logs/audit/` 디렉터리에 JSON 포맷으로 남기는 파이프라인 구축
+- 사용되지 않는 백업/캐시 파일을 정리하여 보안 위험을 제거
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
 
