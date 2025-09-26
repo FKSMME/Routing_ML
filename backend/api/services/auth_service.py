@@ -5,7 +5,7 @@ import hashlib
 import ssl
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
-
+from typing import Optional
 from ldap3 import ALL, Connection, NTLM, Server, Tls
 from ldap3.core.exceptions import LDAPException
 
@@ -18,11 +18,18 @@ if TYPE_CHECKING:
     from backend.api.security import SessionManager, SessionRecord
 
 
+from backend.api.config import get_settings
+from backend.api.schemas import LoginRequest, LoginResponse
+from backend.api.security import SessionRecord, get_session_manager
+from common.logger import get_logger
+
 @dataclass
 class AuthResult:
     success: bool
     message: str
     session: Optional["SessionRecord"] = None
+    session: Optional[SessionRecord] = None
+
 
 
 class WindowsAuthService:
@@ -42,6 +49,9 @@ class WindowsAuthService:
         self.settings = settings or get_settings()
         self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
         self._session_manager = session_manager
+    def __init__(self) -> None:
+        self.settings = get_settings()
+        self.logger = get_logger("auth.windows", log_dir=self.settings.audit_log_dir, use_json=True)
 
     def authenticate(self, payload: LoginRequest, client_host: Optional[str]) -> AuthResult:
         username = payload.username.strip()
@@ -91,7 +101,6 @@ class WindowsAuthService:
             extra={"username": username, "client_host": client_host},
         )
         return AuthResult(False, "인증에 실패했습니다")
-
     def _get_session_manager(self) -> "SessionManager":
         if self._session_manager is not None:
             return self._session_manager
@@ -100,13 +109,18 @@ class WindowsAuthService:
         return get_session_manager()
 
     def _create_session(self, username: str, client_host: Optional[str]) -> "SessionRecord":
+    def _create_session(self, username: str, client_host: Optional[str]) -> SessionRecord:
         domain = self.settings.windows_domain
         display_name = username
         if domain and "\\" not in username and "@" not in username:
             qualified_username = f"{domain}\\{username}"
         else:
             qualified_username = username
+
         session = self._get_session_manager().create_session(
+
+        session = get_session_manager().create_session(
+
             username=qualified_username,
             display_name=display_name,
             domain=self.settings.windows_domain,
