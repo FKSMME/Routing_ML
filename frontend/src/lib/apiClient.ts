@@ -5,8 +5,18 @@ import type { PredictionResponse } from "@types/routing";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@types/workflow";
 
 
+const fallbackProtocol =
+  typeof window !== "undefined" && window.location.protocol
+    ? window.location.protocol
+    : "http:";
+const fallbackHost =
+  typeof window !== "undefined" && window.location.hostname
+    ? window.location.hostname
+    : "10.204.2.28";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:8000/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ?? `${fallbackProtocol}//${fallbackHost}:8000/api`,
   timeout: 60_000,
 });
 
