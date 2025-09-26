@@ -177,3 +177,13 @@ KPI-2: 예측시간/실적시간 일치율(MAE 또는 MAPE 역지표)
 - FastAPI + React 기반 웹 아키텍처만을 공식 진입점으로 사용하고, Windows 인증/세션 로깅 체계가 모든 경로에 일관되게 적용되도록 한다.
 - 루트 및 하위 디렉터리의 숨은 파일을 포함해 잔존 데스크톱 자산·로그를 정리하고, 삭제/보존 근거를 산출물(로그/리포트)에 기록한다.
 - 삭제/정리 결과와 감사 로그 구조를 PRD·Tasklist·PoC 보고서에 반영하고, 차기 워크플로우 시각화 산출물로 업데이트한다.
+
+
+## 추가 GUI & 유지보수 전략 (2025-10 업데이트)
+- **데이터 소스 관리 패널**: Access 파일 경로, 기본 테이블, 컬럼 블루프린트를 GUI에서 수정할 수 있도록 `DataSourceConfigurator`를 추가했습니다. 블루프린트 가능/불가 영역은 Oklch 파스텔 블루 음영으로 표시하여 사용자가 실수로 비허용 영역을 선택할 때 시각적으로 구분됩니다. 설정은 `/api/workflow/graph` `data_source` 패치로 즉시 저장됩니다.
+- **모델 학습 콘솔**: 예측 서비스와 분리된 `TrainingConsole` GUI는 `/api/trainer/run`, `/api/trainer/status`와 연동되어 드라이런 여부, 버전 라벨, TensorBoard 메타데이터 컬럼을 지정하고, 학습 완료 시 `/models/version_*` 디렉터리에 버전별로 저장합니다. 모든 진행률과 성능 값은 `logs/performance/training.performance.log`에 기록합니다.
+- **TensorBoard/Neo4j 게시 솔루션**: 예측 시 `with_visualization` 옵션을 사용하면 TensorBoard Projector용 `metadata.tsv`/`vectors.tsv`와 Neo4j 그래프 JSON이 자동으로 생성됩니다. `VisualizationSummary` 컴포넌트는 경로를 안내하고, `ExportOptionsPanel`에서 시각화 포함 여부를 제어합니다.
+- **Feature 가중치 제어**: 프런트엔드 `FeatureWeightPanel`은 `FeatureWeightManager` 프로파일(`default`, `geometry-focus`, `operation-history`, `custom`)을 선택하거나 주요 피처(OUTDIAMETER, SETUP_TIME, MACH_WORKED_HOURS)를 슬라이더로 조정할 수 있게 했으며, `/api/predict` 요청에 `feature_weights` 및 `weight_profile`을 포함합니다.
+- **다중 포맷 출력**: `/api/predict`는 `export_formats` 파라미터를 받아 CSV, TXT(UTF-8), Excel, JSON, Parquet, Cache, ERP 스텁 파일을 `deliverables/exports`에 저장합니다. ERP 연동은 기본 비활성화되어 있으나 향후 인터페이스를 위한 설정 필드를 포함합니다.
+- **Neo4j/TensorBoard 통합**: `visualization` 설정으로 Neo4j 워크스페이스 URL과 Projector 메타데이터 컬럼을 관리하며, UI에서 관련 경로와 브라우저 주소를 즉시 확인할 수 있습니다.
+- **Oklch 파스텔 블루 UI**: 전체 레이아웃에 Oklch 기반 파스텔 블루 그라데이션과 하이라이트/선택 음영을 적용하고, 모든 마우스 오버 시 카드가 부드럽게 부각되도록 인터랙션을 재정비했습니다.

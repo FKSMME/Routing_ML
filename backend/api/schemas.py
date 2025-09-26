@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from typing_extensions import Literal
+
 from pydantic import BaseModel, Field, validator
 
 
@@ -46,6 +48,22 @@ class PredictionRequest(BaseModel):
         None, ge=0.0, le=1.0, description="후보 필터링 임계값"
     )
     mode: str = Field("summary", description="응답 구성 모드(summary|detailed)")
+    feature_weights: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="사용자 정의 피처 가중치 (ITEM_INFO_VIEW 기준).",
+    )
+    weight_profile: Optional[str] = Field(
+        default=None,
+        description="사전 정의된 가중치 프로파일 식별자",
+    )
+    export_formats: Optional[List[str]] = Field(
+        default=None,
+        description="즉시 내보낼 결과 포맷 목록 (csv|excel|txt|json|parquet)",
+    )
+    with_visualization: bool = Field(
+        default=False,
+        description="Neo4j/TensorBoard 연동을 위한 벡터 스냅샷 포함 여부",
+    )
 
     @validator("item_codes", each_item=True)
     def _strip_item_code(cls, value: str) -> str:  # noqa: N805
@@ -198,6 +216,62 @@ class SQLConfigModel(BaseModel):
     active_profile: Optional[str] = None
 
 
+class BlueprintToggleModel(BaseModel):
+    id: str
+    label: str
+    enabled: bool
+    description: Optional[str] = None
+    shade: Optional[str] = None
+    accent: Optional[str] = None
+
+
+class DataSourceTableProfileModel(BaseModel):
+    name: str
+    label: str
+    role: Literal["features", "routing", "results", "aux"] = "features"
+    required: bool = False
+    columns: List[str] = Field(default_factory=list)
+    description: Optional[str] = None
+
+
+class DataSourceConfigModel(BaseModel):
+    access_path: str
+    default_table: str
+    backup_paths: List[str] = Field(default_factory=list)
+    table_profiles: List[DataSourceTableProfileModel] = Field(default_factory=list)
+    column_overrides: Dict[str, List[str]] = Field(default_factory=dict)
+    allow_gui_override: bool = True
+    shading_palette: Dict[str, str] = Field(default_factory=dict)
+    blueprint_switches: List[BlueprintToggleModel] = Field(default_factory=list)
+    version_hint: Optional[str] = None
+
+
+class ExportConfigModel(BaseModel):
+    enable_cache_save: bool = False
+    enable_excel: bool = True
+    enable_csv: bool = True
+    enable_txt: bool = True
+    enable_parquet: bool = True
+    enable_json: bool = True
+    erp_interface_enabled: bool = False
+    erp_protocol: Optional[str] = None
+    erp_endpoint: Optional[str] = None
+    default_encoding: str = "utf-8"
+    export_directory: str
+    compress_on_save: bool = True
+
+
+class VisualizationConfigModel(BaseModel):
+    tensorboard_projector_dir: str
+    projector_enabled: bool = True
+    projector_metadata_columns: List[str] = Field(default_factory=list)
+    neo4j_enabled: bool = True
+    neo4j_browser_url: Optional[str] = None
+    neo4j_workspace: Optional[str] = None
+    publish_service_enabled: bool = True
+    publish_notes: Optional[str] = None
+
+
 class TrainerRuntimeModel(BaseModel):
     similarity_threshold: float = Field(..., ge=0.0, le=1.0)
     trim_std_enabled: bool = True
@@ -225,6 +299,9 @@ class WorkflowConfigResponse(BaseModel):
     trainer: TrainerRuntimeModel
     predictor: PredictorRuntimeModel
     sql: SQLConfigModel
+    data_source: DataSourceConfigModel
+    export: ExportConfigModel
+    visualization: VisualizationConfigModel
     updated_at: str
 
 
@@ -257,11 +334,56 @@ class SQLConfigPatch(BaseModel):
     active_profile: Optional[str] = None
 
 
+class BlueprintTogglePatch(BaseModel):
+    id: str
+    enabled: Optional[bool] = None
+    description: Optional[str] = None
+
+
+class DataSourceConfigPatch(BaseModel):
+    access_path: Optional[str] = None
+    default_table: Optional[str] = None
+    backup_paths: Optional[List[str]] = None
+    table_profiles: Optional[List[DataSourceTableProfileModel]] = None
+    column_overrides: Optional[Dict[str, List[str]]] = None
+    allow_gui_override: Optional[bool] = None
+    blueprint_switches: Optional[List[BlueprintTogglePatch]] = None
+
+
+class ExportConfigPatch(BaseModel):
+    enable_cache_save: Optional[bool] = None
+    enable_excel: Optional[bool] = None
+    enable_csv: Optional[bool] = None
+    enable_txt: Optional[bool] = None
+    enable_parquet: Optional[bool] = None
+    enable_json: Optional[bool] = None
+    erp_interface_enabled: Optional[bool] = None
+    erp_protocol: Optional[str] = None
+    erp_endpoint: Optional[str] = None
+    default_encoding: Optional[str] = None
+    export_directory: Optional[str] = None
+    compress_on_save: Optional[bool] = None
+
+
+class VisualizationConfigPatch(BaseModel):
+    tensorboard_projector_dir: Optional[str] = None
+    projector_enabled: Optional[bool] = None
+    projector_metadata_columns: Optional[List[str]] = None
+    neo4j_enabled: Optional[bool] = None
+    neo4j_browser_url: Optional[str] = None
+    neo4j_workspace: Optional[str] = None
+    publish_service_enabled: Optional[bool] = None
+    publish_notes: Optional[str] = None
+
+
 class WorkflowConfigPatch(BaseModel):
     graph: Optional[WorkflowGraphPatch] = None
     trainer: Optional[TrainerRuntimePatch] = None
     predictor: Optional[PredictorRuntimePatch] = None
     sql: Optional[SQLConfigPatch] = None
+    data_source: Optional[DataSourceConfigPatch] = None
+    export: Optional[ExportConfigPatch] = None
+    visualization: Optional[VisualizationConfigPatch] = None
 
 
 __all__ = [
@@ -283,4 +405,10 @@ __all__ = [
     "TrainerRuntimeModel",
     "PredictorRuntimeModel",
     "SQLConfigModel",
+    "DataSourceConfigModel",
+    "ExportConfigModel",
+    "VisualizationConfigModel",
+    "DataSourceConfigPatch",
+    "ExportConfigPatch",
+    "VisualizationConfigPatch",
 ]
