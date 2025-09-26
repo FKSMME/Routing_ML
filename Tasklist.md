@@ -210,6 +210,12 @@
 - [x] (테스트) 장애 주입 테스트(모델 미존재/DB 연결 끊김) — `docs/stage7_operations_report.md#3-테스트-test`
 - [x] (배포) 단계적 롤아웃/롤백 전략 — `docs/stage7_operations_report.md#4-배포-deployment`
 
+## 2025-02-16 데스크톱 GUI 정리 및 웹 아키텍처 집중
+- ~~Tkinter GUI(main.py, gui/*) 유지~~
+- FastAPI·React 경로만을 사용자 인터페이스로 인정하고, 레거시 GUI/로그 자산을 식별·삭제한다.
+- 숨은 파일을 포함한 저장소 전체를 재검토하여 웹 아키텍처와 무관한 산출물을 제거하고 근거를 보고한다.
+- Windows 인증·감사 로그 플로우를 후속 테스트/운영 Task에 반영하고 문서화한다.
+
 
 8. 문서화/전달물 — 상세 문서: `task_details/stage8_detail.md`
 

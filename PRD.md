@@ -112,6 +112,8 @@ routing_candidate_operations(item_cd, candidate_id, PROC_SEQ, …, MTMG_NUMB)
 FK: (item_cd, candidate_id)
 
 워크플로우 그래프 UI에서 제공하는 “리스트 / 파워 쿼리” 설정 패널을 통해 7.1 SQL 구조 컬럼명과 Access VIEW 명칭 매핑을 수정할 수 있다. 설정은 `SQLColumnConfig`(profiles, active_profile)로 저장되어 `/api/workflow/graph` 응답에 노출되며, 사용자가 정의한 프로파일은 Power Query 스타일로 여러 매핑 조합을 유지한다.
+- SQL 컬럼 검증: `/api/workflow/graph` PATCH는 학습 완료된 컬럼 집합(`DEFAULT_SQL_OUTPUT_COLUMNS`)에서만 `output_columns`/`available_columns` 변경을 허용하며, 잘못된 컬럼이 전달되면 400 오류와 감사 로그를 남긴다.
+- SQL 저장 출력: `/api/candidates/save`는 `routing_candidates`/`routing_candidate_operations`에 대응하는 INSERT SQL 미리보기와 경고 목록을 JSON 응답에 포함하고, 허용되지 않은 컬럼은 제거 후 경고로 통지한다.
 
 4) 서비스/배포
 
@@ -168,3 +170,10 @@ KPI-2: 예측시간/실적시간 일치율(MAE 또는 MAPE 역지표)
 - Windows 도메인 ID/비밀번호 기반 사용자 인증을 FastAPI 전 구간에 적용한다.
 - 로그인/로그아웃 이벤트와 주요 API 호출 이력을 `logs/audit/` 경로에 JSON 로그로 축적한다.
 - 불필요한 백업 스크립트 및 캐시 디렉터리는 분석 후 제거하여 보안 노출을 최소화한다.
+
+
+## 2025-02-16 추가 지시 (데스크톱 GUI 폐기 및 웹 아키텍처 집중)
+- ~~Tkinter 기반 데스크톱 진입점(`main.py`, `gui/*`) 유지~~
+- FastAPI + React 기반 웹 아키텍처만을 공식 진입점으로 사용하고, Windows 인증/세션 로깅 체계가 모든 경로에 일관되게 적용되도록 한다.
+- 루트 및 하위 디렉터리의 숨은 파일을 포함해 잔존 데스크톱 자산·로그를 정리하고, 삭제/보존 근거를 산출물(로그/리포트)에 기록한다.
+- 삭제/정리 결과와 감사 로그 구조를 PRD·Tasklist·PoC 보고서에 반영하고, 차기 워크플로우 시각화 산출물로 업데이트한다.

@@ -8,6 +8,34 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
+import types
+
+# 필요한 외부 모듈이 설치되지 않은 환경에서도 테스트가 동작하도록 최소 스텁을 주입한다.
+if "ldap3" not in sys.modules:
+    class _DummyConnection:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+        def bind(self) -> bool:  # pragma: no cover - LDAP 호출은 테스트에서 사용하지 않음
+            return True
+
+        def unbind(self) -> None:  # pragma: no cover
+            pass
+
+    ldap3_stub = types.SimpleNamespace(
+        ALL="ALL",
+        Connection=_DummyConnection,
+        NTLM="NTLM",
+        Server=lambda *args, **kwargs: object(),
+        Tls=lambda *args, **kwargs: object(),
+    )
+    sys.modules["ldap3"] = ldap3_stub
+    core_module = types.ModuleType("ldap3.core")
+    exceptions_module = types.ModuleType("ldap3.core.exceptions")
+    exceptions_module.LDAPException = Exception
+    sys.modules["ldap3.core"] = core_module
+    sys.modules["ldap3.core.exceptions"] = exceptions_module
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:

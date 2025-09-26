@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     candidate_store_dir: Path = Field(default=Path("logs/candidates"))
     allowed_origins: List[str] = Field(default_factory=lambda: ["*"])
 
+
+    sql_table_candidates: str = Field(default="routing_candidates")
+    sql_table_operations: str = Field(default="routing_candidate_operations")
+    sql_preview_row_limit: int = Field(default=20, ge=1, le=500)
+
+
     # Windows 인증/LDAP 설정
     windows_auth_enabled: bool = Field(default=True)
     windows_domain: Optional[str] = Field(default=None, description="기본 Windows 도메인")

@@ -1,0 +1,105 @@
+digraph RoutingMLWorkflow {
+    graph [
+        fontname="Pretendard",
+        bgcolor="#0f172a",
+        label="Routing-ML End-to-End Workflow",
+        labelloc=t,
+        fontsize=26,
+        fontcolor="#f8fafc"
+    ];
+    node [
+        shape=box,
+        style="rounded,filled",
+        fontname="Pretendard",
+        fontcolor="#0f172a",
+        color="#1e293b",
+        width=2.8,
+        height=0.9
+    ];
+    edge [
+        color="#38bdf8",
+        penwidth=2,
+        arrowsize=0.9
+    ];
+
+    subgraph cluster_data {
+        label="데이터 수집/정제";
+        labelloc=b;
+        color="#38bdf8";
+        fontcolor="#bae6fd";
+        style="rounded,dashed";
+        item_info [label="ITEM\nINFO View\n정규화"];
+        routing_view [label="ROUTING\n이력\n정합성 검사"];
+        work_orders [label="WORK ORDER\n실적\n클렌징"];
+        feature_store [label="Feature Store\n(ODBC Snapshots)", fillcolor="#e0f2fe"];
+        item_info -> feature_store;
+        routing_view -> feature_store;
+        work_orders -> feature_store;
+    }
+
+    subgraph cluster_training {
+        label="학습 서비스";
+        labelloc=b;
+        color="#f97316";
+        fontcolor="#ffedd5";
+        style="rounded,dashed";
+        feature_store -> preprocessing [label="스케일링\n가중치" color="#f97316"];
+        preprocessing [label="Preprocessing\n(스케일+인코딩)", fillcolor="#fed7aa"];
+        preprocessing -> hnsw_index [label="임베딩" color="#f97316"];
+        hnsw_index [label="HNSW\n임베딩 인덱스", fillcolor="#fed7aa"];
+        hnsw_index -> ensemble [label="Top-K\n라벨링" color="#f97316"];
+        ensemble [label="Meta Ensemble\n(3~4 후보)", fillcolor="#fed7aa"];
+        ensemble -> model_registry [label="모델 메타" color="#f97316"];
+        model_registry [label="모델 & 메타\nRegistry", fillcolor="#fed7aa"];
+    }
+
+    subgraph cluster_prediction {
+        label="예측 서비스";
+        labelloc=b;
+        color="#22c55e";
+        fontcolor="#dcfce7";
+        style="rounded,dashed";
+        auth_gateway [label="Windows\n로그인/세션", fillcolor="#bbf7d0"];
+        workflow_api [label="/api/workflow\n그래프 관리", fillcolor="#bbf7d0"];
+        predict_api [label="/api/predict\n후보 생성", fillcolor="#bbf7d0"];
+        persist_api [label="/api/candidates/save\nSQL Export", fillcolor="#bbf7d0"];
+        auth_gateway -> workflow_api;
+        auth_gateway -> predict_api;
+        predict_api -> persist_api;
+    }
+
+    subgraph cluster_frontend {
+        label="React 워크플로우 UI";
+        labelloc=b;
+        color="#a855f7";
+        fontcolor="#f3e8ff";
+        style="rounded,dashed";
+        graph_editor [label="그래프 편집기\n(노드/에지)", fillcolor="#ede9fe"];
+        similarity_controls [label="유사도/Top-K\n컨트롤", fillcolor="#ede9fe"];
+        audit_panel [label="감사 타임라인\n(로그 뷰)", fillcolor="#ede9fe"];
+        graph_editor -> similarity_controls [color="#a855f7"];
+        similarity_controls -> audit_panel [color="#a855f7"];
+    }
+
+    feature_store -> preprocessing;
+    model_registry -> predict_api [label="모델 로드" color="#f97316"];
+    predict_api -> graph_editor [label="후보 제공" color="#22c55e"];
+    workflow_api -> graph_editor [label="그래프 설정" color="#22c55e"];
+    graph_editor -> workflow_api [label="SAVE PATCH" color="#a855f7"];
+    audit_panel -> audit_sink [label="행동 기록" color="#a855f7"];
+
+    subgraph cluster_outputs {
+        label="산출물";
+        labelloc=b;
+        color="#14b8a6";
+        fontcolor="#ccfbf1";
+        style="rounded,dashed";
+        sql_export [label="SQL Export\n(routing_candidates)", fillcolor="#ccfbf1"];
+        report [label="TensorBoard\nProjector", fillcolor="#ccfbf1"];
+        audit_sink [label="Audit Logs\n(JSON)", fillcolor="#ccfbf1"];
+    }
+
+    persist_api -> sql_export [color="#22c55e"];
+    ensemble -> report [color="#f97316"];
+    auth_gateway -> audit_sink [label="로그인 이벤트" color="#22c55e"];
+}

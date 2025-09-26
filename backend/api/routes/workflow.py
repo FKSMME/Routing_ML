@@ -29,6 +29,7 @@ from common.config_store import (
     WorkflowGraphConfig,
     workflow_config_store,
 )
+from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS, ensure_default_aliases
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/workflow", tags=["workflow-graph"])
@@ -140,12 +141,34 @@ async def patch_workflow_graph(
 
     if payload.sql is not None:
         sql_cfg = SQLColumnConfig.from_dict(snapshot.get("sql", {}))
-        if payload.sql.output_columns is not None:
-            sql_cfg.output_columns = payload.sql.output_columns
-        if payload.sql.column_aliases is not None:
-            sql_cfg.column_aliases = payload.sql.column_aliases
+        allowed_columns = set(DEFAULT_SQL_OUTPUT_COLUMNS)
+
         if payload.sql.available_columns is not None:
+            invalid_columns = sorted(set(payload.sql.available_columns) - allowed_columns)
+            if invalid_columns:
+                message = "허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(invalid_columns)
+                logger.warning("SQL available_columns 검증 실패", extra={"invalid_columns": invalid_columns, "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
             sql_cfg.available_columns = payload.sql.available_columns
+
+        if payload.sql.output_columns is not None:
+            available_set = set(sql_cfg.available_columns)
+            invalid_outputs = [col for col in payload.sql.output_columns if col not in available_set]
+            if invalid_outputs:
+                message = "output_columns에 허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(sorted(invalid_outputs))
+                logger.warning("SQL output_columns 검증 실패", extra={"invalid_columns": invalid_outputs, "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.output_columns = payload.sql.output_columns
+
+        if payload.sql.column_aliases is not None:
+            alias_targets = list(payload.sql.column_aliases.values())
+            invalid_aliases = [alias for alias in alias_targets if alias not in allowed_columns]
+            if invalid_aliases:
+                message = "column_aliases가 허용되지 않은 컬럼을 참조합니다: " + ", ".join(sorted(invalid_aliases))
+                logger.warning("SQL column_aliases 검증 실패", extra={"invalid_columns": invalid_aliases, "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.column_aliases = ensure_default_aliases(payload.sql.column_aliases)
+
         if payload.sql.profiles is not None:
             sql_cfg.profiles = [
                 PowerQueryProfile(name=profile.name, description=profile.description, mapping=profile.mapping)
@@ -153,6 +176,16 @@ async def patch_workflow_graph(
             ]
         if payload.sql.active_profile is not None:
             sql_cfg.active_profile = payload.sql.active_profile
+        try:
+            sql_cfg.validate_columns(list(DEFAULT_SQL_OUTPUT_COLUMNS))
+        except ValueError as exc:
+            logger.warning(
+                "SQL 설정 검증 실패",
+                extra={"error": str(exc), "username": current_user.username},
+            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
         snapshot = workflow_config_store.update_sql_column_config(sql_cfg)
         logger.info(
             "SQL 컬럼 매핑 업데이트",

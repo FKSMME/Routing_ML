@@ -1,19 +1,11 @@
-"""세션 및 인증 헬퍼."""
+"""세션 관리 모듈."""
 from __future__ import annotations
-
-
-from fastapi import Depends, Header, HTTPException, Request, status
-
-from backend.api.schemas import AuthenticatedUser
-from backend.api.session_manager import SessionManager, SessionRecord, get_session_manager
 
 import secrets
 import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, Optional
-
-from fastapi import Depends, Header, HTTPException, Request, status
 
 from backend.api.config import get_settings
 from backend.api.schemas import AuthenticatedUser
@@ -49,7 +41,11 @@ class SessionManager:
         self._ttl = ttl_seconds
         self._records: Dict[str, SessionRecord] = {}
         self._lock = threading.Lock()
-        self._logger = get_logger("auth.session", log_dir=get_settings().audit_log_dir, use_json=True)
+        self._logger = get_logger(
+            "auth.session",
+            log_dir=get_settings().audit_log_dir,
+            use_json=True,
+        )
 
     def create_session(
         self,
@@ -73,7 +69,7 @@ class SessionManager:
             )
             self._records[token] = record
             self._logger.info(
-                "세션 발급",  # message
+                "세션 발급",
                 extra={
                     "username": username,
                     "domain": domain,
@@ -92,7 +88,7 @@ class SessionManager:
             if record.expires_at < datetime.utcnow():
                 self._records.pop(token, None)
                 self._logger.info(
-                    "세션 만료",  # message
+                    "세션 만료",
                     extra={
                         "username": record.username,
                         "token": token,
@@ -128,34 +124,4 @@ def get_session_manager() -> SessionManager:
     return _session_manager  # type: ignore[return-value]
 
 
-
-def _extract_token(authorization: str) -> str:
-    if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization 헤더가 필요합니다")
-    scheme, _, param = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not param:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Bearer 토큰이 필요합니다")
-    return param
-
-
-async def get_current_user(
-    request: Request,
-    authorization: str = Header(..., alias="Authorization"),
-) -> AuthenticatedUser:
-    token = _extract_token(authorization)
-    session = get_session_manager().validate(token)
-    if session is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="세션이 유효하지 않습니다")
-
-    # 원격 주소 업데이트(프록시 환경 대비)
-    client_host = request.client.host if request.client else None
-    if client_host and client_host != session.client_host:
-        session.client_host = client_host
-    return session.to_user()
-
-
-async def require_auth(user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
-    return user
-
-
-__all__ = ["SessionManager", "get_session_manager", "get_current_user", "require_auth", "SessionRecord"]
+__all__ = ["SessionRecord", "SessionManager", "get_session_manager"]

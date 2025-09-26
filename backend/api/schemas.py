@@ -155,6 +155,8 @@ class CandidateSaveResponse(BaseModel):
     candidate_id: str
     saved_path: str
     saved_at: datetime
+    sql_preview: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
 
 class HealthResponse(BaseModel):

@@ -13,7 +13,8 @@
    - 추가 다이어그램 업데이트 항목: 데이터 파이프라인 노드, HNSW 인덱스 스토리지 노드, 모니터링 대시보드.
 2. **문서 구조 매핑**
    - 핵심 문서/코드 맵을 표로 정리(아래 “문서 구조 매핑” 섹션 참조).
-   - `PRD.md`, `Tasklist.md`, `task_details/*`, `main.py`, `backend/` API 등 주요 위치 파악.
+   - `PRD.md`, `Tasklist.md`, `task_details/*`, ~~`main.py`~~, `backend/` API 등 주요 위치 파악.
+   - 2025-02-16 지시에 따라 데스크톱 런처는 제거되고 FastAPI/React 웹 경로가 단일 진입점으로 전환됨.
 3. **승인 워크플로우 다이어그램 초안**
    - `docs/approval_workflow.puml`에 PlantUML 정의 작성.
    - 단계별 게이트(요청 → 리뷰 → 오류 수정 → 재승인) 포함.
@@ -48,7 +49,8 @@
 | 요건 | `PRD.md` | 프로젝트 요구사항 문서, 절대 지령 포함 |
 | 마스터 계획 | `Tasklist.md` | 단계별 태스크 개요 및 링크 |
 | 단계 세부 계획 | `task_details/stage*_detail.md` | 단계별 게이트/태스크 정의 |
-| GUI 앱 | `gui/` | PyQt 기반 프런트엔드 코드 |
+| ~~GUI 앱~~ | ~~`gui/`~~ | ~~PyQt 기반 프런트엔드 코드~~ |
+| 웹 프런트엔드 | `frontend/` | React 기반 워크플로우 UI |
 | 백엔드 | `backend/` | FastAPI/서비스 로직 |
 | 공통 모듈 | `common/` | 데이터/모델 공용 코드 |
 | 모델 자산 | `models/` | 학습된 모델 및 헬퍼 |
