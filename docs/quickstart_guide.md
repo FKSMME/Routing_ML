@@ -10,7 +10,7 @@
 ## 빠른 시작 가이드 (주니어 엔지니어용)
 
 ### 1. 환경 준비
-- `python 3.11`과 `node 20` 이상을 설치한다.
+- `python 3.12`와 `node 20` 이상을 설치한다.
 - `requirements.txt`를 사용해 백엔드 의존성을 설치한다.
 - Access DB(`routing_data/ROUTING AUTO TEST.accdb`)가 있는 사내 공유폴더를 `/mnt/data/routing_data`로 마운트한다.
 - `ACCESS_CONNECTION_STRING` 환경 변수를 `.env` 또는 Compose 시크릿에 설정한다.
@@ -40,16 +40,16 @@ pip install -r requirements.txt
 2. FastAPI 서버를 실행한다.
    ```bash
    ACCESS_CONNECTION_STRING="Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=/mnt/data/routing_data/ROUTING AUTO TEST.accdb" \
-   python backend/run_api.py --config predictor_config.yaml
+   uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
    ```
 3. 건강 상태 점검:
   ```bash
-  curl http://localhost:8000/api/health
-  curl http://localhost:8000/api/workflow/graph
+  curl http://10.204.2.28:8000/api/health
+  curl http://10.204.2.28:8000/api/workflow/graph
   ```
 4. 워크플로우 설정 초기화: `config/workflow_settings.json` 파일이 생성되었는지 확인하고, 필요한 경우 `/api/workflow/graph` PATCH로 임계값/컬럼 매핑을 조정한다.
    ```bash
-   curl http://localhost:8000/api/health
+   curl http://10.204.2.28:8000/api/health
    ```
 
 
@@ -58,9 +58,9 @@ pip install -r requirements.txt
    ```bash
    cd frontend
    npm install
-   npm run dev -- --host
+   npm run dev -- --host 0.0.0.0
    ```
-2. 브라우저에서 `http://localhost:5173`에 접속해 다음 항목을 확인한다.
+2. 브라우저에서 `http://10.204.2.28:5173`에 접속해 다음 항목을 확인한다.
    - 유사도 슬라이더 기본값이 0.8인지 확인.
    - 후보 라우팅 카드에서 3~4개의 라우팅 조합이 노출되는지 확인.
    - TensorBoard Projector 안내 링크가 정상 동작하는지 확인.
@@ -88,12 +88,12 @@ pip install -r requirements.txt
 3. 상태 점검:
   ```bash
   docker compose ps
-  curl http://localhost:8000/api/health
-  curl http://localhost:8000/api/workflow/graph
+  curl http://10.204.2.28:8000/api/health
+  curl http://10.204.2.28:8000/api/workflow/graph
   ```
    ```bash
    docker compose ps
-   curl http://localhost:8000/api/health
+   curl http://10.204.2.28:8000/api/health
    ```
 
 4. 종료:

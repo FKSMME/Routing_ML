@@ -4,4 +4,4 @@
 - 기본 포트: 8000
 - 설정/로그 위치: `%APPDATA%\RoutingML\config`, `%APPDATA%\RoutingML\logs`
 - 주요 실행 파일: `{app}\backend\RoutingMLBackend.exe`
-- 서비스 점검: `http://localhost:8000/api/health`
+- 서비스 점검: `http://10.204.2.28:8000/api/health`

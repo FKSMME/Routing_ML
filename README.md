@@ -21,14 +21,14 @@
 - **Docs**: `docs/` — Stage별 보고서, 빠른 시작, 릴리스 노트, 아키텍처 다이어그램을 포함합니다.
 
 ## 빠른 시작
-자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요.
+자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python backend/trainer_ml.py --config trainer_config.yaml --data-path /mnt/data/routing_data
-ACCESS_CONNECTION_STRING="..." python backend/run_api.py --config predictor_config.yaml
+ACCESS_CONNECTION_STRING="..." uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
 ```
 
 워크플로우 그래프 설정 파일은 `config/workflow_settings.json`에 저장되며, 최초 실행 시 자동 생성됩니다. SAVE 버튼으로 변경된 런타임/컬럼 매핑이 즉시 반영됩니다.
@@ -44,8 +44,10 @@ ACCESS_CONNECTION_STRING="..." python backend/run_api.py --config predictor_conf
 ```bash
 cd C:\Users\syyun\Documents\GitHub\Routing_ML\frontend
 npm install
-npm run dev -- --host
+npm run dev -- --host 0.0.0.0
 ```
+
+- 사내망 사용자들은 `http://10.204.2.28:5173`(프런트엔드)와 `http://10.204.2.28:8000/api/health`(백엔드)로 접근해 상태를 확인합니다.
 
 ## Docker Compose 배포
 `deploy/docker` 디렉터리에서 Compose 스택을 구성합니다.
@@ -59,7 +61,7 @@ ACCESS_CONNECTION_STRING="..." docker compose up -d --build
 
 - 네트워크: `routing-ml-network` (내부 전용)
 - 볼륨: `/mnt/data`(Access), `/mnt/models`(모델), `/mnt/config`(설정)
-- 헬스체크: `curl http://localhost:8000/api/health`
+- 헬스체크: `curl http://10.204.2.28:8000/api/health`
 
 - 설정 파일: `config/workflow_settings.json`을 `/mnt/config`에 바인드해 SAVE 버튼 변경 사항을 보존합니다.
 =======
