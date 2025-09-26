@@ -261,3 +261,14 @@
 - [x] (테스트) 설치 후 학습·예측·워크플로우 SAVE 검증 체크리스트와 QA 자동화 계획 수립 — `docs/stage9_packaging_plan.md#테스트-전략`
 - [x] (문서) Quickstart/운영 매뉴얼 업데이트 계획 및 사내 배포 정책 정리 — `docs/stage9_packaging_plan.md#문서화`
 
+
+
+11. 유지보수 자동화 & 시각화 고도화
+
+- [x] (구현) `/api/workflow/graph` `data_source` 설정 확장 및 GUI 블루프린트 음영 표시 — `backend/api/routes/workflow.py`, `frontend/src/components/DataSourceConfigurator.tsx`
+- [x] (구현) `/api/trainer/run` / `/api/trainer/status` 학습 콘솔 및 성능 로그 — `backend/api/routes/trainer.py`, `backend/api/services/training_service.py`, `frontend/src/components/TrainingConsole.tsx`
+- [x] (구현) 예측 결과 다중 포맷 내보내기 및 ERP 인터페이스 옵션 — `backend/api/services/prediction_service.py`, `frontend/src/components/ExportOptionsPanel.tsx`
+- [x] (구현) TensorBoard/Neo4j 시각화 스냅샷 자동 생성 및 UI 노출 — `backend/api/services/prediction_service.py`, `frontend/src/components/VisualizationSummary.tsx`
+- [x] (구현) Feature 가중치 프로파일 선택/슬라이더 조정 — `frontend/src/components/FeatureWeightPanel.tsx`
+- [x] (구현) Oklch 파스텔 블루 레이아웃 및 하이라이트 효과 — `frontend/src/index.css`, `frontend/src/App.tsx`
+- [x] (문서) PRD/Tasklist 업데이트 — `PRD.md`, `Tasklist.md`

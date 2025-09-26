@@ -216,11 +216,264 @@ class WorkflowGraphConfig:
         )
 
 
+@dataclass
+class BlueprintToggle:
+    """GUI 블루프린트 영역의 가능/불가 상태를 표현한다."""
+
+    id: str
+    label: str
+    enabled: bool = True
+    description: Optional[str] = None
+    shade: str = "oklch(0.82 0.06 235)"
+    accent: Optional[str] = "oklch(0.68 0.10 235)"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "label": self.label,
+            "enabled": self.enabled,
+            "description": self.description,
+            "shade": self.shade,
+            "accent": self.accent,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "BlueprintToggle":
+        if not data:
+            data = {}
+        return cls(
+            id=data.get("id", "unknown"),
+            label=data.get("label", "미지정"),
+            enabled=bool(data.get("enabled", True)),
+            description=data.get("description"),
+            shade=data.get("shade", "oklch(0.82 0.06 235)"),
+            accent=data.get("accent", "oklch(0.68 0.10 235)"),
+        )
+
+
+@dataclass
+class DataSourceConfig:
+    """Access/테이블/컬럼 구성을 UI에서 조정 가능하도록 저장."""
+
+    access_path: str = "routing_data/ROUTING AUTO TEST.accdb"
+    default_table: str = "dbo_BI_ITEM_INFO_VIEW"
+    backup_paths: List[str] = field(default_factory=list)
+    table_profiles: List[Dict[str, Any]] = field(
+        default_factory=lambda: [
+            {
+                "name": "dbo_BI_ITEM_INFO_VIEW",
+                "label": "품목 마스터",
+                "role": "features",
+                "required": True,
+                "columns": ["ITEM_CD", "ITEM_NM", "ITEM_TYPE", "RAW_MATL_KIND"],
+            },
+            {
+                "name": "dbo_BI_ROUTING_VIEW",
+                "label": "라우팅 기준",
+                "role": "routing",
+                "required": True,
+                "columns": [
+                    "ITEM_CD",
+                    "PROC_SEQ",
+                    "JOB_CD",
+                    "SETUP_TIME",
+                    "MACH_WORKED_HOURS",
+                ],
+            },
+            {
+                "name": "dbo_BI_WORK_ORDER_RESULTS",
+                "label": "실적 로그",
+                "role": "results",
+                "required": False,
+                "columns": [
+                    "ITEM_CD",
+                    "ACT_SETUP_TIME",
+                    "ACT_RUN_TIME",
+                    "WAIT_TIME",
+                    "MOVE_TIME",
+                ],
+            },
+        ]
+    )
+    column_overrides: Dict[str, List[str]] = field(default_factory=dict)
+    allow_gui_override: bool = True
+    shading_palette: Dict[str, str] = field(
+        default_factory=lambda: {
+            "allowed": "oklch(0.94 0.04 235)",
+            "restricted": "oklch(0.88 0.03 235)",
+            "disabled": "oklch(0.78 0.02 235)",
+            "highlight": "oklch(0.70 0.08 235)",
+        }
+    )
+    blueprint_switches: List[BlueprintToggle] = field(
+        default_factory=lambda: [
+            BlueprintToggle(
+                id="feature-columns",
+                label="피처 추출",
+                enabled=True,
+                description="ITEM_INFO_VIEW 기반 피처는 활성화 상태",
+            ),
+            BlueprintToggle(
+                id="routing-columns",
+                label="라우팅 기준",
+                enabled=True,
+                description="ROUTING_VIEW는 수정 가능",
+            ),
+            BlueprintToggle(
+                id="workorder-columns",
+                label="실적 로그",
+                enabled=False,
+                description="실적 로그는 기본 비활성 (GUI에서 명시적으로 활성화 필요)",
+                shade="oklch(0.78 0.02 235)",
+                accent="oklch(0.64 0.06 235)",
+            ),
+        ]
+    )
+    version_hint: str = "access-config-v1"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "access_path": self.access_path,
+            "default_table": self.default_table,
+            "backup_paths": list(self.backup_paths),
+            "table_profiles": list(self.table_profiles),
+            "column_overrides": {k: list(v) for k, v in self.column_overrides.items()},
+            "allow_gui_override": self.allow_gui_override,
+            "shading_palette": dict(self.shading_palette),
+            "blueprint_switches": [toggle.to_dict() for toggle in self.blueprint_switches],
+            "version_hint": self.version_hint,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DataSourceConfig":
+        if not data:
+            data = {}
+        switches = [BlueprintToggle.from_dict(item) for item in data.get("blueprint_switches", [])]
+        if not switches:
+            switches = cls().blueprint_switches
+        instance = cls(
+            access_path=data.get("access_path", "routing_data/ROUTING AUTO TEST.accdb"),
+            default_table=data.get("default_table", "dbo_BI_ITEM_INFO_VIEW"),
+            backup_paths=data.get("backup_paths", []),
+            table_profiles=data.get("table_profiles", cls().table_profiles),
+            column_overrides={k: list(v) for k, v in data.get("column_overrides", {}).items()},
+            allow_gui_override=bool(data.get("allow_gui_override", True)),
+            shading_palette=data.get("shading_palette", cls().shading_palette),
+            blueprint_switches=switches,
+            version_hint=data.get("version_hint", "access-config-v1"),
+        )
+        return instance
+
+
+@dataclass
+class ExportFormatConfig:
+    """예측 결과 내보내기 옵션."""
+
+    enable_cache_save: bool = False
+    enable_excel: bool = True
+    enable_csv: bool = True
+    enable_txt: bool = True
+    enable_parquet: bool = True
+    enable_json: bool = True
+    erp_interface_enabled: bool = False
+    erp_protocol: Optional[str] = None
+    erp_endpoint: Optional[str] = None
+    default_encoding: str = "utf-8"
+    export_directory: str = "deliverables/exports"
+    compress_on_save: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "enable_cache_save": self.enable_cache_save,
+            "enable_excel": self.enable_excel,
+            "enable_csv": self.enable_csv,
+            "enable_txt": self.enable_txt,
+            "enable_parquet": self.enable_parquet,
+            "enable_json": self.enable_json,
+            "erp_interface_enabled": self.erp_interface_enabled,
+            "erp_protocol": self.erp_protocol,
+            "erp_endpoint": self.erp_endpoint,
+            "default_encoding": self.default_encoding,
+            "export_directory": self.export_directory,
+            "compress_on_save": self.compress_on_save,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ExportFormatConfig":
+        if not data:
+            data = {}
+        return cls(
+            enable_cache_save=bool(data.get("enable_cache_save", False)),
+            enable_excel=bool(data.get("enable_excel", True)),
+            enable_csv=bool(data.get("enable_csv", True)),
+            enable_txt=bool(data.get("enable_txt", True)),
+            enable_parquet=bool(data.get("enable_parquet", True)),
+            enable_json=bool(data.get("enable_json", True)),
+            erp_interface_enabled=bool(data.get("erp_interface_enabled", False)),
+            erp_protocol=data.get("erp_protocol"),
+            erp_endpoint=data.get("erp_endpoint"),
+            default_encoding=data.get("default_encoding", "utf-8"),
+            export_directory=data.get("export_directory", "deliverables/exports"),
+            compress_on_save=bool(data.get("compress_on_save", True)),
+        )
+
+
+@dataclass
+class VisualizationConfig:
+    """TensorBoard/Neo4j 시각화 설정."""
+
+    tensorboard_projector_dir: str = "logs/tensorboard"
+    projector_enabled: bool = True
+    projector_metadata_columns: List[str] = field(
+        default_factory=lambda: ["ITEM_CD", "ITEM_NM", "GROUP1", "ITEM_TYPE"]
+    )
+    neo4j_enabled: bool = True
+    neo4j_browser_url: str = "http://localhost:7474"
+    neo4j_workspace: str = "neo4j+routing"
+    publish_service_enabled: bool = True
+    publish_notes: Optional[str] = "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "tensorboard_projector_dir": self.tensorboard_projector_dir,
+            "projector_enabled": self.projector_enabled,
+            "projector_metadata_columns": list(self.projector_metadata_columns),
+            "neo4j_enabled": self.neo4j_enabled,
+            "neo4j_browser_url": self.neo4j_browser_url,
+            "neo4j_workspace": self.neo4j_workspace,
+            "publish_service_enabled": self.publish_service_enabled,
+            "publish_notes": self.publish_notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VisualizationConfig":
+        if not data:
+            data = {}
+        return cls(
+            tensorboard_projector_dir=data.get("tensorboard_projector_dir", "logs/tensorboard"),
+            projector_enabled=bool(data.get("projector_enabled", True)),
+            projector_metadata_columns=data.get(
+                "projector_metadata_columns", ["ITEM_CD", "ITEM_NM", "GROUP1", "ITEM_TYPE"]
+            ),
+            neo4j_enabled=bool(data.get("neo4j_enabled", True)),
+            neo4j_browser_url=data.get("neo4j_browser_url", "http://localhost:7474"),
+            neo4j_workspace=data.get("neo4j_workspace", "neo4j+routing"),
+            publish_service_enabled=bool(data.get("publish_service_enabled", True)),
+            publish_notes=data.get(
+                "publish_notes",
+                "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다.",
+            ),
+        )
+
+
 DEFAULT_CONFIG: Dict[str, Any] = {
     "graph": WorkflowGraphConfig().to_dict(),
     "trainer": TrainerRuntimeConfig().to_dict(),
     "predictor": PredictorRuntimeConfig().to_dict(),
     "sql": SQLColumnConfig().to_dict(),
+    "data_source": DataSourceConfig().to_dict(),
+    "export": ExportFormatConfig().to_dict(),
+    "visualization": VisualizationConfig().to_dict(),
     "updated_at": datetime.utcnow().isoformat(),
 }
 
@@ -300,6 +553,27 @@ class WorkflowConfigStore:
     def update_sql_column_config(self, config: SQLColumnConfig) -> Dict[str, Any]:
         return self.update_config({"sql": config.to_dict()})
 
+    def get_data_source_config(self) -> DataSourceConfig:
+        data = self.load().get("data_source", {})
+        return DataSourceConfig.from_dict(data)
+
+    def update_data_source_config(self, config: DataSourceConfig) -> Dict[str, Any]:
+        return self.update_config({"data_source": config.to_dict()})
+
+    def get_export_config(self) -> ExportFormatConfig:
+        data = self.load().get("export", {})
+        return ExportFormatConfig.from_dict(data)
+
+    def update_export_config(self, config: ExportFormatConfig) -> Dict[str, Any]:
+        return self.update_config({"export": config.to_dict()})
+
+    def get_visualization_config(self) -> VisualizationConfig:
+        data = self.load().get("visualization", {})
+        return VisualizationConfig.from_dict(data)
+
+    def update_visualization_config(self, config: VisualizationConfig) -> Dict[str, Any]:
+        return self.update_config({"visualization": config.to_dict()})
+
     def update_graph(self, graph: WorkflowGraphConfig) -> Dict[str, Any]:
         graph.last_saved = datetime.utcnow().isoformat()
         return self.update_config({"graph": graph.to_dict()})
@@ -321,4 +595,8 @@ __all__ = [
     "PredictorRuntimeConfig",
     "SQLColumnConfig",
     "PowerQueryProfile",
+    "DataSourceConfig",
+    "ExportFormatConfig",
+    "VisualizationConfig",
+    "BlueprintToggle",
 ]

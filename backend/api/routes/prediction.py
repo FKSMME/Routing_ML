@@ -1,6 +1,8 @@
 """FastAPI 라우터 정의."""
 from __future__ import annotations
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.api.config import get_settings
@@ -50,7 +52,19 @@ async def predict(
             similarity_threshold=request.similarity_threshold
             or prediction_service.settings.default_similarity_threshold,
             mode=request.mode,
+            feature_weights=request.feature_weights,
+            weight_profile=request.weight_profile,
+            with_visualization=request.with_visualization,
         )
+        exported_files: List[str] = []
+        if request.export_formats:
+            exported_files = prediction_service.export_predictions(
+                items,
+                candidates,
+                request.export_formats,
+            )
+            if exported_files:
+                metrics["exported_files"] = exported_files
         audit_logger.info(
             "predict",
             extra={
@@ -58,6 +72,7 @@ async def predict(
                 "requested_items": request.item_codes,
                 "returned_candidates": len(candidates),
                 "threshold": metrics.get("threshold"),
+                "exported_files": exported_files,
             },
         )
         return PredictionResponse(items=items, candidates=candidates, metrics=metrics)

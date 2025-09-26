@@ -54,11 +54,70 @@ export interface SQLConfigModel {
   active_profile?: string | null;
 }
 
+export interface BlueprintToggle {
+  id: string;
+  label: string;
+  enabled: boolean;
+  description?: string | null;
+  shade?: string | null;
+  accent?: string | null;
+}
+
+export interface DataSourceTableProfile {
+  name: string;
+  label: string;
+  role: "features" | "routing" | "results" | "aux";
+  required: boolean;
+  columns: string[];
+  description?: string | null;
+}
+
+export interface DataSourceConfigModel {
+  access_path: string;
+  default_table: string;
+  backup_paths: string[];
+  table_profiles: DataSourceTableProfile[];
+  column_overrides: Record<string, string[]>;
+  allow_gui_override: boolean;
+  shading_palette: Record<string, string>;
+  blueprint_switches: BlueprintToggle[];
+  version_hint?: string | null;
+}
+
+export interface ExportConfigModel {
+  enable_cache_save: boolean;
+  enable_excel: boolean;
+  enable_csv: boolean;
+  enable_txt: boolean;
+  enable_parquet: boolean;
+  enable_json: boolean;
+  erp_interface_enabled: boolean;
+  erp_protocol?: string | null;
+  erp_endpoint?: string | null;
+  default_encoding: string;
+  export_directory: string;
+  compress_on_save: boolean;
+}
+
+export interface VisualizationConfigModel {
+  tensorboard_projector_dir: string;
+  projector_enabled: boolean;
+  projector_metadata_columns: string[];
+  neo4j_enabled: boolean;
+  neo4j_browser_url?: string | null;
+  neo4j_workspace?: string | null;
+  publish_service_enabled: boolean;
+  publish_notes?: string | null;
+}
+
 export interface WorkflowConfigResponse {
   graph: WorkflowGraphModel;
   trainer: TrainerRuntimeModel;
   predictor: PredictorRuntimeModel;
   sql: SQLConfigModel;
+  data_source: DataSourceConfigModel;
+  export: ExportConfigModel;
+  visualization: VisualizationConfigModel;
   updated_at: string;
 }
 
@@ -91,9 +150,48 @@ export interface SQLConfigPatch {
   active_profile?: string | null;
 }
 
+export interface DataSourceConfigPatch {
+  access_path?: string;
+  default_table?: string;
+  backup_paths?: string[];
+  table_profiles?: DataSourceTableProfile[];
+  column_overrides?: Record<string, string[]>;
+  allow_gui_override?: boolean;
+  blueprint_switches?: { id: string; enabled?: boolean; description?: string | null }[];
+}
+
+export interface ExportConfigPatch {
+  enable_cache_save?: boolean;
+  enable_excel?: boolean;
+  enable_csv?: boolean;
+  enable_txt?: boolean;
+  enable_parquet?: boolean;
+  enable_json?: boolean;
+  erp_interface_enabled?: boolean;
+  erp_protocol?: string | null;
+  erp_endpoint?: string | null;
+  default_encoding?: string;
+  export_directory?: string;
+  compress_on_save?: boolean;
+}
+
+export interface VisualizationConfigPatch {
+  tensorboard_projector_dir?: string;
+  projector_enabled?: boolean;
+  projector_metadata_columns?: string[];
+  neo4j_enabled?: boolean;
+  neo4j_browser_url?: string | null;
+  neo4j_workspace?: string | null;
+  publish_service_enabled?: boolean;
+  publish_notes?: string | null;
+}
+
 export interface WorkflowConfigPatch {
   graph?: WorkflowGraphPatch;
   trainer?: TrainerRuntimePatch;
   predictor?: PredictorRuntimePatch;
   sql?: SQLConfigPatch;
+  data_source?: DataSourceConfigPatch;
+  export?: ExportConfigPatch;
+  visualization?: VisualizationConfigPatch;
 }

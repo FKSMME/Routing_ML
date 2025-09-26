@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import joblib
 import numpy as np
@@ -17,6 +17,51 @@ logger = get_logger("feature_weights")
 
 class FeatureWeightManager:
     """실제 41개 피처에 대한 가중치 관리 및 활성화/비활성화 클래스"""
+
+    PROFILE_PRESETS: Dict[str, Dict[str, Any]] = {
+        "default": {
+            "description": "기본 가중치 (도메인 지식 기반)",
+            "weights": {},
+        },
+        "geometry-focus": {
+            "description": "치수 및 치공구 관련 피처 강조",
+            "weights": {
+                "OUTDIAMETER": 2.4,
+                "INDIAMETER": 2.2,
+                "OUTTHICKNESS": 2.2,
+                "IN_SEALSIZE": 1.6,
+                "OUT_SEALSIZE": 1.6,
+                "MID_SEALSIZE": 1.6,
+            },
+            "activate": {
+                "OUTDIAMETER": True,
+                "INDIAMETER": True,
+                "OUTTHICKNESS": True,
+                "IN_SEALSIZE": True,
+                "OUT_SEALSIZE": True,
+                "MID_SEALSIZE": True,
+            },
+        },
+        "operation-history": {
+            "description": "공정 이력/시간 기반 가중치",
+            "weights": {
+                "SETUP_TIME": 1.8,
+                "MACH_WORKED_HOURS": 1.8,
+                "ACT_RUN_TIME": 1.6,
+                "ACT_SETUP_TIME": 1.6,
+                "WAIT_TIME": 1.4,
+                "MOVE_TIME": 1.2,
+            },
+            "activate": {
+                "SETUP_TIME": True,
+                "MACH_WORKED_HOURS": True,
+                "ACT_RUN_TIME": True,
+                "ACT_SETUP_TIME": True,
+                "WAIT_TIME": True,
+                "MOVE_TIME": True,
+            },
+        },
+    }
 
     # ----------------------------------------------------------------------
     # ❶ 기본 가중치 (도메인 지식 기반)
@@ -139,6 +184,61 @@ class FeatureWeightManager:
         self.feature_importance: Dict[str, float] = {}
         self.feature_statistics: Dict[str, Dict[str, float]] = {}
         self.load_weights()  # 기존 저장본 있으면 불러오기
+
+    # ------------------------------------------------------------------
+    # ❹ 프로파일 관리
+    # ------------------------------------------------------------------
+    def list_profiles(self) -> List[Dict[str, Any]]:
+        profiles: List[Dict[str, Any]] = []
+        for name, payload in self.PROFILE_PRESETS.items():
+            entry = {"name": name}
+            entry.update({k: v for k, v in payload.items() if k != "weights"})
+            entry["weights"] = payload.get("weights", {})
+            profiles.append(entry)
+        return profiles
+
+    def apply_profile(self, name: str, *, persist: bool = True) -> None:
+        preset = self.PROFILE_PRESETS.get(name)
+        if preset is None:
+            raise KeyError(f"알 수 없는 피처 가중치 프로파일: {name}")
+
+        weights = preset.get("weights", {})
+        if weights:
+            self.feature_weights.update(weights)
+        activate = preset.get("activate", {})
+        for feature, enabled in activate.items():
+            self.active_features[feature] = bool(enabled)
+
+        logger.info("Feature weight profile 적용: %s", name)
+        if persist:
+            self.save_weights()
+
+    def apply_manual_weights(
+        self,
+        overrides: Dict[str, float],
+        *,
+        persist: bool = True,
+        clip_range: Tuple[float, float] = (0.0, 4.0),
+    ) -> None:
+        if not overrides:
+            return
+        min_val, max_val = clip_range
+        clipped = {}
+        for feature, weight in overrides.items():
+            if not isinstance(weight, (int, float)):
+                continue
+            clipped[feature] = float(max(min(weight, max_val), min_val))
+        self.feature_weights.update(clipped)
+        logger.info("수동 피처 가중치 적용: %d개", len(clipped))
+        if persist:
+            self.save_weights()
+
+    def export_state(self) -> Dict[str, Any]:
+        return {
+            "weights": dict(self.feature_weights),
+            "active_features": dict(self.active_features),
+            "profiles": self.list_profiles(),
+        }
 
     # ----------------------------------------------------------------------
     # ❸ 중요도 분석

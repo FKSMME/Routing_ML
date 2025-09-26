@@ -29,6 +29,13 @@ export interface PredictionMetrics {
   returned_candidates?: number;
   threshold?: number;
   generated_at?: string;
+  feature_weights?: {
+    weights?: Record<string, number>;
+    active_features?: Record<string, boolean>;
+    profiles?: { name: string; description?: string; weights?: Record<string, number> }[];
+  };
+  visualization?: Record<string, unknown>;
+  exported_files?: string[];
 }
 
 export interface PredictionResponse {

@@ -8,10 +8,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from backend.api.config import get_settings
 from backend.api.schemas import (
     AuthenticatedUser,
+    BlueprintToggleModel,
+    DataSourceConfigModel,
+    DataSourceTableProfileModel,
+    ExportConfigModel,
     PowerQueryProfileModel,
     PredictorRuntimeModel,
     SQLConfigModel,
     TrainerRuntimeModel,
+    VisualizationConfigModel,
     WorkflowConfigPatch,
     WorkflowConfigResponse,
     WorkflowGraphEdge,
@@ -22,10 +27,13 @@ from backend.api.security import require_auth
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
 from backend.trainer_ml import apply_trainer_runtime_config
 from common.config_store import (
+    DataSourceConfig,
+    ExportFormatConfig,
     PowerQueryProfile,
     PredictorRuntimeConfig,
     SQLColumnConfig,
     TrainerRuntimeConfig,
+    VisualizationConfig,
     WorkflowGraphConfig,
     workflow_config_store,
 )
@@ -43,6 +51,9 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
     trainer_cfg = TrainerRuntimeConfig.from_dict(snapshot.get("trainer", {}))
     predictor_cfg = PredictorRuntimeConfig.from_dict(snapshot.get("predictor", {}))
     sql_cfg = SQLColumnConfig.from_dict(snapshot.get("sql", {}))
+    data_source_cfg = DataSourceConfig.from_dict(snapshot.get("data_source", {}))
+    export_cfg = ExportFormatConfig.from_dict(snapshot.get("export", {}))
+    viz_cfg = VisualizationConfig.from_dict(snapshot.get("visualization", {}))
 
     return WorkflowConfigResponse(
         graph=WorkflowGraphModel(
@@ -60,6 +71,25 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
             profiles=[PowerQueryProfileModel(**profile.to_dict()) for profile in sql_cfg.profiles],
             active_profile=sql_cfg.active_profile,
         ),
+        data_source=DataSourceConfigModel(
+            access_path=data_source_cfg.access_path,
+            default_table=data_source_cfg.default_table,
+            backup_paths=data_source_cfg.backup_paths,
+            table_profiles=[
+                DataSourceTableProfileModel(**profile)
+                for profile in data_source_cfg.table_profiles
+            ],
+            column_overrides=data_source_cfg.column_overrides,
+            allow_gui_override=data_source_cfg.allow_gui_override,
+            shading_palette=data_source_cfg.shading_palette,
+            blueprint_switches=[
+                BlueprintToggleModel(**toggle.to_dict())
+                for toggle in data_source_cfg.blueprint_switches
+            ],
+            version_hint=data_source_cfg.version_hint,
+        ),
+        export=ExportConfigModel(**export_cfg.to_dict()),
+        visualization=VisualizationConfigModel(**viz_cfg.to_dict()),
         updated_at=snapshot.get("updated_at", datetime.utcnow().isoformat()),
     )
 
@@ -192,6 +222,110 @@ async def patch_workflow_graph(
             extra={
                 "username": current_user.username,
                 "active_profile": sql_cfg.active_profile,
+            },
+        )
+
+    if payload.data_source is not None:
+        data_cfg = DataSourceConfig.from_dict(snapshot.get("data_source", {}))
+        if payload.data_source.access_path is not None:
+            access_path = payload.data_source.access_path.strip()
+            if not access_path.lower().endswith(".accdb"):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Access 데이터베이스 파일(.accdb)만 허용됩니다.",
+                )
+            data_cfg.access_path = access_path
+        if payload.data_source.default_table is not None:
+            data_cfg.default_table = payload.data_source.default_table
+        if payload.data_source.backup_paths is not None:
+            data_cfg.backup_paths = payload.data_source.backup_paths
+        if payload.data_source.table_profiles is not None:
+            data_cfg.table_profiles = [profile.dict() for profile in payload.data_source.table_profiles]
+        if payload.data_source.column_overrides is not None:
+            data_cfg.column_overrides = {
+                key: list(values)
+                for key, values in payload.data_source.column_overrides.items()
+            }
+        if payload.data_source.allow_gui_override is not None:
+            data_cfg.allow_gui_override = payload.data_source.allow_gui_override
+        if payload.data_source.blueprint_switches is not None:
+            toggle_map = {toggle.id: toggle for toggle in data_cfg.blueprint_switches}
+            for toggle_patch in payload.data_source.blueprint_switches:
+                toggle = toggle_map.get(toggle_patch.id)
+                if not toggle:
+                    continue
+                if toggle_patch.enabled is not None:
+                    toggle.enabled = toggle_patch.enabled
+                if toggle_patch.description is not None:
+                    toggle.description = toggle_patch.description
+            data_cfg.blueprint_switches = list(toggle_map.values())
+        snapshot = workflow_config_store.update_data_source_config(data_cfg)
+        logger.info(
+            "데이터 소스 설정 업데이트",
+            extra={
+                "username": current_user.username,
+                "access_path": data_cfg.access_path,
+                "default_table": data_cfg.default_table,
+            },
+        )
+
+    if payload.export is not None:
+        export_cfg = ExportFormatConfig.from_dict(snapshot.get("export", {}))
+        for field_name in [
+            "enable_cache_save",
+            "enable_excel",
+            "enable_csv",
+            "enable_txt",
+            "enable_parquet",
+            "enable_json",
+            "erp_interface_enabled",
+            "erp_protocol",
+            "erp_endpoint",
+            "default_encoding",
+            "export_directory",
+            "compress_on_save",
+        ]:
+            value = getattr(payload.export, field_name)
+            if value is not None:
+                setattr(export_cfg, field_name, value)
+        snapshot = workflow_config_store.update_export_config(export_cfg)
+        logger.info(
+            "결과 내보내기 설정 업데이트",
+            extra={
+                "username": current_user.username,
+                "formats": {
+                    "excel": export_cfg.enable_excel,
+                    "csv": export_cfg.enable_csv,
+                    "txt": export_cfg.enable_txt,
+                    "parquet": export_cfg.enable_parquet,
+                    "json": export_cfg.enable_json,
+                },
+                "erp_enabled": export_cfg.erp_interface_enabled,
+            },
+        )
+
+    if payload.visualization is not None:
+        viz_cfg = VisualizationConfig.from_dict(snapshot.get("visualization", {}))
+        for field_name in [
+            "tensorboard_projector_dir",
+            "projector_enabled",
+            "projector_metadata_columns",
+            "neo4j_enabled",
+            "neo4j_browser_url",
+            "neo4j_workspace",
+            "publish_service_enabled",
+            "publish_notes",
+        ]:
+            value = getattr(payload.visualization, field_name)
+            if value is not None:
+                setattr(viz_cfg, field_name, value)
+        snapshot = workflow_config_store.update_visualization_config(viz_cfg)
+        logger.info(
+            "시각화 설정 업데이트",
+            extra={
+                "username": current_user.username,
+                "tensorboard": viz_cfg.tensorboard_projector_dir,
+                "neo4j": viz_cfg.neo4j_browser_url,
             },
         )
 
