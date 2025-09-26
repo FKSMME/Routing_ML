@@ -59,6 +59,14 @@
    - 설정 파일: `%APPDATA%\RoutingML\config\workflow_settings.json`
 5. "완료" 버튼을 누르면 설치가 마무리됩니다.
 
+## 4-1. Access DB 배치 및 경로 설정
+1. 사내 공유 드라이브에서 최신 Access DB(`ROUTING AUTO TEST.accdb`) 파일을 복사합니다.
+   - 기본 제공 위치 예시: `\\fileserver\routing\ROUTING AUTO TEST.accdb`
+2. 사용자 PC의 `%APPDATA%\RoutingML` 폴더 안에 `routing_data` 폴더를 만들고, 방금 복사한 DB를 저장합니다.
+   - 최종 경로 예시: `%APPDATA%\RoutingML\routing_data\ROUTING AUTO TEST.accdb`
+3. 서비스 실행 중 경로를 바꾸어야 한다면 워크플로우 UI 설정 화면에서 `access_path` 값을 사내 공유 폴더 경로로 갱신합니다.
+   - 예: `access_path = \\fileserver\routing\ROUTING AUTO TEST.accdb`
+
 ## 5. 설치 후 바로 해보는 점검
 - [ ] 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다.
 - [ ] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
