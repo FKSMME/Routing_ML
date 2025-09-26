@@ -3,9 +3,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from backend.api.config import get_settings
 from backend.api.schemas import (
+    AuthenticatedUser,
     PowerQueryProfileModel,
     PredictorRuntimeModel,
     SQLConfigModel,
@@ -16,6 +18,7 @@ from backend.api.schemas import (
     WorkflowGraphModel,
     WorkflowGraphNode,
 )
+from backend.api.security import require_auth
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
 from backend.trainer_ml import apply_trainer_runtime_config
 from common.config_store import (
@@ -30,6 +33,8 @@ from common.logger import get_logger
 
 router = APIRouter(prefix="/api/workflow", tags=["workflow-graph"])
 logger = get_logger("api.workflow")
+settings = get_settings()
+audit_logger = get_logger("workflow.audit", log_dir=settings.audit_log_dir, use_json=True)
 
 
 def _build_response(snapshot: dict) -> WorkflowConfigResponse:
@@ -59,15 +64,24 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
 
 
 @router.get("/graph", response_model=WorkflowConfigResponse)
-async def get_workflow_graph() -> WorkflowConfigResponse:
+async def get_workflow_graph(
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> WorkflowConfigResponse:
     """현재 워크플로우 그래프 및 런타임 설정을 반환한다."""
 
     snapshot = workflow_config_store.load()
+    audit_logger.info(
+        "workflow.graph.read",
+        extra={"username": current_user.username},
+    )
     return _build_response(snapshot)
 
 
 @router.patch("/graph", response_model=WorkflowConfigResponse)
-async def patch_workflow_graph(payload: WorkflowConfigPatch) -> WorkflowConfigResponse:
+async def patch_workflow_graph(
+    payload: WorkflowConfigPatch,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> WorkflowConfigResponse:
     """워크플로우 그래프와 런타임 설정을 갱신한다."""
 
     if payload is None or payload.dict(exclude_unset=True) == {}:
@@ -85,7 +99,14 @@ async def patch_workflow_graph(payload: WorkflowConfigPatch) -> WorkflowConfigRe
             graph_cfg.design_refs = payload.graph.design_refs
         graph_cfg.last_saved = datetime.utcnow().isoformat()
         snapshot = workflow_config_store.update_graph(graph_cfg)
-        logger.info("워크플로우 그래프 업데이트: nodes=%d edges=%d", len(graph_cfg.nodes), len(graph_cfg.edges))
+        logger.info(
+            "워크플로우 그래프 업데이트",
+            extra={
+                "username": current_user.username,
+                "nodes": len(graph_cfg.nodes),
+                "edges": len(graph_cfg.edges),
+            },
+        )
 
     if payload.trainer is not None:
         trainer_cfg = TrainerRuntimeConfig.from_dict(snapshot.get("trainer", {}))
@@ -99,7 +120,7 @@ async def patch_workflow_graph(payload: WorkflowConfigPatch) -> WorkflowConfigRe
             trainer_cfg.trim_upper_percent = payload.trainer.trim_upper_percent
         snapshot = workflow_config_store.update_trainer_runtime(trainer_cfg)
         apply_trainer_runtime_config(trainer_cfg)
-        logger.info("트레이너 런타임 설정 저장")
+        logger.info("트레이너 런타임 설정 저장", extra={"username": current_user.username})
 
     if payload.predictor is not None:
         predictor_cfg = PredictorRuntimeConfig.from_dict(snapshot.get("predictor", {}))
@@ -115,7 +136,7 @@ async def patch_workflow_graph(payload: WorkflowConfigPatch) -> WorkflowConfigRe
             predictor_cfg.trim_upper_percent = payload.predictor.trim_upper_percent
         snapshot = workflow_config_store.update_predictor_runtime(predictor_cfg)
         apply_predictor_runtime_config(predictor_cfg)
-        logger.info("예측기 런타임 설정 저장")
+        logger.info("예측기 런타임 설정 저장", extra={"username": current_user.username})
 
     if payload.sql is not None:
         sql_cfg = SQLColumnConfig.from_dict(snapshot.get("sql", {}))
@@ -133,8 +154,18 @@ async def patch_workflow_graph(payload: WorkflowConfigPatch) -> WorkflowConfigRe
         if payload.sql.active_profile is not None:
             sql_cfg.active_profile = payload.sql.active_profile
         snapshot = workflow_config_store.update_sql_column_config(sql_cfg)
-        logger.info("SQL 컬럼 매핑 업데이트: active_profile=%s", sql_cfg.active_profile)
+        logger.info(
+            "SQL 컬럼 매핑 업데이트",
+            extra={
+                "username": current_user.username,
+                "active_profile": sql_cfg.active_profile,
+            },
+        )
 
+    audit_logger.info(
+        "workflow.graph.patch",
+        extra={"username": current_user.username, "updated_keys": list(payload.dict(exclude_none=True).keys())},
+    )
     return _build_response(snapshot)
 
 
