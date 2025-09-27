@@ -1,0 +1,18 @@
+{
+  "generated_at": "20250927T011012Z",
+  "policy_path": "config/odbc_driver_policy.json",
+  "driver_count": 0,
+  "evaluation": {
+    "compliant": false,
+    "checks": [
+      {
+        "driver": "Microsoft Access Driver (*.mdb, *.accdb)",
+        "status": "missing"
+      },
+      {
+        "driver": "SQL Server",
+        "status": "missing"
+      }
+    ]
+  }
+}

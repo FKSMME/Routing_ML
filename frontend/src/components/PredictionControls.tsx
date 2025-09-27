@@ -36,19 +36,21 @@ export function PredictionControls({
   return (
     <form onSubmit={handleSubmit} className="panel-card interactive-card space-y-4">
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-accent-strong">품목 코드</label>
+        <label className="text-xs font-semibold text-accent-strong">품목 코드 목록</label>
         <textarea
           value={inputValue}
           onChange={(event) => setInputValue(event.target.value)}
           rows={3}
           className="input-field"
-          placeholder="ITEM-001, ITEM-002"
+          placeholder="예: ITEM-001, ITEM-002"
         />
-        <p className="text-xs text-muted">콤마로 구분하여 다수의 품목을 입력할 수 있습니다.</p>
+        <p className="text-xs text-muted">
+          콤마로 구분하여 다수의 품목을 입력하면 순서대로 조회됩니다.
+        </p>
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-accent-strong">Top-K 후보 수</label>
+        <label className="text-xs font-semibold text-accent-strong">추천 개수 (Top K)</label>
         <input
           type="number"
           min={1}
@@ -57,10 +59,11 @@ export function PredictionControls({
           onChange={(event) => onChangeTopK(Number(event.target.value))}
           className="input-field"
         />
+        <p className="text-xs text-muted">표시할 유사 공정 후보의 최대 개수를 의미합니다.</p>
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-semibold text-accent-strong">유사도 임계값</label>
+        <label className="text-xs font-semibold text-accent-strong">최소 유사도 점수</label>
         <input
           type="range"
           min={0}
@@ -69,7 +72,9 @@ export function PredictionControls({
           onChange={(event) => onChangeThreshold(Number(event.target.value) / 100)}
           className="w-full"
         />
-        <p className="text-xs text-muted">현재 값: {(threshold * 100).toFixed(0)}%</p>
+        <p className="text-xs text-muted">
+          현재 값: {(threshold * 100).toFixed(0)}% — 이 점수 이상인 후보만 결과에 포함됩니다.
+        </p>
       </div>
 
       <button type="submit" disabled={loading} className="btn-primary w-full">
