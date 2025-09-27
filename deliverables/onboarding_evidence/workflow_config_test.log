@@ -1,0 +1,15 @@
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
+rootdir: /workspace/Routing_ML
+plugins: anyio-4.11.0
+collected 2 items
+
+tests/test_sql_column_config.py ..                                                                                       [100%]
+
+======================================================= warnings summary =======================================================
+common/config_store.py:477
+  /workspace/Routing_ML/common/config_store.py:477: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "updated_at": datetime.utcnow().isoformat(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================================= 2 passed, 1 warning in 0.05s =================================================
