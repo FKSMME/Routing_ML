@@ -1,0 +1,12 @@
+2025-10-02T09:00:00Z | troubleshooting | section1 | install_service 로그 경로/스크립트 로직 점검, 컨테이너에는 로그 미생성 상태 확인.
+2025-10-02T09:05:00Z | troubleshooting | section1 | Windows 서비스 제거/재등록 PowerShell 명령 재검토, 관리자 환경 미제공 사실 기록.
+2025-10-02T09:10:00Z | troubleshooting | section1 | 이벤트 뷰어 전달 절차를 Stage9 패키징 지침과 대조해 보고 루트 확인.
+2025-10-02T09:20:00Z | troubleshooting | section2 | netstat/ss 미설치 확인, 포트 8000 충돌 진단 절차 문서화 및 대체 포트 재설치 옵션 재검토.
+2025-10-02T09:25:00Z | troubleshooting | section2 | 헬스체크 URL 및 post_install_test 포트 매개변수 검증, 브라우저 확인은 불가 환경으로 로깅.
+2025-10-02T09:35:00Z | troubleshooting | section3 | verify_odbc.ps1 로직 검토 및 Access ODBC 설치/네트워크 점검 순서 문서화.
+2025-10-02T09:45:00Z | troubleshooting | section4 | models 디렉터리 내 핵심 산출물(training_metadata.json, encoder.joblib, scaler.joblib) 존재 확인.
+2025-10-02T09:55:00Z | troubleshooting | section5 | TensorBoard projector 샘플( metadata.tsv, vectors.tsv, projector_config.json ) 생성해 출력 구조 검증.
+2025-10-02T10:05:00Z | troubleshooting | section6 | workflow_settings.json 및 Access 7.1 프로파일 구성 확인, 컬럼 별칭 무결성 검토.
+2025-10-02T10:10:00Z | troubleshooting | section7 | collect_logs.ps1 압축/경로 흐름 검토, 로그 수집 ZIP 생성 절차 문서화.
+2025-10-02T10:15:00Z | troubleshooting | section8 | 제거 절차/서비스 삭제 명령/프로그램 폴더 정리 순서 확인 및 완료 체크.
+2025-10-02T10:20:00Z | troubleshooting | section9 | 지원 연락처 및 stage9_packaging_plan 참조 위치 재확인, 후속 문의 경로 문서화.

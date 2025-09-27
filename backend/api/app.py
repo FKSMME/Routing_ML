@@ -1,6 +1,10 @@
 """FastAPI 애플리케이션 팩토리."""
 from __future__ import annotations
 
+from backend.api.pydantic_compat import ensure_forward_ref_compat
+
+ensure_forward_ref_compat()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

@@ -52,3 +52,8 @@
 4. 단계 종료 보고 및 다음 단계 승인 요청 문서 작성(Access/사내망 준수 로그 첨부) → §7 Stage 종료 조건 및 로그 제출
 5. 그래프 API 배포 파이프라인 및 권한 제어 전략 초안 작성(백엔드 캐시/설정 업데이트 포함, `config/workflow_settings.json` 권한/백업 관리) → `docs/graph_workflow_ui_plan.md#배포-전략`
 
+### 그래프 워크플로우 갱신 보고
+- 2025-09-25T09:08:00Z, Stage 3 범위 내 그래프 API 스키마(노드/에지/런타임/SQL 섹션) 업데이트 사항을 Tasklist와 이해관계자에게 공유하고 `/api/workflow/graph` 영향 범위를 재확인했다.
+- 2025-09-25T09:12:00Z, Stage 4 연계 작업(React Flow 기반 UI)과의 의존성을 문서화하여 `docs/graph_workflow_ui_plan.md#컴포넌트-구조` 업데이트와 함께 검토 로그를 확보했다.
+- React Flow 라이브러리 도입에 대한 사내 의존성 정책 검토 결과를 백엔드 측 승인 라인에 보고하고, Stage 3 로그(`logs/task_execution_20250925.log`)에 계획/승인 타임스탬프를 기록했다.
+

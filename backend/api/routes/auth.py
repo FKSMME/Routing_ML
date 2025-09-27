@@ -1,7 +1,7 @@
 """인증 관련 API 라우터."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from backend.api.config import get_settings
 from backend.api.schemas import AuthenticatedUser, LoginRequest, LoginResponse
@@ -38,13 +38,18 @@ async def login(request: Request, payload: LoginRequest) -> LoginResponse:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(user: AuthenticatedUser = Depends(require_auth)) -> None:
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
+async def logout(user: AuthenticatedUser = Depends(require_auth)) -> Response:
     get_session_manager().revoke(user.session_id)
     audit_logger.info(
         "로그아웃",
         extra={"username": user.username, "client_host": user.client_host},
     )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 __all__ = ["router"]
