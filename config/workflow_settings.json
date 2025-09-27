@@ -1,6 +1,21 @@
 {
   "graph": {
-    "nodes": [],
+    "nodes": [
+      {
+        "id": "trainer",
+        "label": "Trainer",
+        "type": "process",
+        "category": null,
+        "status": null,
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "settings": {},
+        "metrics": {},
+        "doc_refs": []
+      }
+    ],
     "edges": [],
     "design_refs": [
       "main/1.jpg",
@@ -8,7 +23,7 @@
       "main/3.jpg",
       "main/4.jpg"
     ],
-    "last_saved": null
+    "last_saved": "2025-09-27T01:08:10.442335"
   },
   "trainer": {
     "similarity_threshold": 0.8,
@@ -18,7 +33,7 @@
   },
   "predictor": {
     "similarity_high_threshold": 0.8,
-    "max_routing_variants": 4,
+    "max_routing_variants": 5,
     "trim_std_enabled": true,
     "trim_lower_percent": 0.05,
     "trim_upper_percent": 0.95
@@ -150,7 +165,7 @@
     ],
     "active_profile": "Access 7.1 기본"
   },
-  "updated_at": "2025-09-25T18:00:00.000000",
+  "updated_at": "2025-09-27T01:08:10.442495",
   "data_source": {
     "access_path": "routing_data/ROUTING AUTO TEST.accdb",
     "default_table": "dbo_BI_ITEM_INFO_VIEW",
