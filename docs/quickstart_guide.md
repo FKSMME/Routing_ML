@@ -136,6 +136,8 @@ pip install -r requirements.txt
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람)
 
+> **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다.
+
 ### 9. 문제 보고 절차
 1. Stage 0 요구 추적표를 참고해 이슈를 기록한다.
 2. Tasklist 단계 상태를 업데이트하고 승인 요청을 한다.

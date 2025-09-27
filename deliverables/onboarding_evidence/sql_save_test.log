@@ -1,0 +1,51 @@
+===================================================== test session starts ======================================================
+platform linux -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
+rootdir: /workspace/Routing_ML
+plugins: anyio-4.11.0
+collected 1 item
+
+tests/test_prediction_service_sql.py .                                                                                   [100%]
+
+======================================================= warnings summary =======================================================
+backend/api/services/prediction_service.py:9
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:9: DeprecationWarning: 
+  Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
+  (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
+  but was not found to be installed on your system.
+  If this would cause problems for you,
+  please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
+          
+    import pandas as pd
+
+common/config_store.py:477
+  /workspace/Routing_ML/common/config_store.py:477: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "updated_at": datetime.utcnow().isoformat(),
+
+tests/test_prediction_service_sql.py::test_save_candidate_produces_sql_preview
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:142: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+
+tests/test_prediction_service_sql.py::test_save_candidate_produces_sql_preview
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:479: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "generated_at": datetime.utcnow().isoformat(),
+
+tests/test_prediction_service_sql.py::test_save_candidate_produces_sql_preview
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:191: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "saved_at": datetime.utcnow().isoformat(),
+
+tests/test_prediction_service_sql.py::test_save_candidate_produces_sql_preview
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:211: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    saved_at=datetime.utcnow(),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================================ 1 passed, 6 warnings in 3.01s =================================================
+--- Logging error ---
+Traceback (most recent call last):
+  File "/root/.pyenv/versions/3.12.10/lib/python3.12/logging/__init__.py", line 1163, in emit
+    stream.write(msg + self.terminator)
+ValueError: I/O operation on closed file.
+Call stack:
+  File "/workspace/Routing_ML/backend/database.py", line 829, in cleanup_connections
+    logger.info("데이터베이스 연결 풀 정리 완료")
+Message: '데이터베이스 연결 풀 정리 완료'
+Arguments: ()
