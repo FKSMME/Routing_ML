@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import type { DataSourceConfigModel } from "@types/workflow";
+import type { DataSourceConfigModel } from "@app-types/workflow";
 
 interface DataSourceConfiguratorProps {
   config?: DataSourceConfigModel;

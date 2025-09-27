@@ -15,9 +15,10 @@ import type {
   PredictorRuntimeModel,
   SQLConfigModel,
   TrainerRuntimeModel,
+  WorkflowConfigPatch,
   WorkflowGraphEdge,
   WorkflowGraphNode,
-} from "@types/workflow";
+} from "@app-types/workflow";
 
 const NODE_TYPES = {
   module: ModuleNode,

@@ -23,18 +23,36 @@ export interface CandidateRouting {
   metadata?: Record<string, unknown>;
 }
 
+export interface VisualizationSnapshot {
+  tensorboard?: string | null;
+  neo4j?: {
+    workspace?: string | null;
+    browser_url?: string | null;
+    [key: string]: unknown;
+  } | null;
+  [key: string]: unknown;
+}
+
+export interface FeatureWeightsProfile {
+  name: string;
+  description?: string;
+  weights?: Record<string, number>;
+}
+
+export interface FeatureWeightsSummary {
+  weights?: Record<string, number>;
+  active_features?: Record<string, boolean>;
+  profiles?: FeatureWeightsProfile[];
+}
+
 export interface PredictionMetrics {
   requested_items?: number;
   returned_routings?: number;
   returned_candidates?: number;
   threshold?: number;
   generated_at?: string;
-  feature_weights?: {
-    weights?: Record<string, number>;
-    active_features?: Record<string, boolean>;
-    profiles?: { name: string; description?: string; weights?: Record<string, number> }[];
-  };
-  visualization?: Record<string, unknown>;
+  feature_weights?: FeatureWeightsSummary;
+  visualization?: VisualizationSnapshot;
   exported_files?: string[];
 }
 

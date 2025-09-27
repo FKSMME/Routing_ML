@@ -1,4 +1,4 @@
-import type { CandidateRouting } from "@types/routing";
+import type { CandidateRouting } from "@app-types/routing";
 
 interface CandidatePanelProps {
   candidates: CandidateRouting[];

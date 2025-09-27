@@ -9,13 +9,14 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
     "baseUrl": "./src",
     "types": ["vitest"],
     "paths": {
       "@components/*": ["components/*"],
       "@hooks/*": ["hooks/*"],
       "@lib/*": ["lib/*"],
-      "@types/*": ["types/*"]
+      "@app-types/*": ["types/*"]
     }
   },
   "include": ["src"],
