@@ -1,0 +1,5 @@
+metric,stage6_baseline,current_week_value,unit,meets_baseline,notes
+stage_match_rate,0.68,0.68,fraction,TRUE,"Matches Stage 6 rule-based baseline (docs/stage6_monitoring_report.md)"
+time_deviation_mae_minutes,28,28,minutes,TRUE,"Equal to Stage 6 baseline ±28분 tolerance"
+candidate_adoption_rate,,,fraction,,"Baseline not defined in Stage 6 documentation; tracked for monitoring"
+alert_response_time_minutes,,,minutes,,"Baseline not defined in Stage 6 documentation; tracked for monitoring"

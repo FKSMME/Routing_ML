@@ -30,3 +30,8 @@ build/
 dist/
 .eggs/
 *.egg-info/
+
+# Deliverable binaries (excluded from Git to allow PR submission)
+deliverables/**/*.pdf
+deliverables/**/*.tar.gz
+deliverables/**/*.joblib
