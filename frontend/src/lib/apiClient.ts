@@ -1,8 +1,8 @@
 import axios from "axios";
 
-import type { PredictionResponse } from "@types/routing";
+import type { PredictionResponse } from "@app-types/routing";
 
-import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@types/workflow";
+import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 
 
 const fallbackProtocol =

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { predictRoutings } from "@lib/apiClient";
-import type { PredictionResponse } from "@types/routing";
+import type { PredictionResponse } from "@app-types/routing";
 
 interface UsePredictOptions {
   itemCodes: string[];

@@ -1,4 +1,4 @@
-import type { PredictionMetrics } from "@types/routing";
+import type { PredictionMetrics } from "@app-types/routing";
 
 interface VisualizationSummaryProps {
   metrics?: PredictionMetrics;
@@ -10,8 +10,20 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
   }
 
   const exportedFiles = metrics.exported_files ?? [];
-  const tensorboardPath = typeof metrics.visualization?.tensorboard === "string" ? metrics.visualization.tensorboard : undefined;
-  const neo4jInfo = metrics.visualization?.neo4j as Record<string, unknown> | undefined;
+  const visualization = metrics.visualization ?? {};
+  const tensorboardPath =
+    typeof visualization.tensorboard === "string" && visualization.tensorboard.trim() !== ""
+      ? visualization.tensorboard
+      : undefined;
+  const neo4jInfo = visualization.neo4j ?? null;
+  const neo4jWorkspace =
+    typeof neo4jInfo?.workspace === "string" && neo4jInfo.workspace.trim() !== ""
+      ? neo4jInfo.workspace
+      : undefined;
+  const neo4jBrowserUrl =
+    typeof neo4jInfo?.browser_url === "string" && neo4jInfo.browser_url.trim() !== ""
+      ? neo4jInfo.browser_url
+      : undefined;
 
   return (
     <section className="panel-card interactive-card">
@@ -33,9 +45,9 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
         <div>
           <p className="text-xs font-semibold text-accent-strong">Neo4j 그래프</p>
           <p className="text-xs text-muted">
-            {neo4jInfo?.browser_url ? (
+            {neo4jBrowserUrl ? (
               <span>
-                워크스페이스 {neo4jInfo.workspace ?? "-"}, 브라우저 {neo4jInfo.browser_url as string}
+                워크스페이스 {neo4jWorkspace ?? "-"}, 브라우저 {neo4jBrowserUrl}
               </span>
             ) : (
               "생성된 그래프 데이터가 없습니다."

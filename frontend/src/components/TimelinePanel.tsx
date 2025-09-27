@@ -1,4 +1,4 @@
-import type { RoutingSummary } from "@types/routing";
+import type { RoutingSummary } from "@app-types/routing";
 
 interface TimelinePanelProps {
   routings: RoutingSummary[];

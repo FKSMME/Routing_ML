@@ -1,4 +1,4 @@
-import type { ExportConfigModel } from "@types/workflow";
+import type { ExportConfigModel } from "@app-types/workflow";
 
 interface ExportOptionsPanelProps {
   config?: ExportConfigModel;
