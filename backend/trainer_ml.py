@@ -8,11 +8,18 @@ import threading
 import warnings
 from pathlib import Path
 from typing import Callable, List, Tuple, Dict, Optional, Union
+import sys
 import joblib
 from joblib import Parallel, delayed
 import multiprocessing
 import time
 import json
+
+# 패키지 루트 경로를 sys.path에 추가하여 `python backend/trainer_ml.py` 직접 실행을 지원
+if __package__ in (None, ""):
+    project_root = Path(__file__).resolve().parents[1]
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
 
 # ── 서드-파티
 import numpy as np
