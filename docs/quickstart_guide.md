@@ -14,6 +14,7 @@
 - `requirements.txt`를 사용해 백엔드 의존성을 설치한다.
 - 사내 공유폴더(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`로 복사하고, 필요 시 `/mnt/data/routing_data`로 마운트한다.
 - `ACCESS_CONNECTION_STRING` 환경 변수를 `.env` 또는 Compose 시크릿에 설정한다.
+- Windows 배포 노트북은 `C:\Users\(PCname)\Documents\GitHub\Routing_ML`(또는 `D:\Routing_ML`) 경로에 클론하는 것을 권장한다.
 
 ```bash
 python -m venv .venv
@@ -21,14 +22,26 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+```powershell
+# PowerShell에서 경로만 사용자 환경에 맞게 조정
+Set-Location C:\Users\$env:USERNAME\Documents\GitHub\Routing_ML
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination trainer_config.yaml -Force
+```
+
 ### 2. 학습 파이프라인 실행
 1. `backend/trainer_ml.py`의 구성 파일을 복사한다.
    ```bash
    cp deploy/docker/volumes/config/trainer_config.example.yaml trainer_config.yaml
    ```
-2. 구성 값을 검토 후 학습을 실행한다.
+2. 구성 값을 검토 후 학습을 실행한다. `backend/trainer_ml.py`는 직접 실행 시에도 프로젝트 루트를 자동으로 `sys.path`에 추가하므로, PowerShell이나 IDE에서 동일한 명령을 그대로 사용할 수 있다.
    ```bash
    python backend/trainer_ml.py --config trainer_config.yaml --data-path /mnt/data/routing_data
+   ```
+   ```powershell
+   python .\backend\trainer_ml.py --config .\trainer_config.yaml --data-path D:\routing_data
    ```
 3. 실행 후 `models/` 폴더에 HNSW 인덱스와 `tb_projector/`가 생성되었는지 확인한다.
 
@@ -60,13 +73,16 @@ pip install -r requirements.txt
    npm install
    npm run dev -- --host 0.0.0.0
    ```
+   ```powershell
+   Set-Location C:\Users\$env:USERNAME\Documents\GitHub\Routing_ML\frontend
+   npm install
+   npm run dev -- --host 0.0.0.0
+   npm run build   # Vite 경로 alias(@components 등) 확인용 배포 빌드
+   ```
 2. 브라우저에서 `http://10.204.2.28:5173`에 접속해 다음 항목을 확인한다.
    - 유사도 슬라이더 기본값이 0.8인지 확인.
    - 후보 라우팅 카드에서 3~4개의 라우팅 조합이 노출되는지 확인.
    - TensorBoard Projector 안내 링크가 정상 동작하는지 확인.
-   - 워크플로우 그래프 탭에서 `main/1.jpg`~`main/4.jpg` 레이아웃과 동일한 블루스크린 UI가 표시되는지, SAVE 버튼 클릭 후 `/api/workflow/graph` 응답에 변경 사항이 반영되는지 확인.
-
-
    - 워크플로우 그래프 탭에서 `main/1.jpg`~`main/4.jpg` 레이아웃과 동일한 블루스크린 UI가 표시되는지, SAVE 버튼 클릭 후 `/api/workflow/graph` 응답에 변경 사항이 반영되는지 확인.
 
 ### 5. SQL 저장 검증
@@ -93,10 +109,6 @@ pip install -r requirements.txt
   curl http://10.204.2.28:8000/api/health
   curl http://10.204.2.28:8000/api/workflow/graph
   ```
-   ```bash
-   docker compose ps
-   curl http://10.204.2.28:8000/api/health
-   ```
 
 5. 종료:
    ```bash
@@ -128,9 +140,6 @@ pip install -r requirements.txt
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
 - [ ] 예측 API Health OK
 - [ ] UI에서 후보 라우팅 3건 이상 확인
-- [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
-
-
 - [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
 
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치

@@ -21,10 +21,7 @@
 - **Docs**: `docs/` — Stage별 보고서, 빠른 시작, 릴리스 노트, 아키텍처 다이어그램을 포함합니다.
 
 ## 빠른 시작
-자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다.
-
 자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다. 사내 공유 드라이브(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 가져와 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`에 복사한 뒤, 필요하면 `/mnt/data/routing_data`로 마운트하세요.
-
 
 ```bash
 python -m venv .venv
@@ -34,20 +31,31 @@ python backend/trainer_ml.py --config trainer_config.yaml --data-path /mnt/data/
 ACCESS_CONNECTION_STRING="..." uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
 ```
 
-워크플로우 그래프 설정 파일은 `config/workflow_settings.json`에 저장되며, 최초 실행 시 자동 생성됩니다. SAVE 버튼으로 변경된 런타임/컬럼 매핑이 즉시 반영됩니다.
+> **참고:** `backend/trainer_ml.py`는 직접 실행(`python backend/trainer_ml.py`) 시에도 동작하도록 프로젝트 루트를 자동으로 `sys.path`에 추가합니다. IDE나 PowerShell에서 모듈 경로 오류가 발생해도 동일한 명령을 사용하면 됩니다.
 
+### Windows PowerShell 예시
 
+사내 표준 노트북에서는 레포지토리를 `C:\Users\(PCname)\Documents\GitHub\Routing_ML` 또는 데이터 전용 SSD(`D:\Routing_ML`)에 클론합니다. 다음 명령은 PowerShell 기준이며, 필요한 경우 경로만 수정하면 됩니다.
 
-워크플로우 그래프 설정 파일은 `config/workflow_settings.json`에 저장되며, 최초 실행 시 자동 생성됩니다. SAVE 버튼으로 변경된 런타임/컬럼 매핑이 즉시 반영됩니다.
+```powershell
+Set-Location C:\Users\$env:USERNAME\Documents\GitHub\Routing_ML
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination trainer_config.yaml -Force
+python backend/trainer_ml.py --config .\trainer_config.yaml --data-path D:\routing_data
+$env:ACCESS_CONNECTION_STRING = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=D:\routing_data\ROUTING AUTO TEST.accdb"
+uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
+```
 
+프런트엔드는 동일한 루트에서 다음과 같이 실행하거나, 배포 빌드를 검증하려면 `npm run build`를 수행합니다.
 
-
-
-프런트엔드 실행:
-```bash
-cd C:\Users\syyun\Documents\GitHub\Routing_ML\frontend
+```powershell
+Set-Location C:\Users\$env:USERNAME\Documents\GitHub\Routing_ML\frontend
 npm install
 npm run dev -- --host 0.0.0.0
+# 배포 빌드 검증
+npm run build
 ```
 
 - 사내망 사용자들은 `http://10.204.2.28:5173`(프런트엔드)와 `http://10.204.2.28:8000/api/health`(백엔드)로 접근해 상태를 확인합니다.
