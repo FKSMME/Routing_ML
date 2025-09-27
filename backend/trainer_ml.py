@@ -25,6 +25,7 @@ from sklearn.feature_selection import VarianceThreshold
 # ── 사내 모듈
 from backend.constants import TRAIN_FEATURES, NUMERIC_FEATURES
 from common.config_store import TrainerRuntimeConfig, workflow_config_store
+from common.file_lock import FileLock, FileLockTimeout
 from backend.index_hnsw import HNSWSearch
 from backend.feature_weights import FeatureWeightManager  # 추가
 from common.logger import get_logger
@@ -690,200 +691,195 @@ def train_model_with_ml_improved(
     variance_threshold: float = 0.001,
     balance_dimensions: bool = True,
 ) -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
-    """
-    개선된 ML 학습 함수 - 모든 피처 사용 (active features는 예측 시에만 적용)
-    """
+    """개선된 ML 학습 함수 - 파일 잠금을 통해 안전하게 실행."""
+
     logger.info("🚀 개선된 ML 모델 학습 시작")
-    
-    # Progress callback
-    def update_progress(pct: int):
-        if progress_cb:
-            progress_cb(pct)
-        if stop_flag and stop_flag.is_set():
-            logger.info("학습이 중단되었습니다")
-            return False
-        return True
-    
-    if not update_progress(5):
-        return None
-    
-    # 1. 모델 디렉토리 설정
-    if save_dir:
-        model_dir = Path(save_dir)
-        model_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        model_dir = None
-    
-    # 2. Feature Manager 초기화
-    feature_manager = None
-    if model_dir:
-        feature_manager = FeatureWeightManager(model_dir)
-        if optimize_for_seal:
-            feature_manager.optimize_for_seal_manufacturing()
-    
-    # 3. Feature 컬럼 결정
-    feature_cols = [c for c in df.columns if c not in ["ITEM_CD", "ITEM_NM"]]
-    logger.info(f"전체 피처 수: {len(feature_cols)}개")
-    
-    if not update_progress(10):
-        return None
-    
-    # 5. 데이터 전처리
-    df_subset = df[["ITEM_CD"] + feature_cols].copy()
-    logger.info(f"학습 데이터: {len(df_subset)}행 × {len(feature_cols)}열")
-    
-    # 6. Categorical/Numeric 분리
-    cat_cols = [c for c in feature_cols if c not in NUMERIC_FEATURES]
-    num_cols = [c for c in feature_cols if c in NUMERIC_FEATURES]
-    
-    # 전처리
-    if cat_cols:
-        df_subset[cat_cols] = df_subset[cat_cols].apply(lambda x: x.astype(str).str.strip())
-    if num_cols:
-        for col in num_cols:
-            df_subset[col] = pd.to_numeric(df_subset[col], errors='coerce').fillna(0)
-    
-    if not update_progress(20):
-        return None
-    
-    # 7. Label Encoding
-    encoder = LabelEncoder()
-    encoded_cat = pd.DataFrame(index=df_subset.index)
-    
-    if cat_cols:
-        for col in cat_cols:
-            try:
-                encoded_cat[col] = encoder.fit_transform(df_subset[col].astype(str))
-            except Exception as e:
-                logger.warning(f"인코딩 실패 {col}: {e}")
-                encoded_cat[col] = 0
-    
-    # 8. 데이터 병합
-    final_data = pd.concat([encoded_cat, df_subset[num_cols]], axis=1)[feature_cols]
-    
-    if not update_progress(30):
-        return None
-    
-    # 9. Feature weights 적용 (학습 시에는 active mask 적용하지 않음)
-    if feature_manager:
-        weights = feature_manager.get_weights_as_array(feature_cols, apply_active_mask=False)
-        logger.info(f"Feature weights 적용: min={weights.min():.2f}, max={weights.max():.2f}")
-        final_data = final_data * weights
-    
-    # 10. Scaling
-    scaler = StandardScaler()
-    scaled_data = scaler.fit_transform(final_data)
-    
-    if not update_progress(40):
-        return None
-    
-    # 11. Variance threshold (active features에만 적용)
-    if variance_threshold > 0:
-        from sklearn.feature_selection import VarianceThreshold
-        selector = VarianceThreshold(threshold=variance_threshold)
-        scaled_data = selector.fit_transform(scaled_data)
-        
-        # 선택된 피처 업데이트
-        selected_features = [feature_cols[i] for i in selector.get_support(indices=True)]
-        removed_count = len(feature_cols) - len(selected_features)
-        
-        if removed_count > 0:
-            logger.info(f"Variance threshold 적용: {removed_count}개 피처 제거됨")
-            feature_cols = selected_features
-    
-    if not update_progress(50):
-        return None
-    
-    # 12. Dimension balancing
-    target_dim = 128
-    current_dim = scaled_data.shape[1]
-    
-    if balance_dimensions and current_dim != target_dim:
-        if current_dim > target_dim:
-            # PCA로 차원 축소
-            from sklearn.decomposition import PCA
-            pca = PCA(n_components=target_dim, random_state=42)
-            scaled_data = pca.fit_transform(scaled_data)
-            logger.info(f"PCA 차원 축소: {current_dim} → {target_dim}")
+
+    lock_dir = Path(save_dir) if save_dir else Path("models")
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_file = lock_dir / ".training.lock"
+    file_lock = FileLock(lock_file)
+    logger.debug("학습 잠금 파일 경로: %s", lock_file)
+
+    def _run_training() -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
+        def update_progress(pct: int) -> bool:
+            if progress_cb:
+                progress_cb(pct)
+            if stop_flag and stop_flag.is_set():
+                logger.info("학습이 중단되었습니다")
+                return False
+            return True
+
+        if not update_progress(5):
+            return None
+
+        model_dir: Optional[Path]
+        if save_dir:
+            model_dir = lock_dir
         else:
-            # 패딩 추가
-            padding = np.zeros((scaled_data.shape[0], target_dim - current_dim))
-            scaled_data = np.hstack([scaled_data, padding])
-            logger.info(f"차원 패딩: {current_dim} → {target_dim}")
-    
-    # 13. 최종 벡터 준비
-    vectors = scaled_data.astype(np.float32)
-    
-    if not update_progress(70):
-        return None
-    
-    # 14. HNSW 인덱스 생성
-    logger.info(f"HNSW 인덱스 생성 중... (벡터 차원: {vectors.shape[1]})")
-    
-    searcher = HNSWSearch(
-        vectors,
-        df_subset["ITEM_CD"].tolist(),
-        M=32,
-        ef_construction=200,
-        ef_search=None
-    )
-    
-    if not update_progress(90):
-        return None
-    
-    # 15. Feature importance 분석 (active features만)
-    if auto_feature_weights and feature_manager:
-        try:
-            # 임베딩 벡터로 중요도 분석
-            feature_manager.analyze_feature_importance(
-                vectors, 
-                feature_cols,
-                df_subset["ITEM_CD"].tolist()
-            )
-            logger.info("Feature importance 분석 완료")
-        except Exception as e:
-            logger.warning(f"Feature importance 분석 실패: {e}")
-    
-    # 16. 모델 저장
-    if save_dir and model_dir:
-        try:
-            # 기본 컴포넌트 저장
-            save_optimized_model(searcher, encoder, scaler, feature_cols, str(model_dir))
-            
-            # Feature manager 저장 (active features 포함)
-            if feature_manager:
-                feature_manager.save_weights()
-            
-            # 메타데이터 저장
-            if save_metadata:
-                metadata = {
-                    'total_items': len(df_subset),
-                    'total_features': len(feature_cols),
-                    'original_features': len(df.columns) - 2,  # ITEM_CD, ITEM_NM 제외
-                    'vector_dimension': vectors.shape[1],
-                    'training_date': pd.Timestamp.now().isoformat(),
-                    'optimize_for_seal': optimize_for_seal,
-                    'variance_threshold': variance_threshold,
-                    'balance_dimensions': balance_dimensions,
-                    'target_dimension': target_dim if balance_dimensions else None,
-                    'note': 'Active features are applied only during prediction',
-                    'workflow_runtime': dict(TRAINER_RUNTIME_SETTINGS),
-                }
-                
-                metadata_path = model_dir / "training_metadata.json"
-                with open(metadata_path, 'w', encoding='utf-8') as f:
-                    json.dump(metadata, f, indent=2, ensure_ascii=False)
-                
-            logger.info(f"모델 저장 완료: {model_dir}")
-            
-        except Exception as e:
-            logger.error(f"모델 저장 실패: {e}")
-    
-    if not update_progress(100):
-        return None
-    
-    logger.info("✅ ML 모델 학습 완료!")
-    return searcher, encoder, scaler, feature_cols
+            model_dir = None
+
+        feature_manager = None
+        if model_dir:
+            feature_manager = FeatureWeightManager(model_dir)
+            if optimize_for_seal:
+                feature_manager.optimize_for_seal_manufacturing()
+
+        feature_cols = [c for c in df.columns if c not in ["ITEM_CD", "ITEM_NM"]]
+        logger.info("전체 피처 수: %d개", len(feature_cols))
+
+        if not update_progress(10):
+            return None
+
+        df_subset = df[["ITEM_CD"] + feature_cols].copy()
+        logger.info("학습 데이터: %d행 × %d열", len(df_subset), len(feature_cols))
+
+        cat_cols = [c for c in feature_cols if c not in NUMERIC_FEATURES]
+        num_cols = [c for c in feature_cols if c in NUMERIC_FEATURES]
+
+        if cat_cols:
+            df_subset[cat_cols] = df_subset[cat_cols].apply(lambda x: x.astype(str).str.strip())
+        if num_cols:
+            for col in num_cols:
+                df_subset[col] = pd.to_numeric(df_subset[col], errors="coerce").fillna(0)
+
+        if not update_progress(20):
+            return None
+
+        encoder = LabelEncoder()
+        encoded_cat = pd.DataFrame(index=df_subset.index)
+
+        if cat_cols:
+            for col in cat_cols:
+                try:
+                    encoded_cat[col] = encoder.fit_transform(df_subset[col].astype(str))
+                except Exception as exc:  # pragma: no cover - 예외 보호
+                    logger.warning("인코딩 실패 %s: %s", col, exc)
+                    encoded_cat[col] = 0
+
+        final_data = pd.concat([encoded_cat, df_subset[num_cols]], axis=1)[feature_cols]
+
+        if not update_progress(30):
+            return None
+
+        if feature_manager:
+            weights = feature_manager.get_weights_as_array(feature_cols, apply_active_mask=False)
+            logger.info("Feature weights 적용: min=%.2f, max=%.2f", weights.min(), weights.max())
+            final_data = final_data * weights
+
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(final_data)
+
+        if not update_progress(40):
+            return None
+
+        if variance_threshold > 0:
+            from sklearn.feature_selection import VarianceThreshold
+
+            selector = VarianceThreshold(threshold=variance_threshold)
+            scaled_data = selector.fit_transform(scaled_data)
+            selected_features = [feature_cols[i] for i in selector.get_support(indices=True)]
+            removed_count = len(feature_cols) - len(selected_features)
+
+            if removed_count > 0:
+                logger.info("Variance threshold 적용: %d개 피처 제거됨", removed_count)
+                feature_cols = selected_features
+
+        if not update_progress(50):
+            return None
+
+        target_dim = 128
+        current_dim = scaled_data.shape[1]
+
+        if balance_dimensions and current_dim != target_dim:
+            if current_dim > target_dim:
+                from sklearn.decomposition import PCA
+
+                pca = PCA(n_components=target_dim)
+                vectors = pca.fit_transform(scaled_data)
+                logger.info("PCA 적용: %d -> %d 차원", current_dim, vectors.shape[1])
+            else:
+                padding = np.zeros((scaled_data.shape[0], target_dim - current_dim))
+                vectors = np.concatenate([scaled_data, padding], axis=1)
+                logger.info("Zero-padding 적용: %d -> %d 차원", current_dim, vectors.shape[1])
+        else:
+            vectors = scaled_data
+
+        if not update_progress(60):
+            return None
+
+        vectors = normalize(vectors, axis=1)
+
+        if not update_progress(70):
+            return None
+
+        logger.info("HNSW 인덱스 생성 중... (벡터 차원: %d)", vectors.shape[1])
+        searcher = HNSWSearch(
+            vectors,
+            df_subset["ITEM_CD"].tolist(),
+            M=32,
+            ef_construction=200,
+            ef_search=None,
+        )
+
+        if not update_progress(90):
+            return None
+
+        if auto_feature_weights and feature_manager:
+            try:
+                feature_manager.analyze_feature_importance(
+                    vectors,
+                    feature_cols,
+                    df_subset["ITEM_CD"].tolist(),
+                )
+                logger.info("Feature importance 분석 완료")
+            except Exception as exc:  # pragma: no cover - 분석 실패 보호
+                logger.warning("Feature importance 분석 실패: %s", exc)
+
+        if save_dir and model_dir:
+            try:
+                save_optimized_model(searcher, encoder, scaler, feature_cols, str(model_dir))
+
+                if feature_manager:
+                    feature_manager.save_weights()
+
+                if save_metadata:
+                    metadata = {
+                        "total_items": len(df_subset),
+                        "total_features": len(feature_cols),
+                        "original_features": len(df.columns) - 2,
+                        "vector_dimension": vectors.shape[1],
+                        "training_date": pd.Timestamp.now().isoformat(),
+                        "optimize_for_seal": optimize_for_seal,
+                        "variance_threshold": variance_threshold,
+                        "balance_dimensions": balance_dimensions,
+                        "target_dimension": target_dim if balance_dimensions else None,
+                        "note": "Active features are applied only during prediction",
+                        "workflow_runtime": dict(TRAINER_RUNTIME_SETTINGS),
+                    }
+
+                    metadata_path = model_dir / "training_metadata.json"
+                    with open(metadata_path, "w", encoding="utf-8") as handle:
+                        json.dump(metadata, handle, indent=2, ensure_ascii=False)
+
+                logger.info("모델 저장 완료: %s", model_dir)
+            except Exception as exc:  # pragma: no cover - 저장 실패 보호
+                logger.error("모델 저장 실패: %s", exc)
+
+        if not update_progress(100):
+            return None
+
+        logger.info("✅ ML 모델 학습 완료!")
+        return searcher, encoder, scaler, feature_cols
+
+    try:
+        with file_lock.context(timeout=300):
+            logger.info("모델 디렉터리 잠금 획득: %s", lock_file)
+            return _run_training()
+    except FileLockTimeout as exc:
+        message = f"모델 디렉터리 잠금 확보 실패: {lock_file}"
+        logger.error(message)
+        raise RuntimeError(message) from exc
 
 # ════════════════════════════════════════════════
 # 기존 함수들 (호환성 유지)

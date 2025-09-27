@@ -1,0 +1,18 @@
+{
+  "generated_at": "20250927T011026Z",
+  "result": {
+    "config": {
+      "candidate_count": 10,
+      "operations_per_candidate": 400,
+      "repetitions": 3
+    },
+    "timings": {
+      "groupby": 0.02080516399996668,
+      "merge": 0.017687586999954874
+    }
+  },
+  "thresholds": {
+    "groupby_seconds": 2.5,
+    "merge_seconds": 2.5
+  }
+}

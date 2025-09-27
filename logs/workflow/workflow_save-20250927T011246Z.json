@@ -1,0 +1,820 @@
+{
+  "generated_at": "20250927T011246Z",
+  "before_snapshot": {
+    "graph": {
+      "nodes": [],
+      "edges": [],
+      "design_refs": [
+        "main/1.jpg",
+        "main/2.jpg",
+        "main/3.jpg",
+        "main/4.jpg"
+      ],
+      "last_saved": null
+    },
+    "trainer": {
+      "similarity_threshold": 0.8,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "predictor": {
+      "similarity_high_threshold": 0.8,
+      "max_routing_variants": 4,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "sql": {
+      "output_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "column_aliases": {
+        "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+      },
+      "available_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "profiles": [
+        {
+          "name": "Access 7.1 기본",
+          "description": "dbo_BI_ROUTING_VIEW 7.1 구조를 그대로 따르는 기본 매핑",
+          "mapping": {
+            "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+            "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+            "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+          }
+        }
+      ],
+      "active_profile": "Access 7.1 기본"
+    },
+    "updated_at": "2025-09-25T18:00:00.000000",
+    "data_source": {
+      "access_path": "routing_data/ROUTING AUTO TEST.accdb",
+      "default_table": "dbo_BI_ITEM_INFO_VIEW",
+      "backup_paths": [],
+      "table_profiles": [
+        {
+          "name": "dbo_BI_ITEM_INFO_VIEW",
+          "label": "품목 마스터",
+          "role": "features",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "ITEM_NM",
+            "ITEM_TYPE",
+            "RAW_MATL_KIND"
+          ]
+        },
+        {
+          "name": "dbo_BI_ROUTING_VIEW",
+          "label": "라우팅 기준",
+          "role": "routing",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "PROC_SEQ",
+            "JOB_CD",
+            "SETUP_TIME",
+            "MACH_WORKED_HOURS"
+          ]
+        },
+        {
+          "name": "dbo_BI_WORK_ORDER_RESULTS",
+          "label": "실적 로그",
+          "role": "results",
+          "required": false,
+          "columns": [
+            "ITEM_CD",
+            "ACT_SETUP_TIME",
+            "ACT_RUN_TIME",
+            "WAIT_TIME",
+            "MOVE_TIME"
+          ]
+        }
+      ],
+      "column_overrides": {},
+      "allow_gui_override": true,
+      "shading_palette": {
+        "allowed": "oklch(0.94 0.04 235)",
+        "restricted": "oklch(0.88 0.03 235)",
+        "disabled": "oklch(0.78 0.02 235)",
+        "highlight": "oklch(0.70 0.08 235)"
+      },
+      "blueprint_switches": [
+        {
+          "id": "feature-columns",
+          "label": "피처 추출",
+          "enabled": true,
+          "description": "ITEM_INFO_VIEW 기반 피처는 활성화 상태",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "routing-columns",
+          "label": "라우팅 기준",
+          "enabled": true,
+          "description": "ROUTING_VIEW는 수정 가능",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "workorder-columns",
+          "label": "실적 로그",
+          "enabled": false,
+          "description": "실적 로그는 기본 비활성 (GUI에서 명시적으로 활성화 필요)",
+          "shade": "oklch(0.78 0.02 235)",
+          "accent": "oklch(0.64 0.06 235)"
+        }
+      ],
+      "version_hint": "access-config-v1"
+    },
+    "export": {
+      "enable_cache_save": false,
+      "enable_excel": true,
+      "enable_csv": true,
+      "enable_txt": true,
+      "enable_parquet": true,
+      "enable_json": true,
+      "erp_interface_enabled": false,
+      "erp_protocol": null,
+      "erp_endpoint": null,
+      "default_encoding": "utf-8",
+      "export_directory": "deliverables/exports",
+      "compress_on_save": true
+    },
+    "visualization": {
+      "tensorboard_projector_dir": "logs/tensorboard",
+      "projector_enabled": true,
+      "projector_metadata_columns": [
+        "ITEM_CD",
+        "ITEM_NM",
+        "GROUP1",
+        "ITEM_TYPE"
+      ],
+      "neo4j_enabled": true,
+      "neo4j_browser_url": "http://localhost:7474",
+      "neo4j_workspace": "neo4j+routing",
+      "publish_service_enabled": true,
+      "publish_notes": "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
+    }
+  },
+  "after_snapshot": {
+    "graph": {
+      "nodes": [
+        {
+          "id": "source",
+          "label": "Data Source",
+          "type": "start"
+        },
+        {
+          "id": "trainer",
+          "label": "Train Model",
+          "type": "process"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "source",
+          "target": "trainer"
+        }
+      ],
+      "design_refs": [
+        "main/1.jpg"
+      ],
+      "last_saved": "2025-09-27T01:12:46.940538"
+    },
+    "trainer": {
+      "similarity_threshold": 0.8,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "predictor": {
+      "similarity_high_threshold": 0.8,
+      "max_routing_variants": 4,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "sql": {
+      "output_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "column_aliases": {
+        "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+      },
+      "available_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "profiles": [
+        {
+          "name": "Access 7.1 기본",
+          "description": "dbo_BI_ROUTING_VIEW 7.1 구조를 그대로 따르는 기본 매핑",
+          "mapping": {
+            "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+            "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+            "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+          }
+        }
+      ],
+      "active_profile": "Access 7.1 기본"
+    },
+    "updated_at": "2025-09-27T01:12:46.940928",
+    "data_source": {
+      "access_path": "routing_data/ROUTING AUTO TEST.accdb",
+      "default_table": "dbo_BI_ITEM_INFO_VIEW",
+      "backup_paths": [],
+      "table_profiles": [
+        {
+          "name": "dbo_BI_ITEM_INFO_VIEW",
+          "label": "품목 마스터",
+          "role": "features",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "ITEM_NM",
+            "ITEM_TYPE",
+            "RAW_MATL_KIND"
+          ]
+        },
+        {
+          "name": "dbo_BI_ROUTING_VIEW",
+          "label": "라우팅 기준",
+          "role": "routing",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "PROC_SEQ",
+            "JOB_CD",
+            "SETUP_TIME",
+            "MACH_WORKED_HOURS"
+          ]
+        },
+        {
+          "name": "dbo_BI_WORK_ORDER_RESULTS",
+          "label": "실적 로그",
+          "role": "results",
+          "required": false,
+          "columns": [
+            "ITEM_CD",
+            "ACT_SETUP_TIME",
+            "ACT_RUN_TIME",
+            "WAIT_TIME",
+            "MOVE_TIME"
+          ]
+        }
+      ],
+      "column_overrides": {},
+      "allow_gui_override": true,
+      "shading_palette": {
+        "allowed": "oklch(0.94 0.04 235)",
+        "restricted": "oklch(0.88 0.03 235)",
+        "disabled": "oklch(0.78 0.02 235)",
+        "highlight": "oklch(0.70 0.08 235)"
+      },
+      "blueprint_switches": [
+        {
+          "id": "feature-columns",
+          "label": "피처 추출",
+          "enabled": true,
+          "description": "ITEM_INFO_VIEW 기반 피처는 활성화 상태",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "routing-columns",
+          "label": "라우팅 기준",
+          "enabled": true,
+          "description": "ROUTING_VIEW는 수정 가능",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "workorder-columns",
+          "label": "실적 로그",
+          "enabled": false,
+          "description": "실적 로그는 기본 비활성 (GUI에서 명시적으로 활성화 필요)",
+          "shade": "oklch(0.78 0.02 235)",
+          "accent": "oklch(0.64 0.06 235)"
+        }
+      ],
+      "version_hint": "access-config-v1"
+    },
+    "export": {
+      "enable_cache_save": false,
+      "enable_excel": true,
+      "enable_csv": true,
+      "enable_txt": true,
+      "enable_parquet": true,
+      "enable_json": true,
+      "erp_interface_enabled": false,
+      "erp_protocol": null,
+      "erp_endpoint": null,
+      "default_encoding": "utf-8",
+      "export_directory": "deliverables/exports",
+      "compress_on_save": true
+    },
+    "visualization": {
+      "tensorboard_projector_dir": "logs/tensorboard",
+      "projector_enabled": true,
+      "projector_metadata_columns": [
+        "ITEM_CD",
+        "ITEM_NM",
+        "GROUP1",
+        "ITEM_TYPE"
+      ],
+      "neo4j_enabled": true,
+      "neo4j_browser_url": "http://localhost:7474",
+      "neo4j_workspace": "neo4j+routing",
+      "publish_service_enabled": true,
+      "publish_notes": "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
+    }
+  },
+  "updated": {
+    "graph": {
+      "nodes": [
+        {
+          "id": "source",
+          "label": "Data Source",
+          "type": "start"
+        },
+        {
+          "id": "trainer",
+          "label": "Train Model",
+          "type": "process"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "source": "source",
+          "target": "trainer"
+        }
+      ],
+      "design_refs": [
+        "main/1.jpg"
+      ],
+      "last_saved": "2025-09-27T01:12:46.940538"
+    },
+    "trainer": {
+      "similarity_threshold": 0.8,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "predictor": {
+      "similarity_high_threshold": 0.8,
+      "max_routing_variants": 4,
+      "trim_std_enabled": true,
+      "trim_lower_percent": 0.05,
+      "trim_upper_percent": 0.95
+    },
+    "sql": {
+      "output_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "column_aliases": {
+        "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+      },
+      "available_columns": [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "ROUTING_SIGNATURE",
+        "PRIORITY",
+        "SIMILARITY_TIER",
+        "PROC_SEQ",
+        "INSIDE_FLAG",
+        "dbo_BI_ROUTING_VIEW_JOB_CD",
+        "JOB_NM",
+        "RES_CD",
+        "RES_DIS",
+        "TIME_UNIT",
+        "MFG_LT",
+        "QUEUE_TIME",
+        "SETUP_TIME",
+        "MACH_WORKED_HOURS",
+        "ACT_SETUP_TIME",
+        "ACT_RUN_TIME",
+        "WAIT_TIME",
+        "MOVE_TIME",
+        "RUN_TIME_QTY",
+        "RUN_TIME_UNIT",
+        "BATCH_OPER",
+        "BP_CD",
+        "dbo_BI_ROUTING_VIEW_CUST_NM",
+        "CUR_CD",
+        "SUBCONTRACT_PRC",
+        "TAX_TYPE",
+        "MILESTONE_FLG",
+        "INSP_FLG",
+        "ROUT_ORDER",
+        "VALID_FROM_DT",
+        "VALID_TO_DT",
+        "dbo_BI_ROUTING_VIEW_REMARK",
+        "ROUT_DOC",
+        "DOC_INSIDE",
+        "DOC_NO",
+        "NC_PROGRAM",
+        "NC_PROGRAM_WRITER",
+        "NC_WRITER_NM",
+        "NC_WRITE_DATE",
+        "NC_REVIEWER",
+        "NC_REVIEWER_NM",
+        "NC_REVIEW_DT",
+        "RAW_MATL_SIZE",
+        "JAW_SIZE",
+        "VALIDITY",
+        "PROGRAM_REMARK",
+        "OP_DRAW_NO",
+        "MTMG_NUMB",
+        "REFERENCE_ITEM_CD",
+        "SIMILARITY_SCORE"
+      ],
+      "profiles": [
+        {
+          "name": "Access 7.1 기본",
+          "description": "dbo_BI_ROUTING_VIEW 7.1 구조를 그대로 따르는 기본 매핑",
+          "mapping": {
+            "JOB_CD": "dbo_BI_ROUTING_VIEW_JOB_CD",
+            "CUST_NM": "dbo_BI_ROUTING_VIEW_CUST_NM",
+            "VIEW_REMARK": "dbo_BI_ROUTING_VIEW_REMARK"
+          }
+        }
+      ],
+      "active_profile": "Access 7.1 기본"
+    },
+    "updated_at": "2025-09-27T01:12:46.940928",
+    "data_source": {
+      "access_path": "routing_data/ROUTING AUTO TEST.accdb",
+      "default_table": "dbo_BI_ITEM_INFO_VIEW",
+      "backup_paths": [],
+      "table_profiles": [
+        {
+          "name": "dbo_BI_ITEM_INFO_VIEW",
+          "label": "품목 마스터",
+          "role": "features",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "ITEM_NM",
+            "ITEM_TYPE",
+            "RAW_MATL_KIND"
+          ]
+        },
+        {
+          "name": "dbo_BI_ROUTING_VIEW",
+          "label": "라우팅 기준",
+          "role": "routing",
+          "required": true,
+          "columns": [
+            "ITEM_CD",
+            "PROC_SEQ",
+            "JOB_CD",
+            "SETUP_TIME",
+            "MACH_WORKED_HOURS"
+          ]
+        },
+        {
+          "name": "dbo_BI_WORK_ORDER_RESULTS",
+          "label": "실적 로그",
+          "role": "results",
+          "required": false,
+          "columns": [
+            "ITEM_CD",
+            "ACT_SETUP_TIME",
+            "ACT_RUN_TIME",
+            "WAIT_TIME",
+            "MOVE_TIME"
+          ]
+        }
+      ],
+      "column_overrides": {},
+      "allow_gui_override": true,
+      "shading_palette": {
+        "allowed": "oklch(0.94 0.04 235)",
+        "restricted": "oklch(0.88 0.03 235)",
+        "disabled": "oklch(0.78 0.02 235)",
+        "highlight": "oklch(0.70 0.08 235)"
+      },
+      "blueprint_switches": [
+        {
+          "id": "feature-columns",
+          "label": "피처 추출",
+          "enabled": true,
+          "description": "ITEM_INFO_VIEW 기반 피처는 활성화 상태",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "routing-columns",
+          "label": "라우팅 기준",
+          "enabled": true,
+          "description": "ROUTING_VIEW는 수정 가능",
+          "shade": "oklch(0.82 0.06 235)",
+          "accent": "oklch(0.68 0.10 235)"
+        },
+        {
+          "id": "workorder-columns",
+          "label": "실적 로그",
+          "enabled": false,
+          "description": "실적 로그는 기본 비활성 (GUI에서 명시적으로 활성화 필요)",
+          "shade": "oklch(0.78 0.02 235)",
+          "accent": "oklch(0.64 0.06 235)"
+        }
+      ],
+      "version_hint": "access-config-v1"
+    },
+    "export": {
+      "enable_cache_save": false,
+      "enable_excel": true,
+      "enable_csv": true,
+      "enable_txt": true,
+      "enable_parquet": true,
+      "enable_json": true,
+      "erp_interface_enabled": false,
+      "erp_protocol": null,
+      "erp_endpoint": null,
+      "default_encoding": "utf-8",
+      "export_directory": "deliverables/exports",
+      "compress_on_save": true
+    },
+    "visualization": {
+      "tensorboard_projector_dir": "logs/tensorboard",
+      "projector_enabled": true,
+      "projector_metadata_columns": [
+        "ITEM_CD",
+        "ITEM_NM",
+        "GROUP1",
+        "ITEM_TYPE"
+      ],
+      "neo4j_enabled": true,
+      "neo4j_browser_url": "http://localhost:7474",
+      "neo4j_workspace": "neo4j+routing",
+      "publish_service_enabled": true,
+      "publish_notes": "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
+    }
+  }
+}

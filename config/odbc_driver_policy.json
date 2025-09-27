@@ -1,0 +1,10 @@
+{
+  "Microsoft Access Driver (*.mdb, *.accdb)": {
+    "min_version": "16.0",
+    "architecture": ["x64"]
+  },
+  "SQL Server": {
+    "min_version": "17.0",
+    "architecture": ["x64", "x86"]
+  }
+}
