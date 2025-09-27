@@ -1,0 +1,10 @@
+{
+  "embeddings": [
+    {
+      "tensorName": "item_embeddings",
+      "tensorShape": [2, 3],
+      "tensorPath": "vectors.tsv",
+      "metadataPath": "metadata.tsv"
+    }
+  ]
+}
