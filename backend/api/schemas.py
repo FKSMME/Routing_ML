@@ -139,6 +139,9 @@ class CandidateRouting(BaseModel):
     similarity_tier: Optional[str] = Field(None, alias="SIMILARITY_TIER")
     has_routing: Optional[str] = Field(None, alias="HAS_ROUTING")
     process_count: Optional[int] = Field(None, alias="PROCESS_COUNT")
+    source_item_code: Optional[str] = Field(
+        None, alias="ITEM_CD", description="추천이 계산된 대상 품목"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:
@@ -166,6 +169,137 @@ class PredictionResponse(BaseModel):
     items: List[RoutingSummary]
     candidates: List[CandidateRouting]
     metrics: Dict[str, Any] = Field(default_factory=dict)
+
+
+class SimilarItem(BaseModel):
+    item_code: str = Field(..., description="유사 품목 코드")
+    similarity_score: float = Field(..., ge=0.0, le=1.0, description="유사도 점수")
+    source: Literal["prediction", "manifest"] = Field(
+        "prediction", description="유사도 정보 출처"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="매니페스트에서 제공되는 부가 메타데이터"
+    )
+
+
+class SimilaritySearchResult(BaseModel):
+    item_code: str = Field(..., description="조회 대상 품목 코드")
+    matches: List[SimilarItem] = Field(default_factory=list)
+    manifest_revision: Optional[str] = Field(
+        None, description="매니페스트 버전/리비전 정보"
+    )
+
+
+class SimilaritySearchRequest(BaseModel):
+    item_codes: List[str] = Field(
+        ..., min_length=1, description="유사 후보를 조회할 품목 코드 목록"
+    )
+    top_k: Optional[int] = Field(
+        None, ge=1, le=50, description="후보로 반환할 최대 품목 수"
+    )
+    min_similarity: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="후보 필터링에 사용할 최소 유사도"
+    )
+    feature_weights: Optional[Dict[str, float]] = Field(
+        default=None, description="예측 시 적용할 수동 가중치"
+    )
+    weight_profile: Optional[str] = Field(
+        default=None, description="적용할 사전 정의된 가중치 프로파일"
+    )
+    include_manifest_metadata: bool = Field(
+        False, description="매니페스트의 추가 메타데이터 포함 여부"
+    )
+
+    @validator("item_codes", each_item=True)
+    def _strip_search_codes(cls, value: str) -> str:  # noqa: N805
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("item code cannot be empty")
+        return cleaned
+
+
+class SimilaritySearchResponse(BaseModel):
+    results: List[SimilaritySearchResult] = Field(default_factory=list)
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GroupRecommendation(BaseModel):
+    group_id: str = Field(..., description="그룹 식별자")
+    score: float = Field(..., ge=0.0, description="우선 순위/점수")
+    source: Literal["manifest", "prediction", "inference"] = Field(
+        ..., description="추천 근거"
+    )
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GroupRecommendationRequest(BaseModel):
+    item_code: str = Field(..., description="추천을 요청할 품목 코드")
+    candidate_limit: Optional[int] = Field(
+        5, ge=1, le=20, description="반환할 최대 추천 개수"
+    )
+    similarity_threshold: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="관련 유사 품목 필터링 기준"
+    )
+
+
+class GroupRecommendationResponse(BaseModel):
+    item_code: str
+    recommendations: List[GroupRecommendation] = Field(default_factory=list)
+    inspected_candidates: int = Field(
+        0, description="추천 산출 시 참고한 후보 품목 수"
+    )
+    manifest_revision: Optional[str] = None
+
+
+class TimeBreakdown(BaseModel):
+    proc_seq: Optional[int] = Field(None, description="공정 순번")
+    setup_time: float = Field(..., ge=0.0, description="세팅 시간 합계")
+    run_time: float = Field(..., ge=0.0, description="가공/운전 시간 합계")
+    queue_time: float = Field(..., ge=0.0, description="대기 시간 합계")
+    wait_time: float = Field(..., ge=0.0, description="정지/대기 시간 합계")
+    move_time: float = Field(..., ge=0.0, description="이동 시간 합계")
+    total_time: float = Field(..., ge=0.0, description="공정별 총 리드타임")
+
+
+class TimeSummaryRequest(BaseModel):
+    item_code: str
+    operations: List[OperationStep] = Field(
+        default_factory=list, description="리드타임 계산에 사용할 공정 데이터"
+    )
+    include_breakdown: bool = Field(
+        False, description="공정별 상세 합계를 포함할지 여부"
+    )
+
+
+class TimeSummaryResponse(BaseModel):
+    item_code: str
+    totals: Dict[str, float] = Field(default_factory=dict)
+    process_count: int = Field(0, ge=0)
+    breakdown: Optional[List[TimeBreakdown]] = None
+
+
+class RuleViolation(BaseModel):
+    rule_id: str
+    message: str
+    severity: Literal["info", "warning", "error"] = "error"
+
+
+class RuleValidationRequest(BaseModel):
+    item_code: str
+    operations: List[OperationStep] = Field(default_factory=list)
+    rule_ids: Optional[List[str]] = Field(
+        default=None, description="검증할 규칙 ID 목록 (None이면 전체)"
+    )
+    context: Dict[str, Any] = Field(
+        default_factory=dict, description="검증 시 참고할 추가 컨텍스트"
+    )
+
+
+class RuleValidationResponse(BaseModel):
+    item_code: str
+    passed: bool
+    violations: List[RuleViolation] = Field(default_factory=list)
+    evaluated_rules: int = Field(0, ge=0)
 
 
 class CandidateSaveRequest(BaseModel):
@@ -398,6 +532,19 @@ __all__ = [
     "AuthenticatedUser",
     "PredictionRequest",
     "PredictionResponse",
+    "SimilarItem",
+    "SimilaritySearchResult",
+    "SimilaritySearchRequest",
+    "SimilaritySearchResponse",
+    "GroupRecommendation",
+    "GroupRecommendationRequest",
+    "GroupRecommendationResponse",
+    "TimeBreakdown",
+    "TimeSummaryRequest",
+    "TimeSummaryResponse",
+    "RuleViolation",
+    "RuleValidationRequest",
+    "RuleValidationResponse",
     "RoutingSummary",
     "CandidateRouting",
     "CandidateSaveRequest",
