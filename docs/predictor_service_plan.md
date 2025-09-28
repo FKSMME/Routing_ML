@@ -33,6 +33,16 @@
 - 캐싱 전략: 인덱스와 메타데이터는 프로세스 시작 시 단일 로드, 30분마다 갱신 체크. 컬럼 매핑 변경 시 핫 리로드 지원.
 - 런타임 설정: `common/config_store.workflow_config_store`에서 유사도 임계, 후보 최대 개수, 트림 표준편차 설정을 읽어와 `apply_runtime_config`로 모듈 전역값 갱신.
 
+- ### 2-1. 시간 프로파일(time_profiles.json) 연동
+- 트레이너 런타임 설정에 `time_profiles_enabled`, `time_profile_strategy`, `time_profile_optimal_sigma`, `time_profile_safe_sigma` 토글을 추가해 GUI/워크플로우 저장소에서 제어한다.
+- 학습 파이프라인(`train_model_with_ml_improved`)은 벡터 생성 이후 `common/time_aggregator.py` 모듈을 호출해 다음 전략을 동시에 계산한다.
+  1. **Z-score**: 원본 평균/표준편차와 최대 z-score를 기록해 이상치 분포를 파악한다.
+  2. **Trimmed-STD**: 하위/상위 백분위(기본 5%/95%)를 절단해 노이즈를 제거한 통계를 얻는다.
+  3. **Sigma Profile**: 선택된 기반 통계(기본은 trimmed 결과)에 `optimal_sigma`/`safe_sigma`를 곱해 OPT/STD/SAFE 시간을 산출한다.
+- 결과는 `models/<version>/time_profiles.json`으로 저장되고, `training_metadata.json`의 `time_profiles.strategy`와 `time_profiles.profile_file`로 전략 및 파일명을 확인한다.
+- Predictor 초기화 시 해당 파일이 존재하면 `TimeScenarioConfig` 기본값을 덮어써 라우팅 시간 시나리오를 최신 통계로 교정한다. 파일이 없거나 열 목록이 비어 있으면 기존 내장 상수를 사용한다.
+- 제조 실적 분포가 변했거나 트림/시그마 파라미터를 조정한 경우, 학습을 재실행해 `time_profiles.json`을 갱신해야 한다. 토글은 `/api/workflow/graph` PATCH를 통해 즉시 반영된다.
+
 - 런타임 설정: `common/config_store.workflow_config_store`에서 유사도 임계, 후보 최대 개수, 트림 표준편차 설정을 읽어와 `apply_runtime_config`로 모듈 전역값 갱신.
 
 

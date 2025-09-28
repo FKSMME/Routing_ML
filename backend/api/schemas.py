@@ -283,6 +283,10 @@ class TrainerRuntimeModel(BaseModel):
     trim_std_enabled: bool = True
     trim_lower_percent: float = Field(0.05, ge=0.0, le=1.0)
     trim_upper_percent: float = Field(0.95, ge=0.0, le=1.0)
+    time_profiles_enabled: bool = False
+    time_profile_strategy: str = Field("sigma_profile", min_length=1)
+    time_profile_optimal_sigma: float = Field(0.67, ge=0.0)
+    time_profile_safe_sigma: float = Field(1.28, ge=0.0)
 
 
 class PredictorRuntimeModel(BaseModel):
@@ -322,6 +326,10 @@ class TrainerRuntimePatch(BaseModel):
     trim_std_enabled: Optional[bool] = None
     trim_lower_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
     trim_upper_percent: Optional[float] = Field(None, ge=0.0, le=1.0)
+    time_profiles_enabled: Optional[bool] = None
+    time_profile_strategy: Optional[str] = Field(None, min_length=1)
+    time_profile_optimal_sigma: Optional[float] = Field(None, ge=0.0)
+    time_profile_safe_sigma: Optional[float] = Field(None, ge=0.0)
 
 
 class PredictorRuntimePatch(BaseModel):

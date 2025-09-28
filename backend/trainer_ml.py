@@ -7,7 +7,7 @@ import gc
 import threading
 import warnings
 from pathlib import Path
-from typing import Callable, List, Tuple, Dict, Optional, Union
+from typing import Any, Callable, List, Tuple, Dict, Optional, Union
 import sys
 import joblib
 from joblib import Parallel, delayed
@@ -36,6 +36,7 @@ from common.file_lock import FileLock, FileLockTimeout
 from backend.index_hnsw import HNSWSearch
 from backend.feature_weights import FeatureWeightManager  # 추가
 from common.logger import get_logger
+from common.time_aggregator import TimeAggregationConfig, generate_time_profiles
 
 logger = get_logger("trainer_ml")
 
@@ -52,6 +53,10 @@ TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool] = {
     "trim_std_enabled": True,
     "trim_lower_percent": 0.05,
     "trim_upper_percent": 0.95,
+    "time_profiles_enabled": False,
+    "time_profile_strategy": "sigma_profile",
+    "time_profile_optimal_sigma": 0.67,
+    "time_profile_safe_sigma": 1.28,
 }
 
 
@@ -62,13 +67,18 @@ def apply_trainer_runtime_config(config: TrainerRuntimeConfig) -> None:
     TRAINER_RUNTIME_SETTINGS["trim_std_enabled"] = config.trim_std_enabled
     TRAINER_RUNTIME_SETTINGS["trim_lower_percent"] = config.trim_lower_percent
     TRAINER_RUNTIME_SETTINGS["trim_upper_percent"] = config.trim_upper_percent
+    TRAINER_RUNTIME_SETTINGS["time_profiles_enabled"] = config.time_profiles_enabled
+    TRAINER_RUNTIME_SETTINGS["time_profile_strategy"] = config.time_profile_strategy
+    TRAINER_RUNTIME_SETTINGS["time_profile_optimal_sigma"] = config.time_profile_optimal_sigma
+    TRAINER_RUNTIME_SETTINGS["time_profile_safe_sigma"] = config.time_profile_safe_sigma
 
     logger.info(
-        "트레이너 런타임 설정 갱신: threshold=%.2f, trim_std=%s (%.2f~%.2f)",
+        "트레이너 런타임 설정 갱신: threshold=%.2f, trim_std=%s (%.2f~%.2f), time_profiles=%s",
         TRAINER_RUNTIME_SETTINGS["similarity_threshold"],
         TRAINER_RUNTIME_SETTINGS["trim_std_enabled"],
         TRAINER_RUNTIME_SETTINGS["trim_lower_percent"],
         TRAINER_RUNTIME_SETTINGS["trim_upper_percent"],
+        TRAINER_RUNTIME_SETTINGS["time_profiles_enabled"],
     )
 
 
@@ -817,6 +827,30 @@ def train_model_with_ml_improved(
 
         vectors = normalize(vectors, axis=1)
 
+        time_profiles_payload: Optional[Dict[str, Any]] = None
+        if model_dir and TRAINER_RUNTIME_SETTINGS.get("time_profiles_enabled"):
+            try:
+                agg_config = TimeAggregationConfig(
+                    strategy=str(TRAINER_RUNTIME_SETTINGS.get("time_profile_strategy", "sigma_profile")),
+                    trim_std_enabled=bool(TRAINER_RUNTIME_SETTINGS.get("trim_std_enabled", True)),
+                    trim_lower_percent=float(TRAINER_RUNTIME_SETTINGS.get("trim_lower_percent", 0.05)),
+                    trim_upper_percent=float(TRAINER_RUNTIME_SETTINGS.get("trim_upper_percent", 0.95)),
+                    optimal_sigma=float(TRAINER_RUNTIME_SETTINGS.get("time_profile_optimal_sigma", 0.67)),
+                    safe_sigma=float(TRAINER_RUNTIME_SETTINGS.get("time_profile_safe_sigma", 1.28)),
+                )
+                time_profiles_payload = generate_time_profiles(df, config=agg_config)
+                if time_profiles_payload.get("columns"):
+                    profiles_path = model_dir / "time_profiles.json"
+                    profiles_path.write_text(
+                        json.dumps(time_profiles_payload, indent=2, ensure_ascii=False),
+                        encoding="utf-8",
+                    )
+                    logger.info("시간 프로파일 저장 완료: %s", profiles_path)
+                else:
+                    logger.info("시간 프로파일 생성 요청됨: 유효한 열이 없어 저장을 건너뜁니다")
+            except Exception as exc:  # pragma: no cover - 보호용
+                logger.warning("시간 프로파일 생성 실패: %s", exc)
+
         if not update_progress(70):
             return None
 
@@ -863,6 +897,14 @@ def train_model_with_ml_improved(
                         "target_dimension": target_dim if balance_dimensions else None,
                         "note": "Active features are applied only during prediction",
                         "workflow_runtime": dict(TRAINER_RUNTIME_SETTINGS),
+                        "time_profiles": {
+                            "enabled": bool(time_profiles_payload and time_profiles_payload.get("columns")),
+                            "strategy": (time_profiles_payload or {}).get("strategy"),
+                            "profile_file": "time_profiles.json"
+                            if time_profiles_payload and time_profiles_payload.get("columns")
+                            else None,
+                            "columns": list((time_profiles_payload or {}).get("columns", {}).keys()),
+                        },
                     }
 
                     metadata_path = model_dir / "training_metadata.json"
