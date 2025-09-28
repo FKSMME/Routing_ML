@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Stage 2 학습 서비스(trainer) 개선 계획
 
 ## 게이트 리뷰 결과 요약

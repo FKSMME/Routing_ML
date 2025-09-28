@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 절대지령 이행 보고 (2025-10)
 
 1. **트레이너 입력 Access 데이터 변경 대응**

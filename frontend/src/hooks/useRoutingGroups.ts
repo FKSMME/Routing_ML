@@ -1,0 +1,181 @@
+﻿import type {
+  RoutingGroupCreateResponse,
+  RoutingGroupDetail,
+  RoutingGroupListResponse,
+  RoutingGroupStep,
+} from "@app-types/routing";
+import {
+  createRoutingGroup,
+  fetchRoutingGroup,
+  listRoutingGroups,
+  postUiAudit,
+} from "@lib/apiClient";
+import { useRoutingStore } from "@store/routingStore";
+import axios from "axios";
+import { useCallback } from "react";
+
+interface SaveGroupArgs {
+  groupName: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+interface SaveGroupResult {
+  ok: boolean;
+  message: string;
+  response?: RoutingGroupCreateResponse;
+}
+
+interface LoadGroupResult {
+  ok: boolean;
+  message: string;
+  detail?: RoutingGroupDetail;
+}
+
+const buildSteps = (timeline: ReturnType<typeof useRoutingStore.getState>["timeline"]): RoutingGroupStep[] =>
+  timeline.map((step, index) => ({
+    seq: index + 1,
+    process_code: step.processCode,
+    description: step.description ?? null,
+    duration_min: step.runTime ?? null,
+    setup_time: step.setupTime ?? null,
+    wait_time: step.waitTime ?? null,
+  }));
+
+export function useRoutingGroups() {
+  const timeline = useRoutingStore((state) => state.timeline);
+  const erpRequired = useRoutingStore((state) => state.erpRequired);
+  const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
+  const setSaving = useRoutingStore((state) => state.setSaving);
+  const setLoading = useRoutingStore((state) => state.setLoading);
+  const setDirty = useRoutingStore((state) => state.setDirty);
+  const setActiveGroup = useRoutingStore((state) => state.setActiveGroup);
+  const setLastSavedAt = useRoutingStore((state) => state.setLastSavedAt);
+  const setValidationErrors = useRoutingStore((state) => state.setValidationErrors);
+  const clearValidation = useRoutingStore((state) => state.clearValidation);
+  const captureLastSuccess = useRoutingStore((state) => state.captureLastSuccess);
+  const rollbackToLastSuccess = useRoutingStore((state) => state.rollbackToLastSuccess);
+  const applyGroup = useRoutingStore((state) => state.applyGroup);
+
+  const collectItemCodes = useCallback((): string[] => {
+    const codes = new Set<string>();
+    timeline.forEach((step) => {
+      if (step.itemCode) {
+        codes.add(step.itemCode);
+      }
+    });
+    return codes.size > 0 ? Array.from(codes) : sourceItemCodes;
+  }, [timeline, sourceItemCodes]);
+
+  const saveGroup = useCallback(
+    async ({ groupName, metadata }: SaveGroupArgs): Promise<SaveGroupResult> => {
+      const trimmed = groupName.trim();
+      if (!trimmed) {
+        return { ok: false, message: "Enter a group name." };
+      }
+      if (timeline.length === 0) {
+        return { ok: false, message: "Add steps to the timeline before saving." };
+      }
+
+      const steps = buildSteps(timeline);
+      const itemCodes = collectItemCodes();
+
+      try {
+        setSaving(true);
+        clearValidation();
+        const response = await createRoutingGroup({
+          groupName: trimmed,
+          itemCodes,
+          steps,
+          erpRequired,
+          metadata: metadata ?? { source: "codex-ui" },
+        });
+        setActiveGroup({ id: response.group_id, name: trimmed, version: response.version, updatedAt: response.updated_at });
+        setLastSavedAt(response.updated_at);
+        captureLastSuccess();
+        setDirty(false);
+        await postUiAudit({
+          action: "ui.routing.save",
+          username: "codex",
+          payload: {
+            group_id: response.group_id,
+            version: response.version,
+            step_count: steps.length,
+            erp_required: erpRequired,
+          },
+        });
+        return { ok: true, message: "Group saved successfully.", response };
+      } catch (error) {
+        rollbackToLastSuccess();
+        let message = "Failed to save group.";
+        if (axios.isAxiosError(error)) {
+          const detail = error.response?.data?.detail ?? error.response?.data?.message;
+          if (Array.isArray(detail)) {
+            const messages = detail.map((value) => String(value));
+            setValidationErrors(messages);
+            message = messages.join("\n");
+          } else if (detail) {
+            const text = typeof detail === "string" ? detail : JSON.stringify(detail);
+            setValidationErrors([text]);
+            message = text;
+          }
+        }
+        return { ok: false, message };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [captureLastSuccess, clearValidation, collectItemCodes, erpRequired, rollbackToLastSuccess, setActiveGroup, setDirty, setLastSavedAt, setSaving, setValidationErrors, timeline],
+  );
+
+  const loadGroup = useCallback(
+    async (groupId: string): Promise<LoadGroupResult> => {
+      const trimmed = groupId.trim();
+      if (!trimmed) {
+        return { ok: false, message: "Enter a group ID." };
+      }
+      try {
+        setLoading(true);
+        const detail = await fetchRoutingGroup(trimmed);
+        applyGroup(detail, "replace");
+        captureLastSuccess();
+        setDirty(false);
+        await postUiAudit({
+          action: "ui.routing.load",
+          username: "codex",
+          payload: {
+            group_id: detail.group_id,
+            version: detail.version,
+            item_count: detail.item_codes.length,
+          },
+        });
+        return { ok: true, message: `Loaded group '${detail.group_name}'.`, detail };
+      } catch (error) {
+        let message = "Failed to load group.";
+        if (axios.isAxiosError(error)) {
+          const detail = error.response?.data?.detail ?? error.response?.data?.message;
+          if (detail) {
+            message = typeof detail === "string" ? detail : JSON.stringify(detail);
+          }
+          setValidationErrors([message]);
+        }
+        return { ok: false, message };
+      } finally {
+        setLoading(false);
+      }
+    },
+    [applyGroup, captureLastSuccess, setDirty, setLoading, setValidationErrors],
+  );
+
+  const fetchGroups = useCallback(
+    async (params?: { owner?: string; search?: string; limit?: number; offset?: number }): Promise<RoutingGroupListResponse> => {
+      return listRoutingGroups(params);
+    },
+    [],
+  );
+
+  return {
+    saveGroup,
+    loadGroup,
+    fetchGroups,
+  };
+}

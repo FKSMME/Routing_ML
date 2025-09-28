@@ -1,0 +1,248 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Color Core Design System */
+    --primary: 195 100% 33%; /* #0078A6 Teamcenter ribbon teal */
+    --primary-glow: 195 100% 45%; /* Lighter version for hover */
+    --secondary: 188 82% 47%; /* #22B8CF accent buttons */
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Gradient Sky */
+    --gradient-sky-start: 195 85% 72%; /* #7BDFF2 */
+    --gradient-sky-mid: 140 65% 75%; /* #C4F1BE */
+    --gradient-sky-end: 195 45% 92%; /* #E6F4F9 */
+    
+    /* Surface Colors */
+    --surface-base: 195 45% 98%; /* #F8FBFD */
+    --surface-raised: 0 0% 100%; /* #FFFFFF */
+    --background: 195 45% 98%;
+    --foreground: 210 45% 20%; /* #1C3245 text-default */
+    
+    /* Card and UI Elements */
+    --card: 0 0% 100%;
+    --card-foreground: 210 45% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 45% 20%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Muted and Secondary Text */
+    --muted: 210 25% 45%; /* #5B7388 text-muted */
+    --muted-foreground: 210 25% 45%;
+    --accent: 188 82% 47%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Menu Colors */
+    --nav-default: 210 40% 25%; /* #224050 */
+    --nav-hover: 210 60% 15%; /* #0F2535 */
+    --nav-active: 195 100% 18%; /* #005777 menu-active */
+    
+    /* Borders and Inputs */
+    --border: 195 30% 85%;
+    --input: 195 30% 95%;
+    --ring: 188 82% 47%;
+    
+    /* Status Colors */
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Chart Colors */
+    --chart-1: 195 100% 33%;
+    --chart-2: 188 82% 47%;
+    --chart-3: 140 65% 45%;
+    --chart-4: 195 85% 72%;
+    --chart-5: 210 45% 35%;
+    
+    --radius: 0.75rem;
+    
+    /* Animation Tokens */
+    --motion-duration-xs: 120ms;
+    --motion-duration-sm: 180ms;
+    --motion-duration-lg: 320ms;
+    --motion-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+    
+    /* Shadow Tokens */
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-glow: 0 0 40px hsl(var(--primary-glow) / 0.4);
+    --shadow-raised: 0 8px 20px hsl(var(--primary) / 0.12);
+    
+    /* Transition */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 210 45% 8%;
+    --foreground: 0 0% 98%;
+    --card: 210 45% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 210 45% 10%;
+    --popover-foreground: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --muted: 210 25% 25%;
+    --muted-foreground: 210 25% 65%;
+    --accent-foreground: 0 0% 98%;
+    --border: 210 25% 20%;
+    --input: 210 25% 15%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: linear-gradient(140deg, 
+      hsl(var(--gradient-sky-start)) 0%, 
+      hsl(var(--gradient-sky-mid)) 50%, 
+      hsl(var(--gradient-sky-end)) 100%);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  /* Typography Scale using clamp() */
+  .heading-lg {
+    font-size: clamp(1.8rem, 1.4vw + 1.2rem, 2.6rem);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  
+  .heading-md {
+    font-size: clamp(1.4rem, 1.1vw + 0.9rem, 2rem);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  
+  .body-text {
+    font-size: clamp(0.95rem, 0.45vw + 0.8rem, 1.1rem);
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+  /* Card with gradient edge highlight */
+  .card-gradient {
+    @apply bg-white rounded-lg;
+    box-shadow: inset 0 2px 0 hsl(var(--secondary) / 0.35), var(--shadow-raised);
+  }
+  
+  /* Tab rail with gradient underline */
+  .tab-active {
+    position: relative;
+    color: hsl(var(--nav-active));
+  }
+  
+  .tab-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--secondary)), hsl(var(--gradient-sky-start)));
+  }
+  
+  /* Button hover effects */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground rounded-lg px-4 py-2 font-medium;
+    transition: var(--transition-smooth);
+  }
+  
+  .btn-primary:hover {
+    background-color: hsl(var(--primary-glow));
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .btn-primary:focus {
+    box-shadow: 0 0 0 3px hsl(var(--secondary) / 0.35);
+  }
+  
+  /* Menu hover effects */
+  .menu-item {
+    color: hsl(var(--nav-default));
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+  
+  .menu-item:hover {
+    color: hsl(var(--nav-hover));
+    background: linear-gradient(90deg, transparent, hsl(var(--gradient-sky-start) / 0.35), transparent);
+  }
+  
+  .menu-item.active {
+    color: hsl(var(--nav-active));
+    background: hsl(var(--gradient-sky-start) / 0.2);
+  }
+  
+  /* Loading skeleton animation */
+  .skeleton {
+    background: linear-gradient(90deg, 
+      hsl(var(--surface-base)), 
+      hsl(var(--surface-raised)), 
+      hsl(var(--surface-base)));
+    background-size: 200% 100%;
+    animation: shimmer 1.2s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  /* Glass overlay effect */
+  .glass-overlay {
+    background: hsl(var(--surface-raised) / 0.82);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+  
+  /* Workflow graph highlight */
+  .workflow-highlight {
+    animation: pulse-gradient 600ms ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulse-gradient {
+    0% { opacity: 0.35; }
+    100% { opacity: 0.6; }
+  }
+  
+  /* Drag and drop styles */
+  .drag-item {
+    transition: var(--transition-smooth);
+    cursor: grab;
+  }
+  
+  .drag-item:active {
+    cursor: grabbing;
+    transform: rotate(5deg) scale(1.05);
+    z-index: 1000;
+  }
+  
+  .drop-zone {
+    border: 2px dashed hsl(var(--border));
+    transition: var(--transition-smooth);
+  }
+  
+  .drop-zone.active {
+    border-color: hsl(var(--secondary));
+    background: hsl(var(--secondary) / 0.1);
+  }
+}
+
+/* Responsive font sizes */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

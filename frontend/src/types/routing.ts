@@ -1,4 +1,4 @@
-export interface OperationStep {
+﻿export interface OperationStep {
   PROC_SEQ: number;
   PROC_CD: string;
   PROC_DESC?: string;
@@ -60,4 +60,54 @@ export interface PredictionResponse {
   items: RoutingSummary[];
   candidates: CandidateRouting[];
   metrics: PredictionMetrics;
+}
+
+export interface RoutingGroupStep {
+  seq: number;
+  process_code: string;
+  description?: string | null;
+  duration_min?: number | null;
+  setup_time?: number | null;
+  wait_time?: number | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface RoutingGroupCreatePayload {
+  groupName: string;
+  itemCodes: string[];
+  steps: RoutingGroupStep[];
+  erpRequired: boolean;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface RoutingGroupCreateResponse {
+  group_id: string;
+  version: number;
+  owner: string;
+  updated_at: string;
+}
+
+export interface RoutingGroupSummary {
+  group_id: string;
+  group_name: string;
+  item_codes: string[];
+  step_count: number;
+  version: number;
+  updated_at: string;
+}
+
+export interface RoutingGroupListResponse {
+  items: RoutingGroupSummary[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+  };
+}
+
+export interface RoutingGroupDetail extends RoutingGroupSummary {
+  steps: RoutingGroupStep[];
+  erp_required: boolean;
+  metadata?: Record<string, unknown> | null;
+  owner: string;
 }

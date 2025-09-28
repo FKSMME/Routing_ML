@@ -1,0 +1,34 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Routing ML Unified Log Schema",
+  "description": "Defines the required fields for audit, interaction, and error logs across the Routing_ML platform.",
+  "type": "object",
+  "properties": {
+    "timestamp": { "type": "string", "format": "date-time" },
+    "ip": { "type": "string", "description": "IPv4 or IPv6 address of the client" },
+    "user": { "type": "string", "description": "User identifier reported by the auth layer" },
+    "userRole": { "type": "string" },
+    "sessionId": { "type": "string" },
+    "requestId": { "type": "string" },
+    "origin": { "type": "string", "enum": ["frontend", "backend", "batch"] },
+    "action": { "type": "string", "description": "High level action name" },
+    "target": { "type": "string", "description": "Entity acted upon" },
+    "targetType": { "type": "string" },
+    "status": { "type": "string", "enum": ["success", "failure", "partial"] },
+    "durationMs": { "type": "number" },
+    "message": { "type": "string" },
+    "level": { "type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] },
+    "metadata": { "type": "object", "additionalProperties": true },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": [
+    "timestamp",
+    "ip",
+    "user",
+    "origin",
+    "action",
+    "status",
+    "message"
+  ],
+  "additionalProperties": true
+}

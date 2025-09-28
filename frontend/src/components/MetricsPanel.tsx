@@ -1,6 +1,5 @@
-import { Fragment } from "react";
-
 import type { PredictionMetrics } from "@app-types/routing";
+import { Fragment } from "react";
 
 interface MetricsPanelProps {
   metrics?: PredictionMetrics;

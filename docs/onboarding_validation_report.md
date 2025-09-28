@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Onboarding Validation Report
 
 ## Context

@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # v1.0 패키징 가이드
 
 `routing_ml_v1.0.tar.gz` 아카이브는 Git에서 제외되어 있으며, 실제 배포 시 아래 절차로 생성한다.

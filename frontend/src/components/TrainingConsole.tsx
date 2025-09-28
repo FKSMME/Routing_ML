@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { fetchTrainingStatus, runTraining, type TrainingRequestPayload, type TrainingStatus } from "@lib/apiClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
 interface TrainingConsoleProps {
   defaultMetadata?: string[];

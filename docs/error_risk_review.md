@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
 2. 단계 착수 전 이번 단계 전체 범위를 리뷰하고 오류를 식별한다.

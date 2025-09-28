@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Routing ML 설치 검증 보고서 (2025-09-27)
 
 본 문서는 `docs/install_guide_ko.md`의 섹션 0~2 및 5에서 요구하는 항목을 실제 리포지토리 환경에서 점검한 결과를 정리한다.

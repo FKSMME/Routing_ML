@@ -1,9 +1,7 @@
-import axios from "axios";
-
-import type { PredictionResponse } from "@app-types/routing";
-
+﻿import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
+import type { PredictionResponse, RoutingGroupCreatePayload, RoutingGroupCreateResponse, RoutingGroupDetail, RoutingGroupListResponse, RoutingGroupStep } from "@app-types/routing";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
-
+import axios from "axios";
 
 const fallbackProtocol =
   typeof window !== "undefined" && window.location.protocol
@@ -54,7 +52,6 @@ export async function fetchMetrics(): Promise<Record<string, unknown>> {
   return response.data;
 }
 
-
 export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
   const response = await api.get<WorkflowConfigResponse>("/workflow/graph");
   return response.data;
@@ -89,9 +86,147 @@ export async function fetchTrainingStatus(): Promise<TrainingStatus> {
   return response.data;
 }
 
+export async function fetchMasterDataTree(params?: { query?: string }): Promise<MasterDataTreeResponse> {
+  const response = await api.get<MasterDataTreeResponse>("/master-data/tree", {
+    params: params?.query ? { query: params.query } : undefined,
+  });
+  return response.data;
+}
+
+export async function fetchMasterDataItem(itemCode: string): Promise<MasterDataItemResponse> {
+  const response = await api.get<MasterDataItemResponse>(`/master-data/items/${encodeURIComponent(itemCode)}`);
+  return response.data;
+}
+
+export async function fetchMasterDataLogs(limit = 5): Promise<MasterDataLogsResponse> {
+  const response = await api.get<MasterDataLogsResponse>("/master-data/logs", { params: { limit } });
+  return response.data;
+}
+
+export async function downloadMasterDataLog(): Promise<void> {
+  const response = await api.get<Blob>("/master-data/logs/download", { responseType: "blob" });
+  const blob = new Blob([response.data], { type: response.headers["content-type"] || "text/plain" });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const disposition = response.headers["content-disposition"];
+  const filename = disposition?.split("filename=")?.[1]?.replace(/"/g, "").trim() || "master_data.log";
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}
+
 export async function runTraining(payload: TrainingRequestPayload): Promise<TrainingStatus> {
   const response = await api.post<TrainingStatus>("/trainer/run", payload);
   return response.data;
 }
 
 export default api;
+
+const mapGroupStepToApi = (step: RoutingGroupStep) => ({
+  seq: step.seq,
+  process_code: step.process_code,
+  description: step.description ?? null,
+  duration_min: step.duration_min ?? null,
+  setup_time: step.setup_time ?? null,
+  wait_time: step.wait_time ?? null,
+  metadata: step.metadata ?? undefined,
+});
+
+export async function createRoutingGroup(payload: RoutingGroupCreatePayload): Promise<RoutingGroupCreateResponse> {
+  const response = await api.post<RoutingGroupCreateResponse>("/routing/groups", {
+    group_name: payload.groupName,
+    item_codes: payload.itemCodes,
+    steps: payload.steps.map((step) => mapGroupStepToApi(step)),
+    erp_required: payload.erpRequired,
+    metadata: payload.metadata ?? undefined,
+  });
+  return response.data;
+}
+
+export async function listRoutingGroups(params?: {
+  owner?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<RoutingGroupListResponse> {
+  const response = await api.get<RoutingGroupListResponse>("/routing/groups", { params });
+  return response.data;
+}
+
+export async function fetchRoutingGroup(groupId: string): Promise<RoutingGroupDetail> {
+  const response = await api.get<RoutingGroupDetail>(`/routing/groups/${encodeURIComponent(groupId)}`);
+  return response.data;
+}
+export interface WorkspaceSettingsPayload {
+  version?: number | string;
+  layout?: Record<string, unknown> | null;
+  routing?: Record<string, unknown> | null;
+  algorithm?: Record<string, unknown> | null;
+  options?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
+  access?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface WorkspaceSettingsResponse extends WorkspaceSettingsPayload {
+  updated_at?: string;
+  user?: string | null;
+}
+
+export interface UiAuditEventPayload {
+  action: string;
+  username?: string;
+  ip_address?: string;
+  payload?: Record<string, unknown> | null;
+}
+
+export interface AccessConnectionRequest {
+  path: string;
+  table?: string | null;
+}
+
+export interface AccessConnectionResponse {
+  ok: boolean;
+  message: string;
+  path_hash?: string;
+  table_profiles?: string[];
+  elapsed_ms?: number;
+  verified_table?: string | null;
+}
+
+export async function fetchWorkspaceSettings(): Promise<WorkspaceSettingsResponse> {
+  const response = await api.get<WorkspaceSettingsResponse>("/settings/workspace");
+  return response.data;
+}
+
+export async function saveWorkspaceSettings(payload: WorkspaceSettingsPayload): Promise<WorkspaceSettingsResponse> {
+  const response = await api.put<WorkspaceSettingsResponse>("/settings/workspace", payload);
+  return response.data;
+}
+
+export async function postUiAudit(event: UiAuditEventPayload): Promise<void> {
+  await api.post("/audit/ui", event);
+}
+
+export async function testAccessConnection(payload: AccessConnectionRequest): Promise<AccessConnectionResponse> {
+  const response = await api.post<AccessConnectionResponse>("/access/connection/test", payload);
+  return response.data;
+}
+export interface AccessMetadataResponse {
+  table: string;
+  columns: Array<{
+    name: string;
+    type: string;
+    nullable?: boolean;
+  }>;
+  path?: string | null;
+  updated_at?: string;
+}
+
+export async function fetchAccessMetadata(params?: { table?: string; path?: string }): Promise<AccessMetadataResponse> {
+  const response = await api.get<AccessMetadataResponse>("/access/metadata", { params });
+  return response.data;
+}

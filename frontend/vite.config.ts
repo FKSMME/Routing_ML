@@ -1,4 +1,4 @@
-import { fileURLToPath, URL } from "node:url";
+﻿import { fileURLToPath, URL } from "node:url";
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -12,6 +12,7 @@ export default defineConfig({
       "@hooks": fileURLToPath(new URL("./src/hooks", import.meta.url)),
       "@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
       "@app-types": fileURLToPath(new URL("./src/types", import.meta.url)),
+      "@store": fileURLToPath(new URL("./src/store", import.meta.url)),
     },
   },
   server: {
@@ -24,3 +25,4 @@ export default defineConfig({
     port: 5173,
   },
 });
+

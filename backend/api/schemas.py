@@ -1,4 +1,4 @@
-"""FastAPI용 Pydantic 스키마 정의."""
+﻿"""FastAPI??Pydantic ?ㅽ궎留??뺤쓽."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -10,14 +10,14 @@ from pydantic import BaseModel, Field, validator
 
 
 class LoginRequest(BaseModel):
-    """Windows 인증 로그인 요청."""
+    """Windows ?몄쬆 濡쒓렇???붿껌."""
 
-    username: str = Field(..., min_length=1, description="Windows 사용자 ID")
-    password: str = Field(..., min_length=1, description="Windows 비밀번호")
+    username: str = Field(..., min_length=1, description="Windows ?ъ슜??ID")
+    password: str = Field(..., min_length=1, description="Windows 鍮꾨?踰덊샇")
 
 
 class LoginResponse(BaseModel):
-    """로그인 응답."""
+    """濡쒓렇???묐떟."""
 
     username: str
     display_name: Optional[str] = None
@@ -28,7 +28,7 @@ class LoginResponse(BaseModel):
 
 
 class AuthenticatedUser(BaseModel):
-    """세션 검증 후 FastAPI 라우터가 사용하는 사용자 정보."""
+    """?몄뀡 寃利???FastAPI ?쇱슦?곌? ?ъ슜?섎뒗 ?ъ슜???뺣낫."""
 
     username: str
     display_name: Optional[str] = None
@@ -40,37 +40,43 @@ class AuthenticatedUser(BaseModel):
 
 
 class PredictionRequest(BaseModel):
-    """예측 요청 입력."""
+    """Payload for routing prediction requests."""
 
-    item_codes: List[str] = Field(..., min_length=1, description="예측 대상 품목 코드 목록")
-    top_k: Optional[int] = Field(None, ge=1, le=50, description="Top-K 후보 수")
-    similarity_threshold: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="후보 필터링 임계값"
+    item_codes: List[str] = Field(
+        ..., min_length=1, description="List of item codes to run predictions for"
     )
-    mode: str = Field("summary", description="응답 구성 모드(summary|detailed)")
+    top_k: Optional[int] = Field(
+        None, ge=1, le=50, description="Maximum number of routing candidates"
+    )
+    similarity_threshold: Optional[float] = Field(
+        None, ge=0.0, le=1.0, description="Minimum similarity score to keep a candidate"
+    )
+    mode: str = Field(
+        "summary", description="Response aggregation mode (summary|detailed)"
+    )
     feature_weights: Optional[Dict[str, float]] = Field(
         default=None,
-        description="사용자 정의 피처 가중치 (ITEM_INFO_VIEW 기준).",
+        description="Explicit feature weight overrides keyed by master-data column",
     )
     weight_profile: Optional[str] = Field(
-        default=None,
-        description="사전 정의된 가중치 프로파일 식별자",
+        default=None, description="Identifier of a predefined weight profile"
     )
     export_formats: Optional[List[str]] = Field(
         default=None,
-        description="즉시 내보낼 결과 포맷 목록 (csv|excel|txt|json|parquet)",
+        description="Optional export formats to generate immediately (csv|excel|txt|json|parquet)",
     )
     with_visualization: bool = Field(
         default=False,
-        description="Neo4j/TensorBoard 연동을 위한 벡터 스냅샷 포함 여부",
+        description="Whether to include visualization artifacts (TensorBoard, Neo4j)",
     )
 
     @validator("item_codes", each_item=True)
     def _strip_item_code(cls, value: str) -> str:  # noqa: N805
         cleaned = value.strip()
         if not cleaned:
-            raise ValueError("빈 품목 코드는 허용되지 않습니다")
+            raise ValueError("item code cannot be empty")
         return cleaned
+
 
 
 class OperationStep(BaseModel):
@@ -155,7 +161,7 @@ class RoutingSummary(BaseModel):
 
 
 class PredictionResponse(BaseModel):
-    """예측 응답."""
+    """?덉륫 ?묐떟."""
 
     items: List[RoutingSummary]
     candidates: List[CandidateRouting]
@@ -412,3 +418,72 @@ __all__ = [
     "ExportConfigPatch",
     "VisualizationConfigPatch",
 ]
+
+class AccessMetadataColumn(BaseModel):
+    name: str
+    type: str
+    nullable: Optional[bool] = True
+
+
+class AccessMetadataResponse(BaseModel):
+    table: str
+    columns: List[AccessMetadataColumn]
+    path: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+
+
+class MasterDataTreeNode(BaseModel):
+    id: str
+    label: str
+    type: Literal["group", "family", "item"]
+    children: List["MasterDataTreeNode"] = Field(default_factory=list)
+    meta: Optional[Dict[str, str]] = None
+
+
+class MasterDataTreeResponse(BaseModel):
+    nodes: List[MasterDataTreeNode]
+    total_items: int
+    filtered_items: int
+    default_item_code: Optional[str] = None
+
+
+class MasterDataMatrixColumn(BaseModel):
+    key: str
+    label: str
+    width: Optional[str] = None
+
+
+class MasterDataMatrixRow(BaseModel):
+    key: str
+    values: Dict[str, str]
+
+
+class MasterDataItemResponse(BaseModel):
+    item_code: str
+    columns: List[MasterDataMatrixColumn]
+    rows: List[MasterDataMatrixRow]
+    record_count: int
+
+
+class MasterDataLogEntry(BaseModel):
+    timestamp: str
+    ip: str
+    user: str
+    action: str
+    target: str
+
+
+class MasterDataConnectionStatus(BaseModel):
+    status: Literal["connected", "disconnected"]
+    path: str
+    last_sync: Optional[str] = None
+
+
+class MasterDataLogsResponse(BaseModel):
+    logs: List[MasterDataLogEntry]
+    connection: MasterDataConnectionStatus
+
+MasterDataTreeNode.update_forward_refs()
+

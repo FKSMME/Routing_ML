@@ -1,0 +1,34 @@
+﻿# Codex Activity Log (2025-09-28)
+
+- 2025-09-28 19:42:20: Created docs/logs directory and initialized activity log per directive.
+- 2025-09-28 19:42:26: Updated work plan checklist to reflect directive on task lists and documentation.
+- 2025-09-28 19:42:46: Enumerated task list documents and reviewed Tasklist.md for outstanding directives.
+- 2025-09-28 19:43:18: Authored docs/sprint/routing_enhancement_tasklist.md detailed checklist for upcoming work.
+- 2025-09-28 19:44:10: Reviewed existing backend and documentation references to finalize scope before drafting new design specs.
+- 2025-09-28 19:44:27: Established execution checklist for drafting routing docs and specs.
+- 2025-09-28 19:45:01: Updated docs/Design/routing_enhancement_plan.md with DnD states, API sequence, and persistence details.
+- 2025-09-28 19:45:44: Expanded docs/backend_api_routing_groups_spec.md with endpoint schemas and audit log actions.
+- 2025-09-28 19:46:16: Revised docs/Design/routing_state_store_plan.md with state structure, async flows, and approval notes.
+- 2025-09-28 19:46:31: Attempted git status but repository metadata not detected (non-git workspace).
+- 2025-09-28 19:46:39: Performed self-review of documentation updates and confirmed checklist alignment.
+- 2025-09-28 19:49:52: Added dependency mapping section to docs/backend_api_routing_groups_spec.md.
+- 2025-09-28 19:50:09: Updated docs/sprint/routing_enhancement_tasklist.md to reflect completed items.
+- 2025-09-28 19:54:40: Revised docs/Design/routing_state_store_plan.md to reflect Codex-only review workflow.
+- 2025-09-28 19:54:44: Updated docs/Design/routing_enhancement_plan.md follow-up checklist for solo execution.
+- 2025-09-28 19:54:50: Adjusted docs/backend_api_routing_groups_spec.md implementation tasks for Codex self-management.
+- 2025-09-28 19:54:56: Realigned docs/sprint/routing_enhancement_tasklist.md review segment to Codex-only workflow.
+- 2025-09-28 20:04:14: Completed Codex self-review for routing design documents and updated checklists.
+- 2025-09-28 20:04:22: Generated deliverables/design/routing_enhancement_state.png visual state flow.
+- 2025-09-28 20:04:31: Logged approval to proceed with frontend web coding based on finalized solo workflow.
+- 2025-09-28 20:33:09: Integrated frontend routing drag-drop workspace, store, and group controls into App.
+- 2025-09-28 20:33:21: Updated backend API spec checklist and authored docs/sprint/routing_enhancement_qa.md for QA coverage.
+- 2025-09-28 20:33:31: Ran npm run build to verify TypeScript and bundling after UI changes.
+- 2025-09-28 20:40:52: Reviewed Design/samples project and authored docs/Design/routing_ui_gap_analysis.md gap report.
+- 2025-09-28 20:42:34: Reauthored routing design/state/store specs and refreshed sprint task list per new requirements.
+- 2025-09-28 21:00:37: Implemented routing workspace 20/60/20 layout, updated Zustand store for product tabs, and added UI gap artefacts.
+- 2025-09-28 21:10:40: Documented integration plan (settings/audit/access) and expanded QA checklist for routing groups API.
+- 2025-09-28 21:12:15: Built skeleton UI for algorithm/data-output/learning/options menus and recorded lint/build test results.
+- 2025-09-28 21:48:10: Connected new workspace APIs (ReactFlow timeline, options/access persistence) and executed lint/build.
+- 2025-09-28 23:29:07: Implemented Access connection validation API and Options workspace UI (path/table selection, metadata preview, audit logging).
+- 2025-09-28 23:29:23: Reworked routing save panel for Stage 2 (local/clipboard exports, ERP interface gating, audit enhancements).
+- 2025-09-28 23:29:35: Verified builds via python -m compileall backend/api and npm run lint after new features.

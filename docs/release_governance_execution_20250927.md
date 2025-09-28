@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 릴리스 거버넌스 체크 (섹션 8) — 2025-09-27
 
 `docs/install_guide_ko.md` 섹션 8에서 요구하는 알파→GA 거버넌스 항목을 점검하였다.

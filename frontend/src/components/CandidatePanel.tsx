@@ -1,49 +1,117 @@
-import type { CandidateRouting } from "@app-types/routing";
+﻿import type { OperationStep } from "@app-types/routing";
+import { useRoutingStore } from "@store/routingStore";
+import { Search } from "lucide-react";
+import type { DragEvent } from "react";
+import { useMemo, useState } from "react";
 
-interface CandidatePanelProps {
-  candidates: CandidateRouting[];
-  loading: boolean;
+interface OperationBucket {
+  itemCode: string;
+  candidateId: string | null;
+  operations: OperationStep[];
 }
 
-export function CandidatePanel({ candidates, loading }: CandidatePanelProps) {
+export function CandidatePanel() {
+  const activeProductId = useRoutingStore((state) => state.activeProductId);
+  const recommendations = useRoutingStore((state) => state.recommendations);
+  const insertOperation = useRoutingStore((state) => state.insertOperation);
+  const loading = useRoutingStore((state) => state.loading);
+
+  const [filter, setFilter] = useState("");
+
+  const bucket = useMemo<OperationBucket | null>(() => {
+    if (!activeProductId) {
+      return null;
+    }
+    return recommendations.find((item) => item.itemCode === activeProductId) ?? null;
+  }, [activeProductId, recommendations]);
+
+  const filteredOperations = useMemo(() => {
+    if (!bucket) {
+      return [];
+    }
+    const keyword = filter.trim().toLowerCase();
+    if (!keyword) {
+      return bucket.operations;
+    }
+    return bucket.operations.filter((operation) => {
+      const source = `${operation.PROC_CD} ${operation.PROC_DESC ?? ""}`.toLowerCase();
+      return source.includes(keyword);
+    });
+  }, [bucket, filter]);
+
+  const handleDragStart = (operation: OperationStep) => (event: DragEvent<HTMLDivElement>) => {
+    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData(
+      "application/routing-operation",
+      JSON.stringify({ itemCode: bucket?.itemCode ?? "", candidateId: bucket?.candidateId, operation }),
+    );
+    event.dataTransfer.setData("text/plain", `${operation.PROC_CD}`);
+  };
+
+  const handleDoubleClick = (operation: OperationStep) => () => {
+    if (!bucket) {
+      return;
+    }
+    insertOperation({ itemCode: bucket.itemCode, candidateId: bucket.candidateId, operation });
+  };
+
   return (
-    <section className="panel-card interactive-card">
+    <section className="panel-card interactive-card candidate-panel">
       <header className="panel-header">
         <div>
-          <h2 className="panel-title">후보 라우팅</h2>
-          <p className="panel-subtitle">유사도 상위 후보 목록입니다.</p>
+          <h2 className="panel-title">후보 공정 블록</h2>
+          <p className="panel-subtitle">드래그하여 라우팅 타임라인에 배치하세요.</p>
         </div>
-        <span className="text-sm text-accent-strong">{candidates.length}건</span>
+        <span className="text-sm text-accent-strong">{bucket?.operations.length ?? 0}</span>
       </header>
 
+      <div className="candidate-filter">
+        <Search size={14} className="candidate-filter__icon" />
+        <input
+          type="search"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          placeholder="공정 코드/설명 검색"
+        />
+      </div>
+
       {loading ? (
-        <div className="p-6 text-sm text-muted">예측 데이터를 불러오는 중입니다...</div>
-      ) : candidates.length === 0 ? (
-        <div className="p-6 text-sm text-muted">표시할 후보가 없습니다. 품목 코드를 확인하세요.</div>
+        <div className="candidate-placeholder">추천 공정을 불러오는 중입니다...</div>
+      ) : !bucket ? (
+        <div className="candidate-placeholder">활성 품목이 없습니다. 품목을 검색해 주세요.</div>
+      ) : filteredOperations.length === 0 ? (
+        <div className="candidate-placeholder">조건에 맞는 후보 공정이 없습니다.</div>
       ) : (
-        <div className="overflow-hidden">
-          <table className="w-full min-w-full divide-y divide-border text-left text-sm">
-            <thead className="bg-surface-strong text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3">품목</th>
-                <th className="px-4 py-3">유사도</th>
-                <th className="px-4 py-3">랭크</th>
-                <th className="px-4 py-3">라우팅 여부</th>
-                <th className="px-4 py-3">공정 수</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {candidates.map((candidate) => (
-                <tr key={`${candidate.CANDIDATE_ITEM_CD}-${candidate.RANK}`} className="hover-row">
-                  <td className="px-4 py-3 font-medium text-primary">{candidate.CANDIDATE_ITEM_CD}</td>
-                  <td className="px-4 py-3 text-accent">{(candidate.SIMILARITY_SCORE * 100).toFixed(1)}%</td>
-                  <td className="px-4 py-3 text-muted-strong">{candidate.RANK}</td>
-                  <td className="px-4 py-3 text-muted-strong">{candidate.HAS_ROUTING ?? "-"}</td>
-                  <td className="px-4 py-3 text-muted-strong">{candidate.PROCESS_COUNT ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="candidate-list" role="list">
+          {filteredOperations.map((operation) => (
+            <div
+              key={`${bucket.itemCode}-${operation.PROC_SEQ}-${operation.PROC_CD}`}
+              role="listitem"
+              className="candidate-block"
+              draggable
+              onDragStart={handleDragStart(operation)}
+              onDoubleClick={handleDoubleClick(operation)}
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleDoubleClick(operation)();
+                }
+              }}
+            >
+              <header className="candidate-block__header">
+                <span className="candidate-block__code">{operation.PROC_CD}</span>
+                <span className="candidate-block__seq">#{operation.PROC_SEQ}</span>
+              </header>
+              <p className="candidate-block__desc">{operation.PROC_DESC ?? "설명 없음"}</p>
+              <div className="candidate-block__meta">
+                <span>세팅 {operation.SETUP_TIME ?? "-"}</span>
+                <span>가공 {operation.RUN_TIME ?? "-"}</span>
+                <span>대기 {operation.WAIT_TIME ?? "-"}</span>
+              </div>
+              <p className="candidate-block__hint">드래그 또는 더블 클릭으로 추가</p>
+            </div>
+          ))}
         </div>
       )}
     </section>

@@ -1,3 +1,12 @@
+import type {
+  PredictorRuntimeModel,
+  SQLConfigModel,
+  TrainerRuntimeModel,
+  WorkflowConfigPatch,
+  WorkflowGraphEdge,
+  WorkflowGraphNode,
+} from "@app-types/workflow";
+import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
@@ -9,16 +18,6 @@ import ReactFlow, {
   Position,
   ReactFlowProvider,
 } from "reactflow";
-
-import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
-import type {
-  PredictorRuntimeModel,
-  SQLConfigModel,
-  TrainerRuntimeModel,
-  WorkflowConfigPatch,
-  WorkflowGraphEdge,
-  WorkflowGraphNode,
-} from "@app-types/workflow";
 
 const NODE_TYPES = {
   module: ModuleNode,

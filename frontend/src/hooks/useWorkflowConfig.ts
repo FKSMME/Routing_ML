@@ -1,7 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
-import { fetchWorkflowConfig, patchWorkflowConfig } from "@lib/apiClient";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
+import { fetchWorkflowConfig, patchWorkflowConfig } from "@lib/apiClient";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const QUERY_KEY = ["workflow-config"];
 

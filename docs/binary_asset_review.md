@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Binary Asset Review
 
 이 저장소의 최신 커밋에서 PR 생성을 막는 바이너리 파일을 조사한 결과, 다음 자산이 문제로 확인되었습니다.

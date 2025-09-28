@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
 2. 단계 착수 전 이번 단계 전체 범위를 리뷰하고 오류를 식별한다.
@@ -39,3 +41,10 @@ python -m backend.run_api
 - Access DB 연결이 불가능한 환경을 위한 모의 데이터 어댑터.
 - `/api/candidates/save` 검증 로직 강화 및 SQL 연동.
 - 배치 예측, 인증/인가 추가.
+
+
+## Master Data API
+- `GET /api/master-data/tree` : Access 기준정보 트리 조회 (query 파라미터로 검색 지원)
+- `GET /api/master-data/items/{item_code}` : 품목별 Access 행렬 데이터 반환
+- `GET /api/master-data/logs` : 감사 로그 5건 + 연결 상태 제공
+- `GET /api/master-data/logs/download` : 감사 로그 파일 다운로드

@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Routing ML 시스템
 
 > 절대 지령 준수: 모든 단계는 승인 후 순차적으로 진행하며, 오류 발견 시 재승인을 요청하고, 문서 작업은 승인 하에 백그라운드 방식으로 수행한다.

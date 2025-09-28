@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 모델 번들 배포 가이드
 
 이 디렉터리에는 모델 메타데이터(JSON)만 Git에 포함되어 있으며, Joblib 바이너리는 용량 문제로 제외된다. 배포 준비 시 아래 파일을 NAS에서 내려받아 동일한 경로에 배치한다.

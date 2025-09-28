@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Stage 1 데이터 파이프라인 설계 및 실행 계획
 
 ## 게이트 리뷰 결과 요약

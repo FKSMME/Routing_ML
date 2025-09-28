@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # Routing ML 설치 요약
 
 - 설치 후 Windows 서비스 이름: `RoutingMLPredictor`

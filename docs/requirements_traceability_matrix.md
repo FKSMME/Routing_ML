@@ -1,3 +1,5 @@
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+
 # 요구사항 추적표 (초안)
 
 | 요구 ID | PRD 섹션 | 설명 | 연관 태스크(Stage/Detail) | 전달물/산출물 | 테스트/검증 | 상태 |
