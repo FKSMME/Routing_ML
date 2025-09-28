@@ -38,6 +38,8 @@ from backend.feature_weights import FeatureWeightManager  # 추가
 from common.logger import get_logger
 from common.time_aggregator import TimeAggregationConfig, generate_time_profiles
 
+from models.manifest import write_manifest
+
 logger = get_logger("trainer_ml")
 
 warnings.filterwarnings(
@@ -687,6 +689,12 @@ def train_model_with_ml_improved(
                 except Exception as e:
                     logger.warning(f"Projector 로그 생성 실패: {e}")
 
+            try:
+                write_manifest(model_dir, strict=True)
+                logger.info("모델 매니페스트 생성 완료: %s", model_dir / "manifest.json")
+            except Exception as manifest_error:
+                logger.error("모델 매니페스트 생성 실패: %s", manifest_error)
+
         except Exception as e:
             logger.error(f"모델 저장 실패: {e}")
 
@@ -910,6 +918,12 @@ def train_model_with_ml_improved(
                     metadata_path = model_dir / "training_metadata.json"
                     with open(metadata_path, "w", encoding="utf-8") as handle:
                         json.dump(metadata, handle, indent=2, ensure_ascii=False)
+
+                try:
+                    write_manifest(model_dir, strict=True)
+                    logger.info("모델 매니페스트 생성 완료: %s", model_dir / "manifest.json")
+                except Exception as manifest_error:  # pragma: no cover - 안전 로그
+                    logger.error("모델 매니페스트 생성 실패: %s", manifest_error)
 
                 logger.info("모델 저장 완료: %s", model_dir)
             except Exception as exc:  # pragma: no cover - 저장 실패 보호
