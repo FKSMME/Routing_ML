@@ -14,6 +14,7 @@ import pandas as pd
 from backend.trainer_ml import train_model_with_ml_improved
 from common.config_store import workflow_config_store
 from common.logger import get_logger
+from models.manifest import write_manifest
 
 performance_logger = get_logger("training.performance", log_dir=Path("logs/performance"))
 logger = get_logger("api.training")
@@ -161,6 +162,13 @@ class TrainingService:
                 json.dumps(metrics, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+
+            try:
+                manifest_path = write_manifest(version_dir, strict=not dry_run)
+                logger.info("매니페스트 생성 완료", extra={"job_id": job_id, "manifest": str(manifest_path)})
+            except Exception as exc:
+                logger.error("매니페스트 생성 실패", extra={"job_id": job_id, "error": str(exc)})
+
             if trained is None:
                 logger.info("학습 드라이런 완료", extra={"job_id": job_id})
             else:
