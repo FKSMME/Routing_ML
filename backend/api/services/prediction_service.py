@@ -10,6 +10,7 @@ import pandas as pd
 
 from backend.api.config import get_settings
 from backend.api.schemas import CandidateRouting, CandidateSaveResponse, RoutingSummary
+from backend.maintenance.model_registry import get_active_version, initialize_schema
 from backend.predictor_ml import predict_items_with_ml_optimized
 from backend.feature_weights import FeatureWeightManager
 from backend.trainer_ml import load_optimized_model
@@ -34,6 +35,21 @@ class PredictionService:
         self.settings = get_settings()
         self._model_lock: bool = False
         self._last_metrics: Dict[str, Any] = {}
+
+        self._model_registry_path = self.settings.model_registry_path
+        initialize_schema(self._model_registry_path)
+
+    @property
+    def model_dir(self) -> Path:
+        override = self.settings.model_directory
+        if override:
+            return override
+
+        active_version = get_active_version(db_path=self._model_registry_path)
+        if not active_version:
+            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
+        return Path(active_version.artifact_dir)
+
         self._model_reference = self.settings.model_directory
         self._model_manifest: Optional[ModelManifest] = None
         self._model_root: Optional[Path] = None

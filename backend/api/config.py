@@ -11,7 +11,15 @@ from pydantic import BaseSettings, Field, validator
 class Settings(BaseSettings):
     """환경 변수 기반 설정."""
 
-    model_directory: Path = Field(default=Path("models/latest"), description="학습된 모델 경로")
+    model_directory: Optional[Path] = Field(
+        default=None,
+        description="비상시 수동 지정할 모델 경로",
+        env=("MODEL_DIRECTORY_OVERRIDE", "MODEL_DIRECTORY"),
+    )
+    model_registry_path: Path = Field(
+        default=Path("models/registry.db"),
+        description="모델 레지스트리 SQLite 파일 경로",
+    )
     default_top_k: int = Field(default=10, ge=1, le=50)
     default_similarity_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
 
@@ -44,14 +52,21 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-    @validator("model_directory", "candidate_store_dir", "audit_log_dir", pre=True)
-    def _expand_path(cls, value: Path | str) -> Path:  # noqa: N805
+    @validator("model_directory", "candidate_store_dir", "audit_log_dir", "model_registry_path", pre=True)
+    def _expand_path(cls, value: Optional[Path | str]) -> Optional[Path]:  # noqa: N805
+        if value is None:
+            return None
         return Path(value).expanduser().resolve()
 
     @validator("candidate_store_dir", "audit_log_dir")
     def _ensure_dir(cls, value: Path) -> Path:  # noqa: N805
         value.mkdir(parents=True, exist_ok=True)
         return value
+
+    @validator("model_directory", always=True)
+    def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
+        if value is None:
+            return None
 
     @validator("model_directory")
     def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
@@ -68,6 +83,7 @@ class Settings(BaseSettings):
         except Exception:
             # 설정 로딩 시 매니페스트 생성 실패는 무시하고 런타임에서 처리
             pass
+
         return value
 
 
