@@ -149,6 +149,14 @@ async def patch_workflow_graph(
             trainer_cfg.trim_lower_percent = payload.trainer.trim_lower_percent
         if payload.trainer.trim_upper_percent is not None:
             trainer_cfg.trim_upper_percent = payload.trainer.trim_upper_percent
+        if payload.trainer.time_profiles_enabled is not None:
+            trainer_cfg.time_profiles_enabled = payload.trainer.time_profiles_enabled
+        if payload.trainer.time_profile_strategy is not None:
+            trainer_cfg.time_profile_strategy = payload.trainer.time_profile_strategy
+        if payload.trainer.time_profile_optimal_sigma is not None:
+            trainer_cfg.time_profile_optimal_sigma = payload.trainer.time_profile_optimal_sigma
+        if payload.trainer.time_profile_safe_sigma is not None:
+            trainer_cfg.time_profile_safe_sigma = payload.trainer.time_profile_safe_sigma
         snapshot = workflow_config_store.update_trainer_runtime(trainer_cfg)
         apply_trainer_runtime_config(trainer_cfg)
         logger.info("트레이너 런타임 설정 저장", extra={"username": current_user.username})
