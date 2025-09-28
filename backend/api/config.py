@@ -67,6 +67,23 @@ class Settings(BaseSettings):
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
+
+    @validator("model_directory")
+    def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
+        try:
+            if value.exists():
+                if value.is_dir():
+                    from models.manifest import write_manifest
+
+                    write_manifest(value, strict=False)
+                elif value.suffix.lower() == ".json" and value.parent.exists():
+                    from models.manifest import write_manifest
+
+                    write_manifest(value.parent, strict=False)
+        except Exception:
+            # 설정 로딩 시 매니페스트 생성 실패는 무시하고 런타임에서 처리
+            pass
+
         return value
 
 

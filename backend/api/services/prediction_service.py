@@ -14,6 +14,7 @@ from backend.maintenance.model_registry import get_active_version, initialize_sc
 from backend.predictor_ml import predict_items_with_ml_optimized
 from backend.feature_weights import FeatureWeightManager
 from backend.trainer_ml import load_optimized_model
+from models.manifest import ModelManifest, read_model_manifest
 from common.logger import get_logger
 from common.config_store import (
     ExportFormatConfig,
@@ -34,6 +35,7 @@ class PredictionService:
         self.settings = get_settings()
         self._model_lock: bool = False
         self._last_metrics: Dict[str, Any] = {}
+
         self._model_registry_path = self.settings.model_registry_path
         initialize_schema(self._model_registry_path)
 
@@ -48,12 +50,40 @@ class PredictionService:
             raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
         return Path(active_version.artifact_dir)
 
+        self._model_reference = self.settings.model_directory
+        self._model_manifest: Optional[ModelManifest] = None
+        self._model_root: Optional[Path] = None
+
+    @property
+    def model_dir(self) -> Path:
+        if self._model_root is not None:
+            return self._model_root
+        reference = self._model_reference
+        if reference.suffix.lower() == ".json":
+            return reference.parent
+        return reference
+
+    def _refresh_manifest(self, *, strict: bool = True) -> ModelManifest:
+        manifest = read_model_manifest(self._model_reference, strict=strict)
+        self._model_manifest = manifest
+        self._model_root = manifest.root_dir
+        return manifest
+
+    def _get_manifest(self) -> ModelManifest:
+        if self._model_manifest is None:
+            return self._refresh_manifest(strict=False)
+        return self._model_manifest
+
     def _ensure_model(self) -> None:
         """모델 디렉토리 유효성 검사."""
-        if not self.model_dir.exists():
-            raise FileNotFoundError(f"모델 디렉토리를 찾을 수 없습니다: {self.model_dir}")
         try:
-            load_optimized_model(self.model_dir)
+            manifest = self._refresh_manifest(strict=True)
+            load_dir = manifest.require_optimized_model_dir()
+        except Exception as exc:
+            logger.error("모델 매니페스트 검증 실패", exc_info=exc)
+            raise
+        try:
+            load_optimized_model(load_dir)
         except Exception as exc:  # pragma: no cover - 안전장치
             logger.error("모델 로드 실패", exc_info=exc)
             raise
@@ -65,7 +95,8 @@ class PredictionService:
         profile_name: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         try:
-            manager = FeatureWeightManager(self.model_dir)
+            manifest = self._get_manifest()
+            manager = FeatureWeightManager(manifest.root_dir)
         except Exception as exc:  # pragma: no cover - 안전장치
             logger.warning("FeatureWeightManager 초기화 실패: %s", exc)
             return None
@@ -116,7 +147,7 @@ class PredictionService:
 
         routing_df, candidates_df = predict_items_with_ml_optimized(
             item_code_list,
-            self.model_dir,
+            self._get_manifest().root_dir,
             top_k=top_k,
             miss_thr=1.0 - similarity_threshold,
             mode=mode,
