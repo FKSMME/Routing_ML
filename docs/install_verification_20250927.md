@@ -10,7 +10,8 @@
 
 ## 1~2. 사전 요구사항 체크
 - **Access ODBC 드라이버**: `pyodbc.drivers()` 호출 결과 빈 배열이 반환되어 Microsoft Access ODBC 드라이버가 설치되어 있지 않음을 확인함.【e6bdbb†L1-L5】
-- **기타 항목**(관리자 권한, VPN, 방화벽 등)은 컨테이너 환경 특성상 확인 불가하므로 후속 Windows 배포 시 별도 검증 필요.
+- **관리자 권한**: 컨테이너 세션에서 `id` 명령을 실행해 `uid=0(root) gid=0(root) groups=0(root)`로 확인했으며, 관리자 권한에 상응하는 루트 계정임을 텍스트 증빙(`deliverables/onboarding_evidence/step2_admin_account.txt`)으로 보관함.
+- **기타 항목**(VPN, 방화벽 등)은 컨테이너 환경 특성상 확인 불가하므로 후속 Windows 배포 시 별도 검증 필요.
 
 ## 5. 설치 직후 점검 항목
 | 점검 항목 | 결과 | 근거 |
