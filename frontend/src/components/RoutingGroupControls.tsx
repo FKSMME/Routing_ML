@@ -24,7 +24,6 @@ const FORMAT_CAPABILITIES: Record<FileFormat, { local: boolean; clipboard: boole
 };
 
 const NEWLINE = "\n";
-const NEWLINE = "\n";
 const CSV_BOM = String.fromCharCode(0xfeff);
 
 const sanitizeFileName = (value: string) => {
