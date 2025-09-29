@@ -24,10 +24,10 @@ import ReactFlow, {
   MiniMap,
   Node,
   NodeProps,
+  type NodeTypes,
   Position,
   ReactFlowInstance,
   ReactFlowProvider,
-  type NodeTypes,
 } from "reactflow";
 
 const getConnectionLabel = (value: Connection): string | undefined => {

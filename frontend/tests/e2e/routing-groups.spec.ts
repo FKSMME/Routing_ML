@@ -311,7 +311,10 @@ describe("Routing group end-to-end flows", () => {
       await result.current.saveGroup({ groupName: "ERP Enabled" });
     });
 
-    const payload = createRoutingGroupMock.mock.calls.at(-1)?.[0];
+    const payload =
+      createRoutingGroupMock.mock.calls[
+        createRoutingGroupMock.mock.calls.length - 1
+      ]?.[0];
     expect(payload?.erpRequired).toBe(true);
   });
 

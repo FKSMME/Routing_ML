@@ -45,6 +45,7 @@
 ## 실행 로그 & 후속 조치
 
 - `npm run build` 재실행 결과 성공 로그 확보 완료. TypeScript 오류가 해소되었으므로 QA 체크리스트 재개 가능. 증빙: [`logs/qa/frontend_build_20251001.log`](../../logs/qa/frontend_build_20251001.log).
+- 2025-09-30 빌드 실패 로그에 재실행(2025-10-01) 성공 내역을 추가 기록하여 회귀 검증 근거를 확보함. 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
 - 빌드 성공 상태를 유지하면서 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.
 - `npm run build` 실패 로그(typescript 타입 오류 10건)를 기반으로 Algorithm/DataOutput/Options Workspace 타입 정의를 보완한 뒤 재빌드 필요. 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
 - 빌드 성공 후 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.

@@ -7,10 +7,12 @@ if (!globalThis.crypto) {
 
 // Polyfill ResizeObserver used by some components during initialization.
 if (typeof globalThis.ResizeObserver === "undefined") {
-  class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
+  class ResizeObserverPolyfill {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
   }
-  globalThis.ResizeObserver = ResizeObserver as unknown as typeof global.ResizeObserver;
+
+  globalThis.ResizeObserver =
+    ResizeObserverPolyfill as unknown as typeof ResizeObserver;
 }
