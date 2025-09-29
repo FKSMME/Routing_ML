@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Manual browser QA blocker | Lab-3 Chrome 127+ 장비 예약 확정 및 사전 증빙 생성 | reservation_confirmed=true, slot_start_utc=2025-10-04T00:00Z | docs/issues/qa_manual_browser_blocker_20251002.md; 내부 공유 드라이브 QA/Lab3/chrome127_manual_reservation_20250929.png | pending – 실행 후 최종 승인 예정 | 2025-10-04 현장 수동 QA 수행 및 캡처 업로드 |
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
