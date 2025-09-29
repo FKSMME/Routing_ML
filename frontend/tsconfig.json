@@ -11,7 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "baseUrl": "./src",
-    "types": ["vitest"],
+    "types": ["vitest", "node"],
     "paths": {
       "@components/*": ["components/*"],
       "@hooks/*": ["hooks/*"],
@@ -21,7 +21,7 @@
       "@styles/*": ["styles/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "tests"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 

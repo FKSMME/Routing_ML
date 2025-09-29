@@ -396,6 +396,9 @@ class SQLConfigModel(BaseModel):
     available_columns: List[str] = Field(default_factory=list)
     profiles: List[PowerQueryProfileModel] = Field(default_factory=list)
     active_profile: Optional[str] = None
+    exclusive_column_groups: List[List[str]] = Field(default_factory=list)
+    key_columns: List[str] = Field(default_factory=list)
+    training_output_mapping: Dict[str, str] = Field(default_factory=dict)
 
 
 class BlueprintToggleModel(BaseModel):
@@ -522,6 +525,9 @@ class SQLConfigPatch(BaseModel):
     available_columns: Optional[List[str]] = None
     profiles: Optional[List[PowerQueryProfileModel]] = None
     active_profile: Optional[str] = None
+    exclusive_column_groups: Optional[List[List[str]]] = None
+    key_columns: Optional[List[str]] = None
+    training_output_mapping: Optional[Dict[str, str]] = None
 
 
 class BlueprintTogglePatch(BaseModel):
@@ -645,6 +651,7 @@ class RslGroupModel(BaseModel):
     description: Optional[str] = None
     owner: str
     tags: List[str] = Field(default_factory=list)
+    erp_required: bool = Field(default=False, description="ERP 인터페이스 필요 여부")
     status: RslGroupStatus
     validation_errors: List[str] = Field(default_factory=list)
     last_validated_at: Optional[datetime] = None
@@ -663,6 +670,10 @@ class RslGroupCreate(BaseModel):
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    erp_required: bool = Field(
+        default=False,
+        description="ERP 인터페이스 필요 여부",
+    )
 
     @validator("tags", each_item=True)
     def _validate_tag(cls, value: str) -> str:  # noqa: N805
@@ -677,6 +688,10 @@ class RslGroupUpdate(BaseModel):
     description: Optional[str] = None
     tags: Optional[List[str]] = None
     slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    erp_required: Optional[bool] = Field(
+        default=None,
+        description="ERP 인터페이스 필요 여부",
+    )
 
 
 class RslGroupListResponse(BaseModel):

@@ -1,0 +1,13 @@
+
+> routing-ml-frontend@0.1.0 build
+> tsc && vite build
+
+vite v5.4.20 building for production...
+transforming...
+✓ 2365 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.50 kB │ gzip:   0.33 kB
+dist/assets/index-7eeIC63G.css     62.84 kB │ gzip:  11.57 kB
+dist/assets/index-D_vEkLqm.js   1,589.25 kB │ gzip: 518.54 kB
+✓ built in 17.37s

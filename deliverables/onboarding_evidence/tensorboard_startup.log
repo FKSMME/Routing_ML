@@ -1,0 +1,4 @@
+TensorBoard 2.20.0 launch
+Command: tensorboard --logdir models/tb_projector --host 0.0.0.0 --port 6006
+Output:
+TensorBoard 2.20.0 at http://0.0.0.0:6006/ (Press CTRL+C to quit)

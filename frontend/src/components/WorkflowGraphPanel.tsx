@@ -78,6 +78,25 @@ function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
   );
 }
 
+interface ColumnAliasRow {
+  alias: string;
+  column: string;
+}
+
+interface TrainingMappingRow {
+  feature: string;
+  column: string;
+}
+
+function orderByReference(values: string[], reference: string[]): string[] {
+  const orderMap = new Map(reference.map((item, index) => [item, index] as const));
+  return Array.from(new Set(values)).sort((a, b) => {
+    const aIndex = orderMap.get(a) ?? Number.MAX_SAFE_INTEGER;
+    const bIndex = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER;
+    return aIndex - bIndex;
+  });
+}
+
 interface NodeFormState {
   label: string;
   status: string;
@@ -89,6 +108,10 @@ interface NodeFormState {
   predictorSimilarity: string;
   maxRoutingVariants: string;
   sqlProfile: string;
+  sqlOutputColumns: string[];
+  sqlKeyColumns: string[];
+  sqlColumnAliases: ColumnAliasRow[];
+  sqlTrainingMappings: TrainingMappingRow[];
 }
 
 const INITIAL_FORM: NodeFormState = {
@@ -102,6 +125,10 @@ const INITIAL_FORM: NodeFormState = {
   predictorSimilarity: "0.8",
   maxRoutingVariants: "4",
   sqlProfile: "",
+  sqlOutputColumns: [],
+  sqlKeyColumns: [],
+  sqlColumnAliases: [],
+  sqlTrainingMappings: [],
 };
 
 function createReactFlowNodes(nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[] {
@@ -163,6 +190,178 @@ function NodeSettingsDialog({
   onSave,
   saving,
 }: NodeSettingsDialogProps) {
+  const [validationMessage, setValidationMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setValidationMessage(null);
+  }, [node.id]);
+
+  const availableSet = useMemo(() => new Set(sql.available_columns), [sql.available_columns]);
+  const selectedOutputSet = useMemo(() => new Set(form.sqlOutputColumns), [form.sqlOutputColumns]);
+  const conflictViolations = useMemo(
+    () =>
+      sql.exclusive_column_groups
+        .map((group) => {
+          const selected = group.filter((column) => selectedOutputSet.has(column));
+          return { group, selected };
+        })
+        .filter((item) => item.selected.length > 1),
+    [sql.exclusive_column_groups, selectedOutputSet],
+  );
+  const conflictColumns = useMemo(
+    () => new Set(conflictViolations.flatMap((item) => item.selected)),
+    [conflictViolations],
+  );
+  const missingKeyColumns = useMemo(
+    () => form.sqlKeyColumns.filter((column) => !selectedOutputSet.has(column)),
+    [form.sqlKeyColumns, selectedOutputSet],
+  );
+  const keyColumnInvalid = useMemo(
+    () => form.sqlKeyColumns.filter((column) => !availableSet.has(column)),
+    [form.sqlKeyColumns, availableSet],
+  );
+  const aliasDuplicateSet = useMemo(() => {
+    const counts = new Map<string, number>();
+    form.sqlColumnAliases.forEach((row) => {
+      const alias = row.alias.trim();
+      if (!alias) return;
+      counts.set(alias, (counts.get(alias) ?? 0) + 1);
+    });
+    return new Set(
+      Array.from(counts.entries())
+        .filter(([, count]) => count > 1)
+        .map(([alias]) => alias),
+    );
+  }, [form.sqlColumnAliases]);
+  const aliasInvalidColumns = useMemo(
+    () =>
+      new Set(
+        form.sqlColumnAliases
+          .filter((row) => row.column && !availableSet.has(row.column))
+          .map((row) => row.column),
+      ),
+    [form.sqlColumnAliases, availableSet],
+  );
+  const trainingFeatureDuplicateSet = useMemo(() => {
+    const counts = new Map<string, number>();
+    form.sqlTrainingMappings.forEach((row) => {
+      const feature = row.feature.trim();
+      if (!feature) return;
+      counts.set(feature, (counts.get(feature) ?? 0) + 1);
+    });
+    return new Set(
+      Array.from(counts.entries())
+        .filter(([, count]) => count > 1)
+        .map(([feature]) => feature),
+    );
+  }, [form.sqlTrainingMappings]);
+  const trainingRowIssues = useMemo(
+    () =>
+      form.sqlTrainingMappings
+        .map((row, index) => {
+          const feature = row.feature.trim();
+          const column = row.column;
+          if (!feature && !column) {
+            return null;
+          }
+          if (!feature || !column) {
+            return { index, reason: "불완전한 행" };
+          }
+          if (!availableSet.has(column)) {
+            return { index, reason: "허용되지 않은 컬럼" };
+          }
+          if (!selectedOutputSet.has(column)) {
+            return { index, reason: "출력 컬럼 아님" };
+          }
+          return null;
+        })
+        .filter((item): item is { index: number; reason: string } => Boolean(item)),
+    [form.sqlTrainingMappings, availableSet, selectedOutputSet],
+  );
+
+  const updateForm = (changes: Partial<NodeFormState>) => {
+    onChange({ ...form, ...changes });
+  };
+
+  const toggleOutputColumn = (column: string) => {
+    if (!availableSet.has(column)) {
+      setValidationMessage(`허용되지 않은 컬럼입니다: ${column}`);
+      return;
+    }
+    if (selectedOutputSet.has(column)) {
+      if (form.sqlKeyColumns.includes(column)) {
+        setValidationMessage("키 컬럼은 출력 컬럼에서 제거할 수 없습니다.");
+        return;
+      }
+      updateForm({ sqlOutputColumns: form.sqlOutputColumns.filter((item) => item !== column) });
+      setValidationMessage(null);
+      return;
+    }
+    const conflict = sql.exclusive_column_groups.find(
+      (group) => group.includes(column) && group.some((member) => selectedOutputSet.has(member)),
+    );
+    if (conflict) {
+      setValidationMessage(`상호 배타 그룹(${conflict.join(", ")})과 충돌합니다.`);
+      return;
+    }
+    const next = orderByReference([...form.sqlOutputColumns, column], sql.available_columns);
+    updateForm({ sqlOutputColumns: next });
+    setValidationMessage(null);
+  };
+
+  const toggleKeyColumn = (column: string) => {
+    if (!selectedOutputSet.has(column)) {
+      setValidationMessage("출력 컬럼에 포함된 후 키로 지정할 수 있습니다.");
+      return;
+    }
+    if (form.sqlKeyColumns.includes(column)) {
+      if (form.sqlKeyColumns.length <= 1) {
+        setValidationMessage("최소 1개의 키 컬럼이 필요합니다.");
+        return;
+      }
+      updateForm({ sqlKeyColumns: form.sqlKeyColumns.filter((item) => item !== column) });
+      setValidationMessage(null);
+      return;
+    }
+    const next = orderByReference([...form.sqlKeyColumns, column], sql.available_columns);
+    updateForm({ sqlKeyColumns: next });
+    setValidationMessage(null);
+  };
+
+  const handleAliasChange = (index: number, field: "alias" | "column", value: string) => {
+    const next = form.sqlColumnAliases.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, [field]: value } : row,
+    );
+    updateForm({ sqlColumnAliases: next });
+  };
+
+  const handleRemoveAlias = (index: number) => {
+    updateForm({ sqlColumnAliases: form.sqlColumnAliases.filter((_, rowIndex) => rowIndex !== index) });
+  };
+
+  const handleAddAlias = () => {
+    const defaultColumn = sql.available_columns[0] ?? "";
+    updateForm({ sqlColumnAliases: [...form.sqlColumnAliases, { alias: "", column: defaultColumn }] });
+  };
+
+  const handleTrainingMappingChange = (index: number, field: "feature" | "column", value: string) => {
+    const next = form.sqlTrainingMappings.map((row, rowIndex) =>
+      rowIndex === index ? { ...row, [field]: value } : row,
+    );
+    updateForm({ sqlTrainingMappings: next });
+  };
+
+  const handleRemoveTrainingMapping = (index: number) => {
+    updateForm({ sqlTrainingMappings: form.sqlTrainingMappings.filter((_, rowIndex) => rowIndex !== index) });
+  };
+
+  const handleAddTrainingMapping = () => {
+    const defaultColumn = form.sqlOutputColumns[0] ?? sql.available_columns[0] ?? "";
+    updateForm({
+      sqlTrainingMappings: [...form.sqlTrainingMappings, { feature: "", column: defaultColumn }],
+    });
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
@@ -309,25 +508,306 @@ function NodeSettingsDialog({
           ) : null}
 
           {node.id === "sql-mapper" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">SQL 프로파일</h3>
-              <label className="space-y-2 text-sm">
-                <span className="text-slate-300">활성 프로파일</span>
-                <select
-                  value={form.sqlProfile}
-                  onChange={(event) => onChange({ ...form, sqlProfile: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                >
-                  {sql.profiles.map((profile) => (
-                    <option key={profile.name} value={profile.name}>
-                      {profile.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p className="text-xs text-slate-400">
-                7.1 구조와 매핑된 컬럼 수: {sql.output_columns.length}
-              </p>
+            <section className="space-y-4 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-sky-200">SQL 프로파일 및 컬럼 구성</h3>
+                  <p className="text-xs text-slate-400">
+                    허용된 컬럼 집합({sql.available_columns.length})과 상호 배타 규칙을 기준으로 매핑을 관리합니다.
+                  </p>
+                </div>
+                <label className="space-y-1 text-sm md:w-64">
+                  <span className="text-slate-300">활성 프로파일</span>
+                  <select
+                    value={form.sqlProfile}
+                    onChange={(event) => onChange({ ...form, sqlProfile: event.target.value })}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                  >
+                    {sql.profiles.map((profile) => (
+                      <option key={profile.name} value={profile.name}>
+                        {profile.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              {validationMessage ? <p className="text-xs text-amber-300">{validationMessage}</p> : null}
+              {conflictViolations.map((item, index) => (
+                <p key={`conflict-${index}`} className="text-xs text-rose-300">
+                  상호 배타 그룹({item.group.join(" · ")})에서 {item.selected.join(", ")}가 동시에 선택되었습니다.
+                </p>
+              ))}
+              {missingKeyColumns.length > 0 ? (
+                <p className="text-xs text-rose-300">
+                  키 컬럼이 출력 컬럼에 포함되지 않았습니다: {missingKeyColumns.join(", ")}
+                </p>
+              ) : null}
+              {keyColumnInvalid.length > 0 ? (
+                <p className="text-xs text-rose-300">허용되지 않은 키 컬럼: {keyColumnInvalid.join(", ")}</p>
+              ) : null}
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-slate-200">
+                    출력 컬럼 선택 ({form.sqlOutputColumns.length})
+                  </h4>
+                  <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 pr-4 text-xs sm:text-sm">
+                    {sql.available_columns.map((column) => {
+                      const selected = selectedOutputSet.has(column);
+                      const hasConflict = conflictColumns.has(column);
+                      return (
+                        <label
+                          key={column}
+                          className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition ${
+                            selected
+                              ? "border-sky-500 bg-sky-500/10 text-sky-100"
+                              : "border-slate-700/80 text-slate-200 hover:border-sky-400/80 hover:text-sky-100"
+                          } ${hasConflict ? "border-rose-500/80 text-rose-200" : ""}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleOutputColumn(column)}
+                            className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
+                          />
+                          <span className="font-mono">{column}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    선택된 컬럼 수: {form.sqlOutputColumns.length} / 허용 {sql.available_columns.length}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-slate-200">
+                    키 컬럼 지정 ({form.sqlKeyColumns.length})
+                  </h4>
+                  {form.sqlOutputColumns.length === 0 ? (
+                    <p className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+                      먼저 출력 컬럼을 선택한 후 키 컬럼을 지정하세요.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3">
+                      {form.sqlOutputColumns.map((column) => {
+                        const isKey = form.sqlKeyColumns.includes(column);
+                        return (
+                          <button
+                            key={column}
+                            type="button"
+                            onClick={() => toggleKeyColumn(column)}
+                            className={`rounded-full px-3 py-1 text-xs sm:text-sm transition ${
+                              isKey
+                                ? "border border-sky-400 bg-sky-500/20 text-sky-100"
+                                : "border border-slate-600 text-slate-300 hover:border-sky-400 hover:text-sky-100"
+                            }`}
+                          >
+                            {column}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {sql.exclusive_column_groups.length > 0 ? (
+                    <div className="rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 text-xs text-slate-300">
+                      <p className="mb-2 font-semibold text-slate-200">상호 배타 그룹</p>
+                      <ul className="list-disc space-y-1 pl-4">
+                        {sql.exclusive_column_groups.map((group, index) => (
+                          <li key={group.join("-") || index} className="font-mono text-[11px] text-slate-300">
+                            {group.join(" · ")}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-200">컬럼 별칭 매핑</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddAlias}
+                    className="rounded-lg border border-sky-500/70 px-3 py-1 text-xs font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-50"
+                  >
+                    행 추가
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-slate-800/80">
+                  <table className="min-w-full divide-y divide-slate-800 text-left text-sm text-slate-200">
+                    <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                      <tr>
+                        <th className="px-4 py-2">별칭</th>
+                        <th className="px-4 py-2">대상 컬럼</th>
+                        <th className="px-4 py-2 text-right">작업</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-900">
+                      {form.sqlColumnAliases.map((row, index) => {
+                        const aliasValue = row.alias;
+                        const aliasTrimmed = aliasValue.trim();
+                        const aliasDuplicate = aliasTrimmed !== "" && aliasDuplicateSet.has(aliasTrimmed);
+                        const columnInvalid = row.column !== "" && !availableSet.has(row.column);
+                        const showAliasError = aliasDuplicate || (!aliasTrimmed && row.column);
+                        return (
+                          <tr key={`alias-${index}`} className="bg-slate-950/40">
+                            <td className="px-4 py-2 align-middle">
+                              <input
+                                type="text"
+                                value={row.alias}
+                                onChange={(event) => handleAliasChange(index, "alias", event.target.value)}
+                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
+                                  showAliasError ? "border-rose-500/70" : "border-slate-700"
+                                }`}
+                                placeholder="JOB_CD"
+                              />
+                            </td>
+                            <td className="px-4 py-2 align-middle">
+                              <select
+                                value={row.column}
+                                onChange={(event) => handleAliasChange(index, "column", event.target.value)}
+                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
+                                  columnInvalid ? "border-rose-500/70" : "border-slate-700"
+                                }`}
+                              >
+                                <option value="">컬럼 선택</option>
+                                {sql.available_columns.map((column) => (
+                                  <option key={column} value={column}>
+                                    {column}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveAlias(index)}
+                                className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-400 hover:text-rose-200"
+                              >
+                                삭제
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {form.sqlColumnAliases.length === 0 ? (
+                        <tr>
+                          <td className="px-4 py-3 text-center text-xs text-slate-500" colSpan={3}>
+                            등록된 별칭이 없습니다. 행 추가 버튼을 눌러주세요.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Access VIEW 별칭과 내부 컬럼명을 매핑합니다. 공백 또는 중복된 별칭은 저장 전에 수정해야 합니다.
+                </p>
+                {aliasDuplicateSet.size > 0 ? (
+                  <p className="text-xs text-rose-300">중복 별칭: {Array.from(aliasDuplicateSet).join(", ")}</p>
+                ) : null}
+                {aliasInvalidColumns.size > 0 ? (
+                  <p className="text-xs text-rose-300">
+                    허용되지 않은 컬럼이 선택되었습니다: {Array.from(aliasInvalidColumns).join(", ")}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-slate-200">학습-출력 매핑</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddTrainingMapping}
+                    className="rounded-lg border border-sky-500/70 px-3 py-1 text-xs font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-50"
+                  >
+                    행 추가
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-slate-800/80">
+                  <table className="min-w-full divide-y divide-slate-800 text-left text-sm text-slate-200">
+                    <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                      <tr>
+                        <th className="px-4 py-2">피처 키</th>
+                        <th className="px-4 py-2">출력 컬럼</th>
+                        <th className="px-4 py-2 text-right">작업</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-900">
+                      {form.sqlTrainingMappings.map((row, index) => {
+                        const featureTrimmed = row.feature.trim();
+                        const featureDuplicate = featureTrimmed !== "" && trainingFeatureDuplicateSet.has(featureTrimmed);
+                        const columnInvalid =
+                          row.column !== "" && (!availableSet.has(row.column) || !selectedOutputSet.has(row.column));
+                        const incomplete = (featureTrimmed === "" && row.column) || (featureTrimmed && !row.column);
+                        return (
+                          <tr key={`mapping-${index}`} className="bg-slate-950/40">
+                            <td className="px-4 py-2 align-middle">
+                              <input
+                                type="text"
+                                value={row.feature}
+                                onChange={(event) => handleTrainingMappingChange(index, "feature", event.target.value)}
+                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
+                                  featureDuplicate || incomplete ? "border-rose-500/70" : "border-slate-700"
+                                }`}
+                                placeholder="item_code"
+                              />
+                            </td>
+                            <td className="px-4 py-2 align-middle">
+                              <select
+                                value={row.column}
+                                onChange={(event) => handleTrainingMappingChange(index, "column", event.target.value)}
+                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
+                                  columnInvalid || incomplete ? "border-rose-500/70" : "border-slate-700"
+                                }`}
+                                disabled={form.sqlOutputColumns.length === 0}
+                              >
+                                <option value="">컬럼 선택</option>
+                                {form.sqlOutputColumns.map((column) => (
+                                  <option key={column} value={column}>
+                                    {column}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTrainingMapping(index)}
+                                className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-400 hover:text-rose-200"
+                              >
+                                삭제
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {form.sqlTrainingMappings.length === 0 ? (
+                        <tr>
+                          <td className="px-4 py-3 text-center text-xs text-slate-500" colSpan={3}>
+                            매핑이 비어 있습니다. 학습 피처와 출력 컬럼을 연결하세요.
+                          </td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-slate-400">
+                  학습 파이프라인 피처와 최종 출력 컬럼 간의 관계를 정의합니다. 중복된 키 또는 허용되지 않은 컬럼은 저장할 수 없습니다.
+                </p>
+                {trainingFeatureDuplicateSet.size > 0 ? (
+                  <p className="text-xs text-rose-300">
+                    중복된 피처 키: {Array.from(trainingFeatureDuplicateSet).join(", ")}
+                  </p>
+                ) : null}
+                {trainingRowIssues.length > 0 ? (
+                  <p className="text-xs text-rose-300">
+                    매핑에 검증 오류가 있습니다 (행: {trainingRowIssues.map((item) => item.index + 1).join(", ")})
+                  </p>
+                ) : null}
+              </div>
             </section>
           ) : null}
         </div>
@@ -381,6 +861,19 @@ export function WorkflowGraphPanel() {
       return;
     }
     const description = typeof selectedNode.settings?.description === "string" ? (selectedNode.settings.description as string) : "";
+    const sortedOutputColumns = orderByReference(data.sql.output_columns ?? [], data.sql.available_columns ?? []);
+    const aliasRows = Object.entries(data.sql.column_aliases ?? {})
+      .map(([alias, column]) => ({ alias, column }))
+      .sort((a, b) => a.alias.localeCompare(b.alias));
+    const trainingMappings = Object.entries(data.sql.training_output_mapping ?? {})
+      .map(([feature, column]) => ({ feature, column }))
+      .sort((a, b) => a.feature.localeCompare(b.feature));
+    const defaultKeyColumns = ["ITEM_CD", "CANDIDATE_ID", "ROUTING_SIGNATURE"];
+    const keySource =
+      data.sql.key_columns && data.sql.key_columns.length > 0
+        ? data.sql.key_columns
+        : defaultKeyColumns.filter((column) => sortedOutputColumns.includes(column));
+    const keyColumns = orderByReference(keySource, data.sql.available_columns ?? []);
     setFormState({
       label: selectedNode.label,
       status: selectedNode.status ?? "",
@@ -392,6 +885,10 @@ export function WorkflowGraphPanel() {
       predictorSimilarity: data.predictor.similarity_high_threshold.toString(),
       maxRoutingVariants: data.predictor.max_routing_variants.toString(),
       sqlProfile: data.sql.active_profile ?? (data.sql.profiles[0]?.name ?? ""),
+      sqlOutputColumns: sortedOutputColumns,
+      sqlKeyColumns: keyColumns,
+      sqlColumnAliases: aliasRows,
+      sqlTrainingMappings: trainingMappings,
     });
   }, [selectedNode, data]);
 
@@ -486,8 +983,122 @@ export function WorkflowGraphPanel() {
       }
 
       if (selectedNode.id === "sql-mapper") {
+        const availableColumns = data.sql.available_columns ?? [];
+        const allowedSet = new Set(availableColumns);
+        const sortedOutputColumns = orderByReference(formState.sqlOutputColumns, availableColumns);
+        if (sortedOutputColumns.length === 0) {
+          setErrorMessage("출력 컬럼을 최소 1개 이상 선택해야 합니다.");
+          return;
+        }
+        const invalidOutputs = sortedOutputColumns.filter((column) => !allowedSet.has(column));
+        if (invalidOutputs.length > 0) {
+          setErrorMessage(`허용되지 않은 출력 컬럼이 포함되어 있습니다: ${invalidOutputs.join(", ")}`);
+          return;
+        }
+        const conflictViolation = (data.sql.exclusive_column_groups ?? []).some((group) => {
+          const selected = group.filter((column) => sortedOutputColumns.includes(column));
+          return selected.length > 1;
+        });
+        if (conflictViolation) {
+          setErrorMessage("상호 배타 그룹 규칙을 위반했습니다. 선택한 컬럼을 다시 확인하세요.");
+          return;
+        }
+
+        const keyColumns = orderByReference(formState.sqlKeyColumns, availableColumns);
+        if (keyColumns.length === 0) {
+          setErrorMessage("키 컬럼을 최소 1개 이상 지정하세요.");
+          return;
+        }
+        const invalidKeys = keyColumns.filter((column) => !allowedSet.has(column));
+        if (invalidKeys.length > 0) {
+          setErrorMessage(`허용되지 않은 키 컬럼이 포함되어 있습니다: ${invalidKeys.join(", ")}`);
+          return;
+        }
+        const missingKeyOutputs = keyColumns.filter((column) => !sortedOutputColumns.includes(column));
+        if (missingKeyOutputs.length > 0) {
+          setErrorMessage(`키 컬럼은 출력 컬럼에 포함되어야 합니다: ${missingKeyOutputs.join(", ")}`);
+          return;
+        }
+
+        const aliasEntries = formState.sqlColumnAliases.map((row) => ({
+          alias: row.alias.trim(),
+          column: row.column.trim(),
+        }));
+        const aliasFiltered = aliasEntries.filter((row) => row.alias !== "" || row.column !== "");
+        const aliasIncomplete = aliasFiltered.filter((row) => row.alias === "" || row.column === "");
+        if (aliasIncomplete.length > 0) {
+          setErrorMessage("컬럼 별칭 매핑에 빈 값이 있습니다. 모든 행을 채워주세요.");
+          return;
+        }
+        const aliasDuplicateCheck = new Map<string, string>();
+        const duplicateAliases: string[] = [];
+        for (const row of aliasFiltered) {
+          if (aliasDuplicateCheck.has(row.alias)) {
+            duplicateAliases.push(row.alias);
+          } else {
+            aliasDuplicateCheck.set(row.alias, row.column);
+          }
+        }
+        if (duplicateAliases.length > 0) {
+          setErrorMessage(`중복된 별칭이 있습니다: ${Array.from(new Set(duplicateAliases)).join(", ")}`);
+          return;
+        }
+        const aliasInvalidColumns = aliasFiltered
+          .map((row) => row.column)
+          .filter((column) => column !== "" && !allowedSet.has(column));
+        if (aliasInvalidColumns.length > 0) {
+          setErrorMessage(`허용되지 않은 컬럼을 별칭에 지정했습니다: ${Array.from(new Set(aliasInvalidColumns)).join(", ")}`);
+          return;
+        }
+        const columnAliases = Object.fromEntries(aliasFiltered.map((row) => [row.alias, row.column]));
+
+        const trainingEntries = formState.sqlTrainingMappings.map((row) => ({
+          feature: row.feature.trim(),
+          column: row.column.trim(),
+        }));
+        const trainingFiltered = trainingEntries.filter((row) => row.feature !== "" || row.column !== "");
+        if (trainingFiltered.length === 0) {
+          setErrorMessage("학습-출력 매핑을 최소 1개 이상 등록하세요.");
+          return;
+        }
+        const trainingIncomplete = trainingFiltered.filter((row) => row.feature === "" || row.column === "");
+        if (trainingIncomplete.length > 0) {
+          setErrorMessage("학습-출력 매핑에 빈 값이 있습니다. 모든 행을 채워주세요.");
+          return;
+        }
+        const trainingDuplicateCheck = new Set<string>();
+        const trainingDuplicates: string[] = [];
+        for (const row of trainingFiltered) {
+          if (trainingDuplicateCheck.has(row.feature)) {
+            trainingDuplicates.push(row.feature);
+          }
+          trainingDuplicateCheck.add(row.feature);
+        }
+        if (trainingDuplicates.length > 0) {
+          setErrorMessage(`중복된 학습 피처 키가 있습니다: ${Array.from(new Set(trainingDuplicates)).join(", ")}`);
+          return;
+        }
+        const trainingInvalidColumns = trainingFiltered
+          .map((row) => row.column)
+          .filter((column) => !sortedOutputColumns.includes(column));
+        if (trainingInvalidColumns.length > 0) {
+          setErrorMessage(
+            `학습 매핑이 출력 컬럼에 포함되지 않은 값을 참조합니다: ${Array.from(
+              new Set(trainingInvalidColumns),
+            ).join(", ")}`,
+          );
+          return;
+        }
+        const trainingOutputMapping = Object.fromEntries(
+          trainingFiltered.map((row) => [row.feature, row.column]),
+        );
+
         payload.sql = {
           active_profile: formState.sqlProfile,
+          output_columns: sortedOutputColumns,
+          column_aliases: columnAliases,
+          key_columns: keyColumns,
+          training_output_mapping: trainingOutputMapping,
         };
       }
 

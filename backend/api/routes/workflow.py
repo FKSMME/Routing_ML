@@ -1,6 +1,8 @@
 """워크플로우 그래프 및 런타임 설정 API."""
 from __future__ import annotations
 
+from collections import Counter
+from copy import deepcopy
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -70,6 +72,9 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
             available_columns=sql_cfg.available_columns,
             profiles=[PowerQueryProfileModel(**profile.to_dict()) for profile in sql_cfg.profiles],
             active_profile=sql_cfg.active_profile,
+            exclusive_column_groups=sql_cfg.exclusive_column_groups,
+            key_columns=sql_cfg.key_columns,
+            training_output_mapping=sql_cfg.training_output_mapping,
         ),
         data_source=DataSourceConfigModel(
             access_path=data_source_cfg.access_path,
@@ -118,10 +123,14 @@ async def patch_workflow_graph(
     if payload is None or payload.dict(exclude_unset=True) == {}:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="업데이트할 항목이 없습니다")
 
-    snapshot = workflow_config_store.load()
+    original_snapshot = workflow_config_store.load()
+    working_snapshot = deepcopy(original_snapshot)
+    pending_logs = []
+    runtime_apply_tasks = []
+    any_changes = False
 
     if payload.graph is not None:
-        graph_cfg = WorkflowGraphConfig.from_dict(snapshot.get("graph", {}))
+        graph_cfg = WorkflowGraphConfig.from_dict(working_snapshot.get("graph", {}))
         if payload.graph.nodes is not None:
             graph_cfg.nodes = [node.dict() for node in payload.graph.nodes]
         if payload.graph.edges is not None:
@@ -129,18 +138,22 @@ async def patch_workflow_graph(
         if payload.graph.design_refs is not None:
             graph_cfg.design_refs = payload.graph.design_refs
         graph_cfg.last_saved = datetime.utcnow().isoformat()
-        snapshot = workflow_config_store.update_graph(graph_cfg)
-        logger.info(
-            "워크플로우 그래프 업데이트",
-            extra={
-                "username": current_user.username,
-                "nodes": len(graph_cfg.nodes),
-                "edges": len(graph_cfg.edges),
-            },
+        working_snapshot["graph"] = graph_cfg.to_dict()
+        any_changes = True
+        pending_logs.append(
+            (
+                logger.info,
+                "워크플로우 그래프 업데이트",
+                {
+                    "username": current_user.username,
+                    "nodes": len(graph_cfg.nodes),
+                    "edges": len(graph_cfg.edges),
+                },
+            )
         )
 
     if payload.trainer is not None:
-        trainer_cfg = TrainerRuntimeConfig.from_dict(snapshot.get("trainer", {}))
+        trainer_cfg = TrainerRuntimeConfig.from_dict(working_snapshot.get("trainer", {}))
         if payload.trainer.similarity_threshold is not None:
             trainer_cfg.similarity_threshold = payload.trainer.similarity_threshold
         if payload.trainer.trim_std_enabled is not None:
@@ -157,12 +170,19 @@ async def patch_workflow_graph(
             trainer_cfg.time_profile_optimal_sigma = payload.trainer.time_profile_optimal_sigma
         if payload.trainer.time_profile_safe_sigma is not None:
             trainer_cfg.time_profile_safe_sigma = payload.trainer.time_profile_safe_sigma
-        snapshot = workflow_config_store.update_trainer_runtime(trainer_cfg)
-        apply_trainer_runtime_config(trainer_cfg)
-        logger.info("트레이너 런타임 설정 저장", extra={"username": current_user.username})
+        working_snapshot["trainer"] = trainer_cfg.to_dict()
+        any_changes = True
+        runtime_apply_tasks.append(("trainer", apply_trainer_runtime_config, trainer_cfg))
+        pending_logs.append(
+            (
+                logger.info,
+                "트레이너 런타임 설정 저장",
+                {"username": current_user.username},
+            )
+        )
 
     if payload.predictor is not None:
-        predictor_cfg = PredictorRuntimeConfig.from_dict(snapshot.get("predictor", {}))
+        predictor_cfg = PredictorRuntimeConfig.from_dict(working_snapshot.get("predictor", {}))
         if payload.predictor.similarity_high_threshold is not None:
             predictor_cfg.similarity_high_threshold = payload.predictor.similarity_high_threshold
         if payload.predictor.max_routing_variants is not None:
@@ -173,12 +193,19 @@ async def patch_workflow_graph(
             predictor_cfg.trim_lower_percent = payload.predictor.trim_lower_percent
         if payload.predictor.trim_upper_percent is not None:
             predictor_cfg.trim_upper_percent = payload.predictor.trim_upper_percent
-        snapshot = workflow_config_store.update_predictor_runtime(predictor_cfg)
-        apply_predictor_runtime_config(predictor_cfg)
-        logger.info("예측기 런타임 설정 저장", extra={"username": current_user.username})
+        working_snapshot["predictor"] = predictor_cfg.to_dict()
+        any_changes = True
+        runtime_apply_tasks.append(("predictor", apply_predictor_runtime_config, predictor_cfg))
+        pending_logs.append(
+            (
+                logger.info,
+                "예측기 런타임 설정 저장",
+                {"username": current_user.username},
+            )
+        )
 
     if payload.sql is not None:
-        sql_cfg = SQLColumnConfig.from_dict(snapshot.get("sql", {}))
+        sql_cfg = SQLColumnConfig.from_dict(working_snapshot.get("sql", {}))
         allowed_columns = set(DEFAULT_SQL_OUTPUT_COLUMNS)
 
         if payload.sql.available_columns is not None:
@@ -199,6 +226,20 @@ async def patch_workflow_graph(
             sql_cfg.output_columns = payload.sql.output_columns
 
         if payload.sql.column_aliases is not None:
+            empty_alias_keys = [key for key in payload.sql.column_aliases if not key.strip()]
+            if empty_alias_keys:
+                message = "column_aliases에 빈 별칭 키가 포함되어 있습니다"
+                logger.warning("SQL column_aliases 검증 실패", extra={"reason": "empty-key", "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            alias_key_counter = Counter(payload.sql.column_aliases.keys())
+            duplicate_aliases = [alias for alias, count in alias_key_counter.items() if count > 1]
+            if duplicate_aliases:
+                message = "column_aliases에 중복된 별칭이 있습니다: " + ", ".join(sorted(duplicate_aliases))
+                logger.warning(
+                    "SQL column_aliases 검증 실패",
+                    extra={"invalid_columns": duplicate_aliases, "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
             alias_targets = list(payload.sql.column_aliases.values())
             invalid_aliases = [alias for alias in alias_targets if alias not in allowed_columns]
             if invalid_aliases:
@@ -206,6 +247,63 @@ async def patch_workflow_graph(
                 logger.warning("SQL column_aliases 검증 실패", extra={"invalid_columns": invalid_aliases, "username": current_user.username})
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
             sql_cfg.column_aliases = ensure_default_aliases(payload.sql.column_aliases)
+
+        if payload.sql.exclusive_column_groups is not None:
+            normalized_groups = []
+            for group in payload.sql.exclusive_column_groups:
+                if not group:
+                    continue
+                invalid_group = sorted({column for column in group if column not in allowed_columns})
+                if invalid_group:
+                    message = "exclusive_column_groups에 허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(invalid_group)
+                    logger.warning(
+                        "SQL exclusive_column_groups 검증 실패",
+                        extra={"invalid_columns": invalid_group, "username": current_user.username},
+                    )
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+                deduped_group: list[str] = []
+                for column in group:
+                    if column in allowed_columns and column not in deduped_group:
+                        deduped_group.append(column)
+                if len(deduped_group) > 1:
+                    normalized_groups.append(deduped_group)
+            sql_cfg.exclusive_column_groups = normalized_groups
+
+        if payload.sql.key_columns is not None:
+            if not payload.sql.key_columns:
+                message = "key_columns는 최소 1개 이상의 컬럼을 포함해야 합니다"
+                logger.warning("SQL key_columns 검증 실패", extra={"reason": "empty", "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            invalid_keys = sorted(set(payload.sql.key_columns) - allowed_columns)
+            if invalid_keys:
+                message = "key_columns에 허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(invalid_keys)
+                logger.warning("SQL key_columns 검증 실패", extra={"invalid_columns": invalid_keys, "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.key_columns = payload.sql.key_columns
+
+        if payload.sql.training_output_mapping is not None:
+            empty_features = [key for key in payload.sql.training_output_mapping if not key.strip()]
+            if empty_features:
+                message = "training_output_mapping에 빈 피처명이 포함되어 있습니다"
+                logger.warning(
+                    "SQL training_output_mapping 검증 실패",
+                    extra={"reason": "empty-feature", "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            invalid_training_targets = sorted(
+                {column for column in payload.sql.training_output_mapping.values() if column not in allowed_columns}
+            )
+            if invalid_training_targets:
+                message = (
+                    "training_output_mapping이 허용되지 않은 컬럼을 참조합니다: "
+                    + ", ".join(invalid_training_targets)
+                )
+                logger.warning(
+                    "SQL training_output_mapping 검증 실패",
+                    extra={"invalid_columns": invalid_training_targets, "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.training_output_mapping = payload.sql.training_output_mapping
 
         if payload.sql.profiles is not None:
             sql_cfg.profiles = [
@@ -224,13 +322,18 @@ async def patch_workflow_graph(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
-        snapshot = workflow_config_store.update_sql_column_config(sql_cfg)
-        logger.info(
-            "SQL 컬럼 매핑 업데이트",
-            extra={
-                "username": current_user.username,
-                "active_profile": sql_cfg.active_profile,
-            },
+        working_snapshot["sql"] = sql_cfg.to_dict()
+        any_changes = True
+        pending_logs.append(
+            (
+                logger.info,
+                "SQL 컬럼 매핑 업데이트",
+                {
+                    "username": current_user.username,
+                    "active_profile": sql_cfg.active_profile,
+                    "key_columns": sql_cfg.key_columns,
+                },
+            )
         )
 
     if payload.data_source is not None:
@@ -267,14 +370,18 @@ async def patch_workflow_graph(
                 if toggle_patch.description is not None:
                     toggle.description = toggle_patch.description
             data_cfg.blueprint_switches = list(toggle_map.values())
-        snapshot = workflow_config_store.update_data_source_config(data_cfg)
-        logger.info(
-            "데이터 소스 설정 업데이트",
-            extra={
-                "username": current_user.username,
-                "access_path": data_cfg.access_path,
-                "default_table": data_cfg.default_table,
-            },
+        working_snapshot["data_source"] = data_cfg.to_dict()
+        any_changes = True
+        pending_logs.append(
+            (
+                logger.info,
+                "데이터 소스 설정 업데이트",
+                {
+                    "username": current_user.username,
+                    "access_path": data_cfg.access_path,
+                    "default_table": data_cfg.default_table,
+                },
+            )
         )
 
     if payload.export is not None:
@@ -296,20 +403,24 @@ async def patch_workflow_graph(
             value = getattr(payload.export, field_name)
             if value is not None:
                 setattr(export_cfg, field_name, value)
-        snapshot = workflow_config_store.update_export_config(export_cfg)
-        logger.info(
-            "결과 내보내기 설정 업데이트",
-            extra={
-                "username": current_user.username,
-                "formats": {
-                    "excel": export_cfg.enable_excel,
-                    "csv": export_cfg.enable_csv,
-                    "txt": export_cfg.enable_txt,
-                    "parquet": export_cfg.enable_parquet,
-                    "json": export_cfg.enable_json,
+        working_snapshot["export"] = export_cfg.to_dict()
+        any_changes = True
+        pending_logs.append(
+            (
+                logger.info,
+                "결과 내보내기 설정 업데이트",
+                {
+                    "username": current_user.username,
+                    "formats": {
+                        "excel": export_cfg.enable_excel,
+                        "csv": export_cfg.enable_csv,
+                        "txt": export_cfg.enable_txt,
+                        "parquet": export_cfg.enable_parquet,
+                        "json": export_cfg.enable_json,
+                    },
+                    "erp_enabled": export_cfg.erp_interface_enabled,
                 },
-                "erp_enabled": export_cfg.erp_interface_enabled,
-            },
+            )
         )
 
     if payload.visualization is not None:
@@ -327,21 +438,86 @@ async def patch_workflow_graph(
             value = getattr(payload.visualization, field_name)
             if value is not None:
                 setattr(viz_cfg, field_name, value)
-        snapshot = workflow_config_store.update_visualization_config(viz_cfg)
-        logger.info(
-            "시각화 설정 업데이트",
-            extra={
-                "username": current_user.username,
-                "tensorboard": viz_cfg.tensorboard_projector_dir,
-                "neo4j": viz_cfg.neo4j_browser_url,
-            },
+        working_snapshot["visualization"] = viz_cfg.to_dict()
+        any_changes = True
+        pending_logs.append(
+            (
+                logger.info,
+                "시각화 설정 업데이트",
+                {
+                    "username": current_user.username,
+                    "tensorboard": viz_cfg.tensorboard_projector_dir,
+                    "neo4j": viz_cfg.neo4j_browser_url,
+                },
+            )
         )
 
-    audit_logger.info(
-        "workflow.graph.patch",
-        extra={"username": current_user.username, "updated_keys": list(payload.dict(exclude_none=True).keys())},
-    )
-    return _build_response(snapshot)
+    final_snapshot = original_snapshot
+    if any_changes:
+        try:
+            final_snapshot = workflow_config_store.apply_patch_atomic(working_snapshot)
+        except Exception as exc:  # pragma: no cover - unexpected I/O failure
+            logger.exception(
+                "워크플로우 설정 저장 실패",
+                extra={"username": current_user.username},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="설정을 저장하지 못했습니다.",
+            ) from exc
+
+        if runtime_apply_tasks:
+            runtime_name = "runtime"
+            try:
+                for runtime_name, apply_func, runtime_cfg in runtime_apply_tasks:
+                    apply_func(runtime_cfg)
+            except Exception as exc:  # pragma: no cover - runtime failure
+                logger.exception(
+                    "런타임 설정 적용 실패, 이전 스냅샷으로 복구합니다",
+                    extra={
+                        "username": current_user.username,
+                        "runtime": runtime_name,
+                    },
+                )
+                try:
+                    workflow_config_store.apply_patch_atomic(original_snapshot)
+                except Exception:  # pragma: no cover - rollback failure
+                    logger.exception(
+                        "런타임 롤백 실패",
+                        extra={"username": current_user.username},
+                    )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="런타임 설정 적용에 실패했습니다.",
+                ) from exc
+
+        for log_func, message, extra in pending_logs:
+            log_func(message, extra=extra)
+
+    payload_dict = payload.dict(exclude_none=True)
+    audit_details: dict[str, object] = {
+        "username": current_user.username,
+        "updated_keys": list(payload_dict.keys()),
+    }
+    sql_payload = payload_dict.get("sql")
+    if isinstance(sql_payload, dict):
+        sql_summary: dict[str, object] = {}
+        if "output_columns" in sql_payload:
+            sql_summary["output_columns_count"] = len(sql_payload.get("output_columns", []))
+        if "column_aliases" in sql_payload:
+            alias_keys = list(sql_payload.get("column_aliases", {}).keys())
+            sql_summary["column_aliases"] = sorted(alias_keys)
+        if "active_profile" in sql_payload:
+            sql_summary["active_profile"] = sql_payload.get("active_profile")
+        if "key_columns" in sql_payload:
+            sql_summary["key_columns"] = list(sql_payload.get("key_columns", []))
+        if "training_output_mapping" in sql_payload:
+            mapping_keys = list(sql_payload.get("training_output_mapping", {}).keys())
+            sql_summary["training_mapping_keys"] = sorted(mapping_keys)
+        if sql_summary:
+            audit_details["sql_changes"] = sql_summary
+    audit_logger.info("workflow.graph.patch", extra=audit_details)
+    return _build_response(final_snapshot)
 
 
 __all__ = ["router"]

@@ -18,6 +18,11 @@
 | Approval | Approver / status / timestamp | Dev Lead - pending |
 | Follow-up | Next steps or blockers | Await ERP interface toggle spec |
 
+### 절대 지령 게이트 템플릿 연동
+- 모든 문서/로그북 작업은 [`docs/absolute_directive_gate_template.md`](../absolute_directive_gate_template.md)의 Gate 0~7 체크리스트를 복사하여 섹션 상단에 배치한다.
+- 각 Gate 행을 업데이트할 때 동일한 내용(담당자, 승인 시각, 증빙, 이전 단계 오류 재확인 결과)을 `logs/task_execution_*.log`에도 같은 타임스탬프와 함께 기록한다.
+- 다음 단계에 착수하기 전, Gate 6·Gate 7의 “이전 단계 오류 재확인 결과” 칼럼을 `재확인 완료` 또는 `추가 조치 필요`로 명시하고, 동일한 판정을 로그에 남긴 뒤에만 단계 전환을 요청한다.
+
 ## Logging Rules
 - Record one row per discrete action or test; group related rows with suffixes (e.g., 2.2.a, 2.2.b).
 - Attach at least one quantitative metric per entry (execution time, success count, error rate, frame rate).

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Workflow Config Timestamp Verification</title>
+  <style>
+    body { font-family: 'Source Code Pro', 'Courier New', monospace; background: #f5f5f5; color: #222; padding: 24px; }
+    h1 { font-size: 20px; margin-bottom: 12px; }
+    pre { background: #fff; border: 1px solid #ccc; padding: 16px; border-radius: 8px; }
+    .metadata { margin-top: 16px; font-size: 14px; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Workflow Save Timestamp Evidence</h1>
+  <pre>ls -l --full-time config/workflow_settings.json deliverables/onboarding_evidence/workflow_config_test.log
+-rw-r--r-- 1 root root 8657 2025-09-29 08:59:07.748989146 +0000 config/workflow_settings.json
+-rw-r--r-- 1 root root  778 2025-09-29 08:59:28.937248131 +0000 deliverables/onboarding_evidence/workflow_config_test.log</pre>
+  <div class="metadata">Captured after executing UI Save flow via /api/workflow/graph PATCH.</div>
+</body>
+</html>

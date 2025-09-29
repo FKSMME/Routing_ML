@@ -68,6 +68,23 @@ DEFAULT_SQL_COLUMN_ALIASES: Dict[str, str] = {
 }
 
 
+# 라우팅 생성 시 필수로 포함되어야 하는 기본 키 컬럼
+DEFAULT_SQL_KEY_COLUMNS: List[str] = [
+    "ITEM_CD",
+    "CANDIDATE_ID",
+    "ROUTING_SIGNATURE",
+]
+
+
+# 학습 결과와 최종 출력 간의 기본 매핑
+DEFAULT_TRAINING_OUTPUT_MAPPING: Dict[str, str] = {
+    "item_code": "ITEM_CD",
+    "candidate_id": "CANDIDATE_ID",
+    "routing_signature": "ROUTING_SIGNATURE",
+    "similarity_score": "SIMILARITY_SCORE",
+}
+
+
 def ensure_default_aliases(mapping: Dict[str, str]) -> Dict[str, str]:
     """기본 별칭 누락 시 보완된 사본을 반환한다."""
     merged = dict(DEFAULT_SQL_COLUMN_ALIASES)
@@ -96,6 +113,8 @@ DEFAULT_POWER_QUERY_PROFILES: List[DefaultPowerQueryProfile] = [
 __all__ = [
     "DEFAULT_SQL_OUTPUT_COLUMNS",
     "DEFAULT_SQL_COLUMN_ALIASES",
+    "DEFAULT_SQL_KEY_COLUMNS",
+    "DEFAULT_TRAINING_OUTPUT_MAPPING",
     "DEFAULT_POWER_QUERY_PROFILES",
     "DefaultPowerQueryProfile",
     "ensure_default_aliases",

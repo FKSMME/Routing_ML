@@ -24,5 +24,12 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
   },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./tests/setup/vitest.setup.ts"],
+    coverage: {
+      reporter: ["text", "lcov"],
+    },
+  },
 });
 

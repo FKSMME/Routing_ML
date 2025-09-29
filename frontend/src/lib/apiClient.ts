@@ -1,6 +1,14 @@
 import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
-import type { PredictionResponse, RoutingGroupCreatePayload, RoutingGroupCreateResponse, RoutingGroupDetail, RoutingGroupListResponse, RoutingGroupStep } from "@app-types/routing";
+import type {
+  PredictionResponse,
+  RoutingGroupCreatePayload,
+  RoutingGroupCreateResponse,
+  RoutingGroupDetail,
+  RoutingGroupListResponse,
+  RoutingGroupStep,
+} from "@app-types/routing";
+import type { TrainingStatusMetrics } from "@app-types/training";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 import axios from "axios";
 
@@ -129,7 +137,7 @@ export interface TrainingStatus {
   progress: number;
   message?: string | null;
   version_path?: string | null;
-  metrics: Record<string, unknown>;
+  metrics: TrainingStatusMetrics;
   latest_version?: Record<string, unknown> | null;
 }
 
@@ -141,6 +149,91 @@ export interface TrainingRequestPayload {
 
 export async function fetchTrainingStatus(): Promise<TrainingStatus> {
   const response = await api.get<TrainingStatus>("/trainer/status");
+  return response.data;
+}
+
+export interface TrainingMetricCard {
+  id?: string;
+  title: string;
+  value: string | number;
+  subtitle?: string | null;
+}
+
+export interface TrainingMetricTrendPoint {
+  timestamp: string;
+  value: number;
+  label?: string | null;
+}
+
+export interface TrainingHeatmapPayload {
+  xLabels: string[];
+  yLabels: string[];
+  values: number[][];
+  unit?: string | null;
+  label?: string | null;
+}
+
+export interface TrainingMetricsResponse {
+  cards?: TrainingMetricCard[];
+  tensorboard_url?: string | null;
+  metric_trend?: TrainingMetricTrendPoint[];
+  metric_trend_label?: string | null;
+  heatmap?: TrainingHeatmapPayload | null;
+}
+
+export interface TrainingFeatureWeight {
+  id: string;
+  label: string;
+  weight: number;
+  enabled: boolean;
+  description?: string | null;
+}
+
+export interface TrainingRunRecord {
+  id?: string;
+  timestamp: string;
+  user: string;
+  result: string;
+  duration_seconds?: number | null;
+  duration_label?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface TrainingFeaturePatchRequest {
+  features: Record<string, boolean>;
+}
+
+export interface TrainingFeaturePatchResponse {
+  updated: string[];
+  disabled?: string[];
+  timestamp: string;
+}
+
+export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
+  const response = await api.get<TrainingMetricsResponse>("/trainer/metrics");
+  return response.data;
+}
+
+export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
+  const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
+    "/trainer/features",
+  );
+  const payload = response.data;
+  return Array.isArray(payload) ? payload : payload.features ?? [];
+}
+
+export async function fetchTrainingRunHistory(limit = 10): Promise<TrainingRunRecord[]> {
+  const response = await api.get<TrainingRunRecord[] | { runs?: TrainingRunRecord[] }>("/trainer/runs", {
+    params: { limit },
+  });
+  const payload = response.data;
+  return Array.isArray(payload) ? payload : payload.runs ?? [];
+}
+
+export async function patchTrainingFeatures(
+  payload: TrainingFeaturePatchRequest,
+): Promise<TrainingFeaturePatchResponse> {
+  const response = await api.patch<TrainingFeaturePatchResponse>("/trainer/features", payload);
   return response.data;
 }
 
@@ -224,6 +317,7 @@ export interface WorkspaceSettingsPayload {
   routing?: Record<string, unknown> | null;
   algorithm?: Record<string, unknown> | null;
   options?: Record<string, unknown> | null;
+  export?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   access?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
@@ -287,4 +381,103 @@ export interface AccessMetadataResponse {
 export async function fetchAccessMetadata(params?: { table?: string; path?: string }): Promise<AccessMetadataResponse> {
   const response = await api.get<AccessMetadataResponse>("/access/metadata", { params });
   return response.data;
+}
+
+export interface OutputProfileSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  format?: string | null;
+  updated_at?: string | null;
+}
+
+export interface OutputProfileColumn {
+  source: string;
+  mapped: string;
+  type?: string | null;
+  required?: boolean;
+}
+
+export interface OutputProfileDetail extends OutputProfileSummary {
+  mappings: OutputProfileColumn[];
+  sample?: Array<Record<string, unknown>>;
+}
+
+export interface OutputPreviewRequest {
+  profileId?: string | null;
+  mappings: OutputProfileColumn[];
+  format?: string | null;
+  limit?: number;
+}
+
+export interface OutputPreviewResponse {
+  format?: string | null;
+  columns?: string[] | null;
+  rows?: Array<Record<string, unknown>>;
+  sample?: Array<Record<string, unknown>>;
+  data?: Array<Record<string, unknown>>;
+  preview?: Array<Record<string, unknown>>;
+}
+
+const isOutputProfileDetail = (value: unknown): value is OutputProfileDetail => {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return Array.isArray((value as OutputProfileDetail).mappings);
+};
+
+export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
+  const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
+  const payload = response.data;
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload.profiles)) {
+    return payload.profiles;
+  }
+  return [];
+}
+
+export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
+  const { data } = await api.get<OutputProfileDetail | { profile: OutputProfileDetail }>(
+    `/routing/output-profiles/${encodeURIComponent(profileId)}`,
+  );
+
+  if (typeof data === "object" && data !== null && "profile" in data) {
+    const maybeProfile = (data as { profile?: unknown }).profile;
+    if (isOutputProfileDetail(maybeProfile)) {
+      return maybeProfile;
+    }
+  }
+
+  if (isOutputProfileDetail(data)) {
+    return data;
+  }
+
+  throw new Error("Unexpected output profile response shape");
+}
+
+export async function generateOutputPreview(
+  payload: OutputPreviewRequest,
+): Promise<{ columns: string[]; rows: Array<Record<string, unknown>>; format?: string | null }> {
+  const response = await api.post<OutputPreviewResponse | Array<Record<string, unknown>>>(
+    "/routing/output-profiles/preview",
+    {
+      profile_id: payload.profileId ?? null,
+      mappings: payload.mappings,
+      format: payload.format ?? null,
+      limit: payload.limit ?? 5,
+    },
+  );
+
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    const columns = data[0] ? Object.keys(data[0]) : [];
+    return { columns, rows: data, format: payload.format ?? null };
+  }
+
+  const rows = data.rows ?? data.sample ?? data.data ?? data.preview ?? [];
+  const columns = data.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
+  return { columns, rows, format: data.format ?? payload.format ?? null };
 }

@@ -1,6 +1,7 @@
 import json
 import sys
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 import pytest
@@ -12,7 +13,9 @@ from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS
 
 
 @pytest.fixture()
-def training_service(tmp_path, monkeypatch) -> TrainingService:
+def training_service(
+    tmp_path, monkeypatch
+) -> Tuple[TrainingService, List[Dict[str, Any]]]:
     monkeypatch.chdir(tmp_path)
 
     class DummySettings:
@@ -32,9 +35,14 @@ def training_service(tmp_path, monkeypatch) -> TrainingService:
         lambda: DummySettings(tmp_path),
     )
 
+    registry_calls: List[Dict[str, Any]] = []
+
+    def fake_register_version(**payload: Any) -> None:
+        registry_calls.append(payload)
+
     monkeypatch.setattr(
         "backend.api.services.training_service.register_version",
-        lambda **_: None,
+        fake_register_version,
     )
 
     def fake_train_model(dataset, save_dir, export_tb_projector, projector_metadata_cols):
@@ -60,13 +68,15 @@ def training_service(tmp_path, monkeypatch) -> TrainingService:
         ),
     )
 
-    return TrainingService()
+    service = TrainingService()
+    return service, registry_calls
 
 
 def test_training_service_generates_time_profiles_manifest(training_service, monkeypatch):
+    service, registry_calls = training_service
     monkeypatch.setitem(TRAINER_RUNTIME_SETTINGS, "time_profiles_enabled", True)
 
-    training_service._run_training(
+    service._run_training(
         job_id="job-1",
         requested_by="tester",
         version_label="unit_test_version",
@@ -89,3 +99,25 @@ def test_training_service_generates_time_profiles_manifest(training_service, mon
 
     metadata_files = manifest.get("metadata", {}).get("files", {})
     assert metadata_files.get("time_profiles") == "time_profiles.json"
+    assert registry_calls, "register_version should be invoked"
+
+
+def test_run_training_registers_manifest_and_updates_metrics(training_service):
+    service, registry_calls = training_service
+
+    result = service._run_training(
+        job_id="job-2",
+        requested_by="tester",
+        version_label="unit_test_version_2",
+        projector_metadata=["ITEM_CD"],
+        dry_run=False,
+    )
+
+    assert registry_calls, "register_version should have been called"
+    call = registry_calls[0]
+    assert call["version_name"] == "unit_test_version_2"
+    assert Path(call["manifest_path"]).name == "manifest.json"
+    assert Path(call["artifact_dir"]).name == "unit_test_version_2"
+    assert result["manifest_path"].endswith("manifest.json")
+    metrics = result.get("metrics", {})
+    assert metrics.get("samples") == 3
