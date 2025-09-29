@@ -130,6 +130,7 @@ export interface TrainingStatus {
   message?: string | null;
   version_path?: string | null;
   metrics: Record<string, unknown>;
+  latest_version?: Record<string, unknown> | null;
 }
 
 export interface TrainingRequestPayload {
