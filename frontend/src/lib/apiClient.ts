@@ -1,4 +1,5 @@
-﻿import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
+import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
+import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse, RoutingGroupCreatePayload, RoutingGroupCreateResponse, RoutingGroupDetail, RoutingGroupListResponse, RoutingGroupStep } from "@app-types/routing";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 import axios from "axios";
@@ -16,7 +17,63 @@ const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL ?? `${fallbackProtocol}//${fallbackHost}:8000/api`,
   timeout: 60_000,
+  withCredentials: true,
 });
+
+const toUserSession = (payload: AuthenticatedUserPayload): UserSession => ({
+  username: payload.username,
+  displayName: payload.display_name ?? undefined,
+  status: payload.status,
+  isAdmin: payload.is_admin,
+  issuedAt: payload.issued_at,
+  expiresAt: payload.expires_at,
+});
+
+export async function registerUser(payload: RegisterRequestPayload): Promise<RegisterResponsePayload> {
+  const response = await api.post<RegisterResponsePayload>("/auth/register", {
+    username: payload.username,
+    password: payload.password,
+    display_name: payload.displayName ?? undefined,
+  });
+  return response.data;
+}
+
+export async function loginUser(payload: LoginRequestPayload): Promise<LoginResponsePayload> {
+  const response = await api.post<LoginResponsePayload>("/auth/login", payload);
+  return response.data;
+}
+
+export async function logoutUser(): Promise<void> {
+  await api.post("/auth/logout");
+}
+
+export async function fetchCurrentUser(): Promise<UserSession | null> {
+  try {
+    const response = await api.get<AuthenticatedUserPayload>("/auth/me");
+    return toUserSession(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function approveUserAccount(payload: { username: string; makeAdmin?: boolean }): Promise<UserStatusResponsePayload> {
+  const response = await api.post<UserStatusResponsePayload>("/auth/admin/approve", {
+    username: payload.username,
+    make_admin: payload.makeAdmin ?? false,
+  });
+  return response.data;
+}
+
+export async function rejectUserAccount(payload: { username: string; reason?: string | null }): Promise<UserStatusResponsePayload> {
+  const response = await api.post<UserStatusResponsePayload>("/auth/admin/reject", {
+    username: payload.username,
+    reason: payload.reason ?? null,
+  });
+  return response.data;
+}
 
 export async function predictRoutings(params: {
   itemCodes: string[];
