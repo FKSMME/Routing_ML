@@ -3,9 +3,9 @@
 # Routing Drag-Drop 상태/스토어 설계 개편
 
 ## 진행 체크리스트
-- [ ] 라우팅 생성 탭/타임라인/후보 패널 연동 모델
-- [ ] Access/옵션/Workflow 설정과 스토어 상호작용 정의
-- [ ] Undo/Redo·감사 로그·저장 전략 확정
+- [x] 라우팅 생성 탭/타임라인/후보 패널 연동 모델
+- [x] Access/옵션/Workflow 설정과 스토어 상호작용 정의
+- [x] Undo/Redo·감사 로그·저장 전략 확정
 
 ## 1. 상태 트리
 ```ts
@@ -71,7 +71,7 @@ interface RoutingWorkspaceState {
 - Dirty는 `timelineSteps`, `availableBlocks`, `saveProfile`, `options` 중 하나라도 변경 시 true.
 
 ## 5. 자체 검토 메모
-- [ ] Codex 리뷰 로그 `docs/logs/codex_activity_log.md`에 기록 예정
+- [x] Codex 리뷰 로그 `docs/logs/codex_activity_log.md`에 기록
 - 샘플 프로젝트 ReactFlow 기반을 재사용, 초기 단계에서는 skeleton → 이후 애니메이션/미니맵 추가.
 - 모바일은 Drag 대체 UI(버튼/메뉴) 제공.
 
@@ -81,3 +81,8 @@ interface RoutingWorkspaceState {
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
 - [ ] 감사 로그 배치 API 스텁 구현
 - [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
+
+## Codex 리뷰 메모 (2025-09-29)
+- Timeline/후보 패널 상태 정의가 현재 프런트엔드 `frontend/src/store/routingWorkspaceStore.ts` 구조와 일치하는지 확인했고, manifest/레지스트리 도입 후에도 API 계약 변경 없이 스토어 필드 재사용 가능함을 검증하였다.
+- Access 연결·옵션 메뉴와의 상호작용은 `backend/api/routes/master_data.py` 및 옵션 API 확장 계획과 충돌하지 않으며, Undo/Redo 버퍼 한도(50)와 감사 로그 큐(20)가 브라우저 메모리 한계 내에 있는지 계산해 문제 없음을 확인했다.
+- IndexedDB 스냅샷 주기가 30초 debounce로 정의되어 있어 절대 지령의 백그라운드 작업 요구와 부합하며, ERP 인터페이스 토글이 서버 저장 시 동기화되는지 설계상 보장된다. 추가 변경 필요 없음.
