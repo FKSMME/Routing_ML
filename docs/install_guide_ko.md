@@ -75,6 +75,7 @@
 - [ ] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [ ] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
 - [ ] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
+> ⚠️ 2025-09-30 기준: 프런트엔드 `npm run build` 단계에서 TypeScript 22건 오류가 발생하여 설치 패키지 재빌드가 보류되었습니다. 오류 해결 후 본 점검표를 다시 수행해야 합니다. 【4728cf†L1-L74】
 
 ## 6. 문제가 생겼나요?
 자주 나오는 문제는 아래 표를 참고하세요. 각 항목은 간단한 언어로 정리했습니다.
@@ -140,6 +141,10 @@
 3. 워크플로우 UI에서 SAVE → `config/workflow_settings.json` 타임스탬프 업데이트 확인.
 4. `/api/predict`에 샘플 품목 요청 → 3~4개의 라우팅 후보와 Trimmed-STD 적용 값이 반환되는지 확인.
 5. `models/tb_projector/` 경로에 TensorBoard 파일 존재 확인.
+
+### 5-1. 2025-09-30 검증 메모
+- 프런트엔드 빌드 오류가 해결될 때까지 Inno Setup 패키지와 PowerShell 후속 검증은 보류한다. 해결 후 `docs/install_verification_20250927.md`에 성공 로그를 추가할 것.
+- Access ODBC/ERP 인터페이스 연동 테스트는 `scripts/run_quality_checks.sh`로 임시 대체 가능하며, 최종 패키지 배포 전 수동 검증을 재수행한다.
 
 ## 6. 문제 해결 요약
 - 서비스 시작 실패: `install_service.ps1 -RemoveOnly`로 삭제 후 다시 설치, 또는 `eventvwr.msc` 응용 프로그램 로그 확인.
