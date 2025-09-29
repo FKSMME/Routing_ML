@@ -396,6 +396,9 @@ class SQLConfigModel(BaseModel):
     available_columns: List[str] = Field(default_factory=list)
     profiles: List[PowerQueryProfileModel] = Field(default_factory=list)
     active_profile: Optional[str] = None
+    exclusive_column_groups: List[List[str]] = Field(default_factory=list)
+    key_columns: List[str] = Field(default_factory=list)
+    training_output_mapping: Dict[str, str] = Field(default_factory=dict)
 
 
 class BlueprintToggleModel(BaseModel):
@@ -522,6 +525,9 @@ class SQLConfigPatch(BaseModel):
     available_columns: Optional[List[str]] = None
     profiles: Optional[List[PowerQueryProfileModel]] = None
     active_profile: Optional[str] = None
+    exclusive_column_groups: Optional[List[List[str]]] = None
+    key_columns: Optional[List[str]] = None
+    training_output_mapping: Optional[Dict[str, str]] = None
 
 
 class BlueprintTogglePatch(BaseModel):

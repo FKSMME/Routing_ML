@@ -52,6 +52,9 @@ export interface SQLConfigModel {
   available_columns: string[];
   profiles: PowerQueryProfile[];
   active_profile?: string | null;
+  exclusive_column_groups: string[][];
+  key_columns: string[];
+  training_output_mapping: Record<string, string>;
 }
 
 export interface BlueprintToggle {
@@ -148,6 +151,9 @@ export interface SQLConfigPatch {
   available_columns?: string[];
   profiles?: PowerQueryProfile[];
   active_profile?: string | null;
+  exclusive_column_groups?: string[][];
+  key_columns?: string[];
+  training_output_mapping?: Record<string, string>;
 }
 
 export interface DataSourceConfigPatch {
