@@ -1,21 +1,49 @@
 """학습 오케스트레이션 상태 조회 서비스."""
 from __future__ import annotations
 
+import json
+import threading
+import time
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+import pandas as pd
 
 from backend.api.config import get_settings
 
-from backend.maintenance.model_registry import register_version
-from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS, train_model_with_ml_improved
+from backend.maintenance.model_registry import list_versions, register_version
 from common.config_store import workflow_config_store
 
-from backend.maintenance.model_registry import list_versions
-
 from common.logger import get_logger
-from common.training_state import DEFAULT_STATUS_PATH, load_status
+from common.training_state import (
+    DEFAULT_STATUS_PATH,
+    TrainingStatusPayload,
+    load_status,
+    save_status,
+)
+from models.manifest import write_manifest
+
+if TYPE_CHECKING:  # pragma: no cover - import-time hinting only
+    from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS as _TrainerRuntimeSettingsType
+    from backend.trainer_ml import train_model_with_ml_improved as _TrainModelFn
 
 logger = get_logger("api.training")
+performance_logger = get_logger("metrics.training")
+
+
+def train_model_with_ml_improved(*args: Any, **kwargs: Any) -> Any:
+    """Lazy proxy to avoid importing heavy trainer dependencies at module import."""
+
+    from backend.trainer_ml import train_model_with_ml_improved as _impl
+
+    return _impl(*args, **kwargs)
+
+
+def _trainer_runtime_settings() -> Dict[str, Any]:
+    from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS
+
+    return TRAINER_RUNTIME_SETTINGS
 
 
 class TrainingService:
@@ -24,6 +52,9 @@ class TrainingService:
     def __init__(self, *, status_path: Optional[Path] = None) -> None:
         self._status_path = status_path or DEFAULT_STATUS_PATH
         self._registry_path = get_settings().model_registry_path
+        self._lock = threading.Lock()
+        self._thread: Optional[threading.Thread] = None
+        self._status = TrainingStatusPayload()
 
     def get_status(self) -> Dict[str, Any]:
         record = load_status(self._status_path)
@@ -59,161 +90,75 @@ class TrainingService:
         projector_metadata: Optional[list[str]] = None,
         dry_run: bool = False,
     ) -> Dict[str, Any]:
-        del requested_by, version_label, projector_metadata, dry_run
-        message = (
-            "API를 통한 학습 실행은 비활성화되었습니다. "
-            "Windows 작업 스케줄러 혹은 PowerShell 서비스에서 "
-            "`python scripts/train_build_index.py --dataset <path> --save-dir <dir>`을 실행해 주세요."
+        settings = get_settings()
+        self._registry_path = settings.model_registry_path
+
+        data_cfg = workflow_config_store.get_data_source_config()
+        viz_cfg = workflow_config_store.get_visualization_config()
+
+        version_root = settings.model_directory or Path("models")
+        version_root = Path(version_root)
+        version_root.mkdir(parents=True, exist_ok=True)
+
+        timestamp = datetime.now(timezone.utc)
+        version_name = version_label or f"version_{timestamp.strftime('%Y%m%d%H%M%S')}"
+        job_id = f"api-train-{timestamp.strftime('%Y%m%d%H%M%S')}"
+        version_dir = version_root / version_name
+
+        start_monotonic = time.monotonic()
+
+        with self._lock:
+            if self._thread and self._thread.is_alive():
+                logger.warning(
+                    "학습 작업이 이미 실행 중입니다", extra={"job_id": self._status.job_id}
+                )
+                return {
+                    "status": "running",
+                    "job_id": self._status.job_id,
+                    "message": "이미 학습 작업이 실행 중입니다.",
+                }
+
+        version_dir.mkdir(parents=True, exist_ok=True)
+
+        started_at = timestamp
+        self._update_status(
+            job_id=job_id,
+            status="scheduled",
+            started_at=started_at.isoformat(),
+            progress=1,
+            message="학습 작업을 준비 중입니다",
+            version_path=str(version_dir),
         )
 
-        settings = get_settings()
-
-        try:
-            self._update_status(progress=10, message="데이터 로딩 준비")
-            dataset = self._load_dataset(data_cfg)
-            sample_count = len(dataset)
-            self._update_status(progress=30, message=f"샘플 {sample_count}건 전처리")
-
-            if dry_run:
-                time.sleep(1.0)
-                trained = None
-            else:
-                trained = train_model_with_ml_improved(
-                    dataset,
-                    save_dir=version_dir,
-                    export_tb_projector=True,
-                    projector_metadata_cols=projector_metadata or viz_cfg.projector_metadata_columns,
-                )
-
-            duration = time.time() - start_time
-            completed_at = datetime.utcnow()
-            metrics = {
-                "duration_sec": round(duration, 2),
-                "samples": sample_count,
-                "dry_run": dry_run,
-                "saved_dir": str(version_dir),
-            }
-            self._update_status(
-                status="completed",
-                progress=100,
-                message="모델 학습 완료",
-                version_path=str(version_dir),
-                metrics=metrics,
-            )
-            performance_logger.info(
-                "training.completed",
-                extra={"job_id": job_id, **metrics},
-            )
-            (version_dir / "training_metrics.json").write_text(
-                json.dumps(metrics, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
-
-            time_profiles_path = version_dir / "time_profiles.json"
-            if (
-                TRAINER_RUNTIME_SETTINGS.get("time_profiles_enabled")
-                and not time_profiles_path.exists()
-            ):
-                placeholder = {
-                    "generated_at": datetime.utcnow().isoformat(),
-                    "strategy": str(
-                        TRAINER_RUNTIME_SETTINGS.get(
-                            "time_profile_strategy", "sigma_profile"
-                        )
-                    ),
-                    "time_columns": [],
-                    "columns": {},
-                    "profiles": {"OPT": {}, "STD": {}, "SAFE": {}},
-                    "parameters": {
-                        "trim_std_enabled": bool(
-                            TRAINER_RUNTIME_SETTINGS.get("trim_std_enabled", True)
-                        ),
-                        "trim_lower_percent": float(
-                            TRAINER_RUNTIME_SETTINGS.get("trim_lower_percent", 0.05)
-                        ),
-                        "trim_upper_percent": float(
-                            TRAINER_RUNTIME_SETTINGS.get("trim_upper_percent", 0.95)
-                        ),
-                        "optimal_sigma": float(
-                            TRAINER_RUNTIME_SETTINGS.get("time_profile_optimal_sigma", 0.67)
-                        ),
-                        "safe_sigma": float(
-                            TRAINER_RUNTIME_SETTINGS.get("time_profile_safe_sigma", 1.28)
-                        ),
-                        "min_samples": 0,
-                    },
-                }
-                time_profiles_path.write_text(
-                    json.dumps(placeholder, ensure_ascii=False, indent=2),
-                    encoding="utf-8",
-                )
-                logger.info(
-                    "시간 프로파일 기본 템플릿 생성",
-                    extra={"job_id": job_id, "path": str(time_profiles_path)},
-                )
-            manifest_metadata = {
-                "version": version_name,
-                "job": {
-                    "id": job_id,
-                    "requested_by": requested_by,
-                    "dry_run": dry_run,
-                    "started_at": meta["started_at"],
-                    "completed_at": completed_at.isoformat(),
-                },
-                "metrics": metrics,
-            }
-            if projector_metadata:
-                manifest_metadata["projector_metadata_columns"] = list(projector_metadata)
-            files_payload = {}
-            for key, filename in (
-                ("training_request", "training_request.json"),
-                ("training_metrics", "training_metrics.json"),
-                ("time_profiles", "time_profiles.json"),
-            ):
-                candidate = version_dir / filename
-                if candidate.exists():
-                    files_payload[key] = candidate.relative_to(version_dir).as_posix()
-            if files_payload:
-                manifest_metadata["files"] = files_payload
-
+        def _target() -> None:
             try:
-                manifest_path = write_manifest(
-                    version_dir,
-                    strict=not dry_run,
-                    metadata=manifest_metadata,
+                self._run_training(
+                    job_id=job_id,
+                    requested_by=requested_by,
+                    version_label=version_name,
+                    projector_metadata=projector_metadata,
+                    dry_run=dry_run,
+                    data_cfg=data_cfg,
+                    viz_cfg=viz_cfg,
+                    version_dir=version_dir,
+                    start_ts=started_at,
+                    start_monotonic=start_monotonic,
                 )
-                logger.info("매니페스트 생성 완료", extra={"job_id": job_id, "manifest": str(manifest_path)})
-            except Exception as exc:
-                logger.error("매니페스트 생성 실패", extra={"job_id": job_id, "error": str(exc)})
-                manifest_path = version_dir / "manifest.json"
+            finally:
+                with self._lock:
+                    self._thread = None
 
-            if not dry_run:
-                try:
-                    register_version(
-                        db_path=settings.model_registry_path,
-                        version_name=version_name,
-                        artifact_dir=version_dir.resolve(),
-                        manifest_path=manifest_path.resolve(),
-                        requested_by=requested_by,
-                        trained_at=completed_at,
-                    )
-                except Exception as registry_error:  # pragma: no cover - 관측 목적
-                    logger.exception(
-                        "모델 레지스트리 업데이트 실패", extra={"job_id": job_id, "error": str(registry_error)}
-                    )
+        thread = threading.Thread(target=_target, daemon=True)
+        with self._lock:
+            self._thread = thread
+        thread.start()
 
-
-            if trained is None:
-                logger.info("학습 드라이런 완료", extra={"job_id": job_id})
-            else:
-                logger.info("학습 완료", extra={"job_id": job_id, "duration": duration})
-        except Exception as exc:  # pragma: no cover - 런타임 실패 보호
-            logger.exception("학습 작업 실패", extra={"job_id": job_id})
-            performance_logger.error("training.failed", extra={"job_id": job_id, "error": str(exc)})
-            self._update_status(status="failed", progress=100, message=str(exc))
-        finally:
-            with self._lock:
-                self._thread = None
+        return {
+            "status": "scheduled",
+            "job_id": job_id,
+            "version": version_name,
+            "message": "학습 작업을 백그라운드에서 시작했습니다.",
+        }
 
     def _load_dataset(self, data_cfg) -> pd.DataFrame:
         access_path = Path(data_cfg.access_path)
@@ -227,6 +172,234 @@ class TrainingService:
         columns.extend(data_cfg.column_overrides.get("features", []))
         return pd.DataFrame(columns=columns)
 
+    def _run_training(
+        self,
+        *,
+        job_id: str,
+        requested_by: str,
+        version_label: Optional[str],
+        projector_metadata: Optional[list[str]],
+        dry_run: bool,
+        data_cfg=None,
+        viz_cfg=None,
+        version_dir: Optional[Path] = None,
+        start_ts: Optional[datetime] = None,
+        start_monotonic: Optional[float] = None,
+    ) -> None:
+        settings = get_settings()
+        data_cfg = data_cfg or workflow_config_store.get_data_source_config()
+        viz_cfg = viz_cfg or workflow_config_store.get_visualization_config()
+
+        root_dir = settings.model_directory or Path("models")
+        root_dir = Path(root_dir)
+        root_dir.mkdir(parents=True, exist_ok=True)
+
+        start_ts = start_ts or datetime.now(timezone.utc)
+        start_monotonic = start_monotonic or time.monotonic()
+
+        version_name = version_label or f"version_{start_ts.strftime('%Y%m%d%H%M%S')}"
+        version_dir = version_dir or (root_dir / version_name)
+        version_dir.mkdir(parents=True, exist_ok=True)
+
+        projector_columns = list(
+            projector_metadata or getattr(viz_cfg, "projector_metadata_columns", [])
+        )
+        export_projector = bool(getattr(viz_cfg, "projector_enabled", True))
+        runtime_settings = _trainer_runtime_settings()
+
+        self._update_status(
+            job_id=job_id,
+            status="running",
+            started_at=start_ts.isoformat(),
+            progress=5,
+            message="데이터셋 로딩 중",
+            version_path=str(version_dir),
+        )
+
+        try:
+            dataset = self._load_dataset(data_cfg)
+            sample_count = len(dataset)
+            self._update_status(
+                progress=20,
+                message=f"데이터셋 로드 완료 ({sample_count}건)",
+            )
+
+            metrics: Dict[str, Any] = {
+                "samples": sample_count,
+                "dataset_path": str(data_cfg.access_path),
+                "version_name": version_name,
+                "dry_run": dry_run,
+            }
+
+            if dry_run:
+                time.sleep(0.5)
+                trained = None
+            else:
+                self._update_status(progress=40, message="학습 파이프라인 실행")
+                trained = train_model_with_ml_improved(
+                    dataset,
+                    save_dir=version_dir,
+                    export_tb_projector=export_projector,
+                    projector_metadata_cols=projector_columns or None,
+                )
+
+            duration = time.monotonic() - start_monotonic
+            metrics["duration_sec"] = round(duration, 2)
+
+            request_payload = {
+                "job_id": job_id,
+                "requested_by": requested_by,
+                "version_label": version_name,
+                "dry_run": dry_run,
+                "started_at": start_ts.isoformat(),
+                "data_source": data_cfg.to_dict() if hasattr(data_cfg, "to_dict") else {},
+                "visualization": viz_cfg.to_dict() if hasattr(viz_cfg, "to_dict") else {},
+            }
+            (version_dir / "training_request.json").write_text(
+                json.dumps(request_payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+
+            self._update_status(progress=60, message="산출물 저장 중")
+
+            if not dry_run:
+                metrics_path = version_dir / "training_metrics.json"
+                metrics_path.write_text(
+                    json.dumps(metrics, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+
+            time_profiles_path = version_dir / "time_profiles.json"
+            if runtime_settings.get("time_profiles_enabled") and not time_profiles_path.exists():
+                placeholder = {
+                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "strategy": str(
+                        runtime_settings.get("time_profile_strategy", "sigma_profile")
+                    ),
+                    "time_columns": [],
+                    "columns": {},
+                    "profiles": {"OPT": {}, "STD": {}, "SAFE": {}},
+                    "parameters": {
+                        "trim_std_enabled": bool(
+                            runtime_settings.get("trim_std_enabled", True)
+                        ),
+                        "trim_lower_percent": float(
+                            runtime_settings.get("trim_lower_percent", 0.05)
+                        ),
+                        "trim_upper_percent": float(
+                            runtime_settings.get("trim_upper_percent", 0.95)
+                        ),
+                        "optimal_sigma": float(
+                            runtime_settings.get("time_profile_optimal_sigma", 0.67)
+                        ),
+                        "safe_sigma": float(
+                            runtime_settings.get("time_profile_safe_sigma", 1.28)
+                        ),
+                        "min_samples": 0,
+                    },
+                }
+                time_profiles_path.write_text(
+                    json.dumps(placeholder, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                logger.info(
+                    "시간 프로파일 기본 템플릿 생성",
+                    extra={"job_id": job_id, "path": str(time_profiles_path)},
+                )
+
+            completed_at = datetime.now(timezone.utc)
+
+            manifest_metadata = {
+                "version": version_name,
+                "job": {
+                    "id": job_id,
+                    "requested_by": requested_by,
+                    "dry_run": dry_run,
+                    "started_at": start_ts.isoformat(),
+                    "completed_at": completed_at.isoformat(),
+                },
+                "metrics": metrics,
+            }
+            if projector_columns:
+                manifest_metadata["projector_metadata_columns"] = projector_columns
+
+            files_payload: Dict[str, str] = {}
+            for key, filename in (
+                ("training_request", "training_request.json"),
+                ("training_metrics", "training_metrics.json"),
+                ("time_profiles", "time_profiles.json"),
+            ):
+                candidate = version_dir / filename
+                if candidate.exists():
+                    files_payload[key] = candidate.relative_to(version_dir).as_posix()
+            if files_payload:
+                manifest_metadata.setdefault("files", files_payload)
+
+            self._update_status(progress=80, message="매니페스트 생성 중")
+
+            try:
+                manifest_path = write_manifest(
+                    version_dir,
+                    strict=not dry_run,
+                    metadata=manifest_metadata,
+                )
+                metrics["manifest_path"] = str(manifest_path)
+                logger.info(
+                    "매니페스트 생성 완료",
+                    extra={"job_id": job_id, "manifest": str(manifest_path)},
+                )
+            except Exception as exc:  # pragma: no cover - manifest failures are logged
+                manifest_path = version_dir / "manifest.json"
+                logger.exception(
+                    "매니페스트 생성 실패",
+                    extra={"job_id": job_id, "error": str(exc)},
+                )
+
+            if not dry_run:
+                try:
+                    register_version(
+                        db_path=self._registry_path,
+                        version_name=version_name,
+                        artifact_dir=version_dir.resolve(),
+                        manifest_path=manifest_path.resolve(),
+                        requested_by=requested_by,
+                        trained_at=completed_at,
+                    )
+                except Exception as registry_error:  # pragma: no cover - defensive logging
+                    logger.exception(
+                        "모델 레지스트리 업데이트 실패",
+                        extra={"job_id": job_id, "error": str(registry_error)},
+                    )
+
+            performance_logger.info(
+                "training.completed", extra={"job_id": job_id, **metrics}
+            )
+            self._update_status(
+                status="completed",
+                progress=100,
+                message="모델 학습 완료",
+                version_path=str(version_dir),
+                metrics=metrics,
+                finished_at=completed_at.isoformat(),
+            )
+
+            if trained is None:
+                logger.info("학습 드라이런 완료", extra={"job_id": job_id})
+            else:
+                logger.info("학습 완료", extra={"job_id": job_id, "duration": duration})
+        except Exception as exc:  # pragma: no cover - ensures failure persistence
+            logger.exception("학습 작업 실패", extra={"job_id": job_id})
+            performance_logger.error(
+                "training.failed", extra={"job_id": job_id, "error": str(exc)}
+            )
+            self._update_status(
+                status="failed",
+                progress=100,
+                message=str(exc),
+                metrics={"error": str(exc)},
+                finished_at=datetime.now(timezone.utc).isoformat(),
+            )
+
     def _update_status(
         self,
         *,
@@ -235,22 +408,35 @@ class TrainingService:
         message: Optional[str] = None,
         version_path: Optional[str] = None,
         metrics: Optional[Dict[str, Any]] = None,
+        job_id: Optional[str] = None,
+        started_at: Optional[str] = None,
+        finished_at: Optional[str] = None,
     ) -> None:
         with self._lock:
-            if status:
+            if job_id is not None:
+                self._status.job_id = job_id
+            if status is not None:
                 self._status.status = status
             if progress is not None:
                 self._status.progress = progress
-            if message:
+            if message is not None:
                 self._status.message = message
-            if version_path:
+            if version_path is not None:
                 self._status.version_path = version_path
-            if metrics:
-                self._status.metrics = metrics
-            if status in {"failed", "completed"}:
-                self._status.finished_at = datetime.utcnow().isoformat()
+            if metrics is not None:
+                self._status.metrics = dict(metrics)
+            if started_at is not None:
+                self._status.started_at = started_at
+                if status not in {"completed", "failed"}:
+                    self._status.finished_at = None
+            if finished_at is not None:
+                self._status.finished_at = finished_at
+            elif status not in {"completed", "failed"}:
+                self._status.finished_at = None
 
-        raise RuntimeError(message)
+            snapshot = TrainingStatusPayload(**self._status.to_dict())
+
+        save_status(snapshot, self._status_path)
 
 
 
