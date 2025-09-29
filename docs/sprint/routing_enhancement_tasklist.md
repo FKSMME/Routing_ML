@@ -23,7 +23,7 @@
 - [ ] Algorithm Visualization: Blueprint graph + settings modal.
 - [ ] Data Output Settings: Column mapping/profile management.
 - [ ] Learning Data Status: TensorBoard link, heatmap, feature toggles.
-- [ ] System Options: 옵션 충돌 규칙 + 컬럼 매핑 설정.
+- [x] System Options: 옵션 충돌 규칙 + 컬럼 매핑 설정 (2025-09-29 20:45 완료 - workflow graph 연동 및 감사 로깅).
 
 ## Phase 4 · Persistence & Integration
 - [ ] Implement IndexedDB + server settings persistence.

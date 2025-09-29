@@ -358,6 +358,7 @@ export function OptionsWorkspace() {
   const handleAddMappingRow = () => {
     setColumnMappings((prev) => [...prev, makeRow({ scope: prev[prev.length - 1]?.scope ?? "" })]);
     setDirty(true);
+    setColumnMappingSource("workspace");
   };
 
   const handleUpdateMappingRow = (id: string, patch: Partial<Omit<ColumnMappingRow, "id">>) => {
@@ -376,6 +377,7 @@ export function OptionsWorkspace() {
     );
     if (changed) {
       setDirty(true);
+      setColumnMappingSource("workspace");
     }
   };
 
@@ -393,6 +395,7 @@ export function OptionsWorkspace() {
     });
     if (removed) {
       setDirty(true);
+      setColumnMappingSource("workspace");
     }
   };
 
@@ -412,6 +415,23 @@ export function OptionsWorkspace() {
     try {
       setSaving(true);
       setStatusMessage("");
+      const previousSource = columnMappingSource;
+      const normalizedRows = columnMappings.map((row) =>
+        makeRow({
+          id: row.id,
+          scope: row.scope.trim(),
+          source: row.source.trim(),
+          target: row.target.trim(),
+        }),
+      );
+      const payloadMappings = normalizedRows
+        .map((row) => ({
+          scope: row.scope,
+          source: row.source,
+          target: row.target,
+        }))
+        .filter((row) => row.scope || row.source || row.target);
+      const mappingScopes = Array.from(new Set(payloadMappings.map((row) => row.scope).filter(Boolean)));
       const metadataPayload = metadataPreview
         ? {
             access_table: metadataPreview.table,
@@ -428,13 +448,7 @@ export function OptionsWorkspace() {
           access_path: accessPath,
           access_table: accessTable || null,
           erp_interface: erpInterface,
-          column_mappings: columnMappings
-            .map((row) => ({
-              scope: row.scope.trim(),
-              source: row.source.trim(),
-              target: row.target.trim(),
-            }))
-            .filter((row) => row.scope || row.source || row.target),
+          column_mappings: payloadMappings,
         },
         access: {
           path: accessPath || null,
@@ -443,27 +457,44 @@ export function OptionsWorkspace() {
         metadata: metadataPayload,
       };
       await saveWorkspaceSettings(payload);
+      setColumnMappings(normalizedRows);
+      setColumnMappingSource("workspace");
       await postUiAudit({
-        action: "ui.options.update",
+        action: "ui.options.save",
         username: "codex",
         payload: {
+          status: "success",
           standard: standardOptions,
           similarity: similarityOptions,
           access_path: accessPath,
           access_table: accessTable || null,
           erp_interface: erpInterface,
-          column_mappings: columnMappings.map((row) => ({
-            scope: row.scope.trim(),
-            source: row.source.trim(),
-            target: row.target.trim(),
-          })),
-          column_mapping_source: columnMappingSource,
+          column_mapping_count: payloadMappings.length,
+          column_mapping_scopes: mappingScopes,
+          column_mapping_source_before: previousSource,
+          metadata_included: Boolean(metadataPayload),
         },
-      });
-      setStatusMessage("Options saved successfully.");
+      }).catch(() => undefined);
+      setStatusMessage(
+        payloadMappings.length > 0
+          ? `Options saved successfully. ${payloadMappings.length} column mappings stored.`
+          : "Options saved successfully.",
+      );
       setDirty(false);
-    } catch {
+    } catch (error: unknown) {
       setStatusMessage("Failed to save options.");
+      const detail = error instanceof Error ? error.message : undefined;
+      await postUiAudit({
+        action: "ui.options.save.error",
+        username: "codex",
+        payload: {
+          status: "error",
+          message: detail,
+          access_path: accessPath,
+          access_table: accessTable || null,
+          mapping_rows: columnMappings.length,
+        },
+      }).catch(() => undefined);
     } finally {
       setSaving(false);
     }
