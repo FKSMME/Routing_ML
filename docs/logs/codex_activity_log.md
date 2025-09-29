@@ -41,3 +41,4 @@
 
 - 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
 
+- 2025-09-29 19:45:32: Implemented frontend IndexedDB persistence utilities with graceful fallback and logged QA snapshot tests.

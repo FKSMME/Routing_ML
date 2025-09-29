@@ -78,6 +78,8 @@ interface RoutingWorkspaceState {
 ## 6. 구현 체크리스트
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
 - [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
+- [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료)
+- [ ] 감사 로그 배치 API 스텁 구현
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
 
 - [x] 감사 로그 배치 API 스텁 구현

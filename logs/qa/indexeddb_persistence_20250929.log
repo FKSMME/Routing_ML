@@ -1,0 +1,18 @@
+# IndexedDB Persistence QA Log (2025-09-29)
+
+## Summary
+- Confirmed the new `frontend/src/lib/persistence/indexedDbPersistence.ts` utility saves routing workspace snapshots and audit queue entries with `idb-keyval`.
+- Verified graceful fallback paths when `indexedDB` is unavailable to avoid runtime errors in non-browser or restricted environments.
+
+## Execution Details
+- 2025-09-29T23:20:57Z — `npm run test -- --run tests/unit/indexedDbPersistence.test.ts tests/e2e/routing-groups.spec.ts`
+  - Result: ✅ PASS
+  - Notes: Validated fallback behaviour unit tests and ensured routing store e2e harness still loads mocked persistence layer.
+
+## Edge Cases Evaluated
+- IndexedDB unavailable (`globalThis.indexedDB = undefined`) → `writeRoutingWorkspaceSnapshot`/`enqueueAuditEntry` return `persisted=false`; reads return empty results without throwing.
+- Snapshot pruning thresholds maintained at five entries to prevent unbounded growth; audit queue capped at fifty entries.
+- Crypto API absence handled via timestamp-based ID fallback.
+
+## Follow-up Actions
+- Wire the snapshot utility into the planned server sync adapter and extend QA coverage to include browser-based IndexedDB smoke tests.
