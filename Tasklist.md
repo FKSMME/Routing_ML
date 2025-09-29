@@ -34,6 +34,10 @@
 - [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
 - [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
 
+- [x] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청 (2025-09-29 09:05 완료)
+- [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
+- [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
+
 - [ ] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청
 - [ ] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰
 - [ ] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰

@@ -37,3 +37,7 @@
 - 2025-09-29 09:09:18: Validated docs/Design/routing_state_store_plan.md persistence/undo design and logged checklist completion.
 
 - 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
+- 2025-09-29 09:55:00: Re-scanned PRD/Tasklist documents and updated routing refactor execution plan with crosswalk coverage for manifest, RSL, frontend, and deployment tasks.
+
+- 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
+
