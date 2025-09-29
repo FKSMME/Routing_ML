@@ -3,8 +3,10 @@ from __future__ import annotations
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 
+
 # NOTE: FastAPI/Pydantic import 전에 호환성 패치를 적용해 Python 3.12에서의
 # ForwardRef 오류를 예방한다.
+
 ensure_forward_ref_compat()
 
 from fastapi import FastAPI
@@ -24,7 +26,6 @@ from common.logger import get_logger
 
 
 def create_app() -> FastAPI:
-    ensure_forward_ref_compat()
     settings = get_settings()
     app = FastAPI(title="Routing-ML API", version="0.1.0")
     app.add_middleware(

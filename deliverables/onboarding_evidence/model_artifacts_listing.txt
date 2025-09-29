@@ -1,28 +1,22 @@
-models:
-TEST.py
-__pycache__
-accdb_to_tsv.py
-active_features.json
-default
-encoder.joblib
-export_tb_projector.py
-feature_columns.joblib
-feature_importance.json
-feature_recommendations.json
-feature_statistics.json
-feature_weights.joblib
-feature_weights.json
-save_load.py
-scaler.joblib
-training_metadata.json
+# Model Artifacts Inventory (updated 2025-10-03)
 
-models/__pycache__:
-save_load.cpython-312.pyc
+The repository no longer tracks binary `.joblib` payloads so they can be regenerated without bloating diffs. Use the helper script
+below to materialize demo-friendly artifacts locally before validation or packaging:
 
-models/default:
-feature_importance.json
-feature_recommendations.json
-feature_statistics.json
-feature_weights.joblib
-feature_weights.json
-training_metadata.json
+1. `python scripts/build_demo_artifacts.py --overwrite`
+2. (Optional) pass `--model-dir <path>` or set `$MODEL_DIRECTORY` to target an alternate output directory.
+3. Capture the resulting checksums/mtimes and confirm `models/manifest.json` was regenerated alongside the artifacts.
+
+## Checksum snapshot (2025-10-03 run)
+| Artifact | SHA-256 | mtime (UTC) |
+| --- | --- | --- |
+| `similarity_engine.joblib` | `633720e9ef11b13c89ac03cdb131b1b826dc275fded1fafb9bbd72e49f71fb7f` | 2025-09-29T09:19:54.647675+00:00 |
+| `encoder.joblib` | `bf6af163b75b47b19c55fbe7dfe240c81aa17906b0050332bc802ba37ab5f923` | 2025-09-29T09:19:54.651675+00:00 |
+| `scaler.joblib` | `b1ce1d9c4a263115df348ae3f6d6f2ac45142fe5b585286b4b1ce1c40a041339` | 2025-09-29T09:19:54.651675+00:00 |
+| `feature_columns.joblib` | `0dfb24946c2e51f05e661ad6252bc4f3638d57ecf2322ed65658acf0dcbaa78e` | 2025-09-29T09:19:54.651675+00:00 |
+| `tb_projector/metadata.tsv` | `b928e69d3bedcd32416f26504dde2efb6c1e1355e0d948ce4f0fe3073b4bb978` | 2025-09-29T09:19:54.651675+00:00 |
+| `tb_projector/vectors.tsv` | `f0bf7d6b5c9ef219e7d00e37173866ae85ee6f9d15b5c9b2351bc22a07c8f20e` | 2025-09-29T09:19:54.655675+00:00 |
+| `tb_projector/projector_config.json` | `a852e9df01ec2e6f88c612900c076eee6f002b14e0159873d81a25656dbade90` | 2025-09-29T09:19:54.655675+00:00 |
+
+All hashes reflect the post-regeneration snapshot created with the updated tooling; re-running the script should produce deterministic
+outputs.
