@@ -534,6 +534,140 @@ class WorkflowConfigPatch(BaseModel):
     visualization: Optional[VisualizationConfigPatch] = None
 
 
+RslGroupStatus = Literal["draft", "ready", "pending_review", "released", "archived"]
+RslStepStatus = Literal["draft", "ready", "released"]
+
+
+class RslRuleRefModel(BaseModel):
+    id: int
+    rule_name: str
+    rule_version: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    is_optional: bool = False
+    created_at: datetime
+
+
+class RslRuleRefCreate(BaseModel):
+    rule_name: str = Field(..., min_length=1)
+    rule_version: Optional[str] = Field(default=None, max_length=64)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    is_optional: bool = False
+
+
+class RslStepModel(BaseModel):
+    id: int
+    sequence: int
+    name: str
+    description: Optional[str] = None
+    status: RslStepStatus
+    tags: List[str] = Field(default_factory=list)
+    config: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    updated_at: datetime
+    rules: List[RslRuleRefModel] = Field(default_factory=list)
+
+    class Config:
+        orm_mode = True
+
+
+class RslStepCreate(BaseModel):
+    sequence: Optional[int] = Field(default=None, ge=1)
+    name: str = Field(..., min_length=1)
+    description: Optional[str] = None
+    status: Optional[RslStepStatus] = None
+    tags: List[str] = Field(default_factory=list)
+    config: Dict[str, Any] = Field(default_factory=dict)
+    rules: List[RslRuleRefCreate] = Field(default_factory=list)
+
+    @validator("tags", each_item=True)
+    def _strip_tag(cls, value: str) -> str:  # noqa: N805
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("태그는 비어 있을 수 없습니다")
+        return cleaned
+
+
+class RslStepUpdate(BaseModel):
+    sequence: Optional[int] = Field(default=None, ge=1)
+    name: Optional[str] = Field(default=None, min_length=1)
+    description: Optional[str] = None
+    status: Optional[RslStepStatus] = None
+    tags: Optional[List[str]] = None
+    config: Optional[Dict[str, Any]] = None
+
+
+class RslGroupModel(BaseModel):
+    id: int
+    slug: str
+    name: str
+    description: Optional[str] = None
+    owner: str
+    tags: List[str] = Field(default_factory=list)
+    status: RslGroupStatus
+    validation_errors: List[str] = Field(default_factory=list)
+    last_validated_at: Optional[datetime] = None
+    released_at: Optional[datetime] = None
+    released_by: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    steps: List[RslStepModel] = Field(default_factory=list)
+
+    class Config:
+        orm_mode = True
+
+
+class RslGroupCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    description: Optional[str] = None
+    tags: List[str] = Field(default_factory=list)
+    slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+
+    @validator("tags", each_item=True)
+    def _validate_tag(cls, value: str) -> str:  # noqa: N805
+        cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("태그는 비어 있을 수 없습니다")
+        return cleaned
+
+
+class RslGroupUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+    slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+
+
+class RslGroupListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[RslGroupModel]
+
+
+class RslValidationResponse(BaseModel):
+    group_id: int
+    is_valid: bool
+    errors: List[str]
+    validated_at: datetime
+
+
+class RslImportRequest(BaseModel):
+    format: Literal["json", "csv"]
+    payload: str
+
+
+class RslImportResult(BaseModel):
+    created: int = 0
+    updated: int = 0
+    skipped: int = 0
+    errors: List[str] = Field(default_factory=list)
+
+
+class RslExportBundle(BaseModel):
+    format: Literal["json", "csv"]
+    payload: str
+
+
 __all__ = [
     "LoginRequest",
     "LoginResponse",
@@ -572,6 +706,21 @@ __all__ = [
     "DataSourceConfigPatch",
     "ExportConfigPatch",
     "VisualizationConfigPatch",
+    "RslGroupStatus",
+    "RslStepStatus",
+    "RslRuleRefModel",
+    "RslRuleRefCreate",
+    "RslStepModel",
+    "RslStepCreate",
+    "RslStepUpdate",
+    "RslGroupModel",
+    "RslGroupCreate",
+    "RslGroupUpdate",
+    "RslGroupListResponse",
+    "RslValidationResponse",
+    "RslImportRequest",
+    "RslImportResult",
+    "RslExportBundle",
 ]
 
 class AccessMetadataColumn(BaseModel):

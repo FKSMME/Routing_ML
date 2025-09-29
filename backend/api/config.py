@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     sql_table_operations: str = Field(default="routing_candidate_operations")
     sql_preview_row_limit: int = Field(default=20, ge=1, le=500)
 
+    rsl_database_url: str = Field(default="sqlite:///logs/rsl_store.db")
+
 
     # Windows 인증/LDAP 설정
     windows_auth_enabled: bool = Field(default=True)
@@ -63,6 +65,13 @@ class Settings(BaseSettings):
         value.mkdir(parents=True, exist_ok=True)
         return value
 
+    @validator("rsl_database_url")
+    def _prepare_rsl_path(cls, value: str) -> str:  # noqa: N805
+        if value.startswith("sqlite:///"):
+            path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            return f"sqlite:///{path}"
+
     @validator("model_directory", always=True)
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
@@ -83,6 +92,7 @@ class Settings(BaseSettings):
         except Exception:
             # 설정 로딩 시 매니페스트 생성 실패는 무시하고 런타임에서 처리
             pass
+
 
         return value
 
