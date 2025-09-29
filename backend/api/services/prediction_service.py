@@ -271,7 +271,7 @@ class PredictionService:
     ) -> Optional[Dict[str, Any]]:
         try:
             manifest = self._get_manifest()
-            manager = FeatureWeightManager(manifest.root_dir)
+            manager = FeatureWeightManager(manifest=manifest)
         except Exception as exc:  # pragma: no cover - 안전장치
             logger.warning("FeatureWeightManager 초기화 실패: %s", exc)
             return None

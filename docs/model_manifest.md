@@ -14,6 +14,20 @@ The manifest follows the `routing-ml/manifest@1` schema:
   "schema_version": "routing-ml/manifest@1",
   "generated_at": "2024-01-01T12:00:00Z",
   "hash_algorithm": "sha256",
+  "metadata": {
+    "version": "2025.09.29_01",
+    "job": {
+      "id": "train-202509290900",
+      "requested_by": "operator",
+      "started_at": "2025-09-29T00:00:00Z",
+      "completed_at": "2025-09-29T00:10:00Z",
+      "dry_run": false
+    },
+    "files": {
+      "training_request": "training_request.json",
+      "training_metrics": "training_metrics.json"
+    }
+  },
   "artifacts": {
     "similarity_engine": {
       "path": "similarity_engine.joblib",
@@ -51,7 +65,9 @@ without reloading the model.
 
 * Existing version directories do **not** need to rename or relocate any
   artifacts. When the API service loads its configuration it will automatically
-  generate a `manifest.json` for the current layout if one is missing.
+  generate a `manifest.json` for the current layout if one is missing. The
+  generated manifest includes the metadata block shown above so operators can
+  trace which training job produced the assets.
 * The `ROUTING_ML_MODEL_DIRECTORY` environment variable may now point to either
   a version directory (legacy behaviour) or directly to a manifest file. The
   prediction service resolves the manifest before accessing the filesystem and
@@ -59,6 +75,9 @@ without reloading the model.
   `load_optimized_model` helper.
 * Training runs regenerate the manifest after all outputs are written so that
   the manifest always reflects the final set of artifacts for that version.
+* Feature-weight management utilities (`FeatureWeightManager`) resolve JSON
+  and joblib snapshots through the manifest so that renamed files remain
+  discoverable without changing application settings.
 
 With these changes operators can continue to manage model versions exactly as
 before while gaining an auditable overview of the saved assets.
