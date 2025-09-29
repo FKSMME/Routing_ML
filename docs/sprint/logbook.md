@@ -15,6 +15,9 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+
+| 2025-09-29 | Phase 5 - QA & Release Prep | Metrics/Visualization manual review | Container environment feasibility check for Chrome 127+ Metrics/Visualization panel capture | metrics_panel=not_run, console_errors=not_collected | logs/qa/metrics_visualization_manual_20250929.log | blocked | Execute physical Lab-3 Chrome 127+ session on 2025-10-04 |
+
 | 2025-10-03 | Phase 5 - QA & Release Prep | QA checklist duplicate consolidation | Step 1 Follow-up 항목 8 자동화 로그를 재활용하여 QA 체크리스트 중복 항목(67/72) 증빙을 확보하고 상태를 동기화했다. | qa_checks_confirmed=5, reused_logs=logs/qa/frontend_e2e_routing_groups_20251002.log | docs/sprint/routing_enhancement_qa.md | pending | 실 브라우저 캡처 확보 시 수동 증빙 추가 | 
 
 | 2025-10-05 | Phase 5 - QA & Release Prep | Tasklist (9) QA coverage cross-ref | ERP 인터페이스 중복 체크 해소 및 QA/관측 커버리지 증빙 정리 | duplicates_resolved=2, coverage_checks=3 | docs/sprint/routing_enhancement_qa.md (라인 60-74 교차 참조) | pending | Chrome 실사 캡처 확보 후 ⚠️ 항목 해제 |
@@ -23,6 +26,7 @@
 
 
 | 2025-10-03 | Stage 1 - Routing Refactor | Routing canvas integration | ReactFlow RoutingCanvas 컴포넌트 구현 및 타임라인 패널 연동 | components_added=1, docs_updated=1, logs_updated=3 | frontend/src/components/routing/RoutingCanvas.tsx; docs/Design/routing_state_store_plan.md; logs/task_execution_20251003.log | pending | Add QA harness for drag/drop persistence |
+
 
 | 2025-09-29 | Phase 5 - QA & Release Prep | Manual browser QA blocker | Lab-3 Chrome 127+ 장비 예약 확정 및 사전 증빙 생성 | reservation_confirmed=true, slot_start_utc=2025-10-04T00:00Z | docs/issues/qa_manual_browser_blocker_20251002.md; 내부 공유 드라이브 QA/Lab3/chrome127_manual_reservation_20250929.png | pending – 실행 후 최종 승인 예정 | 2025-10-04 현장 수동 QA 수행 및 캡처 업로드 |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Workspace store QA | Undo/Redo·저장 옵션·ERP 토글 통합 회귀 시나리오 수행 및 로그 아카이브 | vitest_suites=1, step_count=3, erp_required=true | logs/qa/workspace_store_manual_20250929.log | pending | Snapshot 복구 경로 자동화 재검토 |

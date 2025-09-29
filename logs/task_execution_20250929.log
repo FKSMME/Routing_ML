@@ -28,3 +28,4 @@
 
 2025-09-29T23:19:33Z | QA-AUTO | Phase5 #QA-Responsive-1280 | Chrome responsive mode @1280px validated. Side panels not collapsed; widths recorded in deliverables/onboarding_evidence/layout_ratio_1280.log and screenshot saved. 이전 단계 오류 재확인: 완료. Next Stage Ready.
 
+2025-09-29T23:49:45Z | codex | QA | Container review for Chrome 127+ Metrics/Visualization panel blocked by missing browser binary; logged outcome in logs/qa/metrics_visualization_manual_20250929.log and updated docs/sprint/routing_enhancement_qa.md checkboxes with blocked status note. Follow-up: complete capture during 2025-10-04 Lab-3 session.
