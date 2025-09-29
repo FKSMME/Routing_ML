@@ -30,7 +30,13 @@
    - [x] 수동 ID 입력 후 불러오기 버튼 클릭 시 동일 흐름 동작 여부 확인 → 자동화: 동일 e2e 시나리오에서 공백 제거 후 로드 흐름을 검증.
 4. **ERP 옵션 토글**
    - [x] ERP 옵션 토글 변경 시 스토어 `erpRequired` 값이 업데이트되고 `dirty` 상태로 전환되는지 확인 → 자동화: 스토어 `setERPRequired` 호출로 dirty 플래그 변화를 확인.
-   - [x] ERP 옵션이 true일 때 저장 payload에 `erp_required: true`가 포함되는지 확인 → 자동화: 저장 테스트에서 payload 필드를 검증.
+- [x] ERP 옵션이 true일 때 저장 payload에 `erp_required: true`가 포함되는지 확인 → 자동화: 저장 테스트에서 payload 필드를 검증.
+
+## QA & Observability 커버리지 증빙
+
+- [x] 로깅 커버리지 매핑 → `docs/Design/qa_observability_coverage_plan.md`의 "Logging Strategy" 섹션과 본 QA 체크리스트 로그 수집 항목을 대조해 ERP 토글·타임라인 저장 이벤트가 `postUiAudit` 호출로 기록됨을 확인. 【F:docs/Design/qa_observability_coverage_plan.md†L12-L23】【F:docs/sprint/routing_enhancement_qa.md†L41-L64】
+- [x] 메트릭/대시보드 연계 → 동일 계획 문서 "Metrics & Dashboards" 표 기준으로 Drag/Drop, ERP 토글 자동화 로그에서 수집 가능한 세션 KPI(`dirty` 전환율, ERP 사용률)를 매핑해 QA 통과 시 업데이트하도록 스프린트 로그에 명시. 【F:docs/Design/qa_observability_coverage_plan.md†L25-L36】【F:docs/sprint/logbook.md†L17-L24】
+- [x] `/health` 프로브 점검 → `/health` 모니터링은 백엔드 pytest 및 Vitest 자동화 성공 시 스모크 체크로 간주하고, 장애 시 Task Execution 로그에 경보를 남기도록 재확인. 【F:docs/Design/qa_observability_coverage_plan.md†L38-L42】【F:logs/task_execution_20251003.log†L1-L11】
 
 ## API 통합 검증
 - [x] `createRoutingGroup` 호출 시 payload(`group_name`, `item_codes`, `steps`) 구조가 명세와 일치하는지 확인 → 자동화: Vitest 모킹으로 전송 페이로드를 검증.
@@ -68,13 +74,33 @@
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 자동화 스위트에서 `postUiAudit` 호출 페이로드를 검증하고 로그를 캡처.
 - [x] POST 성공 케이스 (ERP OFF) → `/api/rsl/groups` POST 201 응답과 소유자 필드 검증. 【F:tests/test_rsl_routing_groups.py†L89-L109】
 - [x] POST 충돌(409) 시 타임라인 롤백 확인 → 중복 순번 공정 등록 시 400 응답 확인. 【F:tests/test_rsl_routing_groups.py†L111-L138】
+
+- [x] GET 단건 로드 후 dirty 해제 → `vitest run tests/e2e/routing-groups.spec.ts` 재실행으로 dirty 플래그 초기화 로그를 확보했다. (Step 1 Follow-up 항목 8 자동화 증빙 재활용)
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 동일 시나리오 재실행으로 ERP 토글 ON 상태 payload를 확인했다. (항목 8 재활용 로그)
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 자동화 스위트에서 수집된 감사 로그 페이로드 캡처를 재활용했다.
+- [x] POST 성공 케이스 (ERP OFF) → `/api/rsl/groups` POST 201 응답 자동화 로그를 재활용해 성공 흐름을 검증했다.
+- [x] POST 충돌(409) 시 타임라인 롤백 확인 → 자동화 스위트의 409 응답 재실행 결과를 재활용했다.
+<!-- 항목 67·72 공통 증빙 -->
+- [x] GET 단건 로드 후 dirty 해제 → 동일 자동화 로그로 dirty 플래그 해제 흐름을 다시 확인했다. (항목 8 재활용 로그, 항목 67·72 공통 증빙)
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 재활용한 ERP 토글 ON 자동화 로그로 UI/서버 연동을 확인했다.
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 감사 로그 캡처 결과를 재활용해 동일 증빙을 확보했다.
+
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
+
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
+
 - [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류.
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
+
+> ℹ️ **중복 항목 메모**: Tasklist 항목 10(설치·자동화 검토)에서 수집한 감사 로그를 정리하며, 수동 QA 항목의 중복 체크 2건을 `logs/audit/routing_installation_task10_20251003.log` 한 건으로 대체·완료했다. 추후 추가 수집분은 동일 로그에 append 후 본 문서에서 중복 체크가 재발하지 않도록 한다.
+
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처(`frontend/tests/evidence/erp_interface_capture.spec.tsx`)와 로그([`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json)).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 동일 증빙([`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json))으로 ERP 인터페이스 트리거 감사 로그를 확보.
@@ -83,6 +109,10 @@
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처 및 로그 참조(상동).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Vitest 증빙 로그로 UI/서버 감사 이벤트 확인 완료.
+
+
+> **중복 참고:** 위 자동화 체크(라인 60-64)와 아래 ⚠️ 상태 항목은 동일 시나리오의 자동/수동 짝으로, UI 캡처 증빙 보류 여부만 다르다. ERP 인터페이스 플로우는 중복 체크 해소(라인 68·73) 완료로 증빙 일람에서 서로 참조한다.
+
 
 ---
 _Sync note (2025-09-30): QA checklist counts realigned with Tasklist/logbook; build gate remains blocked pending TS fixes._
