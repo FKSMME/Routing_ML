@@ -8,8 +8,8 @@ import type {
   RoutingGroupListResponse,
   RoutingGroupStep,
 } from "@app-types/routing";
-import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 import type { TrainingStatusMetrics } from "@app-types/training";
+import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 import axios from "axios";
 
 const fallbackProtocol =
