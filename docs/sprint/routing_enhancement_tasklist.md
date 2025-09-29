@@ -26,8 +26,8 @@
 - [ ] System Options: 옵션 충돌 규칙 + 컬럼 매핑 설정.
 
 ## Phase 4 · Persistence & Integration
-- [ ] Implement IndexedDB + server settings persistence.
-- [ ] Extend audit logging (IP/time/action) for all UI operations.
+- [x] Implement IndexedDB + server settings persistence. (2025-09-30 완료)
+- [x] Extend audit logging (IP/time/action) for all UI operations. (2025-09-30 완료)
 - [ ] Wire ERP interface trigger and Access file linkage.
 - [ ] Document Docker/internal deployment plan.
 

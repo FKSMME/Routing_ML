@@ -1,5 +1,12 @@
 ﻿import type { OperationStep, PredictionResponse, RoutingGroupDetail } from "@app-types/routing";
 import { create } from "zustand";
+import { shallow } from "zustand/shallow";
+
+import {
+  enqueueAuditEntry,
+  readLatestRoutingWorkspaceSnapshot,
+  writeRoutingWorkspaceSnapshot,
+} from "../lib/indexedDb";
 
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;
@@ -61,9 +68,24 @@ export interface RoutingProductTab {
 
 type LastSuccessMap = Record<string, TimelineStep[]>;
 
+const SNAPSHOT_DEBOUNCE_MS = 30_000;
 
+interface RoutingWorkspacePersistedState {
+  activeProductId: string | null;
+  activeItemId: string | null;
+  productTabs: RoutingProductTab[];
+  timeline: TimelineStep[];
+  lastSuccessfulTimeline: LastSuccessMap;
+  lastSavedAt?: string;
+  dirty: boolean;
+}
+
+type PersistedSelectionState = RoutingWorkspacePersistedState;
 
 const cloneTimeline = (steps: TimelineStep[]): TimelineStep[] => steps.map((step) => ({ ...step }));
+
+const cloneSuccessMap = (source: LastSuccessMap): LastSuccessMap =>
+  Object.fromEntries(Object.entries(source).map(([key, steps]) => [key, cloneTimeline(steps)]));
 
 const normalizeSequence = (steps: TimelineStep[]): TimelineStep[] =>
   steps.map((step, index) => ({ ...step, seq: index + 1, positionX: index * NODE_GAP }));
@@ -149,6 +171,26 @@ const updateLastSuccess = (
   tabId: string,
   timeline: TimelineStep[],
 ): LastSuccessMap => ({ ...lastSuccess, [tabId]: cloneTimeline(timeline) });
+
+const toPersistedState = (selection: PersistedSelectionState): RoutingWorkspacePersistedState => ({
+  activeProductId: selection.activeProductId,
+  activeItemId: selection.activeItemId,
+  productTabs: selection.productTabs.map((tab) => ({ ...tab, timeline: cloneTimeline(tab.timeline) })),
+  timeline: cloneTimeline(selection.timeline),
+  lastSuccessfulTimeline: cloneSuccessMap(selection.lastSuccessfulTimeline),
+  lastSavedAt: selection.lastSavedAt,
+  dirty: selection.dirty,
+});
+
+const persistedSelector = (state: RoutingStoreState): PersistedSelectionState => ({
+  activeProductId: state.activeProductId,
+  activeItemId: state.activeItemId,
+  productTabs: state.productTabs,
+  timeline: state.timeline,
+  lastSuccessfulTimeline: state.lastSuccessfulTimeline,
+  lastSavedAt: state.lastSavedAt,
+  dirty: state.dirty,
+});
 
 export interface RoutingStoreState {
   loading: boolean;
@@ -489,6 +531,110 @@ export const useRoutingStore = create<RoutingStoreState>((set) => ({
       };
     }),
 }));
+
+let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
+
+const persistRoutingSnapshot = (state: RoutingWorkspacePersistedState) => {
+  void (async () => {
+    try {
+      const snapshot = await writeRoutingWorkspaceSnapshot(state);
+      await enqueueAuditEntry({
+        action: "routing.snapshot.save",
+        message: "Saved routing workspace snapshot to IndexedDB.",
+        context: {
+          snapshotId: snapshot.id,
+          activeProductId: state.activeProductId,
+          dirty: state.dirty,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save routing workspace snapshot", error);
+      await enqueueAuditEntry({
+        action: "routing.snapshot.save.error",
+        level: "error",
+        message: error instanceof Error ? error.message : String(error),
+        context: {
+          activeProductId: state.activeProductId,
+        },
+      });
+    }
+  })();
+};
+
+const scheduleSnapshotSave = (selection: PersistedSelectionState) => {
+  const stateForSave = toPersistedState(selection);
+  if (snapshotTimer) {
+    clearTimeout(snapshotTimer);
+  }
+  snapshotTimer = setTimeout(() => {
+    snapshotTimer = undefined;
+    persistRoutingSnapshot(stateForSave);
+  }, SNAPSHOT_DEBOUNCE_MS);
+};
+
+useRoutingStore.subscribe(persistedSelector, (selection) => {
+  scheduleSnapshotSave(selection);
+}, { equalityFn: shallow });
+
+const restoreLatestSnapshot = async () => {
+  try {
+    const snapshot = await readLatestRoutingWorkspaceSnapshot<RoutingWorkspacePersistedState>();
+    if (!snapshot || !snapshot.state) {
+      return;
+    }
+    const persisted = snapshot.state;
+    const restoredTabs = (persisted.productTabs ?? []).map((tab) => ({
+      ...tab,
+      timeline: normalizeSequence(cloneTimeline(tab.timeline ?? [])),
+    }));
+    let activeProductId = persisted.activeProductId;
+    if (!activeProductId || !restoredTabs.some((tab) => tab.id === activeProductId)) {
+      activeProductId = restoredTabs[0]?.id ?? null;
+    }
+    const fallbackTimeline = normalizeSequence(cloneTimeline(persisted.timeline ?? []));
+    const activeTimelineSource = activeProductId
+      ? restoredTabs.find((tab) => tab.id === activeProductId)?.timeline ?? fallbackTimeline
+      : fallbackTimeline;
+    const normalizedTimeline = normalizeSequence(cloneTimeline(activeTimelineSource));
+    const successMap = persisted.lastSuccessfulTimeline
+      ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
+      : {};
+
+    useRoutingStore.setState(
+      (current) => ({
+        ...current,
+        activeProductId,
+        activeItemId: persisted.activeItemId ?? activeProductId,
+        productTabs: restoredTabs,
+        timeline: normalizedTimeline,
+        history: { past: [], future: [] },
+        lastSuccessfulTimeline: successMap,
+        lastSavedAt: persisted.lastSavedAt,
+        dirty: computeDirty(normalizedTimeline, successMap, activeProductId),
+      }),
+      false,
+      "routing.snapshot.restore",
+    );
+
+    await enqueueAuditEntry({
+      action: "routing.snapshot.restore",
+      message: "Restored routing workspace snapshot from IndexedDB.",
+      context: {
+        snapshotId: snapshot.id,
+        tabCount: restoredTabs.length,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to restore routing workspace snapshot", error);
+    await enqueueAuditEntry({
+      action: "routing.snapshot.restore.error",
+      level: "error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+void restoreLatestSnapshot();
 
 
 
