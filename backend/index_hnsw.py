@@ -79,10 +79,10 @@ class HNSWSearch:
         q = query.astype("float32", copy=False).reshape(1, -1)
         faiss.normalize_L2(q)
 
-        D2, I = self.index.search(q, top_k)          # L2 거리 제곱 반환
-        sims = 1.0 - (D2[0] / 2.0)                  # cosine 환산
+        distances_sq, indices = self.index.search(q, top_k)  # L2 거리 제곱 반환
+        sims = 1.0 - (distances_sq[0] / 2.0)                  # cosine 환산
 
         if top_k == 1:
-            return self.item_codes[int(I[0, 0])], float(sims[0])
+            return self.item_codes[int(indices[0, 0])], float(sims[0])
 
-        return list(self.item_codes[I[0]]), sims.tolist()
+        return list(self.item_codes[indices[0]]), sims.tolist()

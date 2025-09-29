@@ -5,20 +5,35 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, Type
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))
 
-from common.config_store import WorkflowGraphConfig, workflow_config_store
+if TYPE_CHECKING:  # pragma: no cover - 타입 검사 전용
+    from common.config_store import WorkflowGraphConfig
+
+
+def _load_workflow_store():
+    from common.config_store import workflow_config_store
+
+    return workflow_config_store
+
+
+def _load_workflow_config() -> Type["WorkflowGraphConfig"]:
+    from common.config_store import WorkflowGraphConfig
+
+    return WorkflowGraphConfig
 
 LOG_DIR = Path("logs/workflow")
 
 
 def run_validation() -> Dict[str, Any]:
-    before = workflow_config_store.load()
-    graph = WorkflowGraphConfig(
+    store = _load_workflow_store()
+    config_cls = _load_workflow_config()
+    before = store.load()
+    graph = config_cls(
         nodes=[
             {"id": "source", "label": "Data Source", "type": "start"},
             {"id": "trainer", "label": "Train Model", "type": "process"},
@@ -26,8 +41,8 @@ def run_validation() -> Dict[str, Any]:
         edges=[{"id": "e1", "source": "source", "target": "trainer"}],
         design_refs=["main/1.jpg"],
     )
-    updated = workflow_config_store.update_graph(graph)
-    after = workflow_config_store.load()
+    updated = store.update_graph(graph)
+    after = store.load()
 
     last_saved = updated["graph"].get("last_saved")
     assert last_saved, "Graph did not record last_saved timestamp"

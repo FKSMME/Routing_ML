@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     sql_table_operations: str = Field(default="routing_candidate_operations")
     sql_preview_row_limit: int = Field(default=20, ge=1, le=500)
 
+    rsl_database_url: str = Field(default="sqlite:///logs/rsl_store.db")
+
 
     # Windows 인증/LDAP 설정
     windows_auth_enabled: bool = Field(default=True)
@@ -51,6 +53,14 @@ class Settings(BaseSettings):
     @validator("candidate_store_dir", "audit_log_dir")
     def _ensure_dir(cls, value: Path) -> Path:  # noqa: N805
         value.mkdir(parents=True, exist_ok=True)
+        return value
+
+    @validator("rsl_database_url")
+    def _prepare_rsl_path(cls, value: str) -> str:  # noqa: N805
+        if value.startswith("sqlite:///"):
+            path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            return f"sqlite:///{path}"
         return value
 
 

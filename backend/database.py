@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import atexit
 import time
 from pathlib import Path
 import threading
 from contextlib import contextmanager
 import warnings
-from typing import Sequence, Any, List, Dict, Optional
+from typing import Any, Dict, List, Sequence
 
 import pandas as pd
 import pyodbc
@@ -83,23 +84,23 @@ class ConnectionPool:
                     # 연결 상태 확인
                     try:
                         conn.execute("SELECT 1")  # 간단한 테스트 쿼리
-                    except:
+                    except Exception:
                         # 연결이 끊어졌으면 새로 생성
                         try:
                             conn.close()
-                        except:
+                        except Exception:
                             pass
                         conn = None
                 
                 if conn is None:
                     conn = _create_connection()  # 새 연결 생성
             yield conn
-        except Exception as e:
+        except Exception:
             # 연결에 문제가 있으면 닫기
             if conn:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
             raise
         finally:
@@ -114,7 +115,7 @@ class ConnectionPool:
                     logger.warning(f"연결 반환 중 오류: {e}")
                     try:
                         conn.close()
-                    except:
+                    except Exception:
                         pass
 
 # 전역 연결 풀
@@ -147,9 +148,8 @@ def validate_system_requirements():
     
     # 1. 필수 라이브러리 확인
     try:
-        import pyodbc
-        import pandas as pd
-        import numpy as np
+        __import__("pandas")
+        __import__("numpy")
     except ImportError as e:
         issues.append(f"필수 라이브러리 누락: {e}")
     
@@ -823,7 +823,7 @@ def cleanup_connections():
             for conn in _connection_pool.connections:
                 try:
                     conn.close()
-                except:
+                except Exception:
                     pass
             _connection_pool.connections.clear()
         logger.info("데이터베이스 연결 풀 정리 완료")
@@ -831,5 +831,4 @@ def cleanup_connections():
         logger.warning(f"연결 풀 정리 중 오류: {e}")
 
 # 모듈 종료 시 자동 정리
-import atexit
 atexit.register(cleanup_connections)

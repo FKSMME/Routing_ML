@@ -79,7 +79,7 @@ def ensure_python_version() -> None:
 def ensure_pyinstaller() -> None:
     try:
         import PyInstaller  # type: ignore  # noqa: F401
-    except ModuleNotFoundError as exc:  # pragma: no cover - 외부 의존성 설치
+    except ModuleNotFoundError:  # pragma: no cover - 외부 의존성 설치
         logging.info("PyInstaller 미설치 감지, pip를 통해 자동 설치를 시도합니다.")
         run_command([sys.executable, "-m", "pip", "install", "pyinstaller"])
         try:
