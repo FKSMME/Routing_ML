@@ -2,16 +2,20 @@ from __future__ import annotations
 
 import atexit
 import time
+from dataclasses import dataclass
+from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 import threading
 from contextlib import contextmanager
 import warnings
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 import pyodbc
 
 from common.logger import get_logger
+from backend.constants import TRAIN_FEATURES
 
 logger = get_logger("database")
 
@@ -24,6 +28,88 @@ ACCESS_DIR = BASE_DIR / "routing_data"               # Access DB 폴더
 VIEW_ITEM_MASTER = "dbo_BI_ITEM_INFO_VIEW"
 VIEW_ROUTING     = "dbo_BI_ROUTING_VIEW"
 VIEW_WORK_RESULT = "dbo_BI_WORK_ORDER_RESULTS"
+
+# 제한된 컬럼 목록 (SELECT * 방지)
+ITEM_MASTER_EXTRA_COLUMNS: List[str] = [
+    "ITEM_GRP2",
+    "ITEM_GRP2NM",
+    "ITEM_GRP3",
+    "ITEM_GRP3NM",
+    "INSRT_DT",
+    "MODI_DT",
+]
+
+# dict.fromkeys 로 순서를 유지하면서 중복 제거
+ITEM_MASTER_VIEW_COLUMNS: Tuple[str, ...] = tuple(
+    dict.fromkeys(list(TRAIN_FEATURES) + ITEM_MASTER_EXTRA_COLUMNS)
+)
+
+ROUTING_VIEW_COLUMNS: Tuple[str, ...] = (
+    "ITEM_CD",
+    "ROUT_NO",
+    "PROC_SEQ",
+    "INSRT_DT",
+    "INSIDE_FLAG",
+    "JOB_CD",
+    "JOB_NM",
+    "RES_CD",
+    "RES_DIS",
+    "TIME_UNIT",
+    "MFG_LT",
+    "QUEUE_TIME",
+    "SETUP_TIME",
+    "RUN_TIME",
+    "RUN_TIME_UNIT",
+    "MACH_WORKED_HOURS",
+    "ACT_SETUP_TIME",
+    "ACT_RUN_TIME",
+    "WAIT_TIME",
+    "MOVE_TIME",
+    "RUN_TIME_QTY",
+    "BATCH_OPER",
+    "BP_CD",
+    "CUST_NM",
+    "CUR_CD",
+    "SUBCONTRACT_PRC",
+    "TAX_TYPE",
+    "MILESTONE_FLG",
+    "INSP_FLG",
+    "ROUT_ORDER",
+    "VALID_FROM_DT",
+    "VALID_TO_DT",
+    "VIEW_REMARK",
+    "ROUT_DOC",
+    "DOC_INSIDE",
+    "DOC_NO",
+    "NC_PROGRAM",
+    "NC_PROGRAM_WRITER",
+    "NC_WRITER_NM",
+    "NC_WRITE_DATE",
+    "NC_REVIEWER",
+    "NC_REVIEWER_NM",
+    "NC_REVIEW_DT",
+    "RAW_MATL_SIZE",
+    "JAW_SIZE",
+    "VALIDITY",
+    "PROGRAM_REMARK",
+    "OP_DRAW_NO",
+    "MTMG_NUMB",
+)
+
+WORK_RESULT_VIEW_COLUMNS: Tuple[str, ...] = (
+    "ITEM_CD",
+    "PROC_SEQ",
+    "WORK_CENTER",
+    "WORK_CENTER_NM",
+    "OPERATION_CD",
+    "OPERATION_NM",
+    "REPORT_DT",
+    "ACT_RUN_TIME",
+    "ACT_SETUP_TIME",
+    "GOOD_QTY",
+    "BAD_QTY",
+    "RUN_QTY",
+)
 
 # ════════════════════════════════════════════════
 # 1) "가장 최근 Access DB" 경로 계산
@@ -121,6 +207,132 @@ class ConnectionPool:
 # 전역 연결 풀
 _connection_pool = ConnectionPool()
 
+
+class CacheStats:
+    """단순 히트/미스 카운터."""
+
+    def __init__(self) -> None:
+        self.hits = 0
+        self.misses = 0
+        self._lock = threading.RLock()
+
+    def record_hit(self) -> None:
+        with self._lock:
+            self.hits += 1
+
+    def record_miss(self) -> None:
+        with self._lock:
+            self.misses += 1
+
+    def reset(self) -> None:
+        with self._lock:
+            self.hits = 0
+            self.misses = 0
+
+    def snapshot(self) -> Dict[str, Any]:
+        with self._lock:
+            total = self.hits + self.misses
+            hit_rate = (self.hits / total) if total else 0.0
+            return {
+                "hits": self.hits,
+                "misses": self.misses,
+                "requests": total,
+                "hit_rate": round(hit_rate, 4),
+            }
+
+
+_cache_lock = threading.RLock()
+_item_master_cache_lock = threading.RLock()
+_routing_cache_lock = threading.RLock()
+
+_cache_versions: Dict[str, str] = {"item_master": "v0", "routing": "v0"}
+_cache_counters: Dict[str, int] = {"item_master": 0, "routing": 0}
+_cache_stats: Dict[str, CacheStats] = {
+    "item_master": CacheStats(),
+    "routing": CacheStats(),
+}
+_last_cache_fetch: Dict[str, Dict[str, Any]] = {"item_master": {}, "routing": {}}
+
+
+def _snapshot_time() -> str:
+    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
+
+def _sanitize_columns(
+    columns: Optional[Sequence[str]],
+    allowed: Sequence[str],
+) -> Tuple[str, ...]:
+    allowed_lookup = {col.upper(): col for col in allowed}
+    if columns:
+        sanitized: List[str] = []
+        unknown: List[str] = []
+        for column in columns:
+            key = str(column).strip().upper()
+            if not key:
+                continue
+            actual = allowed_lookup.get(key)
+            if actual:
+                if actual not in sanitized:
+                    sanitized.append(actual)
+            else:
+                unknown.append(column)
+        if unknown:
+            logger.warning("[DB] 허용되지 않은 컬럼 무시: %s", ", ".join(map(str, unknown)))
+        if sanitized:
+            return tuple(sanitized)
+    return tuple(allowed)
+
+
+def _build_select_query(
+    view_name: str,
+    columns: Sequence[str],
+    *,
+    where_clause: Optional[str] = None,
+    order_clause: Optional[str] = None,
+) -> str:
+    column_clause = ", ".join(columns)
+    query_parts = [f"SELECT {column_clause} FROM {view_name}"]
+    if where_clause:
+        query_parts.append(where_clause)
+    if order_clause:
+        query_parts.append(order_clause)
+    return " \n".join(query_parts)
+
+
+def _record_cache_event(
+    dataset: str,
+    *,
+    cached: bool,
+    columns: Sequence[str],
+    context: Optional[Dict[str, Any]] = None,
+) -> None:
+    stats = _cache_stats.get(dataset)
+    if stats is not None:
+        if cached:
+            stats.record_hit()
+        else:
+            stats.record_miss()
+
+    with _cache_lock:
+        _last_cache_fetch[dataset] = {
+            "cached": cached,
+            "columns": list(columns),
+            "context": dict(context or {}),
+            "timestamp": _snapshot_time(),
+            "version": _cache_versions.get(dataset),
+        }
+
+
+def _next_version(dataset: str, tag: Optional[str]) -> str:
+    with _cache_lock:
+        if tag is not None:
+            token = str(tag)
+        else:
+            _cache_counters[dataset] += 1
+            token = f"v{_cache_counters[dataset]}"
+        _cache_versions[dataset] = token
+        return token
+
 # ════════════════════════════════════════════════
 # 4) 유틸리티 함수들
 # ════════════════════════════════════════════════
@@ -185,15 +397,26 @@ def validate_system_requirements():
 # ════════════════════════════════════════════════
 # 5) 쿼리 실행 함수들
 # ════════════════════════════════════════════════
+def _prepare_params(params: Sequence[Any] | None) -> Tuple[Any, ...]:
+    if params is None:
+        return tuple()
+    if isinstance(params, tuple):
+        return params
+    return tuple(params)
+
+
 def _run_query_optimized(query: str, params: Sequence[Any] | None = None, retries: int = 3, delay: float = 2.0) -> pd.DataFrame:
     """최적화된 쿼리 실행 (연결 풀 사용)"""
     for attempt in range(1, retries + 1):
         try:
+            prepared_params = _prepare_params(params)
+            if "?" in query and not prepared_params:
+                raise ValueError("파라미터 플레이스홀더가 있는 쿼리에는 값이 필요합니다")
             with _connection_pool.get_connection() as conn:
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', message='pandas only supports SQLAlchemy connectable')
-                    df = pd.read_sql(query, conn, params=params or [])
-            
+                    df = pd.read_sql(query, conn, params=list(prepared_params))
+
             if df.empty:
                 logger.debug("[DB] 빈 결과세트 반환 – %s", query[:80])
             return df
@@ -214,12 +437,15 @@ def _run_query(
     """쿼리 실행 → DataFrame (기존 호환성 유지)"""
     for attempt in range(1, retries + 1):
         try:
+            prepared_params = _prepare_params(params)
+            if "?" in query and not prepared_params:
+                raise ValueError("파라미터 플레이스홀더가 있는 쿼리에는 값이 필요합니다")
             with _connect() as conn:
                 # pandas 경고 억제
                 with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', 
+                    warnings.filterwarnings('ignore',
                                           message='pandas only supports SQLAlchemy connectable')
-                    df = pd.read_sql(query, conn, params=params or [])
+                    df = pd.read_sql(query, conn, params=list(prepared_params))
             if df.empty:
                 logger.warning("[DB] 빈 결과세트 반환 – %s", query[:80])
             return df
@@ -230,200 +456,316 @@ def _run_query(
                 continue
             raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
 
+def _load_item_master(columns_key: Tuple[str, ...]) -> pd.DataFrame:
+    query = _build_select_query(VIEW_ITEM_MASTER, columns_key)
+    return _run_query(query, ())
+
+
+@lru_cache(maxsize=32)
+def _fetch_item_master_cached(version: str, columns_key: Tuple[str, ...]) -> pd.DataFrame:
+    return _load_item_master(columns_key)
+
+
+def _load_single_item(item_cd_upper: str, columns_key: Tuple[str, ...]) -> pd.DataFrame:
+    query = _build_select_query(
+        VIEW_ITEM_MASTER,
+        columns_key,
+        where_clause="WHERE ITEM_CD = ?",
+    )
+    return _run_query(query, (item_cd_upper,))
+
+
+@lru_cache(maxsize=512)
+def _fetch_single_item_cached(
+    version: str,
+    item_cd_upper: str,
+    columns_key: Tuple[str, ...],
+) -> pd.DataFrame:
+    return _load_single_item(item_cd_upper, columns_key)
+
+
+def _load_routing_by_rout_no(
+    item_cd_upper: str,
+    rout_no: str,
+    columns_key: Tuple[str, ...],
+) -> pd.DataFrame:
+    query = _build_select_query(
+        VIEW_ROUTING,
+        columns_key,
+        where_clause="WHERE ITEM_CD = ? AND ROUT_NO = ?",
+        order_clause="ORDER BY PROC_SEQ",
+    )
+    return _run_query(query, (item_cd_upper, rout_no))
+
+
+def _load_all_routings(item_cd_upper: str, columns_key: Tuple[str, ...]) -> pd.DataFrame:
+    query = _build_select_query(
+        VIEW_ROUTING,
+        columns_key,
+        where_clause="WHERE ITEM_CD = ?",
+        order_clause="ORDER BY ROUT_NO, PROC_SEQ",
+    )
+    return _run_query(query, (item_cd_upper,))
+
+
+def _load_latest_routing(
+    item_cd_upper: str,
+    selection_mode: str,
+    columns_key: Tuple[str, ...],
+) -> pd.DataFrame:
+    if selection_mode == "most_used":
+        count_query = "\n".join(
+            [
+                "SELECT ROUT_NO, COUNT(*) as PROC_COUNT",
+                f"FROM {VIEW_ROUTING}",
+                "WHERE ITEM_CD = ?",
+                "GROUP BY ROUT_NO",
+                "ORDER BY COUNT(*) DESC, ROUT_NO DESC",
+            ]
+        )
+        count_df = _run_query(count_query, (item_cd_upper,))
+        if count_df.empty:
+            logger.warning("[DB] ROUT_NO를 찾을 수 없음 – ITEM_CD: %s", item_cd_upper)
+            return pd.DataFrame()
+        most_used_rout_no = count_df.iloc[0]["ROUT_NO"]
+        logger.info(
+            "[DB] 최다 공정 ROUT_NO 선택: %s (%s개 공정)",
+            most_used_rout_no,
+            count_df.iloc[0]["PROC_COUNT"],
+        )
+        return _load_routing_by_rout_no(item_cd_upper, most_used_rout_no, columns_key)
+
+    all_routing_query = "\n".join(
+        [
+            "SELECT DISTINCT ROUT_NO, INSRT_DT",
+            f"FROM {VIEW_ROUTING}",
+            "WHERE ITEM_CD = ?",
+            "ORDER BY INSRT_DT DESC, ROUT_NO DESC",
+        ]
+    )
+    rout_df = _run_query(all_routing_query, (item_cd_upper,))
+    if rout_df.empty:
+        logger.warning("[DB] ROUT_NO를 찾을 수 없음 – ITEM_CD: %s", item_cd_upper)
+        return pd.DataFrame()
+
+    if "INSRT_DT" in rout_df.columns:
+        try:
+            rout_df["INSRT_DT_SAFE"] = pd.to_datetime(rout_df["INSRT_DT"], errors="coerce")
+            rout_df_sorted = rout_df.sort_values(
+                ["INSRT_DT_SAFE", "ROUT_NO"],
+                ascending=[False, False],
+                na_position="last",
+            )
+            latest_rout_no = rout_df_sorted.iloc[0]["ROUT_NO"]
+        except Exception as exc:
+            logger.warning("[DB] INSRT_DT 정렬 실패, ROUT_NO로만 정렬: %s", exc)
+            latest_rout_no = rout_df.sort_values("ROUT_NO", ascending=False).iloc[0]["ROUT_NO"]
+    else:
+        latest_rout_no = rout_df.sort_values("ROUT_NO", ascending=False).iloc[0]["ROUT_NO"]
+
+    logger.info("[DB] 최신 ROUT_NO 선택: %s", latest_rout_no)
+    return _load_routing_by_rout_no(item_cd_upper, latest_rout_no, columns_key)
+
+
+@lru_cache(maxsize=512)
+def _fetch_latest_routing_cached(
+    version: str,
+    item_cd_upper: str,
+    selection_mode: str,
+    columns_key: Tuple[str, ...],
+) -> pd.DataFrame:
+    return _load_latest_routing(item_cd_upper, selection_mode, columns_key)
+
+
 # ════════════════════════════════════════════════
 # 6) 공개 API - 단일 조회 (필수 함수들)
 # ════════════════════════════════════════════════
-def fetch_item_master(columns: list[str] | None = None) -> pd.DataFrame:
+def fetch_item_master(
+    columns: Optional[List[str]] = None,
+    *,
+    use_cache: bool = True,
+) -> pd.DataFrame:
     """전체 품목 마스터 조회"""
-    col_clause = ", ".join(columns) if columns else "*"
-    query = f"SELECT {col_clause} FROM {VIEW_ITEM_MASTER}"
+
+    columns_key = _sanitize_columns(columns, ITEM_MASTER_VIEW_COLUMNS)
     logger.info("[DB] ITEM_MASTER 조회…")
-    return _run_query(query)
 
-def fetch_single_item(item_cd: str) -> pd.DataFrame:
-    """단일 품목 정보 조회 - 대소문자 무시"""
-    logger.debug(f"[DB] ITEM 단건 조회: {item_cd}")
-    
-    # 대문자로 통일하여 조회
-    item_cd_upper = item_cd.upper().strip()
-    
-    query = f"""
-        SELECT *
-        FROM {VIEW_ITEM_MASTER}
-        WHERE ITEM_CD = ?
-    """
-    
-    try:
-        df = _run_query(query, [item_cd_upper])
-        
-        if df.empty:
-            # LIKE 검색으로 재시도
-            query_like = f"""
-                SELECT *
-                FROM {VIEW_ITEM_MASTER}
-                WHERE ITEM_CD LIKE ?
-            """
-            df = _run_query(query_like, [f'%{item_cd_upper}%'])
-            
-            if not df.empty and len(df) == 1:
-                logger.info(f"[DB] LIKE 검색으로 품목 발견: {df['ITEM_CD'].iloc[0]}")
-                
-        return df
-        
-    except Exception as e:
-        logger.error(f"[DB] 품목 조회 오류: {str(e)}")
-        return pd.DataFrame()
-
-def fetch_routing_for_item(item_cd: str, latest_only: bool = True, selection_mode: str = "latest") -> pd.DataFrame:
-    """
-    특정 품목의 라우팅 정보 조회 - 대소문자 무시
-    
-    Args:
-        item_cd: 품목 코드
-        latest_only: True일 경우 하나의 ROUT_NO만 반환 (기본값 True)
-        selection_mode: "latest" (최신) 또는 "most_used" (최다 사용)
-    
-    Returns:
-        pd.DataFrame: 라우팅 정보
-    """
-    logger.debug(f"[DB] ROUTING 조회: {item_cd} (latest_only={latest_only}, mode={selection_mode})")
-    
-    # 대문자로 통일하여 조회
-    item_cd_upper = item_cd.upper().strip()
-    
-    if latest_only:
-        try:
-            if selection_mode == "most_used":
-                # 가장 많이 사용된 ROUT_NO 찾기
-                count_query = f"""
-                    SELECT ROUT_NO, COUNT(*) as PROC_COUNT
-                    FROM {VIEW_ROUTING}
-                    WHERE ITEM_CD = ?
-                    GROUP BY ROUT_NO
-                    ORDER BY COUNT(*) DESC, ROUT_NO DESC
-                """
-                
-                count_df = _run_query(count_query, [item_cd_upper])
-                
-                if count_df.empty:
-                    logger.warning(f"[DB] ROUT_NO를 찾을 수 없음 – ITEM_CD: {item_cd}")
-                    return pd.DataFrame()
-                
-                # 가장 많은 공정을 가진 ROUT_NO 선택
-                most_used_rout_no = count_df.iloc[0]['ROUT_NO']
-                
-                logger.info(f"[DB] 최다 공정 ROUT_NO 선택: {most_used_rout_no} ({count_df.iloc[0]['PROC_COUNT']}개 공정)")
-                
-                # 디버깅: 모든 ROUT_NO와 공정 수 출력
-                logger.debug(f"[DB] {item_cd}의 ROUT_NO별 공정 수:")
-                for idx, row in count_df.iterrows():
-                    logger.debug(f"  - ROUT_NO: {row['ROUT_NO']}, 공정 수: {row['PROC_COUNT']}")
-                
-                # 해당 ROUT_NO의 모든 공정 조회
-                query = f"""
-                    SELECT *
-                    FROM {VIEW_ROUTING}
-                    WHERE ITEM_CD = ? AND ROUT_NO = ?
-                    ORDER BY PROC_SEQ
-                """
-                
-                df = _run_query(query, [item_cd_upper, most_used_rout_no])
-                
-            else:  # latest 모드 (기존 로직)
-                # 먼저 해당 품목의 모든 라우팅 정보를 가져옴
-                all_routing_query = f"""
-                    SELECT DISTINCT ROUT_NO, INSRT_DT
-                    FROM {VIEW_ROUTING}
-                    WHERE ITEM_CD = ?
-                    ORDER BY INSRT_DT DESC, ROUT_NO DESC
-                """
-                
-                rout_df = _run_query(all_routing_query, [item_cd_upper])
-                
-                if rout_df.empty:
-                    logger.warning(f"[DB] ROUT_NO를 찾을 수 없음 – ITEM_CD: {item_cd}")
-                    return pd.DataFrame()
-                
-                # Python에서 최신 ROUT_NO 선택
-                if 'INSRT_DT' in rout_df.columns:
-                    try:
-                        # INSRT_DT로 정렬 시도
-                        rout_df['INSRT_DT_SAFE'] = pd.to_datetime(rout_df['INSRT_DT'], errors='coerce')
-                        rout_df_sorted = rout_df.sort_values(['INSRT_DT_SAFE', 'ROUT_NO'], 
-                                                            ascending=[False, False], 
-                                                            na_position='last')
-                        latest_rout_no = rout_df_sorted.iloc[0]['ROUT_NO']
-                        
-                        # 디버깅: 모든 ROUT_NO 출력
-                        logger.debug(f"[DB] {item_cd}의 ROUT_NO 목록 (최신순):")
-                        for idx, row in rout_df_sorted.iterrows():
-                            date_str = row['INSRT_DT'] if pd.notna(row['INSRT_DT']) else 'N/A'
-                            logger.debug(f"  - ROUT_NO: {row['ROUT_NO']}, INSRT_DT: {date_str}")
-                            
-                    except Exception as e:
-                        logger.warning(f"[DB] INSRT_DT 정렬 실패, ROUT_NO로만 정렬: {e}")
-                        # ROUT_NO로만 정렬 (알파벳/숫자 내림차순)
-                        latest_rout_no = rout_df.sort_values('ROUT_NO', ascending=False).iloc[0]['ROUT_NO']
-                else:
-                    # INSRT_DT 컬럼이 없으면 ROUT_NO로만 정렬
-                    latest_rout_no = rout_df.sort_values('ROUT_NO', ascending=False).iloc[0]['ROUT_NO']
-                
-                logger.info(f"[DB] 최신 ROUT_NO 선택: {latest_rout_no}")
-                
-                # 해당 ROUT_NO의 모든 공정 조회
-                query = f"""
-                    SELECT *
-                    FROM {VIEW_ROUTING}
-                    WHERE ITEM_CD = ? AND ROUT_NO = ?
-                    ORDER BY PROC_SEQ
-                """
-                
-                df = _run_query(query, [item_cd_upper, latest_rout_no])
-            
-            if not df.empty:
-                # PROC_SEQ 확인
-                proc_seqs = df['PROC_SEQ'].unique()
-                logger.info(f"[DB] 라우팅 조회 성공: ROUT_NO={df['ROUT_NO'].iloc[0]}, {len(df)}개 공정")
-                logger.debug(f"[DB] PROC_SEQ 목록: {sorted(proc_seqs)}")
-            
-            return df
-            
-        except Exception as e:
-            logger.error(f"[DB] 라우팅 조회 오류: {str(e)}")
-            return pd.DataFrame()
-    
+    if use_cache:
+        with _item_master_cache_lock:
+            before = _fetch_item_master_cached.cache_info()
+            df = _fetch_item_master_cached(
+                _cache_versions["item_master"],
+                columns_key,
+            )
+            after = _fetch_item_master_cached.cache_info()
+            cached = after.hits > before.hits
     else:
-        # 기존 로직: 모든 라우팅 조회
-        query = f"""
-            SELECT *
-            FROM {VIEW_ROUTING}
-            WHERE ITEM_CD = ?
-            ORDER BY ROUT_NO, PROC_SEQ
-        """
-        
-        try:
-            df = _run_query(query, [item_cd_upper])
-            
-            if df.empty:
-                logger.warning(f"[DB] 빈 결과세트 반환 – ITEM_CD: {item_cd}")
+        df = _load_item_master(columns_key)
+        cached = False
+
+    _record_cache_event(
+        "item_master",
+        cached=cached,
+        columns=columns_key,
+        context={"mode": "bulk"},
+    )
+    return df.copy()
+
+
+def fetch_single_item(
+    item_cd: str,
+    columns: Optional[List[str]] = None,
+    *,
+    use_cache: bool = True,
+) -> pd.DataFrame:
+    """단일 품목 정보 조회 - 대소문자 무시"""
+
+    logger.debug("[DB] ITEM 단건 조회: %s", item_cd)
+    item_cd_upper = item_cd.upper().strip()
+    columns_key = _sanitize_columns(columns, ITEM_MASTER_VIEW_COLUMNS)
+
+    cached = False
+    fallback_used = False
+    result = pd.DataFrame()
+
+    try:
+        if use_cache:
+            with _item_master_cache_lock:
+                before = _fetch_single_item_cached.cache_info()
+                df = _fetch_single_item_cached(
+                    _cache_versions["item_master"],
+                    item_cd_upper,
+                    columns_key,
+                )
+                after = _fetch_single_item_cached.cache_info()
+                cached = after.hits > before.hits
+        else:
+            df = _load_single_item(item_cd_upper, columns_key)
+
+        if df.empty:
+            fallback_used = True
+            like_query = _build_select_query(
+                VIEW_ITEM_MASTER,
+                columns_key,
+                where_clause="WHERE ITEM_CD LIKE ?",
+            )
+            df = _run_query(like_query, (f"%{item_cd_upper}%",))
+            if not df.empty and len(df) == 1:
+                logger.info("[DB] LIKE 검색으로 품목 발견: %s", df["ITEM_CD"].iloc[0])
+            cached = False
+
+        result = df.copy()
+
+    except Exception as exc:
+        logger.error("[DB] 품목 조회 오류: %s", exc)
+        result = pd.DataFrame()
+        cached = False
+        fallback_used = True
+    finally:
+        _record_cache_event(
+            "item_master",
+            cached=cached and not fallback_used,
+            columns=columns_key,
+            context={"mode": "single", "item_cd": item_cd_upper},
+        )
+
+    return result
+
+
+def fetch_routing_for_item(
+    item_cd: str,
+    latest_only: bool = True,
+    selection_mode: str = "latest",
+    *,
+    use_cache: bool = True,
+) -> pd.DataFrame:
+    """특정 품목의 라우팅 정보 조회 - 대소문자 무시"""
+
+    logger.debug(
+        "[DB] ROUTING 조회: %s (latest_only=%s, mode=%s)",
+        item_cd,
+        latest_only,
+        selection_mode,
+    )
+
+    item_cd_upper = item_cd.upper().strip()
+    columns_key = ROUTING_VIEW_COLUMNS
+    cached = False
+    result = pd.DataFrame()
+
+    try:
+        if latest_only:
+            if use_cache:
+                with _routing_cache_lock:
+                    before = _fetch_latest_routing_cached.cache_info()
+                    df = _fetch_latest_routing_cached(
+                        _cache_versions["routing"],
+                        item_cd_upper,
+                        selection_mode,
+                        columns_key,
+                    )
+                    after = _fetch_latest_routing_cached.cache_info()
+                    cached = after.hits > before.hits
             else:
-                # ROUT_NO별 통계 로깅
-                rout_counts = df['ROUT_NO'].value_counts()
-                logger.info(f"[DB] 라우팅 조회 성공: 총 {len(df)}개 공정, {len(rout_counts)}개 ROUT_NO")
+                df = _load_latest_routing(item_cd_upper, selection_mode, columns_key)
+
+            if not df.empty:
+                proc_seqs = df["PROC_SEQ"].unique()
+                logger.info(
+                    "[DB] 라우팅 조회 성공: ROUT_NO=%s, %s개 공정",
+                    df["ROUT_NO"].iloc[0],
+                    len(df),
+                )
+                logger.debug("[DB] PROC_SEQ 목록: %s", sorted(proc_seqs))
+
+        else:
+            df = _load_all_routings(item_cd_upper, columns_key)
+            cached = False
+            if df.empty:
+                logger.warning("[DB] 빈 결과세트 반환 – ITEM_CD: %s", item_cd)
+            else:
+                rout_counts = df["ROUT_NO"].value_counts()
+                logger.info(
+                    "[DB] 라우팅 조회 성공: 총 %s개 공정, %s개 ROUT_NO",
+                    len(df),
+                    len(rout_counts),
+                )
                 for rout_no, count in rout_counts.items():
-                    logger.debug(f"  - ROUT_NO: {rout_no}, 공정 수: {count}")
-                
-        except Exception as e:
-            logger.error(f"[DB] 라우팅 조회 오류: {str(e)}")
-            return pd.DataFrame()
-    
-    return df
+                    logger.debug("  - ROUT_NO: %s, 공정 수: %s", rout_no, count)
+
+        result = df.copy()
+
+    except Exception as exc:
+        logger.error("[DB] 라우팅 조회 오류: %s", exc)
+        result = pd.DataFrame()
+        cached = False
+
+    finally:
+        _record_cache_event(
+            "routing",
+            cached=cached,
+            columns=columns_key,
+            context={
+                "item_cd": item_cd_upper,
+                "latest_only": latest_only,
+                "selection_mode": selection_mode,
+            },
+        )
+
+    return result
+
 
 def fetch_work_results_for_item(item_cd: str) -> pd.DataFrame:
     """단일 품목의 작업 결과 조회"""
-    query = f"SELECT * FROM {VIEW_WORK_RESULT} WHERE ITEM_CD = ?"
-    logger.debug("[DB] WORK_RESULT 조회: %s", item_cd)
-    return _run_query(query, [item_cd.upper()])  # 대문자 변환 추가
+
+    item_cd_upper = item_cd.upper().strip()
+    query = _build_select_query(
+        VIEW_WORK_RESULT,
+        WORK_RESULT_VIEW_COLUMNS,
+        where_clause="WHERE ITEM_CD = ?",
+    )
+    logger.debug("[DB] WORK_RESULT 조회: %s", item_cd_upper)
+    return _run_query(query, (item_cd_upper,)).copy()
 
 # ════════════════════════════════════════════════
 # 7) 🚀 배치 쿼리 API (고속 성능 최적화용)
@@ -433,25 +775,26 @@ def fetch_items_batch(item_codes: List[str]) -> Dict[str, pd.DataFrame]:
     """🚀 여러 품목의 마스터 정보를 한 번에 조회 - pandas 경고 억제"""
     if not item_codes:
         return {}
-    
+
     item_codes = [code.upper() for code in item_codes]
-    
+    columns_key = ITEM_MASTER_VIEW_COLUMNS
+
     batch_size = 100
     all_results = {}
-    
+
     for i in range(0, len(item_codes), batch_size):
         batch_codes = item_codes[i:i + batch_size]
         placeholders = ','.join('?' * len(batch_codes))
-        
-        query = f'''
-            SELECT *
-            FROM {VIEW_ITEM_MASTER}
-            WHERE ITEM_CD IN ({placeholders})
-        '''
-        
-        logger.info("[DB] ITEM_MASTER 배치 조회: %s개 품목 (배치 %s)", 
+
+        query = _build_select_query(
+            VIEW_ITEM_MASTER,
+            columns_key,
+            where_clause=f"WHERE ITEM_CD IN ({placeholders})",
+        )
+
+        logger.info("[DB] ITEM_MASTER 배치 조회: %s개 품목 (배치 %s)",
                    len(batch_codes), i // batch_size + 1)
-        
+
         try:
             df = _run_query_optimized(query, batch_codes)
                 
@@ -478,13 +821,14 @@ def fetch_routings_for_items(item_codes: List[str], latest_only: bool = True) ->
     """🚀 여러 품목의 라우팅 데이터를 한 번에 조회"""
     if not item_codes:
         return {}
-    
+
     item_codes = [code.upper() for code in item_codes]
-    
+    columns_key = ROUTING_VIEW_COLUMNS
+
     if latest_only:
         # 개별 조회 방식 (최신 ROUT_NO 로직이 복잡하므로)
         all_results = {}
-        
+
         for item_cd in item_codes:
             try:
                 routing_df = fetch_routing_for_item(item_cd, latest_only=True)
@@ -505,17 +849,17 @@ def fetch_routings_for_items(item_codes: List[str], latest_only: bool = True) ->
     for i in range(0, len(item_codes), batch_size):
         batch_codes = item_codes[i:i + batch_size]
         placeholders = ','.join('?' * len(batch_codes))
-        
-        query = f'''
-            SELECT *
-            FROM {VIEW_ROUTING}
-            WHERE ITEM_CD IN ({placeholders})
-            ORDER BY ITEM_CD, ROUT_NO, PROC_SEQ
-        '''
-        
-        logger.debug("[DB] ROUTING 배치 조회: %s개 품목 (배치 %s)", 
+
+        query = _build_select_query(
+            VIEW_ROUTING,
+            columns_key,
+            where_clause=f"WHERE ITEM_CD IN ({placeholders})",
+            order_clause="ORDER BY ITEM_CD, ROUT_NO, PROC_SEQ",
+        )
+
+        logger.debug("[DB] ROUTING 배치 조회: %s개 품목 (배치 %s)",
                     len(batch_codes), i // batch_size + 1)
-        
+
         try:
             df = _run_query_optimized(query, batch_codes)
                 
@@ -546,22 +890,23 @@ def fetch_work_results_batch(item_codes: List[str]) -> Dict[str, pd.DataFrame]:
     """🚀 여러 품목의 작업 결과 데이터를 한 번에 조회"""
     if not item_codes:
         return {}
-    
+
     item_codes = [code.upper() for code in item_codes]
-    
+    columns_key = WORK_RESULT_VIEW_COLUMNS
+
     # Access DB의 IN 절 제한을 고려한 배치 처리
     batch_size = 100
     all_results = {}
-    
+
     for i in range(0, len(item_codes), batch_size):
         batch_codes = item_codes[i:i + batch_size]
         placeholders = ','.join('?' * len(batch_codes))
-        
-        query = f'''
-            SELECT *
-            FROM {VIEW_WORK_RESULT}
-            WHERE ITEM_CD IN ({placeholders})
-        '''
+
+        query = _build_select_query(
+            VIEW_WORK_RESULT,
+            columns_key,
+            where_clause=f"WHERE ITEM_CD IN ({placeholders})",
+        )
         
         logger.debug("[DB] WORK_RESULT 배치 조회: %s개 품목 (배치 %s)", 
                     len(batch_codes), i // batch_size + 1)
@@ -704,19 +1049,14 @@ def check_item_has_routing(item_cd: str) -> bool:
 def fetch_item_info_only(item_cd: str) -> pd.DataFrame:
     """
     품목 정보만 조회 (라우팅 없이)
-    
+
     Args:
         item_cd: 품목 코드
-        
+
     Returns:
         pd.DataFrame: 품목 정보
     """
-    query = f"""
-    SELECT *
-    FROM {VIEW_ITEM_MASTER}
-    WHERE ITEM_CD = ?
-    """
-    return _run_query(query, [item_cd.upper()])  # 대문자 변환 추가
+    return fetch_single_item(item_cd, use_cache=True)
 
 def fetch_routing_statistics(latest_only: bool = True) -> pd.DataFrame:
     """
@@ -802,15 +1142,70 @@ def fetch_routing_by_rout_no(item_cd: str, rout_no: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: 라우팅 정보
     """
-    query = f"""
-        SELECT *
-        FROM {VIEW_ROUTING}
-        WHERE ITEM_CD = ? AND ROUT_NO = ?
-        ORDER BY PROC_SEQ
-    """
-    
-    logger.debug(f"[DB] 특정 ROUT_NO 라우팅 조회: {item_cd}, {rout_no}")
-    return _run_query(query, [item_cd.upper(), rout_no])
+    logger.debug("[DB] 특정 ROUT_NO 라우팅 조회: %s, %s", item_cd, rout_no)
+    return _load_routing_by_rout_no(
+        item_cd.upper().strip(),
+        rout_no,
+        ROUTING_VIEW_COLUMNS,
+    ).copy()
+
+
+def invalidate_item_master_cache(tag: Optional[str] = None) -> str:
+    """품목 마스터 캐시 무효화 및 버전 갱신."""
+
+    new_version = _next_version("item_master", tag)
+    _fetch_item_master_cached.cache_clear()
+    _fetch_single_item_cached.cache_clear()
+    _cache_stats["item_master"].reset()
+    with _cache_lock:
+        _last_cache_fetch["item_master"] = {
+            "cached": False,
+            "columns": list(ITEM_MASTER_VIEW_COLUMNS),
+            "context": {"action": "invalidate"},
+            "timestamp": _snapshot_time(),
+            "version": new_version,
+        }
+    return new_version
+
+
+def invalidate_routing_cache(tag: Optional[str] = None) -> str:
+    """라우팅 캐시 무효화 및 버전 갱신."""
+
+    new_version = _next_version("routing", tag)
+    _fetch_latest_routing_cached.cache_clear()
+    _cache_stats["routing"].reset()
+    with _cache_lock:
+        _last_cache_fetch["routing"] = {
+            "cached": False,
+            "columns": list(ROUTING_VIEW_COLUMNS),
+            "context": {"action": "invalidate"},
+            "timestamp": _snapshot_time(),
+            "version": new_version,
+        }
+    return new_version
+
+
+def get_cache_versions() -> Dict[str, str]:
+    """현재 캐시 버전 태그 스냅샷."""
+
+    with _cache_lock:
+        return dict(_cache_versions)
+
+
+def get_cache_snapshot() -> Dict[str, Any]:
+    """캐시 적중률 및 최근 조회 메타데이터 스냅샷."""
+
+    snapshot: Dict[str, Any] = {}
+    with _cache_lock:
+        for dataset in ("item_master", "routing"):
+            stats = _cache_stats[dataset].snapshot()
+            last_fetch = dict(_last_cache_fetch.get(dataset) or {})
+            snapshot[dataset] = {
+                "version": _cache_versions.get(dataset),
+                "stats": stats,
+                "last_fetch": last_fetch or None,
+            }
+    return snapshot
 
 # ════════════════════════════════════════════════
 # 11) 정리 함수

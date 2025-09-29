@@ -199,7 +199,8 @@ def dummy_user():
     return AuthenticatedUser(
         username="tester",
         display_name="Tester",
-        domain="TEST",
+        status="approved",
+        is_admin=False,
         issued_at=pd.Timestamp.utcnow().to_pydatetime(),
         expires_at=pd.Timestamp.utcnow().to_pydatetime(),
         session_id="session",

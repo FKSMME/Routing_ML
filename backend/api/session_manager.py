@@ -1,127 +1,80 @@
-"""세션 관리 모듈."""
+"""JWT 관리 모듈."""
 from __future__ import annotations
 
-import secrets
-import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Any, Dict
+from uuid import uuid4
 
-from backend.api.config import get_settings
-from backend.api.schemas import AuthenticatedUser
-from common.logger import get_logger
+import jwt
+from jwt import ExpiredSignatureError, InvalidTokenError
+
+from backend.api.config import Settings, get_settings
 
 
-@dataclass
-class SessionRecord:
+@dataclass(slots=True)
+class TokenBundle:
+    """JWT 발급 결과."""
+
     token: str
-    username: str
-    display_name: Optional[str]
-    domain: Optional[str]
     issued_at: datetime
     expires_at: datetime
-    client_host: Optional[str]
-
-    def to_user(self) -> AuthenticatedUser:
-        return AuthenticatedUser(
-            username=self.username,
-            display_name=self.display_name,
-            domain=self.domain,
-            issued_at=self.issued_at,
-            expires_at=self.expires_at,
-            session_id=self.token,
-            client_host=self.client_host,
-        )
+    jti: str
 
 
-class SessionManager:
-    """인메모리 세션 저장소."""
+class JWTManager:
+    """JWT 토큰을 생성하고 검증하는 헬퍼."""
 
-    def __init__(self, ttl_seconds: int) -> None:
-        self._ttl = ttl_seconds
-        self._records: Dict[str, SessionRecord] = {}
-        self._lock = threading.Lock()
-        self._logger = get_logger(
-            "auth.session",
-            log_dir=get_settings().audit_log_dir,
-            use_json=True,
-        )
+    def __init__(self, settings: Settings | None = None) -> None:
+        self.settings = settings or get_settings()
 
-    def create_session(
+    def create_access_token(
         self,
-        username: str,
         *,
-        display_name: Optional[str],
-        domain: Optional[str],
-        client_host: Optional[str],
-    ) -> SessionRecord:
-        with self._lock:
-            now = datetime.utcnow()
-            token = secrets.token_urlsafe(32)
-            record = SessionRecord(
-                token=token,
-                username=username,
-                display_name=display_name,
-                domain=domain,
-                issued_at=now,
-                expires_at=now + timedelta(seconds=self._ttl),
-                client_host=client_host,
+        subject: str,
+        claims: Dict[str, Any] | None = None,
+    ) -> TokenBundle:
+        now = datetime.utcnow()
+        expires = now + timedelta(seconds=self.settings.jwt_access_token_ttl_seconds)
+        payload: Dict[str, Any] = {
+            "sub": subject,
+            "iat": now,
+            "exp": expires,
+            "jti": uuid4().hex,
+        }
+        if claims:
+            payload.update(claims)
+
+        token = jwt.encode(
+            payload,
+            self.settings.jwt_secret_key,
+            algorithm=self.settings.jwt_algorithm,
+        )
+        return TokenBundle(token=token, issued_at=now, expires_at=expires, jti=payload["jti"])
+
+    def verify(self, token: str) -> Dict[str, Any]:
+        try:
+            payload = jwt.decode(
+                token,
+                self.settings.jwt_secret_key,
+                algorithms=[self.settings.jwt_algorithm],
+                options={"require": ["exp", "iat", "sub", "jti"]},
             )
-            self._records[token] = record
-            self._logger.info(
-                "세션 발급",
-                extra={
-                    "username": username,
-                    "domain": domain,
-                    "client_host": client_host,
-                    "issued_at": record.issued_at.isoformat(),
-                    "expires_at": record.expires_at.isoformat(),
-                },
-            )
-            return record
-
-    def validate(self, token: str) -> Optional[SessionRecord]:
-        with self._lock:
-            record = self._records.get(token)
-            if record is None:
-                return None
-            if record.expires_at < datetime.utcnow():
-                self._records.pop(token, None)
-                self._logger.info(
-                    "세션 만료",
-                    extra={
-                        "username": record.username,
-                        "token": token,
-                    },
-                )
-                return None
-            return record
-
-    def revoke(self, token: str) -> None:
-        with self._lock:
-            record = self._records.pop(token, None)
-            if record:
-                self._logger.info(
-                    "세션 종료",
-                    extra={
-                        "username": record.username,
-                        "token": token,
-                    },
-                )
+        except ExpiredSignatureError as exc:  # pragma: no cover - PyJWT는 만료 시 예외만 던짐
+            raise PermissionError("토큰이 만료되었습니다") from exc
+        except InvalidTokenError as exc:  # pragma: no cover - 세부 유형은 PyJWT 내부에서 관리
+            raise PermissionError("유효하지 않은 토큰입니다") from exc
+        return payload
 
 
-_session_manager: Optional[SessionManager] = None
-_session_lock = threading.Lock()
+_jwt_manager: JWTManager | None = None
 
 
-def get_session_manager() -> SessionManager:
-    global _session_manager
-    if _session_manager is None:
-        with _session_lock:
-            if _session_manager is None:
-                settings = get_settings()
-                _session_manager = SessionManager(ttl_seconds=settings.session_ttl_seconds)
-    return _session_manager  # type: ignore[return-value]
+def get_jwt_manager() -> JWTManager:
+    global _jwt_manager
+    if _jwt_manager is None:
+        _jwt_manager = JWTManager()
+    return _jwt_manager
 
 
-__all__ = ["SessionRecord", "SessionManager", "get_session_manager"]
+__all__ = ["JWTManager", "TokenBundle", "get_jwt_manager"]
