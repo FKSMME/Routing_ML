@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
 from backend.api.routes.access import router as access_router
+from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.master_data import router as master_data_router
 from backend.api.routes.prediction import router as prediction_router
@@ -40,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(workflow_router)
     app.include_router(trainer_router)
     app.include_router(workspace_router)
+    app.include_router(audit_router)
     app.include_router(routing_groups_router)
     app.include_router(master_data_router)
     app.include_router(access_router)

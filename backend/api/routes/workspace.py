@@ -1,4 +1,4 @@
-﻿"""Workspace settings, audit, and Access connection routes."""
+"""Workspace settings, audit, and Access connection routes."""
 from __future__ import annotations
 
 import json
@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Request, Response, status
 from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
+from backend.api.routes.audit import AuditEvent, persist_ui_audit_events
 from backend.api.security import require_auth
 from backend.api.schemas import AuthenticatedUser
 from backend.api.services.master_data_service import master_data_service
@@ -35,13 +36,6 @@ class WorkspaceSettingsPayload(BaseModel):
 class WorkspaceSettingsResponse(WorkspaceSettingsPayload):
     updated_at: str
     user: Optional[str] = None
-
-
-class AuditEvent(BaseModel):
-    action: str
-    username: Optional[str] = None
-    ip_address: Optional[str] = None
-    payload: Optional[dict[str, Any]] = None
 
 
 class AccessConnectionRequest(BaseModel):
@@ -132,20 +126,7 @@ async def save_workspace_settings(
     response_class=Response,
 )
 async def record_ui_audit(event: AuditEvent, request: Request) -> Response:
-    audit_dir = settings.audit_log_dir
-    audit_dir.mkdir(parents=True, exist_ok=True)
-    log_file = audit_dir / "ui_actions.log"
-
-    payload = {
-        "timestamp": datetime.utcnow().isoformat(),
-        "action": event.action,
-        "username": event.username,
-        "ip_address": event.ip_address or (request.client.host if request.client else None),
-        "payload": event.payload,
-    }
-    with log_file.open("a", encoding="utf-8") as fp:
-        fp.write(json.dumps(payload, ensure_ascii=False) + "\n")
-
+    persist_ui_audit_events([event], request)
     logger.info("workspace.audit", extra={"action": event.action, "username": event.username})
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
