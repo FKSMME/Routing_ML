@@ -41,3 +41,6 @@
 
 - 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
 
+- 2025-10-03 07:55:12: Refactored frontend Zustand stores to introduce global useWorkspaceStore with PRD-aligned export/visualization fields and routingStore factory separation.
+- 2025-10-03 08:02:45: Updated docs/Design/routing_state_store_plan.md with merge strategy summary, checked checklist completion, and synchronized workspace/routing logs.
+
