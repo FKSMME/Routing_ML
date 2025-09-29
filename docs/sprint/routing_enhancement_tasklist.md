@@ -13,7 +13,7 @@ _Reference update_: The previous `deliverables/design/routing_enhancement_state.
 2. The Save panel anchors to the right column with primary/secondary CTA buttons aligned to the bottom edge.
 3. Timeline cards stack vertically with drag handles on the left and real-time KPI chips on the right.
 - [ ] Review `docs/Design/samples` and capture reusable UI tokens/components.
-- [ ] Finalize navigation labels/order and encoding fix in frontend.
+- [x] Finalize navigation labels/order and encoding fix in frontend. (2025-09-30 완료 - 라벨/설명 설계 명칭으로 정비)
 - [ ] Update design specs for all menus (`routing_enhancement_plan.md`, `routing_state_store_plan.md`, new gap analysis).
 
 ## Phase 2 · Routing Generation Rebuild
