@@ -77,16 +77,39 @@ interface RoutingWorkspaceState {
 
 ## 6. 구현 체크리스트
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
+
+- [x] ReactFlow 도입 및 캔버스 컴포넌트 작성
+- [ ] IndexedDB persistence 유틸 (`idb-keyval`)
+
 - [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
 - [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료)
+
 - [ ] 감사 로그 배치 API 스텁 구현
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
 
 - [x] 감사 로그 배치 API 스텁 구현
 - [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
 
+
+## 7. RoutingCanvas 컴포넌트 구조 (2025-10-03)
+- 경로: `frontend/src/components/routing/RoutingCanvas.tsx` (타임라인 패널과 추천/드래그 드롭 스토어가 공유).
+- ReactFlow 노드/엣지 변환은 스토어 `timeline` 배열을 기반으로 `positionX` 값이 없을 경우 `NODE_GAP(240px)`로 균등 배치.
+- `useRoutingStore`에서 다음 액션을 직접 소비: `moveStep`, `insertOperation`, `removeStep` (undo/redo는 패널 컨트롤에서 호출).
+- 드롭 이벤트는 `application/routing-operation` 페이로드(JSON)를 파싱하여 스토어 `insertOperation(payload, index)`에 위임.
+- 노드 드래그 종료 시 `moveStep(stepId, newIndex)` 호출로 위치를 재계산하고 스토어 내부에서 history push/dirty 플래그를 관리.
+- ReactFlow 컨텍스트는 컴포넌트 내부에서 `ReactFlowProvider`로 감싸고, `autoFit`/`fitPadding` props로 뷰포트 초기화 정책을 제어.
+
+| Prop | Type | Default | 설명 |
+| --- | --- | --- | --- |
+| `className` | `string` | `undefined` | 캔버스 래퍼(`timeline-flow`)에 추가되는 클래스. |
+| `autoFit` | `boolean` | `true` | 초기화 및 타임라인 길이 변경 시 `fitView` 호출 여부. |
+| `fitPadding` | `number` | `0.2` | `fitView` 패딩 값 (ReactFlow padding, 단위는 viewport 비율). |
+
+> 향후 확장: `onInit` 콜백을 추가하여 외부에서 ReactFlow 인스턴스를 제어하거나, `edgeTypes`/`nodeTypes` 주입으로 가시화 커스터마이징 지원.
+
 - [ ] 감사 로그 배치 API 스텁 구현
 - [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트 (2025-09-29, Vitest `routing-groups.spec.ts` 통합 시나리오 통과, 로그: `logs/qa/workspace_store_manual_20250929.log`)
+
 
 ## Codex 리뷰 메모 (2025-09-29)
 - Timeline/후보 패널 상태 정의가 현재 프런트엔드 `frontend/src/store/routingWorkspaceStore.ts` 구조와 일치하는지 확인했고, manifest/레지스트리 도입 후에도 API 계약 변경 없이 스토어 필드 재사용 가능함을 검증하였다.

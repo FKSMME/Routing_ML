@@ -5,4 +5,8 @@
 2025-10-03T08:10Z | 현장 증빙 수집 계획 작성 | docs/install_evidence_collection_plan.md로 0·2단계 항목 증빙 지시사항 전달 초안 확정.
 
 2025-10-03T09:15:00Z | BOT-AUTO | Phase5 #034 - Stage 9 문서/체크리스트 정비 | Stage 9 SOP 및 설치 가이드 업데이트, Tasklist Phase 5 체크박스 동기화, 릴리즈 노트 하이라이트에 반영. 이전 단계 오류 재확인: 완료. Next Stage Ready.
+
+2025-10-03T10:20:00Z | Routing canvas integration | ReactFlow 기반 RoutingCanvas 컴포넌트 작성, Zustand 스토어 연동, 설계 문서/로그북/실행 로그 동기화 완료.
+
 2025-10-03T09:42Z | UI 감사 배치 엔드포인트 스텁 | /api/audit/ui/batch 추가, 프런트 스토어 배치 호출 경로·스키마 동기화, 후속 배경 동기화 작업 대기.
+

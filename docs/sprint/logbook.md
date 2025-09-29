@@ -15,9 +15,13 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+
+| 2025-10-03 | Stage 1 - Routing Refactor | Routing canvas integration | ReactFlow RoutingCanvas 컴포넌트 구현 및 타임라인 패널 연동 | components_added=1, docs_updated=1, logs_updated=3 | frontend/src/components/routing/RoutingCanvas.tsx; docs/Design/routing_state_store_plan.md; logs/task_execution_20251003.log | pending | Add QA harness for drag/drop persistence |
+
 | 2025-09-29 | Phase 5 - QA & Release Prep | Manual browser QA blocker | Lab-3 Chrome 127+ 장비 예약 확정 및 사전 증빙 생성 | reservation_confirmed=true, slot_start_utc=2025-10-04T00:00Z | docs/issues/qa_manual_browser_blocker_20251002.md; 내부 공유 드라이브 QA/Lab3/chrome127_manual_reservation_20250929.png | pending – 실행 후 최종 승인 예정 | 2025-10-04 현장 수동 QA 수행 및 캡처 업로드 |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Workspace store QA | Undo/Redo·저장 옵션·ERP 토글 통합 회귀 시나리오 수행 및 로그 아카이브 | vitest_suites=1, step_count=3, erp_required=true | logs/qa/workspace_store_manual_20250929.log | pending | Snapshot 복구 경로 자동화 재검토 |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Audit log evidence capture | Captured UI `POST /api/audit/ui` event with server persistence logs | ui_events=1, server_entries=1 | deliverables/onboarding_evidence/audit_log_sample_ui.log; deliverables/onboarding_evidence/audit_log_sample_server.log | pending | Schedule physical browser QA session for remaining checklist items |
+
 
 | 2025-10-03 | Phase 5 - QA & Release Prep | UI audit batch stub | Added /api/audit/ui/batch stub and synced store/OpenAPI docs | endpoints_added=1, docs_updated=4 | backend/api/routes/audit.py; frontend/src/lib/apiClient.ts | pending | Implement background audit queue flush worker |
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
