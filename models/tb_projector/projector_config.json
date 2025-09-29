@@ -1,8 +1,11 @@
 {
   "embeddings": [
     {
-      "tensorName": "item_embeddings",
-      "tensorShape": [2, 3],
+      "tensorName": "demo_embeddings",
+      "tensorShape": [
+        5,
+        41
+      ],
       "tensorPath": "vectors.tsv",
       "metadataPath": "metadata.tsv"
     }

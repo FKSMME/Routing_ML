@@ -11,6 +11,13 @@ from contextlib import contextmanager
 import warnings
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from backend.demo_data import (
+    demo_mode_enabled,
+    get_demo_item,
+    get_demo_routing,
+    has_demo_routing,
+)
+
 import pandas as pd
 import pyodbc
 
@@ -18,6 +25,8 @@ from common.logger import get_logger
 from backend.constants import TRAIN_FEATURES
 
 logger = get_logger("database")
+
+_DEMO_MODE = demo_mode_enabled()
 
 # ════════════════════════════════════════════════
 # 0) 경로 · 뷰 상수 (먼저 정의)
@@ -655,6 +664,12 @@ def fetch_single_item(
             cached = False
 
         result = df.copy()
+        if result.empty and _DEMO_MODE:
+            demo_df = get_demo_item(item_cd_upper)
+            if not demo_df.empty:
+                logger.info("[DB] 데모 데이터로 품목 응답: %s", item_cd_upper)
+                result = demo_df
+                fallback_used = True
 
     except Exception as exc:
         logger.error("[DB] 품목 조회 오류: %s", exc)
@@ -734,6 +749,12 @@ def fetch_routing_for_item(
                     logger.debug("  - ROUT_NO: %s, 공정 수: %s", rout_no, count)
 
         result = df.copy()
+        if result.empty and _DEMO_MODE:
+            demo_df = get_demo_routing(item_cd_upper)
+            if not demo_df.empty:
+                logger.info("[DB] 데모 데이터 라우팅 사용: %s", item_cd_upper)
+                result = demo_df
+                cached = False
 
     except Exception as exc:
         logger.error("[DB] 라우팅 조회 오류: %s", exc)
@@ -1039,13 +1060,16 @@ def check_item_has_routing(item_cd: str) -> bool:
     
     try:
         result = _run_query(query, [item_cd_upper])
-        
+
         return result['cnt'].iloc[0] > 0 if not result.empty else False
-        
+
     except Exception as e:
         logger.error(f"[DB] 라우팅 존재 확인 오류: {str(e)}")
-        return False
-    
+        return has_demo_routing(item_cd_upper) if _DEMO_MODE else False
+
+    if _DEMO_MODE and has_demo_routing(item_cd_upper):
+        return True
+
 def fetch_item_info_only(item_cd: str) -> pd.DataFrame:
     """
     품목 정보만 조회 (라우팅 없이)

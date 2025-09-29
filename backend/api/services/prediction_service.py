@@ -15,6 +15,8 @@ import pandas as pd
 
 from backend.api.config import get_settings
 from backend import database
+from backend.demo_artifacts import materialize_demo_artifacts
+from backend.demo_data import demo_mode_enabled
 
 from backend.api.schemas import (
     CandidateRouting,
@@ -304,6 +306,29 @@ class PredictionService:
                 self._model_root = reference if reference.is_dir() else reference.parent
         return self._model_root
 
+    def _maybe_materialize_demo_artifacts(self, reference: Path) -> None:
+        if not demo_mode_enabled():
+            return
+
+        ref_path = Path(reference).expanduser().resolve(strict=False)
+        target_dir = ref_path.parent if ref_path.suffix.lower() == ".json" else ref_path
+
+        required = (
+            "similarity_engine.joblib",
+            "encoder.joblib",
+            "scaler.joblib",
+            "feature_columns.joblib",
+        )
+
+        if all((target_dir / name).exists() for name in required):
+            return
+
+        try:
+            logger.info("데모 모드: 누락된 모델 아티팩트를 재생성합니다 (%s)", target_dir)
+            materialize_demo_artifacts(target_dir, overwrite=False, update_manifest=True)
+        except Exception as exc:  # pragma: no cover - 방어 로직
+            logger.warning("데모 아티팩트 생성 실패 (%s): %s", target_dir, exc, exc_info=exc)
+
     def _refresh_manifest(self, *, strict: bool = True) -> ModelManifest:
         override = self.settings.model_directory
         if override is not None:
@@ -320,6 +345,8 @@ class PredictionService:
                 self._model_root = None
 
         try:
+            if demo_mode_enabled():
+                self._maybe_materialize_demo_artifacts(self._model_reference)
             manifest = read_model_manifest(self._model_reference, strict=strict)
         except ValueError as exc:
             if not strict and "Unsupported manifest schema" in str(exc):
@@ -483,10 +510,24 @@ class PredictionService:
         """모델 디렉토리 유효성 검사."""
         try:
             manifest = self._refresh_manifest(strict=True)
+        except FileNotFoundError as exc:
+            if demo_mode_enabled():
+                self._maybe_materialize_demo_artifacts(self._model_reference)
+                manifest = self._refresh_manifest(strict=True)
+            else:
+                logger.error("모델 매니페스트 검증 실패", exc_info=exc)
+                raise
+
+        try:
             load_dir = manifest.require_optimized_model_dir()
-        except Exception as exc:
-            logger.error("모델 매니페스트 검증 실패", exc_info=exc)
-            raise
+        except (FileNotFoundError, KeyError, ValueError) as exc:
+            if demo_mode_enabled():
+                self._maybe_materialize_demo_artifacts(manifest.root_dir)
+                manifest = self._refresh_manifest(strict=True)
+                load_dir = manifest.require_optimized_model_dir()
+            else:
+                logger.error("모델 매니페스트 검증 실패", exc_info=exc)
+                raise
 
         training_metadata = self._load_training_metadata(load_dir, manifest)
         training_versions = training_metadata.get("runtime_versions", {}) if isinstance(training_metadata, dict) else {}
@@ -1617,6 +1658,22 @@ class PredictionService:
         summaries: List[RoutingSummary] = []
         for item_cd, group in grouped:
             operations = group.to_dict(orient="records")
+            for op in operations:
+                if "PROC_SEQ" not in op or op["PROC_SEQ"] is None:
+                    op["PROC_SEQ"] = 0
+                value = op.get("PROC_SEQ")
+                if value is None:
+                    op["PROC_SEQ"] = 0
+                    continue
+                if isinstance(value, str):
+                    value = value.strip()
+                    if not value:
+                        op["PROC_SEQ"] = 0
+                        continue
+                try:
+                    op["PROC_SEQ"] = int(float(value))
+                except (TypeError, ValueError):
+                    op["PROC_SEQ"] = 0
             meta = {}
             for key in [
                 "ITEM_CD",

@@ -1,0 +1,89 @@
+POST http://127.0.0.1:8000/api/predict
+Authorization: Bearer <demo_user token>
+Payload:
+{
+  "item_codes": ["DEMO_ITEM_005"],
+  "top_k": 3,
+  "similarity_threshold": 0.7,
+  "mode": "detailed"
+}
+
+Response (HTTP 200):
+{
+  "items": [
+    {
+      "ITEM_CD": "DEMO_ITEM_005",
+      "CANDIDATE_ID": "DEMO_ITEM_005_MLP",
+      "ROUTING_SIGNATURE": "ROUTING",
+      "PRIORITY": "primary",
+      "SIMILARITY_TIER": "HIGH",
+      "SIMILARITY_SCORE": 1.0,
+      "REFERENCE_ITEM_CD": "ML_PREDICTED",
+      "generated_at": "2025-09-29T08:48:58.012836",
+      "operations": [
+        {
+          "PROC_SEQ": 0,
+          "INSIDE_FLAG": "nan",
+          "dbo_BI_ROUTING_VIEW_JOB_CD": "nan",
+          "JOB_NM": "nan",
+          "RES_CD": "nan",
+          "RES_DIS": "nan",
+          "TIME_UNIT": "nan",
+          "MFG_LT": 0.0,
+          "QUEUE_TIME": 0.0,
+          "SETUP_TIME": 0.0,
+          "MACH_WORKED_HOURS": 0.0,
+          "ACT_SETUP_TIME": 0.0,
+          "ACT_RUN_TIME": 0.0,
+          "WAIT_TIME": 0.0,
+          "MOVE_TIME": 0.0,
+          "RUN_TIME_QTY": 0.0,
+          "RUN_TIME_UNIT": "nan",
+          "BATCH_OPER": "nan",
+          "BP_CD": "nan",
+          "dbo_BI_ROUTING_VIEW_CUST_NM": "nan",
+          "CUR_CD": "nan",
+          "SUBCONTRACT_PRC": 0.0,
+          "TAX_TYPE": "nan",
+          "MILESTONE_FLG": "nan",
+          "INSP_FLG": "nan",
+          "ROUT_ORDER": "nan",
+          "VALID_FROM_DT": "nan",
+          "VALID_TO_DT": "nan",
+          "dbo_BI_ROUTING_VIEW_REMARK": "nan",
+          "ROUT_DOC": "nan",
+          "DOC_INSIDE": "nan",
+          "DOC_NO": "nan",
+          "NC_PROGRAM": "nan",
+          "NC_PROGRAM_WRITER": "nan",
+          "NC_WRITER_NM": "nan",
+          "NC_WRITE_DATE": "nan",
+          "NC_REVIEWER": "nan",
+          "NC_REVIEWER_NM": "nan",
+          "NC_REVIEW_DT": "nan",
+          "RAW_MATL_SIZE": "nan",
+          "JAW_SIZE": "nan",
+          "VALIDITY": "nan",
+          "PROGRAM_REMARK": "nan",
+          "OP_DRAW_NO": "nan",
+          "MTMG_NUMB": "nan"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "CANDIDATE_ITEM_CD": "ML_PREDICTED",
+      "SIMILARITY_SCORE": 1.0,
+      "ROUTING_SIGNATURE": "ROUTING",
+      "ROUTING_SUMMARY": "ML 예측 공정 1개",
+      "PRIORITY": "primary",
+      "SIMILARITY_TIER": "HIGH",
+      "HAS_ROUTING": "✓ 있음",
+      "PROCESS_COUNT": 1,
+      "ITEM_CD": "DEMO_ITEM_005",
+      "metadata": {}
+    }
+  ],
+  "metrics": { "threshold": 0.7, "returned_candidates": 1 }
+}
