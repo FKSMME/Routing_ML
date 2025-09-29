@@ -35,3 +35,4 @@ dist/
 deliverables/**/*.pdf
 deliverables/**/*.tar.gz
 deliverables/**/*.joblib
+deliverables/**/*.png

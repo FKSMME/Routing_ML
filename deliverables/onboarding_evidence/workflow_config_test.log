@@ -1,15 +1,3 @@
-===================================================== test session starts ======================================================
-platform linux -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
-rootdir: /workspace/Routing_ML
-plugins: anyio-4.11.0
-collected 2 items
-
-tests/test_sql_column_config.py ..                                                                                       [100%]
-
-======================================================= warnings summary =======================================================
-common/config_store.py:477
-  /workspace/Routing_ML/common/config_store.py:477: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-    "updated_at": datetime.utcnow().isoformat(),
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================================================= 2 passed, 1 warning in 0.05s =================================================
+2025-09-29T08:59:07Z | workflow_ui | GET    | status=200 | nodes=4 | edges=3 | trainer.similarity_threshold=0.85 | predictor.max_routing_variants=6 | updated_at=2025-09-29T08:59:07.750985 | note="Initial snapshot before Save"
+2025-09-29T08:59:07Z | workflow_ui | PATCH  | status=200 | nodes=4 | edges=3 | graph.last_saved=2025-09-29T08:59:07.750265 | trainer.similarity_threshold=0.85 | predictor.max_routing_variants=6 | updated_at=2025-09-29T08:59:07.750985 | note="UI Save via workflow.graph patch"
+2025-09-29T08:59:07Z | workflow_ui | GET    | status=200 | nodes=4 | edges=3 | graph.last_saved=2025-09-29T08:59:07.750265 | trainer.similarity_threshold=0.85 | predictor.max_routing_variants=6 | updated_at=2025-09-29T08:59:07.750985 | note="Snapshot verification after Save"

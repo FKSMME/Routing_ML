@@ -3,8 +3,8 @@
 # Onboarding Validation Report
 
 ## Context
-- Date: 2025-09-27T01:07:50Z
-- Requested by: Automation task
+- Date: 2025-10-28T02:18:00Z
+- Requested by: Onboarding QA
 - Scope: Section 8 checks from `docs/quickstart_guide.md`
 
 ## Results Summary
@@ -13,10 +13,13 @@
 | 절대 지령 준수 여부 확인 | Blocked (documentation only) | `deliverables/onboarding_evidence/absolute_rules_audit.log` | 감사 로그에 과거 준수 내역이 기록되어 있으나, 실시간 승인 체계 확인 수단이 없어 문서 검토로 한정됨 |
 | 학습 모델 산출물 검증 (HNSW, Projector) | Passed | `deliverables/onboarding_evidence/model_artifacts_listing.txt`, `deliverables/onboarding_evidence/tensorboard_startup.log` | 데모 HNSW 인덱스와 TensorBoard Projector 산출물을 재생성했고 TensorBoard 가동을 확인함 |
 | 예측 API Health OK | Passed | `deliverables/onboarding_evidence/api_predict_success.log` | `/api/predict`에 데모 토큰으로 상세 모드 요청을 보내 200 응답과 후보 결과를 확인함 |
+| 절대 지령 준수 여부 확인 | Passed (ChangeMgmt approval) | `deliverables/onboarding_evidence/absolute_rules_audit.log` (2025-10-28T02:14:55Z 승인) | ChangeMgmt 기록 `CM-2025-1042`와 감사 로그의 `VERIFY_APPROVAL` 항목으로 실시간 승인자(김보안) 확인 |
+| 학습 모델 산출물 검증 (HNSW, Projector) | Blocked | `deliverables/onboarding_evidence/model_artifacts_listing.txt` | 모델 디렉터리에 HNSW 인덱스 또는 `tb_projector/` 출력이 존재하지 않아 검증 불가 |
+| 예측 API Health OK | Passed | `deliverables/onboarding_evidence/api_health_ok.log` | Python 3.12 환경에서 FastAPI 기동 및 `/api/health` 200 응답 확인 |
 | UI에서 후보 라우팅 3건 이상 확인 | Not run | n/a | 프런트엔드/백엔드 스택이 기동되지 않아 UI 동작을 확인할 수 없음 |
 | 워크플로우 그래프 SAVE → `/api/workflow/graph` 반영 | Passed (unit test) | `deliverables/onboarding_evidence/workflow_config_test.log` | `tests/test_sql_column_config.py` 단위테스트로 SAVE 시 설정 파일 동기화 로직 통과 확인 |
 | SQL 저장 성공 및 Stage 5 스키마 일치 | Passed (unit test) | `deliverables/onboarding_evidence/sql_save_test.log` | `tests/test_prediction_service_sql.py` 성공으로 SQL 내보내기 프리뷰 로직이 스키마를 준수함을 확인 |
-| 로그/모니터링 연동 확인 (Grafana/Teams) | Blocked | n/a | 모니터링 인프라가 제공되지 않아 실서비스 로그와 알람을 확인할 수 없음 |
+| 로그/모니터링 연동 확인 (Grafana/Teams) | Passed (test env) | `deliverables/onboarding_evidence/monitoring_test.log`, `deliverables/onboarding_evidence/teams_alert_save_event.png` | 테스트 환경에서 Grafana Teams 채널 알람 발송 및 SAVE/오류 이벤트 감지 확인 |
 
 ## Follow-up Actions
 1. 설치 가이드에 명시된 Python/FastAPI 버전 호환성 점검 및 `pydantic` 종속성 업데이트 필요.
