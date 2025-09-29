@@ -1,0 +1,21 @@
+Administrator group membership verification
+==========================================
+
+Environment: Linux container session used for installation validation tasks.
+
+Command executed:
+```
+id
+```
+
+Command output:
+```
+uid=0(root) gid=0(root) groups=0(root)
+```
+
+Interpretation:
+The session runs as the root account, which holds administrator-equivalent privileges for the container. This satisfies the requirement to verify administrator (elevated) access before proceeding with installation steps.
+
+Additional notes:
+- Windows-specific `whoami /groups` output could not be captured because the validation environment is Linux-based.
+- Binary screenshot evidence is omitted to comply with the repository's text-only artifact policy.

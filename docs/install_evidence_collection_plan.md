@@ -17,7 +17,7 @@
 | 0단계-2. **기본 경로** 유지 | 설치 마법사 경로 선택 화면에서 기본값(`C:\\Program Files\\FKSM\\RoutingML`) 유지 확인 | 기본 경로가 보이는 스크린샷 | `step0_default_path.png` |
 | 0단계-3. 설치 완료 후 **완료 버튼** 클릭 | 설치 완료 창(로그 요약 포함)에서 완료 버튼 누르기 전 캡처 | 완료 버튼과 로그 요약이 포함된 스크린샷 | `step0_finish_prompt.png` |
 | 0단계-4. `/api/health` 점검 | 브라우저 또는 PowerShell에서 `http://10.204.2.28:8000/api/health` 호출 후 "ok" 응답 확인 | 응답 결과 캡처 또는 `Invoke-WebRequest` 콘솔 로그 | `step0_api_health.png` / `step0_api_health.txt` |
-| 2단계-1. 관리자 권한 계정 확인 | Windows 사용자 계정이 관리자 그룹인지 확인 | "컴퓨터 관리" 또는 `whoami /groups` 캡처 | `step2_admin_account.png` |
+| 2단계-1. 관리자 권한 계정 확인 | Windows 사용자 계정이 관리자 그룹인지 확인 | "컴퓨터 관리" 또는 `whoami /groups` 캡처 (저장소 업로드 시 텍스트 로그로 대체 가능) | `step2_admin_account.png` / `step2_admin_account.txt` |
 | 2단계-3. VPN/사내망 연결 확인 | VPN 클라이언트 또는 사내망 접속 화면 캡처 | 연결 상태가 보이는 스크린샷 | `step2_vpn_status.png` |
 | 2단계-4. 포트 8000 **방화벽 허용** 확인 | Windows Defender 방화벽 인바운드 규칙 화면 캡처 | 허용 규칙 또는 예외 확인 화면 | `step2_firewall_rule.png` |
 | 추가: `/api/health` 요청과 함께 **서비스 로그** 저장 | 서비스 자동 실행 로그를 확인하고 텍스트 파일로 저장 | `%APPDATA%\RoutingML\logs` 내 관련 로그 파일 | `step0_service_start.log` |

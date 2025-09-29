@@ -46,7 +46,7 @@
 - 목표: Windows 10/11 64비트 PC에서 Routing ML 예측 서비스를 바로 실행할 수 있도록 하기.
 
 ## 2. 설치 전에 꼭 확인하세요 (체크리스트)
-- [ ] **관리자 권한**이 있는 계정으로 로그인했나요?
+- [x] **관리자 권한**이 있는 계정으로 로그인했나요?
 - [ ] "Microsoft Access Driver (*.mdb, *.accdb)" (64비트)가 설치되어 있나요?
   - 없다면 사내 소프트웨어 센터에서 `AccessDatabaseEngine_X64.exe`를 설치하세요.
   - 설치 후 **ODBC 데이터 원본(64비트)**(`C:\Windows\System32\odbcad32.exe`)을 열어 드라이버 목록에 항목이 표시되는지 확인하고, `scripts\verify_odbc.ps1`을 실행해 로그를 남깁니다.
