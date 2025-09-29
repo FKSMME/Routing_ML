@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 0 | Completed 30 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 30 | Blockers 1
 
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
@@ -52,4 +52,12 @@
 - [x] (8) 프런트엔드 UI 그룹 – 20/60/20 레이아웃 & ReactFlow 체크리스트 (`docs/sprint/next_stage_checklist.md#group-4-frontend-integration`) (2025-09-29 17:30 KST 완료)
 - [x] (9) QA & 관측 그룹 – 테스트/로그/메트릭 항목 정의 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:00 KST 완료)
 - [x] (10) 설치 & 운영 그룹 – 인스톨러/워크플로우 자동화 점검 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:25 KST 완료)
+
+
+## QA Follow-up
+
+- [ ] QA 체크리스트 빌드 게이트 복구 (`npm run build` TypeScript 오류 10건 해결 및 QA 27개 시나리오 재실행) (증빙: `logs/qa/frontend_build_20250930.log`)
+
+---
+_Sync note (2025-09-30): Tasklist, sprint logbook, and QA scenario counts aligned; QA 빌드 게이트는 보류 중._
 

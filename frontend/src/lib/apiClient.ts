@@ -419,6 +419,23 @@ export interface OutputPreviewResponse {
   preview?: Array<Record<string, unknown>>;
 }
 
+const isOutputProfileDetail = (value: unknown): value is OutputProfileDetail => {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  return Array.isArray((value as OutputProfileDetail).mappings);
+};
+
+const isOutputProfileEnvelope = (
+  value: unknown,
+): value is { profile: OutputProfileDetail } =>
+  Boolean(
+    value &&
+      typeof value === "object" &&
+      "profile" in value &&
+      isOutputProfileDetail((value as { profile?: unknown }).profile),
+  );
+
 export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
   const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
   const payload = response.data;
@@ -436,10 +453,13 @@ export async function fetchOutputProfileDetail(profileId: string): Promise<Outpu
     `/routing/output-profiles/${encodeURIComponent(profileId)}`,
   );
   const payload = response.data;
-  if ("profile" in payload && payload.profile) {
+  if (isOutputProfileEnvelope(payload)) {
     return payload.profile;
   }
-  return payload;
+  if (isOutputProfileDetail(payload)) {
+    return payload;
+  }
+  throw new Error("Unexpected output profile response shape");
 }
 
 export async function generateOutputPreview(

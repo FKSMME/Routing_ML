@@ -32,6 +32,9 @@ const DEFAULT_OPTIONS = {
   accessPath: "",
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
 interface ErrorWithDetail {
   response?: {
     data?: {
@@ -179,14 +182,14 @@ const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undef
     });
   }
 
-  if (workflow.data_source && typeof workflow.data_source === "object") {
-    const dataSource = workflow.data_source as Record<string, unknown>;
+  if (isRecord(workflow.data_source)) {
+    const dataSource = workflow.data_source;
     collect(dataSource.column_mappings, "Data Source");
     collect(dataSource.column_mapping, "Data Source");
   }
 
-  if (workflow.sql && typeof workflow.sql === "object") {
-    const sql = workflow.sql as Record<string, unknown>;
+  if (isRecord(workflow.sql)) {
+    const sql = workflow.sql;
     collect(sql.column_mappings, "Output");
     collect(sql.column_mapping, "Output");
   }
