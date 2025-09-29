@@ -6,14 +6,15 @@
 - [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ✅ 성공: TypeScript 오류 0건으로 빌드 완료. 증빙: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log). (히스토리: 2025-10-01 성공, 2025-09-30 실패 로그는 참조용으로 보존)
 - [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → ✅ `pytest tests/test_rsl_routing_groups.py`로 `/api/rsl/groups` 라우팅 그룹 시나리오 검증 완료. 증빙: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
 - [x] 프런트엔드 E2E 라우팅 그룹 플로우 (`vitest run tests/e2e/routing-groups.spec.ts`) → ✅ 성공: Drag/Drop, dirty 플래그, 저장/불러오기 경로 검증. 증빙: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- [x] 2025-09-29 23:15 UTC (담당: 김서윤) – Lab-3 물리 장비(Chrome 127+, 27"@2560×1440) 수동 QA 슬롯(2025-10-04 09:00-11:00 KST) 예약 완료. 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png` (저장소에는 바이너리 미보관).
 - [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → ⚠️ 환경 제약으로 미수행. 물리 실습 환경에서 재검증 필요 (Issue: [`docs/issues/qa_manual_browser_blocker_20251002.md`](../issues/qa_manual_browser_blocker_20251002.md)).
 
 ## 기능 시나리오
 
 > **수동 QA 슬롯 확정:** 2025-10-04 09:00-11:00 KST (장소: Lab-3, 담당: QA Ops 김서윤). 검증 순서는 (1) 20/60/20 레이아웃 계측 → (2) 통합 QA 대기 항목(ERP 토글 포함) → (3) 회귀 테스트 항목으로 고정하였다. 예비 슬롯은 2025-10-07 14:00-15:30 KST(동일 담당)으로 확보하여 미완료 체크를 보완한다.
 0. **레이아웃 20/60/20 배치**
-   - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요, `docs/issues/qa_manual_browser_blocker_20251002.md` 참고.
-   - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 보류, Issue 참고.
+    - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요, `docs/issues/qa_manual_browser_blocker_20251002.md` 참고. (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png`).
+    - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 보류, Issue 참고. (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png`).
 1. **Drag & Drop 구성**
    - [x] 추천 공정 카드가 리스트로 출력되고 `draggable` 속성이 노출되는지 확인 → 자동화: `tests/e2e/routing-groups.spec.ts`에서 `insertOperation` 경로로 카드 삽입 및 속성 노출을 검증.
    - [x] 타임라인 Drop Zone으로 드래그 시 하이라이트(`drop-zone.is-active`)가 표시되는지 확인 → 자동화: 동일 스위트에서 드래그/드롭 시퀀스와 dirty 플래그 변화를 점검.
@@ -37,9 +38,11 @@
 - [x] 감사 로그 필드(`activeGroupId`, `lastSavedAt`)가 스토어에 반영되는지 확인 → 자동화: 저장/불러오기 흐름에서 감사 로그 호출과 상태 업데이트를 검증.
 
 ## 회귀 검증
-- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 보류 (Issue 참조).
-- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
-- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
+- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
+- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
+- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_workflow_20250929.png`).
+
+> _참고: `chrome127_manual_*` 플레이스홀더 이미지는 내부 공유 드라이브에서만 관리하며, 저장소에는 텍스트 로그만 유지한다. 2025-10-04 현장 테스트 이후 실측 캡처로 교체 예정이다._
 
 ## 실행 로그 & 후속 조치
 
