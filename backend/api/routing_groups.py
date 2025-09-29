@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -392,12 +392,13 @@ async def update_routing_group(
 @router.delete(
     "/groups/{group_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
 )
 async def delete_routing_group(
     group_id: str,
     request: Request,
     current_user: AuthenticatedUser = Depends(require_auth),
-) -> None:
+) -> Response:
     start = time.perf_counter()
     with session_scope() as session:
         try:
@@ -433,3 +434,4 @@ async def delete_routing_group(
         client_host=request.client.host if request.client else None,
         correlation_id=_get_correlation_id(request),
     )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
