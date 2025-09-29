@@ -5,3 +5,4 @@
 2025-10-03T08:10Z | 현장 증빙 수집 계획 작성 | docs/install_evidence_collection_plan.md로 0·2단계 항목 증빙 지시사항 전달 초안 확정.
 
 2025-10-03T09:15:00Z | BOT-AUTO | Phase5 #034 - Stage 9 문서/체크리스트 정비 | Stage 9 SOP 및 설치 가이드 업데이트, Tasklist Phase 5 체크박스 동기화, 릴리즈 노트 하이라이트에 반영. 이전 단계 오류 재확인: 완료. Next Stage Ready.
+2025-10-03T09:32:00Z | QA 체크리스트 중복 항목 증빙 재확보 | docs/sprint/routing_enhancement_qa.md의 항목 67/72를 Step 1 Follow-up 항목 8 자동화 로그 재활용으로 `[x]` 처리하고 공통 증빙 메모를 기록.

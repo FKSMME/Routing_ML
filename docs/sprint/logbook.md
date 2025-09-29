@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-03 | Phase 5 - QA & Release Prep | QA checklist duplicate consolidation | Step 1 Follow-up 항목 8 자동화 로그를 재활용하여 QA 체크리스트 중복 항목(67/72) 증빙을 확보하고 상태를 동기화했다. | qa_checks_confirmed=5, reused_logs=logs/qa/frontend_e2e_routing_groups_20251002.log | docs/sprint/routing_enhancement_qa.md | pending | 실 브라우저 캡처 확보 시 수동 증빙 추가 | 
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
