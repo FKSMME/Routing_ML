@@ -335,6 +335,11 @@ export interface UiAuditEventPayload {
   payload?: Record<string, unknown> | null;
 }
 
+export interface UiAuditBatchPayload {
+  events: UiAuditEventPayload[];
+  source?: string;
+}
+
 export interface AccessConnectionRequest {
   path: string;
   table?: string | null;
@@ -359,8 +364,15 @@ export async function saveWorkspaceSettings(payload: WorkspaceSettingsPayload): 
   return response.data;
 }
 
+export async function postUiAuditBatch(payload: UiAuditBatchPayload): Promise<void> {
+  if (!payload.events || payload.events.length === 0) {
+    return;
+  }
+  await api.post("/audit/ui/batch", payload);
+}
+
 export async function postUiAudit(event: UiAuditEventPayload): Promise<void> {
-  await api.post("/audit/ui", event);
+  await postUiAuditBatch({ events: [event] });
 }
 
 export async function testAccessConnection(payload: AccessConnectionRequest): Promise<AccessConnectionResponse> {

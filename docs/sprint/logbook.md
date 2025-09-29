@@ -16,6 +16,7 @@
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
+| 2025-10-03 | Phase 5 - QA & Release Prep | UI audit batch stub | Added /api/audit/ui/batch stub and synced store/OpenAPI docs | endpoints_added=1, docs_updated=4 | backend/api/routes/audit.py; frontend/src/lib/apiClient.ts | pending | Implement background audit queue flush worker |
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
 | 2025-09-29 | Stage 1 - Routing Refactor | docs/Design/onprem_two_tier_architecture.md | Documented on-prem two-tier architecture and automated logbook workflow | analysis_time_min=95, files_touched=3, tasks_remaining=3 | docs/Design/onprem_two_tier_architecture.md | pending | Extend dashboard instrumentation |
