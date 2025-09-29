@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Workspace store QA | Undo/Redo·저장 옵션·ERP 토글 통합 회귀 시나리오 수행 및 로그 아카이브 | vitest_suites=1, step_count=3, erp_required=true | logs/qa/workspace_store_manual_20250929.log | pending | Snapshot 복구 경로 자동화 재검토 |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Audit log evidence capture | Captured UI `POST /api/audit/ui` event with server persistence logs | ui_events=1, server_entries=1 | deliverables/onboarding_evidence/audit_log_sample_ui.log; deliverables/onboarding_evidence/audit_log_sample_server.log | pending | Schedule physical browser QA session for remaining checklist items |
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
