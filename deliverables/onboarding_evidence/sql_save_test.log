@@ -1,3 +1,11 @@
+[2025-09-29T08:35:00Z] Stage 5 SQL export verification
+- Command: curl -sS http://10.204.2.28:8000/api/export/sql -o /tmp/stage5.sql
+- Result: FAIL
+- Error: upstream connect error or disconnect/reset before headers. reset reason: remote connection failure, transport failure reason: delayed connect error: Connection refused
+- Comparison to docs/stage5_sql_report.md: Not executed (SQL export unavailable).
+- Follow-up: Re-run after confirming Stage 5 export service availability or endpoint URL; ensure generated schema aligns with Stage 5 specification once access is restored.
+
+--- Previous log retained for reference ---
 ===================================================== test session starts ======================================================
 platform linux -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
 rootdir: /workspace/Routing_ML
@@ -8,13 +16,13 @@ tests/test_prediction_service_sql.py .                                          
 
 ======================================================= warnings summary =======================================================
 backend/api/services/prediction_service.py:9
-  /workspace/Routing_ML/backend/api/services/prediction_service.py:9: DeprecationWarning: 
+  /workspace/Routing_ML/backend/api/services/prediction_service.py:9: DeprecationWarning:
   Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
   (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
   but was not found to be installed on your system.
   If this would cause problems for you,
   please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
-          
+
     import pandas as pd
 
 common/config_store.py:477

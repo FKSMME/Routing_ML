@@ -1,5 +1,10 @@
 # Routing ML Internal Deployment SOP (v2025-09-29)
 
+## 0. Revision Summary — 2025-10-03 Stage 9 Alignment
+- Stage 9 Alpha·Beta·GA 게이트별 승인 담당자, 증빙 산출물, 재검증 절차를 SOP 본문에 편입했다.
+- 설치 가이드(`docs/install_guide_ko.md`)와 릴리즈 노트(`deliverables/release_notes_2025-09-29.md`)를 교차 참조하여 Task Execution 로그, 증빙 경로, 체크리스트 싱크 규칙을 명시했다.
+- QA 체크리스트 결과 및 `logs/task_execution_*.log` 기록을 Stage 9 승인 선행 조건으로 정의했다.
+
 ## 1. Scope & Roles
 - **Scope**: Routing ML Windows 패키지(백엔드 FastAPI + 프런트엔드 빌드 + ML 모델) 배포 및 업데이트.
 - **Roles**:
@@ -34,3 +39,20 @@
 1. `http://<host>:8000/api/health` 응답 확인.
 2. `/api/rsl/groups` POST/GET 스팟 테스트 수행.
 3. 감사 로그(`logs/audit/ui_actions.log`, `logs/audit/rsl.audit.log`)에 시간/IP 기록 확인.
+
+## 7. Stage 9 Approval Workflow & Evidence
+1. **Alpha(내부 QA)**
+   - 선행 조건: `docs/sprint/routing_enhancement_qa.md` 체크리스트 통과, `pytest tests/test_rsl_routing_groups.py` 로그 확보.
+   - 증빙: 설치 스모크 테스트 결과, `logs/qa/frontend_build_*.log`, `logs/task_execution_*.log` 승인 기록.
+   - 승인자: QA 리드(예: QA-KIM) — Task Execution 로그에 `Next Stage Ready` 명시.
+2. **Beta(선발 사용자)**
+   - 선행 조건: Alpha 증빙 + 사용자 피드백 수집 계획 수립, 설치 가이드 최신화(`docs/install_guide_ko.md`).
+   - 증빙: 베타 사용자 설치 스크린샷, `/api/health` 확인 기록, 피드백 요약.
+   - 승인자: Deployment Engineer — NAS/SCCM 업로드 로그와 해시값 게시 완료.
+3. **GA(전체 배포)**
+   - 선행 조건: 베타 이슈 클로즈, 릴리즈 노트 승인(`deliverables/release_notes_2025-09-29.md`).
+   - 증빙: Change Management 승인서, 전체 사용자 공지, 최종 설치/롤백 절차 검증.
+   - 승인자: Release Owner — 릴리즈 노트 및 Tasklist Phase 5 체크박스 완료 상태 확인.
+4. **증빙 보관 및 싱크 규칙**
+   - 모든 단계의 승인 로그는 `logs/task_execution_*.log`에 ISO8601 타임스탬프로 남기고, 동일 내용을 Tasklist Phase 5 및 관련 문서 체크리스트에 반영한다.
+   - 증빙 파일은 `deliverables/onboarding_evidence/` 하위에 `Stage9_<게이트>_YYYYMMDD/` 구조로 보관하고 릴리즈 노트 Highlights에 링크를 추가한다.

@@ -27,6 +27,12 @@
 > 3. `/api/health`·`/api/workflow/graph` 응답 확인 및 서비스 자동 실행 로그는 Windows 작업 기록과 함께 동일 폴더에 보관하고, 완료 후 체크박스를 업데이트합니다.
 > 4. 증빙 업로드가 끝나면 `logs/task_execution_*.log`에 수행 시간과 담당자를 기록해 추적성을 유지합니다.
 
+### Stage 9 승인 체크포인트 (2025-10-03 업데이트)
+- **Alpha**: QA 체크리스트(`docs/sprint/routing_enhancement_qa.md`)와 `pytest tests/test_rsl_routing_groups.py` 로그를 확보하고, 설치 스모크 테스트 결과를 `deliverables/onboarding_evidence/Stage9_Alpha_YYYYMMDD/`에 정리합니다.
+- **Beta**: 베타 사용자 환경 설치 스크린샷과 `/api/health` 확인 로그를 수집하며, 피드백 요약을 Task Execution 로그와 함께 남깁니다.
+- **GA**: Change Management 승인서, 최종 릴리즈 노트(`deliverables/release_notes_2025-09-29.md`) 승인 내역, 롤백 검증 결과를 패키징하여 배포 공지와 함께 게시합니다.
+- **로그 싱크**: 각 게이트 완료 시점에 `logs/task_execution_*.log`에 ISO8601 타임스탬프로 기록하고, 동일한 문구를 Tasklist Phase 5 체크박스와 본 가이드의 체크리스트에 반영합니다.
+
 ## 1. 왜 이 설치가 필요한가요?
 - 최종 사용자는 파이썬을 설치하지 않아도 됩니다.
 - 이 설치 파일 하나로 **백엔드 서비스**, **웹 화면**, **ML 모델**, **필요한 스크립트**가 모두 들어갑니다.

@@ -1,11 +1,16 @@
 """FastAPI 애플리케이션 엔트리포인트."""
 from __future__ import annotations
 
+from backend.api.pydantic_compat import ensure_forward_ref_compat
+
+# NOTE: FastAPI/Pydantic import 전에 호환성 패치를 적용해 Python 3.12에서의
+# ForwardRef 오류를 예방한다.
+ensure_forward_ref_compat()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
-from backend.api.pydantic_compat import ensure_forward_ref_compat
 from backend.api.routes.access import router as access_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.master_data import router as master_data_router
@@ -15,10 +20,6 @@ from backend.api.routes.trainer import router as trainer_router
 from backend.api.routes.workflow import router as workflow_router
 from backend.api.routes.workspace import router as workspace_router
 from backend.api.routing_groups import router as routing_groups_router
-
-from backend.api.routes.master_data import router as master_data_router
-from backend.api.routes.access import router as access_router
-from backend.api.routes.rsl import router as rsl_router
 from common.logger import get_logger
 
 

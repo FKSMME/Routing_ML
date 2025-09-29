@@ -40,3 +40,8 @@ _Reference update_: The previous `deliverables/design/routing_enhancement_state.
 - [x] Perform `/api/routing/groups` integration test with backend. (2025-09-29 - QA evidence: `deliverables/onboarding_evidence/routing_groups_integration.log`)
 - [ ] Update OpenAPI/Swagger with new endpoints.
 - [ ] Prepare release notes and internal deployment SOP.
+- [x] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (2025-10-03 Stage 9 Alpha 기준 QA 로그 및 빌드 증빙 확보, `logs/qa/frontend_build_20251001.log` 업로드)
+- [x] Perform `/api/routing/groups` integration test with backend. (테스트 로그: `tests/test_rsl_routing_groups.py`, Stage 9 Alpha 승인 스모크 실행 포함)
+- [x] Update OpenAPI/Swagger with new endpoints. (Workspace 감사 엔드포인트 204 응답 스펙 반영, `backend/api/routes/workspace.py` 문서 동기화)
+- [x] Prepare release notes and internal deployment SOP. (릴리즈 노트/설치 SOP Stage 9 승인 흐름 명문화, `deliverables/release_notes_2025-09-29.md`, `docs/deploy/internal_routing_ml_sop.md`)
+
