@@ -120,4 +120,11 @@ def get_logger(
     return logger
 
 
-__all__ = ["get_logger", "JSONFormatter"]
+performance_logger = get_logger(
+    "performance.training",
+    log_dir=Path("logs/performance"),
+    use_json=True,
+)
+
+
+__all__ = ["get_logger", "JSONFormatter", "performance_logger"]
