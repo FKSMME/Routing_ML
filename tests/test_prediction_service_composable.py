@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -7,6 +8,19 @@ import pandas as pd
 import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+os.environ.setdefault(
+    "ROUTING_ML_MODEL_DIRECTORY_OVERRIDE",
+    str((Path(__file__).resolve().parents[1] / "models").resolve()),
+)
+os.environ.setdefault(
+    "MODEL_DIRECTORY_OVERRIDE",
+    str((Path(__file__).resolve().parents[1] / "models").resolve()),
+)
+
+from backend.api.config import get_settings
+
+get_settings.cache_clear()
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 
@@ -44,6 +58,7 @@ from backend.api.schemas import (
     TimeSummaryResponse,
 )
 from backend.api.services.prediction_service import PredictionService, prediction_service
+from models.manifest import write_manifest
 from backend.api.routes import prediction as prediction_routes
 
 
@@ -246,3 +261,65 @@ def test_time_summary_endpoint_integration(dummy_user, monkeypatch):
 
     assert response.process_count == 2
     assert response.totals["lead_time"] == 3.2
+
+
+def test_prediction_service_loads_time_profiles(tmp_path):
+    service = PredictionService()
+    model_dir = tmp_path / "model"
+    model_dir.mkdir()
+    service.settings.model_directory = model_dir
+    service._model_reference = model_dir
+    service._model_manifest = None
+
+    for filename in (
+        "similarity_engine.joblib",
+        "encoder.joblib",
+        "scaler.joblib",
+        "feature_columns.joblib",
+    ):
+        (model_dir / filename).write_text("stub", encoding="utf-8")
+
+    time_profiles_path = model_dir / "time_profiles.json"
+    initial_profiles = {
+        "generated_at": "2024-01-01T00:00:00Z",
+        "strategy": "sigma_profile",
+        "time_columns": ["SETUP_TIME"],
+        "columns": {
+            "SETUP_TIME": {"samples": 5, "profile": {"standard": 1.0}},
+        },
+        "profiles": {
+            "OPT": {"SETUP_TIME": 1.2},
+            "STD": {"SETUP_TIME": 1.0},
+            "SAFE": {"SETUP_TIME": 1.8},
+        },
+        "parameters": {},
+    }
+    time_profiles_path.write_text(
+        json.dumps(initial_profiles, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    write_manifest(model_dir, strict=False)
+    service._refresh_manifest(strict=False)
+
+    first = service.get_time_profiles()
+    assert first is not None
+    assert first["profiles"]["STD"]["SETUP_TIME"] == pytest.approx(1.0)
+
+    second = service.get_time_profiles()
+    assert second is not None
+    assert second["profiles"]["STD"]["SETUP_TIME"] == pytest.approx(1.0)
+    assert second is not first
+
+    updated_profiles = dict(initial_profiles)
+    updated_profiles["profiles"] = dict(initial_profiles["profiles"])
+    updated_profiles["profiles"]["STD"] = {"SETUP_TIME": 2.5}
+    time_profiles_path.write_text(
+        json.dumps(updated_profiles, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    os.utime(time_profiles_path, None)
+
+    third = service.get_time_profiles()
+    assert third is not None
+    assert third["profiles"]["STD"]["SETUP_TIME"] == pytest.approx(2.5)
