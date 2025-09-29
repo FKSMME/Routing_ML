@@ -1,0 +1,120 @@
+2025-09-29 10:46:12 | trainer_ml | INFO     | [trainer_ml.py:94] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
+2025-09-29 10:46:12 | predictor_ml_improved | INFO     | [predictor_ml.py:1806] | apply_runtime_config | MainThread | 런타임 설정 갱신: threshold=0.82, variants=6, trim_std=True (0.04~0.96), encoding_cache=(size=20000, ttl=900s)
+2025-09-29 10:46:12 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspace/Routing_ML/models/default
+2025-09-29 10:46:12 | api.app | INFO     | [app.py:48] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
+{"timestamp": "2025-09-29 10:46:19", "name": "auth.service", "level": "INFO", "message": "로그인 성공", "filename": "auth_service.py", "lineno": 175, "funcName": "login", "threadName": "MainThread", "taskName": "Task-3", "username": "qa_user", "client_host": "127.0.0.1"}
+{"timestamp": "2025-09-29 10:46:19", "name": "auth.audit", "level": "INFO", "message": "로그인 성공", "filename": "auth.py", "lineno": 56, "funcName": "login", "threadName": "MainThread", "taskName": "Task-3", "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:52186 - "POST /api/auth/login HTTP/1.1" 200 OK
+2025-09-29 10:46:19 | api.routes | INFO     | [prediction.py:49] | predict | MainThread | 예측 요청
+2025-09-29 10:46:19 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['DEMO_ITEM_001'], top_k=10, similarity_threshold=0.30, mode=detailed
+2025-09-29 10:46:19 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspace/Routing_ML/models/default
+2025-09-29 10:46:19 | trainer_ml | INFO     | [trainer_ml.py:1082] | load_optimized_model | MainThread | 모델 로드 시작, 디렉토리: /workspace/Routing_ML/models/default
+2025-09-29 10:46:19 | trainer_ml | INFO     | [trainer_ml.py:1090] | load_optimized_model | MainThread | 모델 로드: /workspace/Routing_ML/models/default, 소요 시간: 0.00초
+2025-09-29 10:46:19 | predictor_ml_improved | INFO     | [predictor_ml.py:1574] | predict_items_with_ml_optimized | MainThread | 🚀 Enhanced ML 배치 예측 시작: 1개 품목
+2025-09-29 10:46:19 | predictor_ml_improved | INFO     | [predictor_ml.py:770] | predict_single_item_with_ml_enhanced | MainThread | 🚀 Enhanced ML 예측 시작 - 품목: DEMO_ITEM_001, 모드: detailed, 라우팅: latest
+2025-09-29 10:46:19 | database | DEBUG    | [database.py:723] | fetch_routing_for_item | MainThread | [DB] ROUTING 조회: DEMO_ITEM_001 (latest_only=True, mode=latest)
+2025-09-29 10:46:19 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 1/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:21 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 2/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:23 | database | ERROR    | [database.py:784] | fetch_routing_for_item | MainThread | [DB] 라우팅 조회 오류: [DB] 쿼리 실패: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:23 | database | INFO     | [database.py:790] | fetch_routing_for_item | MainThread | [DB] 데모 데이터 라우팅 사용(오류 복구): DEMO_ITEM_001
+2025-09-29 10:46:23 | predictor_ml_improved | INFO     | [predictor_ml.py:1775] | predict_items_with_ml_optimized | MainThread | 배치 예측 완료: 3개 라우팅 조합, 1개 후보
+2025-09-29 10:46:23 | api.prediction | INFO     | [prediction_service.py:755] | predict | MainThread | [예측] 완료 - routings=1 candidates=1
+{"timestamp": "2025-09-29 10:46:23", "name": "api.audit", "level": "INFO", "message": "predict", "filename": "prediction.py", "lineno": 76, "funcName": "predict", "threadName": "MainThread", "taskName": "Task-4", "username": "qa_user", "requested_items": ["DEMO_ITEM_001"], "returned_candidates": 1, "threshold": 0.3, "exported_files": []}
+INFO:     127.0.0.1:52186 - "POST /api/predict HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:28", "name": "auth.service", "level": "INFO", "message": "로그인 성공", "filename": "auth_service.py", "lineno": 175, "funcName": "login", "threadName": "MainThread", "taskName": "Task-5", "username": "qa_user", "client_host": "127.0.0.1"}
+{"timestamp": "2025-09-29 10:46:28", "name": "auth.audit", "level": "INFO", "message": "로그인 성공", "filename": "auth.py", "lineno": 56, "funcName": "login", "threadName": "MainThread", "taskName": "Task-5", "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:48476 - "POST /api/auth/login HTTP/1.1" 200 OK
+2025-09-29 10:46:28 | api.routes | INFO     | [prediction.py:49] | predict | MainThread | 예측 요청
+2025-09-29 10:46:28 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['DEMO_ITEM_001'], top_k=10, similarity_threshold=0.30, mode=detailed
+2025-09-29 10:46:28 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspace/Routing_ML/models/default
+2025-09-29 10:46:28 | trainer_ml | INFO     | [trainer_ml.py:1082] | load_optimized_model | MainThread | 모델 로드 시작, 디렉토리: /workspace/Routing_ML/models/default
+2025-09-29 10:46:28 | trainer_ml | INFO     | [trainer_ml.py:1090] | load_optimized_model | MainThread | 모델 로드: /workspace/Routing_ML/models/default, 소요 시간: 0.00초
+2025-09-29 10:46:28 | predictor_ml_improved | INFO     | [predictor_ml.py:1574] | predict_items_with_ml_optimized | MainThread | 🚀 Enhanced ML 배치 예측 시작: 1개 품목
+2025-09-29 10:46:28 | predictor_ml_improved | INFO     | [predictor_ml.py:770] | predict_single_item_with_ml_enhanced | MainThread | 🚀 Enhanced ML 예측 시작 - 품목: DEMO_ITEM_001, 모드: detailed, 라우팅: latest
+2025-09-29 10:46:28 | database | DEBUG    | [database.py:723] | fetch_routing_for_item | MainThread | [DB] ROUTING 조회: DEMO_ITEM_001 (latest_only=True, mode=latest)
+2025-09-29 10:46:28 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 1/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:30 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 2/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:32 | database | ERROR    | [database.py:784] | fetch_routing_for_item | MainThread | [DB] 라우팅 조회 오류: [DB] 쿼리 실패: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:32 | database | INFO     | [database.py:790] | fetch_routing_for_item | MainThread | [DB] 데모 데이터 라우팅 사용(오류 복구): DEMO_ITEM_001
+2025-09-29 10:46:32 | predictor_ml_improved | INFO     | [predictor_ml.py:1775] | predict_items_with_ml_optimized | MainThread | 배치 예측 완료: 3개 라우팅 조합, 1개 후보
+2025-09-29 10:46:32 | api.prediction | INFO     | [prediction_service.py:755] | predict | MainThread | [예측] 완료 - routings=1 candidates=1
+{"timestamp": "2025-09-29 10:46:32", "name": "api.audit", "level": "INFO", "message": "predict", "filename": "prediction.py", "lineno": 76, "funcName": "predict", "threadName": "MainThread", "taskName": "Task-6", "username": "qa_user", "requested_items": ["DEMO_ITEM_001"], "returned_candidates": 1, "threshold": 0.3, "exported_files": []}
+INFO:     127.0.0.1:48476 - "POST /api/predict HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:39", "name": "auth.service", "level": "INFO", "message": "로그인 성공", "filename": "auth_service.py", "lineno": 175, "funcName": "login", "threadName": "MainThread", "taskName": "Task-7", "username": "qa_user", "client_host": "127.0.0.1"}
+{"timestamp": "2025-09-29 10:46:39", "name": "auth.audit", "level": "INFO", "message": "로그인 성공", "filename": "auth.py", "lineno": 56, "funcName": "login", "threadName": "MainThread", "taskName": "Task-7", "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:54260 - "POST /api/auth/login HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:40", "name": "routing.audit", "level": "INFO", "message": "routing.group.list", "filename": "logger.py", "lineno": 170, "funcName": "audit_routing_event", "threadName": "MainThread", "taskName": "Task-8", "action": "routing.group.list", "result": "success", "payload": {"filters": {"owner": "qa_user", "item_code": null, "search": null}, "result_count": 0, "duration_ms": 7.26}, "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:54262 - "GET /api/routing/groups?limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54272 - "GET /api/settings/workspace HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:40", "name": "workflow.audit", "level": "INFO", "message": "workflow.graph.read", "filename": "workflow.py", "lineno": 109, "funcName": "get_workflow_graph", "threadName": "MainThread", "taskName": "Task-10", "username": "qa_user"}
+INFO:     127.0.0.1:54272 - "GET /api/workflow/graph HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:40", "name": "routing.audit", "level": "INFO", "message": "routing.group.list", "filename": "logger.py", "lineno": 170, "funcName": "audit_routing_event", "threadName": "MainThread", "taskName": "Task-11", "action": "routing.group.list", "result": "success", "payload": {"filters": {"owner": "qa_user", "item_code": null, "search": null}, "result_count": 0, "duration_ms": 1.98}, "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:54262 - "GET /api/routing/groups?limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54280 - "OPTIONS /api/predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54294 - "GET /api/settings/workspace HTTP/1.1" 200 OK
+2025-09-29 10:46:40 | api.routes | INFO     | [prediction.py:49] | predict | MainThread | 예측 요청
+2025-09-29 10:46:40 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['DEMO_ITEM_001'], top_k=10, similarity_threshold=0.30, mode=detailed
+2025-09-29 10:46:40 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspace/Routing_ML/models/default
+2025-09-29 10:46:40 | trainer_ml | INFO     | [trainer_ml.py:1082] | load_optimized_model | MainThread | 모델 로드 시작, 디렉토리: /workspace/Routing_ML/models/default
+2025-09-29 10:46:40 | trainer_ml | INFO     | [trainer_ml.py:1090] | load_optimized_model | MainThread | 모델 로드: /workspace/Routing_ML/models/default, 소요 시간: 0.00초
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:547] | load_weights | MainThread | Feature weights 로드 완료 (41개, 활성 33개) [json]
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:560] | load_weights | MainThread | Feature weights 로드 완료 (41개) [joblib]
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:575] | load_weights | MainThread | Active features 로드 완료 (33개)
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:585] | load_weights | MainThread | feature_importance 로드 완료
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:585] | load_weights | MainThread | feature_statistics 로드 완료
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:219] | apply_profile | MainThread | Feature weight profile 적용: geometry-focus
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-29 10:46:40 | feature_weights | INFO     | [feature_weights.py:612] | save_weights | MainThread | Feature weights 저장 완료
+2025-09-29 10:46:40 | predictor_ml_improved | INFO     | [predictor_ml.py:1574] | predict_items_with_ml_optimized | MainThread | 🚀 Enhanced ML 배치 예측 시작: 1개 품목
+2025-09-29 10:46:40 | predictor_ml_improved | INFO     | [predictor_ml.py:770] | predict_single_item_with_ml_enhanced | MainThread | 🚀 Enhanced ML 예측 시작 - 품목: DEMO_ITEM_001, 모드: detailed, 라우팅: latest
+2025-09-29 10:46:40 | database | DEBUG    | [database.py:723] | fetch_routing_for_item | MainThread | [DB] ROUTING 조회: DEMO_ITEM_001 (latest_only=True, mode=latest)
+2025-09-29 10:46:40 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 1/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:42 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 2/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:44 | database | ERROR    | [database.py:784] | fetch_routing_for_item | MainThread | [DB] 라우팅 조회 오류: [DB] 쿼리 실패: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:44 | database | INFO     | [database.py:790] | fetch_routing_for_item | MainThread | [DB] 데모 데이터 라우팅 사용(오류 복구): DEMO_ITEM_001
+2025-09-29 10:46:44 | predictor_ml_improved | INFO     | [predictor_ml.py:1775] | predict_items_with_ml_optimized | MainThread | 배치 예측 완료: 3개 라우팅 조합, 1개 후보
+2025-09-29 10:46:44 | api.prediction | INFO     | [prediction_service.py:755] | predict | MainThread | [예측] 완료 - routings=1 candidates=1
+2025-09-29 10:46:44 | api.prediction | INFO     | [prediction_service.py:1356] | _safe_export | MainThread | 예측 결과 내보내기 완료: deliverables/exports/routing_operations_20250929104644.csv
+2025-09-29 10:46:44 | api.prediction | WARNING  | [prediction_service.py:1358] | _safe_export | MainThread | 예측 결과 내보내기 실패 (deliverables/exports/routing_bundle_20250929104644.xlsx): No module named 'openpyxl'
+2025-09-29 10:46:44 | api.prediction | INFO     | [prediction_service.py:1356] | _safe_export | MainThread | 예측 결과 내보내기 완료: deliverables/exports/routing_operations_20250929104644.csv.gz
+{"timestamp": "2025-09-29 10:46:44", "name": "api.audit", "level": "INFO", "message": "predict", "filename": "prediction.py", "lineno": 76, "funcName": "predict", "threadName": "MainThread", "taskName": "Task-14", "username": "qa_user", "requested_items": ["DEMO_ITEM_001"], "returned_candidates": 1, "threshold": 0.3, "exported_files": ["deliverables/exports/routing_operations_20250929104644.csv", "deliverables/exports/routing_operations_20250929104644.csv.gz"]}
+INFO:     127.0.0.1:54262 - "POST /api/predict HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:54", "name": "auth.service", "level": "INFO", "message": "로그인 성공", "filename": "auth_service.py", "lineno": 175, "funcName": "login", "threadName": "MainThread", "taskName": "Task-15", "username": "qa_user", "client_host": "127.0.0.1"}
+{"timestamp": "2025-09-29 10:46:54", "name": "auth.audit", "level": "INFO", "message": "로그인 성공", "filename": "auth.py", "lineno": 56, "funcName": "login", "threadName": "MainThread", "taskName": "Task-15", "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:33652 - "POST /api/auth/login HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:55", "name": "routing.audit", "level": "INFO", "message": "routing.group.list", "filename": "logger.py", "lineno": 170, "funcName": "audit_routing_event", "threadName": "MainThread", "taskName": "Task-16", "action": "routing.group.list", "result": "success", "payload": {"filters": {"owner": "qa_user", "item_code": null, "search": null}, "result_count": 0, "duration_ms": 1.25}, "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:33658 - "GET /api/routing/groups?limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33672 - "GET /api/settings/workspace HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:55", "name": "workflow.audit", "level": "INFO", "message": "workflow.graph.read", "filename": "workflow.py", "lineno": 109, "funcName": "get_workflow_graph", "threadName": "MainThread", "taskName": "Task-18", "username": "qa_user"}
+INFO:     127.0.0.1:33658 - "GET /api/workflow/graph HTTP/1.1" 200 OK
+{"timestamp": "2025-09-29 10:46:55", "name": "routing.audit", "level": "INFO", "message": "routing.group.list", "filename": "logger.py", "lineno": 170, "funcName": "audit_routing_event", "threadName": "MainThread", "taskName": "Task-19", "action": "routing.group.list", "result": "success", "payload": {"filters": {"owner": "qa_user", "item_code": null, "search": null}, "result_count": 0, "duration_ms": 5.14}, "username": "qa_user", "client_host": "127.0.0.1"}
+INFO:     127.0.0.1:33672 - "GET /api/routing/groups?limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33682 - "GET /api/settings/workspace HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33694 - "OPTIONS /api/predict HTTP/1.1" 200 OK
+2025-09-29 10:46:55 | api.routes | INFO     | [prediction.py:49] | predict | MainThread | 예측 요청
+2025-09-29 10:46:55 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['DEMO_ITEM_001'], top_k=10, similarity_threshold=0.30, mode=detailed
+2025-09-29 10:46:55 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspace/Routing_ML/models/default
+2025-09-29 10:46:55 | trainer_ml | INFO     | [trainer_ml.py:1082] | load_optimized_model | MainThread | 모델 로드 시작, 디렉토리: /workspace/Routing_ML/models/default
+2025-09-29 10:46:55 | trainer_ml | INFO     | [trainer_ml.py:1090] | load_optimized_model | MainThread | 모델 로드: /workspace/Routing_ML/models/default, 소요 시간: 0.00초
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:547] | load_weights | MainThread | Feature weights 로드 완료 (41개, 활성 33개) [json]
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:560] | load_weights | MainThread | Feature weights 로드 완료 (41개) [joblib]
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:575] | load_weights | MainThread | Active features 로드 완료 (33개)
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:585] | load_weights | MainThread | feature_importance 로드 완료
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:585] | load_weights | MainThread | feature_statistics 로드 완료
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:219] | apply_profile | MainThread | Feature weight profile 적용: geometry-focus
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-29 10:46:55 | feature_weights | INFO     | [feature_weights.py:612] | save_weights | MainThread | Feature weights 저장 완료
+2025-09-29 10:46:55 | predictor_ml_improved | INFO     | [predictor_ml.py:1574] | predict_items_with_ml_optimized | MainThread | 🚀 Enhanced ML 배치 예측 시작: 1개 품목
+2025-09-29 10:46:55 | predictor_ml_improved | INFO     | [predictor_ml.py:770] | predict_single_item_with_ml_enhanced | MainThread | 🚀 Enhanced ML 예측 시작 - 품목: DEMO_ITEM_001, 모드: detailed, 라우팅: latest
+2025-09-29 10:46:55 | database | DEBUG    | [database.py:723] | fetch_routing_for_item | MainThread | [DB] ROUTING 조회: DEMO_ITEM_001 (latest_only=True, mode=latest)
+2025-09-29 10:46:55 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 1/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:57 | database | WARNING  | [database.py:464] | _run_query | MainThread | [DB] 쿼리 재시도 2/3: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:59 | database | ERROR    | [database.py:784] | fetch_routing_for_item | MainThread | [DB] 라우팅 조회 오류: [DB] 쿼리 실패: 폴더가 존재하지 않습니다 ➔ /workspace/Routing_ML/routing_data
+2025-09-29 10:46:59 | database | INFO     | [database.py:790] | fetch_routing_for_item | MainThread | [DB] 데모 데이터 라우팅 사용(오류 복구): DEMO_ITEM_001
+2025-09-29 10:46:59 | predictor_ml_improved | INFO     | [predictor_ml.py:1775] | predict_items_with_ml_optimized | MainThread | 배치 예측 완료: 3개 라우팅 조합, 1개 후보
+2025-09-29 10:46:59 | api.prediction | INFO     | [prediction_service.py:755] | predict | MainThread | [예측] 완료 - routings=1 candidates=1
+2025-09-29 10:46:59 | api.prediction | INFO     | [prediction_service.py:1356] | _safe_export | MainThread | 예측 결과 내보내기 완료: deliverables/exports/routing_operations_20250929104659.csv
+2025-09-29 10:46:59 | api.prediction | WARNING  | [prediction_service.py:1358] | _safe_export | MainThread | 예측 결과 내보내기 실패 (deliverables/exports/routing_bundle_20250929104659.xlsx): No module named 'openpyxl'
+2025-09-29 10:46:59 | api.prediction | INFO     | [prediction_service.py:1356] | _safe_export | MainThread | 예측 결과 내보내기 완료: deliverables/exports/routing_operations_20250929104659.csv.gz
+{"timestamp": "2025-09-29 10:46:59", "name": "api.audit", "level": "INFO", "message": "predict", "filename": "prediction.py", "lineno": 76, "funcName": "predict", "threadName": "MainThread", "taskName": "Task-22", "username": "qa_user", "requested_items": ["DEMO_ITEM_001"], "returned_candidates": 1, "threshold": 0.3, "exported_files": ["deliverables/exports/routing_operations_20250929104659.csv", "deliverables/exports/routing_operations_20250929104659.csv.gz"]}
+INFO:     127.0.0.1:33672 - "POST /api/predict HTTP/1.1" 200 OK

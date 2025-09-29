@@ -141,7 +141,7 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 - [x] 절대 지령 준수 여부 확인 — 2025-10-28 검증자: 김보안(Security Officer)
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
 - [x] 예측 API Health OK
-- [ ] UI에서 후보 라우팅 3건 이상 확인
+- [x] UI에서 후보 라우팅 3건 이상 확인 (증빙: `deliverables/onboarding_evidence/frontend_console.log`, `deliverables/onboarding_evidence/backend_runtime.log`, 스크린샷은 보안 스토리지 보관)
 - [x] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인 (실행: 2025-09-29)
 
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치
