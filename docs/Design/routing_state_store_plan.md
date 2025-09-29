@@ -76,9 +76,14 @@ interface RoutingWorkspaceState {
 - 모바일은 Drag 대체 UI(버튼/메뉴) 제공.
 
 ## 6. 구현 체크리스트
+
+- [x] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
+- [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
+
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
 
 - [x] ReactFlow 도입 및 캔버스 컴포넌트 작성
+
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
 
 - [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
@@ -115,3 +120,9 @@ interface RoutingWorkspaceState {
 - Timeline/후보 패널 상태 정의가 현재 프런트엔드 `frontend/src/store/routingWorkspaceStore.ts` 구조와 일치하는지 확인했고, manifest/레지스트리 도입 후에도 API 계약 변경 없이 스토어 필드 재사용 가능함을 검증하였다.
 - Access 연결·옵션 메뉴와의 상호작용은 `backend/api/routes/master_data.py` 및 옵션 API 확장 계획과 충돌하지 않으며, Undo/Redo 버퍼 한도(50)와 감사 로그 큐(20)가 브라우저 메모리 한계 내에 있는지 계산해 문제 없음을 확인했다.
 - IndexedDB 스냅샷 주기가 30초 debounce로 정의되어 있어 절대 지령의 백그라운드 작업 요구와 부합하며, ERP 인터페이스 토글이 서버 저장 시 동기화되는지 설계상 보장된다. 추가 변경 필요 없음.
+
+## 7. 2025-10-03 병합 전략 업데이트
+- `frontend/src/store/workspaceStore.ts` 신설: 글로벌 워크스페이스(`layout`, `activeMenu`, `itemSearch`, `featureWeights`, `exportProfile`, `erpInterfaceEnabled`) 상태를 하나의 Zustand 스토어로 묶고, PRD의 `export_formats`, `with_visualization`, `feature_weights` 필드를 직접 추적한다.
+- `frontend/src/store/routingStore.ts`는 `createRoutingStore()` 팩토리로 재구성하여 `useWorkspaceStore`와 동일 인스턴스를 공유한다. `applyPredictionResponse` 액션을 통해 라우팅 추천 응답을 타임라인/탭 상태와 워크스페이스 메타데이터(프로파일, 시각화 토글, 내보내기 이력)에 동시 반영한다.
+- ERP 인터페이스 토글과 추천 품목 목록은 `useRoutingStore.subscribe()` 기반 양방향 동기화로 연결했다. 워크스페이스에서 ERP 플래그를 변경하면 라우팅 스토어의 dirty 상태 계산을 그대로 유지하면서 옵션 패널과 SAVE 패널이 일관되게 갱신된다.
+- `frontend/src/App.tsx`는 지역 `useState` 대신 `useWorkspaceStore` 셀렉터를 사용해 네비게이션, 예측 파라미터, Feature Weight 패널을 제어하고, PRD 명세(`with_visualization`, `export_formats`, `weight_profile`)에 맞춰 API 파라미터를 구성한다.
