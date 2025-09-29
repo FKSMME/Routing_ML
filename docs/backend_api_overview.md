@@ -17,6 +17,7 @@
 - `backend/api/routes/prediction.py`: `/api/*` 하위에서 예측, 후보 저장, 유사도 검색, 그룹 추천, 공정 시간 요약, 규칙 검증, 메트릭 조회를 처리한다.【F:backend/api/routes/prediction.py†L35-L234】
 - `backend/api/routes/workflow.py`: `/api/workflow/graph`에 대한 GET/PATCH로 그래프·런타임·SQL·데이터 소스·시각화 구성을 일괄 관리한다.【F:backend/api/routes/workflow.py†L45-L200】
 - `backend/api/routes/workspace.py`: `/api/settings/workspace`, `/api/audit/ui`, `/api/access/connection/test`를 통해 UI 설정, UI 감사 로그, Access 연결 검증을 담당한다.【F:backend/api/routes/workspace.py†L19-L200】
+- `backend/api/routes/audit.py`: `/api/audit/ui/batch` 배치 엔드포인트에서 UI 감사 큐를 수신하고 로그 파일에 저장한다.【F:backend/api/routes/audit.py†L1-L90】
 - `backend/api/routes/master_data.py`: `/api/master-data/*`에서 트리, 품목, 감사 로그, 감사 로그 다운로드 API를 제공한다.【F:backend/api/routes/master_data.py†L18-L112】
 - `backend/api/routes/access.py`: `/api/access/metadata`를 통해 Access 메타데이터를 반환한다.【F:backend/api/routes/access.py†L11-L31】
 - `backend/api/routing_groups.py`: `/api/routing/groups` CRUD로 SQLite 기반 라우팅 그룹과 감사 로깅을 관리한다.【F:backend/api/routing_groups.py†L34-L437】
@@ -51,6 +52,7 @@ python -m backend.run_api
 | 워크플로우 | `/api/workflow/graph` | GET/PATCH | 그래프·런타임·SQL·데이터 소스 구성을 조회/갱신.【F:backend/api/routes/workflow.py†L102-L200】 |
 | 워크스페이스 | `/api/settings/workspace` | GET/PUT | UI 설정 저장/조회, 컬럼 매핑 카운트 로깅.【F:backend/api/routes/workspace.py†L67-L127】 |
 | 워크스페이스 | `/api/audit/ui` | POST | UI 상호작용 감사 로그 스트리밍.【F:backend/api/routes/workspace.py†L129-L151】 |
+| 감사 | `/api/audit/ui/batch` | POST | IndexedDB 감사 큐를 서버에 일괄 전송 (배치 스텁).【F:backend/api/routes/audit.py†L64-L90】 |
 | Access | `/api/access/connection/test` | POST | Access 연결·테이블 검증 및 경과 시간 반환.【F:backend/api/routes/workspace.py†L154-L200】 |
 | 마스터 데이터 | `/api/master-data/tree` | GET | Access 기준정보 트리 조회.【F:backend/api/routes/master_data.py†L24-L44】 |
 | 마스터 데이터 | `/api/master-data/items/{item_code}` | GET | 품목 행렬 조회 및 감사 로그.【F:backend/api/routes/master_data.py†L47-L70】 |

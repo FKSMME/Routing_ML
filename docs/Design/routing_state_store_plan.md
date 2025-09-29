@@ -62,7 +62,7 @@ interface RoutingWorkspaceState {
 ## 3. Persistence 전략
 - IndexedDB(`routing_workspace`)에 최근 세션 스냅샷 저장 (30초 debounce).
 - 서버 저장: `/api/settings/workspace` PUT (사용자별, 버전 관리).
-- 감사 로그: 프런트 임시 큐 → `/api/audit/ui` 배치 전송.
+- 감사 로그: 프런트 임시 큐 → `/api/audit/ui/batch` 배치 전송.
 - Access 연결: 암호화된 자격 증명 저장 금지, 경로만 저장.
 
 ## 4. Undo/Redo/Dirty 규칙
@@ -77,10 +77,19 @@ interface RoutingWorkspaceState {
 
 ## 6. 구현 체크리스트
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
+
 - [x] ReactFlow 도입 및 캔버스 컴포넌트 작성
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
+
+- [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
+- [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료)
+
 - [ ] 감사 로그 배치 API 스텁 구현
+- [ ] IndexedDB persistence 유틸 (`idb-keyval`)
+
+- [x] 감사 로그 배치 API 스텁 구현
 - [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
+
 
 ## 7. RoutingCanvas 컴포넌트 구조 (2025-10-03)
 - 경로: `frontend/src/components/routing/RoutingCanvas.tsx` (타임라인 패널과 추천/드래그 드롭 스토어가 공유).
@@ -97,6 +106,10 @@ interface RoutingWorkspaceState {
 | `fitPadding` | `number` | `0.2` | `fitView` 패딩 값 (ReactFlow padding, 단위는 viewport 비율). |
 
 > 향후 확장: `onInit` 콜백을 추가하여 외부에서 ReactFlow 인스턴스를 제어하거나, `edgeTypes`/`nodeTypes` 주입으로 가시화 커스터마이징 지원.
+
+- [ ] 감사 로그 배치 API 스텁 구현
+- [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트 (2025-09-29, Vitest `routing-groups.spec.ts` 통합 시나리오 통과, 로그: `logs/qa/workspace_store_manual_20250929.log`)
+
 
 ## Codex 리뷰 메모 (2025-09-29)
 - Timeline/후보 패널 상태 정의가 현재 프런트엔드 `frontend/src/store/routingWorkspaceStore.ts` 구조와 일치하는지 확인했고, manifest/레지스트리 도입 후에도 API 계약 변경 없이 스토어 필드 재사용 가능함을 검증하였다.
