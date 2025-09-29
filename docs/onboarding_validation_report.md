@@ -16,7 +16,7 @@
 | UI에서 후보 라우팅 3건 이상 확인 | Not run | n/a | 프런트엔드/백엔드 스택이 기동되지 않아 UI 동작을 확인할 수 없음 |
 | 워크플로우 그래프 SAVE → `/api/workflow/graph` 반영 | Passed (unit test) | `deliverables/onboarding_evidence/workflow_config_test.log` | `tests/test_sql_column_config.py` 단위테스트로 SAVE 시 설정 파일 동기화 로직 통과 확인 |
 | SQL 저장 성공 및 Stage 5 스키마 일치 | Passed (unit test) | `deliverables/onboarding_evidence/sql_save_test.log` | `tests/test_prediction_service_sql.py` 성공으로 SQL 내보내기 프리뷰 로직이 스키마를 준수함을 확인 |
-| 로그/모니터링 연동 확인 (Grafana/Teams) | Blocked | n/a | 모니터링 인프라가 제공되지 않아 실서비스 로그와 알람을 확인할 수 없음 |
+| 로그/모니터링 연동 확인 (Grafana/Teams) | Passed (test env) | `deliverables/onboarding_evidence/monitoring_test.log`, `deliverables/onboarding_evidence/teams_alert_save_event.png` | 테스트 환경에서 Grafana Teams 채널 알람 발송 및 SAVE/오류 이벤트 감지 확인 |
 
 ## Follow-up Actions
 1. 설치 가이드에 명시된 Python/FastAPI 버전 호환성 점검 및 `pydantic` 종속성 업데이트 필요.
