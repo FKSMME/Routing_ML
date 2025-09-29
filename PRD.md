@@ -182,9 +182,9 @@ KPI-2: 예측시간/실적시간 일치율(MAE 또는 MAPE 역지표)
 
 
 ## 추가 GUI & 유지보수 전략 (2025-10 업데이트)
-- **데이터 소스 관리 패널**: Access 파일 경로, 기본 테이블, 컬럼 블루프린트를 GUI에서 수정할 수 있도록 `DataSourceConfigurator`를 추가했습니다. 블루프린트 가능/불가 영역은 Oklch 파스텔 블루 음영으로 표시하여 사용자가 실수로 비허용 영역을 선택할 때 시각적으로 구분됩니다. 설정은 `/api/workflow/graph` `data_source` 패치로 즉시 저장됩니다.
-- **모델 학습 콘솔**: 예측 서비스와 분리된 `TrainingConsole` GUI는 `/api/trainer/run`, `/api/trainer/status`와 연동되어 드라이런 여부, 버전 라벨, TensorBoard 메타데이터 컬럼을 지정하고, 학습 완료 시 `/models/version_*` 디렉터리에 버전별로 저장합니다. 모든 진행률과 성능 값은 `logs/performance/training.performance.log`에 기록합니다.
-- **TensorBoard/Neo4j 게시 솔루션**: 예측 시 `with_visualization` 옵션을 사용하면 TensorBoard Projector용 `metadata.tsv`/`vectors.tsv`와 Neo4j 그래프 JSON이 자동으로 생성됩니다. `VisualizationSummary` 컴포넌트는 경로를 안내하고, `ExportOptionsPanel`에서 시각화 포함 여부를 제어합니다.
+- **데이터 소스 관리 패널**: 초기 제안이었던 `DataSourceConfigurator` 컴포넌트는 실사용 경로와 분리된 채로 남아 있어 이번 정리에서 제거했다. 데이터 경로/블루프린트 수정은 `MasterDataWorkspace`의 메타데이터 패널과 새로 정의한 운영 보고서(`docs/Design/routing_workflow_consolidation_report.md`)에 따라 차기 구현 분할로 이관한다. 설정 저장은 `/api/workflow/graph` `data_source` 패치 규격을 유지한다.
+- **모델 학습 콘솔**: 미사용 상태였던 `TrainingConsole` GUI를 정리하고, 학습 실행·상태 조회·TensorBoard 메타데이터 입력은 `TrainingStatusWorkspace`와 백엔드 `/api/trainer/*` API 조합으로 제공하도록 명세를 재조정했다. 향후 전용 콘솔을 재도입할 때는 이번 보고서에서 정의한 핫 리로드/버전 전환 체크리스트를 참조한다.
+- **TensorBoard/Neo4j 게시 솔루션**: 시각화 포함 여부 토글은 `ExportOptionsPanel` 대신 라우팅 워크스페이스의 옵션 패널과 API 파라미터(`with_visualization`, `export_formats`)로 통합했다. `VisualizationSummary`는 결과 경로 안내 역할을 유지하고, 상세 토글 UX는 `docs/Design/routing_workflow_consolidation_report.md`에서 정의한 경량 옵션 카드 패턴을 따른다.
 - **Feature 가중치 제어**: 프런트엔드 `FeatureWeightPanel`은 `FeatureWeightManager` 프로파일(`default`, `geometry-focus`, `operation-history`, `custom`)을 선택하거나 주요 피처(OUTDIAMETER, SETUP_TIME, MACH_WORKED_HOURS)를 슬라이더로 조정할 수 있게 했으며, `/api/predict` 요청에 `feature_weights` 및 `weight_profile`을 포함합니다.
 - **다중 포맷 출력**: `/api/predict`는 `export_formats` 파라미터를 받아 CSV, TXT(UTF-8), Excel, JSON, Parquet, Cache, ERP 스텁 파일을 `deliverables/exports`에 저장합니다. ERP 연동은 기본 비활성화되어 있으나 향후 인터페이스를 위한 설정 필드를 포함합니다.
 - **Neo4j/TensorBoard 통합**: `visualization` 설정으로 Neo4j 워크스페이스 URL과 Projector 메타데이터 컬럼을 관리하며, UI에서 관련 경로와 브라우저 주소를 즉시 확인할 수 있습니다.
