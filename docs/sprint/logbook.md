@@ -15,7 +15,11 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+
+| 2025-10-05 | Phase 5 - QA & Release Prep | Tasklist (9) QA coverage cross-ref | ERP 인터페이스 중복 체크 해소 및 QA/관측 커버리지 증빙 정리 | duplicates_resolved=2, coverage_checks=3 | docs/sprint/routing_enhancement_qa.md (라인 60-74 교차 참조) | pending | Chrome 실사 캡처 확보 후 ⚠️ 항목 해제 |
+
 | 2025-10-03 | Phase 5 - QA & Release Prep | QA audit log dedup | Manual QA audit log duplicates consolidated using Tasklist item 10 evidence | audit_samples_collected=4, duplicates_resolved=2 | logs/audit/routing_installation_task10_20251003.log | in-review – QA Ops acknowledgement pending | Update QA checklist memo & task execution log |
+
 
 | 2025-10-03 | Stage 1 - Routing Refactor | Routing canvas integration | ReactFlow RoutingCanvas 컴포넌트 구현 및 타임라인 패널 연동 | components_added=1, docs_updated=1, logs_updated=3 | frontend/src/components/routing/RoutingCanvas.tsx; docs/Design/routing_state_store_plan.md; logs/task_execution_20251003.log | pending | Add QA harness for drag/drop persistence |
 
