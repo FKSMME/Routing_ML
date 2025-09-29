@@ -13,6 +13,14 @@ from backend.api.schemas import (
     HealthResponse,
     PredictionRequest,
     PredictionResponse,
+    GroupRecommendationRequest,
+    GroupRecommendationResponse,
+    RuleValidationRequest,
+    RuleValidationResponse,
+    SimilaritySearchRequest,
+    SimilaritySearchResponse,
+    TimeSummaryRequest,
+    TimeSummaryResponse,
 )
 from backend.api.services.prediction_service import prediction_service
 from backend.api.security import require_auth
@@ -82,6 +90,108 @@ async def predict(
     except Exception as exc:  # pragma: no cover - 예외 포착
         logger.exception("예측 처리 실패")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+
+@router.post(
+    "/similarity/search",
+    response_model=SimilaritySearchResponse,
+    summary="유사 품목 후보 검색",
+)
+async def similarity_search(
+    request: SimilaritySearchRequest,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> SimilaritySearchResponse:
+    """품목별 유사 후보를 조회한다."""
+    try:
+        response = prediction_service.search_similar_items(request)
+        audit_logger.info(
+            "similarity.search",
+            extra={
+                "username": current_user.username,
+                "items": request.item_codes,
+                "total_matches": response.metrics.get("total_matches"),
+            },
+        )
+        return response
+    except FileNotFoundError as exc:
+        logger.error("모델 경로 오류: %s", exc)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - 방어
+        logger.exception("유사도 검색 실패")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+
+@router.post(
+    "/groups/recommendations",
+    response_model=GroupRecommendationResponse,
+    summary="품목 그룹 추천",
+)
+async def group_recommendations(
+    request: GroupRecommendationRequest,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> GroupRecommendationResponse:
+    """예측 결과와 매니페스트를 바탕으로 그룹을 추천한다."""
+    try:
+        response = prediction_service.recommend_groups(request)
+        audit_logger.info(
+            "groups.recommend",
+            extra={
+                "username": current_user.username,
+                "item_code": request.item_code,
+                "count": len(response.recommendations),
+            },
+        )
+        return response
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover
+        logger.exception("그룹 추천 실패")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+
+@router.post(
+    "/time/summary",
+    response_model=TimeSummaryResponse,
+    summary="공정 시간 요약",
+)
+async def time_summary(
+    request: TimeSummaryRequest,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> TimeSummaryResponse:
+    """공정 데이터를 기반으로 리드타임을 집계한다."""
+    response = prediction_service.summarize_process_times(request)
+    audit_logger.info(
+        "time.summary",
+        extra={
+            "username": current_user.username,
+            "item_code": request.item_code,
+            "process_count": response.process_count,
+        },
+    )
+    return response
+
+
+@router.post(
+    "/rules/validate",
+    response_model=RuleValidationResponse,
+    summary="공정 규칙 검증",
+)
+async def validate_rules(
+    request: RuleValidationRequest,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> RuleValidationResponse:
+    """매니페스트 규칙을 기반으로 공정 데이터를 검증한다."""
+    response = prediction_service.validate_rules(request)
+    audit_logger.info(
+        "rules.validate",
+        extra={
+            "username": current_user.username,
+            "item_code": request.item_code,
+            "evaluated": response.evaluated_rules,
+            "violations": len(response.violations),
+        },
+    )
+    return response
 
 
 @router.post("/candidates/save", response_model=CandidateSaveResponse)

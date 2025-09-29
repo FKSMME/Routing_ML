@@ -14,6 +14,10 @@ from backend.api.routes.rsl import router as rsl_router
 from backend.api.routes.trainer import router as trainer_router
 from backend.api.routes.workflow import router as workflow_router
 from backend.api.routes.workspace import router as workspace_router
+
+from backend.api.routes.master_data import router as master_data_router
+from backend.api.routes.access import router as access_router
+from backend.api.routes.rsl import router as rsl_router
 from common.logger import get_logger
 
 

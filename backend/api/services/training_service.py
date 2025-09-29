@@ -11,9 +11,12 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
+from backend.api.config import get_settings
+from backend.maintenance.model_registry import register_version
 from backend.trainer_ml import train_model_with_ml_improved
 from common.config_store import workflow_config_store
 from common.logger import get_logger
+from models.manifest import write_manifest
 
 performance_logger = get_logger("training.performance", log_dir=Path("logs/performance"))
 logger = get_logger("api.training")
@@ -122,6 +125,8 @@ class TrainingService:
             encoding="utf-8",
         )
 
+        settings = get_settings()
+
         try:
             self._update_status(progress=10, message="데이터 로딩 준비")
             dataset = self._load_dataset(data_cfg)
@@ -140,6 +145,7 @@ class TrainingService:
                 )
 
             duration = time.time() - start_time
+            completed_at = datetime.utcnow()
             metrics = {
                 "duration_sec": round(duration, 2),
                 "samples": sample_count,
@@ -161,6 +167,45 @@ class TrainingService:
                 json.dumps(metrics, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+            manifest_path = version_dir / "manifest.json"
+            manifest_payload = {
+                "version": version_name,
+                "job_id": job_id,
+                "requested_by": requested_by,
+                "started_at": meta["started_at"],
+                "completed_at": completed_at.isoformat(),
+                "artifacts": {
+                    "metrics": str((version_dir / "training_metrics.json").resolve()),
+                },
+                "metrics": metrics,
+            }
+            manifest_path.write_text(
+                json.dumps(manifest_payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            if not dry_run:
+                try:
+                    register_version(
+                        db_path=settings.model_registry_path,
+                        version_name=version_name,
+                        artifact_dir=version_dir.resolve(),
+                        manifest_path=manifest_path.resolve(),
+                        requested_by=requested_by,
+                        trained_at=completed_at,
+                    )
+                except Exception as registry_error:  # pragma: no cover - 관측 목적
+                    logger.exception(
+                        "모델 레지스트리 업데이트 실패", extra={"job_id": job_id, "error": str(registry_error)}
+                    )
+
+
+            try:
+                manifest_path = write_manifest(version_dir, strict=not dry_run)
+                logger.info("매니페스트 생성 완료", extra={"job_id": job_id, "manifest": str(manifest_path)})
+            except Exception as exc:
+                logger.error("매니페스트 생성 실패", extra={"job_id": job_id, "error": str(exc)})
+
+
             if trained is None:
                 logger.info("학습 드라이런 완료", extra={"job_id": job_id})
             else:
