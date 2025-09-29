@@ -27,6 +27,7 @@ import ReactFlow, {
   Position,
   ReactFlowInstance,
   ReactFlowProvider,
+  type NodeTypes,
 } from "reactflow";
 
 const getConnectionLabel = (value: Connection): string | undefined => {
@@ -132,7 +133,15 @@ function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
   );
 }
 
-const nodeTypes = {
+type WorkflowEdgeData = {
+  kind: WorkflowGraphEdge["kind"];
+};
+
+type WorkflowNode = Node<ModuleNodeData>;
+type WorkflowEdge = Edge<WorkflowEdgeData>;
+type WorkflowReactFlowInstance = ReactFlowInstance<ModuleNodeData, WorkflowEdgeData>;
+
+const nodeTypes: NodeTypes = {
   module: ModuleNode,
 };
 
@@ -162,7 +171,7 @@ const INITIAL_FORM: NodeFormState = {
   sqlProfile: "",
 };
 
-const createReactFlowNodes = (nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[] =>
+const createReactFlowNodes = (nodes: WorkflowGraphNode[]): WorkflowNode[] =>
   nodes.map((node) => ({
     id: node.id,
     type: "module",
@@ -182,13 +191,14 @@ const createReactFlowNodes = (nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[
     targetPosition: Position.Left,
   }));
 
-const createReactFlowEdges = (edges: WorkflowGraphEdge[]): Edge[] =>
+const createReactFlowEdges = (edges: WorkflowGraphEdge[]): WorkflowEdge[] =>
   edges.map((edge) => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
     label: edge.label,
     animated: edge.kind !== "data-flow",
+    data: { kind: edge.kind },
     style: {
       stroke:
         edge.kind === "ui-flow"
@@ -456,7 +466,7 @@ export function AlgorithmWorkspace() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [formState, setFormState] = useState<NodeFormState>(INITIAL_FORM);
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<WorkflowReactFlowInstance | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const nodesRef = useRef<WorkflowGraphNode[]>([]);
   const edgesRef = useRef<WorkflowGraphEdge[]>([]);
@@ -513,6 +523,10 @@ export function AlgorithmWorkspace() {
 
   const reactFlowNodes = useMemo(() => createReactFlowNodes(graphNodes), [graphNodes]);
   const reactFlowEdges = useMemo(() => createReactFlowEdges(graphEdges), [graphEdges]);
+
+  const handleInit = useCallback((instance: WorkflowReactFlowInstance) => {
+    setReactFlowInstance(instance);
+  }, []);
 
   const selectedNode = useMemo(
     () => graphNodes.find((node) => node.id === selectedNodeId) ?? null,
@@ -650,14 +664,14 @@ export function AlgorithmWorkspace() {
   }, [formState, persistWorkflow, selectedNode, workflowConfig]);
 
   const handleNodeDoubleClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: React.MouseEvent, node: WorkflowNode) => {
       setSelectedNodeId(node.id);
       setDialogOpen(true);
     },
     [],
   );
 
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: WorkflowNode) => {
     setSelectedNodeId(node.id);
   }, []);
 
@@ -666,7 +680,7 @@ export function AlgorithmWorkspace() {
   }, []);
 
   const handleNodeDragStop = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
+    (_event: React.MouseEvent, node: WorkflowNode) => {
       setGraphNodes((prev) => {
         const next = prev.map((item) =>
           item.id === node.id
@@ -684,7 +698,7 @@ export function AlgorithmWorkspace() {
   );
 
   const handleNodesDelete = useCallback(
-    (deleted: Node[]) => {
+    (deleted: WorkflowNode[]) => {
       if (deleted.length === 0) return;
       setGraphNodes((prev) => {
         const deletedIds = new Set(deleted.map((node) => node.id));
@@ -701,7 +715,7 @@ export function AlgorithmWorkspace() {
   );
 
   const handleEdgesDelete = useCallback(
-    (edgesToDelete: Edge[]) => {
+    (edgesToDelete: WorkflowEdge[]) => {
       if (edgesToDelete.length === 0) return;
       setGraphEdges((prev) => {
         const deleteIds = new Set(edgesToDelete.map((edge) => edge.id));
@@ -716,20 +730,22 @@ export function AlgorithmWorkspace() {
   const handleConnect = useCallback(
     (connection: Connection) => {
       const { source, target } = connection;
-      if (!source || !target) return;
+      if (source == null || target == null) return;
+      const sourceId = typeof source === "string" ? source : String(source);
+      const targetId = typeof target === "string" ? target : String(target);
       setGraphEdges((prev) => {
         const alreadyExists = prev.some(
-          (edge) => edge.source === source && edge.target === target,
+          (edge) => edge.source === sourceId && edge.target === targetId,
         );
         if (alreadyExists) {
           return prev;
         }
-        const id = `${source}-${target}-${Date.now().toString(36)}`;
+        const id = `${sourceId}-${targetId}-${Date.now().toString(36)}`;
         const connectionLabel = getConnectionLabel(connection);
         const newEdge: WorkflowGraphEdge = {
           id,
-          source,
-          target,
+          source: sourceId,
+          target: targetId,
           kind: "data-flow",
           label: connectionLabel,
         };
@@ -873,7 +889,7 @@ export function AlgorithmWorkspace() {
               nodeTypes={nodeTypes}
               nodes={reactFlowNodes}
               edges={reactFlowEdges}
-              onInit={setReactFlowInstance}
+              onInit={handleInit}
               onDrop={onDrop}
               onDragOver={onDragOver}
               onNodeClick={handleNodeClick}

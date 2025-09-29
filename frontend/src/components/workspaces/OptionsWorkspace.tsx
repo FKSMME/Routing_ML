@@ -159,39 +159,40 @@ const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undef
   if (!workflow) {
     return [];
   }
+
   const candidates: ColumnMappingRow[] = [];
   const asAny = workflow as unknown as Record<string, unknown>;
   const collect = (value: unknown, scope?: string) => {
     candidates.push(...normalizeMappingCandidate(value, scope));
   };
 
-  collect(asAny.column_mappings);
-  collect(asAny.column_mapping);
+  collect(asAny["column_mappings"]);
+  collect(asAny["column_mapping"]);
 
   if (workflow.graph?.nodes) {
     workflow.graph.nodes.forEach((node) => {
       if (node.settings && typeof node.settings === "object") {
         const settings = node.settings as Record<string, unknown>;
         if ("column_mappings" in settings) {
-          collect(settings.column_mappings, node.label || node.id);
+          collect(settings["column_mappings"], node.label || node.id);
         }
         if ("column_mapping" in settings) {
-          collect(settings.column_mapping, node.label || node.id);
+          collect(settings["column_mapping"], node.label || node.id);
         }
       }
     });
   }
 
-  if (isRecord(workflow.data_source)) {
-    const dataSource = workflow.data_source;
-    collect(dataSource.column_mappings, "Data Source");
-    collect(dataSource.column_mapping, "Data Source");
+  const dataSourceUnknown = workflow.data_source as unknown;
+  if (isRecord(dataSourceUnknown)) {
+    collect(dataSourceUnknown["column_mappings"], "Data Source");
+    collect(dataSourceUnknown["column_mapping"], "Data Source");
   }
 
-  if (isRecord(workflow.sql)) {
-    const sql = workflow.sql;
-    collect(sql.column_mappings, "Output");
-    collect(sql.column_mapping, "Output");
+  const sqlUnknown = workflow.sql as unknown;
+  if (isRecord(sqlUnknown)) {
+    collect(sqlUnknown["column_mappings"], "Output");
+    collect(sqlUnknown["column_mapping"], "Output");
   }
 
   return dedupeMappings(candidates);
