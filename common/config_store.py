@@ -613,14 +613,27 @@ class WorkflowConfigStore:
         with self._lock:
             current = self._load_locked()
             merged = _deep_merge(current, patch)
-            merged["updated_at"] = datetime.utcnow().isoformat()
-            self.path.write_text(
-                json.dumps(merged, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
-            self._cache = merged
+            result = self._write_snapshot_locked(merged)
             logger.info("워크플로우 설정 업데이트: keys=%s", list(patch.keys()))
-            return json.loads(json.dumps(merged))
+            return result
+
+    def apply_patch_atomic(self, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+        """사전 검증된 스냅샷을 원자적으로 저장한다."""
+
+        if not isinstance(snapshot, dict):
+            raise TypeError("snapshot must be a dictionary")
+        with self._lock:
+            return self._write_snapshot_locked(snapshot)
+
+    def _write_snapshot_locked(self, snapshot: Dict[str, Any]) -> Dict[str, Any]:
+        prepared = json.loads(json.dumps(snapshot))
+        prepared["updated_at"] = datetime.utcnow().isoformat()
+        self.path.write_text(
+            json.dumps(prepared, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        self._cache = prepared
+        return json.loads(json.dumps(prepared))
 
     def get_graph(self) -> WorkflowGraphConfig:
         data = self.load().get("graph", {})
