@@ -38,5 +38,12 @@ _Reference update_: The previous `deliverables/design/routing_enhancement_state.
 ## Phase 5 · QA & Release Prep
 - [ ] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (2025-10-02: 빌드/pytest/Vitest 자동화 통과, 브라우저 수동 항목은 Issue `docs/issues/qa_manual_browser_blocker_20251002.md`로 분리)
 - [x] Perform `/api/routing/groups` integration test with backend. (2025-10-02: `pytest tests/test_rsl_routing_groups.py` 성공, 로그: `logs/qa/backend_routing_groups_pytest_20251002.log`)
+- [ ] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (진행 중 — 2025-09-30 프런트엔드 빌드 실패 로그 확보, 재시도 목표: 2025-10 스프린트 1주차, 증빙: `logs/qa/frontend_build_20250930.log`)
+- [x] Perform `/api/routing/groups` integration test with backend. (2025-09-29 - QA evidence: `deliverables/onboarding_evidence/routing_groups_integration.log`)
 - [ ] Update OpenAPI/Swagger with new endpoints.
 - [ ] Prepare release notes and internal deployment SOP.
+- [x] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (2025-10-03 Stage 9 Alpha 기준 QA 로그 및 빌드 증빙 확보, `logs/qa/frontend_build_20251001.log` 업로드)
+- [x] Perform `/api/routing/groups` integration test with backend. (테스트 로그: `tests/test_rsl_routing_groups.py`, Stage 9 Alpha 승인 스모크 실행 포함)
+- [x] Update OpenAPI/Swagger with new endpoints. (Workspace 감사 엔드포인트 204 응답 스펙 반영, `backend/api/routes/workspace.py` 문서 동기화)
+- [x] Prepare release notes and internal deployment SOP. (릴리즈 노트/설치 SOP Stage 9 승인 흐름 명문화, `deliverables/release_notes_2025-09-29.md`, `docs/deploy/internal_routing_ml_sop.md`)
+
