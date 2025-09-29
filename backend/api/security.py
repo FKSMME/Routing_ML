@@ -1,57 +1,58 @@
-"""FastAPI dependencies for session-based authentication."""
+"""FastAPI dependencies for JWT 기반 인증."""
 from __future__ import annotations
 
 from fastapi import Depends, Header, HTTPException, Request, status
 
+from backend.api.config import get_settings
 from backend.api.schemas import AuthenticatedUser
-from backend.api.session_manager import (
-    SessionManager,
-    SessionRecord,
-    get_session_manager,
-)
+from backend.api.services.auth_service import auth_service
+
+settings = get_settings()
 
 
-def _extract_token(authorization: str) -> str:
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authorization 헤더가 필요합니다",
-        )
-    scheme, _, param = authorization.partition(" ")
-    if scheme.lower() != "bearer" or not param:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Bearer 토큰이 필요합니다",
-        )
-    return param
+def _extract_token(request: Request, authorization: str | None) -> str:
+    cookie_token = request.cookies.get(settings.jwt_cookie_name)
+    if cookie_token:
+        return cookie_token
+    if authorization:
+        scheme, _, param = authorization.partition(" ")
+        if scheme.lower() == "bearer" and param:
+            return param
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="인증 토큰이 필요합니다",
+    )
 
 
 async def get_current_user(
     request: Request,
-    authorization: str = Header(..., alias="Authorization"),
+    authorization: str | None = Header(None, alias="Authorization"),
 ) -> AuthenticatedUser:
-    token = _extract_token(authorization)
-    session = get_session_manager().validate(token)
-    if session is None:
+    token = _extract_token(request, authorization)
+    try:
+        user = auth_service.validate_token(token)
+    except PermissionError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="세션이 유효하지 않습니다",
-        )
-
+            detail=str(exc),
+        ) from exc
     client_host = request.client.host if request.client else None
-    if client_host and client_host != session.client_host:
-        session.client_host = client_host
-    return session.to_user()
+    if client_host:
+        user.client_host = client_host
+    return user
 
 
 async def require_auth(user: AuthenticatedUser = Depends(get_current_user)) -> AuthenticatedUser:
     return user
 
 
-__all__ = [
-    "SessionManager",
-    "SessionRecord",
-    "get_session_manager",
-    "get_current_user",
-    "require_auth",
-]
+async def require_admin(user: AuthenticatedUser = Depends(require_auth)) -> AuthenticatedUser:
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="관리자 권한이 필요합니다",
+        )
+    return user
+
+
+__all__ = ["get_current_user", "require_auth", "require_admin"]

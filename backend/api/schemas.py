@@ -1,4 +1,4 @@
-﻿"""FastAPI??Pydantic ?ㅽ궎留??뺤쓽."""
+"""FastAPI??Pydantic ?ㅽ궎留??뺤쓽."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -14,33 +14,71 @@ ensure_forward_ref_compat()
 
 
 class LoginRequest(BaseModel):
-    """Windows ?몄쬆 濡쒓렇???붿껌."""
+    """로그인 요청 페이로드."""
 
-    username: str = Field(..., min_length=1, description="Windows ?ъ슜??ID")
-    password: str = Field(..., min_length=1, description="Windows 鍮꾨?踰덊샇")
+    username: str = Field(..., min_length=1, description="로그인 ID")
+    password: str = Field(..., min_length=1, description="비밀번호")
+
+
+class RegisterRequest(BaseModel):
+    """신규 사용자 등록 요청."""
+
+    username: str = Field(..., min_length=1, description="로그인 ID")
+    password: str = Field(..., min_length=1, description="비밀번호")
+    display_name: Optional[str] = Field(
+        default=None, description="사용자에게 표시할 이름"
+    )
+
+
+class RegisterResponse(BaseModel):
+    """가입 요청 결과."""
+
+    username: str
+    status: Literal["pending", "approved", "rejected"]
+    is_admin: bool = False
+    message: str
 
 
 class LoginResponse(BaseModel):
-    """濡쒓렇???묐떟."""
+    """로그인 응답."""
 
     username: str
     display_name: Optional[str] = None
-    domain: Optional[str] = None
+    status: Literal["pending", "approved", "rejected"]
+    is_admin: bool = False
     token: str
     issued_at: datetime
     expires_at: datetime
 
 
 class AuthenticatedUser(BaseModel):
-    """?몄뀡 寃利???FastAPI ?쇱슦?곌? ?ъ슜?섎뒗 ?ъ슜???뺣낫."""
+    """JWT 인증을 통해 확인된 사용자."""
 
     username: str
     display_name: Optional[str] = None
-    domain: Optional[str] = None
+    status: Literal["pending", "approved", "rejected"]
+    is_admin: bool = False
     issued_at: datetime
     expires_at: datetime
-    session_id: str
+    session_id: Optional[str] = None
     client_host: Optional[str] = None
+
+
+class AdminApproveRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    make_admin: bool = False
+
+
+class AdminRejectRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    reason: Optional[str] = None
+
+
+class UserStatusResponse(BaseModel):
+    username: str
+    display_name: Optional[str] = None
+    status: Literal["pending", "approved", "rejected"]
+    is_admin: bool = False
 
 
 class PredictionRequest(BaseModel):
