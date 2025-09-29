@@ -17,7 +17,7 @@
 - `backend/api/routes/access.py`: Access 메타데이터 조회(`/api/access/metadata`). 【F:backend/api/routes/access.py†L1-L33】
 - `backend/api/routes/workflow.py`: 워크플로우 그래프/런타임 구성 PATCH(`/api/workflow/graph`). 【F:backend/api/routes/workflow.py†L35-L152】
 - `backend/api/routes/workspace.py`: UI 설정 저장/감사(`/api/settings/workspace`, `/api/access/connection/test`, `/api/audit/ui`). 【F:backend/api/routes/workspace.py†L52-L139】
-- `backend/api/routes/rsl.py`: 라우팅 그룹 CRUD(`/api/routing/groups`) 및 감사 로깅.
+- `backend/api/routes/rsl.py`: 라우팅 그룹 CRUD(`/api/rsl/groups`) 및 감사 로깅. 【F:backend/api/routes/rsl.py†L34-L114】
 - `backend/api/routes/trainer.py`: 학습 상태/메트릭/피처 토글 API.
 - `backend/api/services/*`: 마스터 데이터/워크플로우/예측/학습 등 비즈니스 로직 계층.
 - `common/config_store.py`: Manifest/Registry, SQL 출력, 옵션, 시각화 설정 저장소.
@@ -41,14 +41,14 @@ python -m backend.run_api
 | 워크플로우 | `/api/workflow/graph` | GET/PATCH | `WorkflowConfigResponse`/`WorkflowConfigPatch` | `workflow.graph.read`/`workflow.graph.patch` 【F:backend/api/routes/workflow.py†L96-L152】 |
 | UI 설정 | `/api/settings/workspace` | GET/PUT | `WorkspaceSettingsResponse`/`WorkspaceSettingsPayload` | `workspace.settings.save` 【F:backend/api/routes/workspace.py†L52-L111】 |
 | UI 감사 | `/api/audit/ui` | POST | `AuditEvent` | `workspace.audit` 【F:backend/api/routes/workspace.py†L113-L133】 |
-| 라우팅 그룹 | `/api/routing/groups` | GET/POST | `RoutingGroupListResponse`/`RoutingGroupCreateRequest` | `rsl.group.save`, `rsl.group.list` |
+| 라우팅 그룹 | `/api/rsl/groups` | GET/POST | `RslGroupListResponse`/`RslGroupCreate` | `rsl.group.create`, `rsl.groups.list` 【F:backend/api/routes/rsl.py†L34-L114】 |
 | 학습 현황 | `/api/trainer/status` | GET | `TrainingStatus` | `trainer.status.read` |
 | 학습 현황 | `/api/trainer/metrics` | GET | `TrainingMetricsResponse` | `trainer.metrics.read` |
 | 학습 현황 | `/api/trainer/features` | GET/PATCH | `TrainingFeatureWeight` | `trainer.features.save` |
 
 ## 4. 예측 & 라우팅 흐름
 1. `/api/predict` 호출 시 요청 파라미터를 검증하고 manifest/registry 메타정보 기반으로 모델과 HNSW 인덱스를 로드한다.
-2. 추천 결과는 타임라인/후보 리스트로 직렬화되며, `RoutingGroupControls`가 그룹 저장 시 `/api/routing/groups`에 `erp_required`·`steps` 정보를 전달한다.
+2. 추천 결과는 타임라인/후보 리스트로 직렬화되며, `RoutingGroupControls`가 그룹 저장 시 `/api/rsl/groups` 호출에 맞춰 `name`/`tags`/`steps`를 전달하도록 조정이 필요하다. 현재 백엔드는 `erp_required` 필드를 무시한다. 【F:tests/test_rsl_routing_groups.py†L89-L148】
 3. `/api/workflow/graph` PATCH는 그래프/런타임/SQL/데이터소스/시각화 설정을 atomic하게 갱신하고, `workflow_config_store`가 JSON 스냅샷을 유지한다. 【F:backend/api/routes/workflow.py†L70-L152】
 4. `/api/settings/workspace` PUT은 UI 탭/레이아웃/옵션 상태를 JSON 파일로 저장하면서 mapping scope/개수를 감사 로그에 기록한다. 【F:backend/api/routes/workspace.py†L52-L111】
 
@@ -65,6 +65,7 @@ python -m backend.run_api
 - OpenAPI 문서는 FastAPI `/docs` 또는 향후 `python -m backend.run_api --export-openapi` 스크립트로 추출한다.
 - `docs/requirements_traceability_matrix.md`는 상기 엔드포인트를 요구사항 ID에 매핑하여 업데이트 완료.
 - `scripts/run_quality_checks.sh`는 ruff/black/pytest/OpenAPI 검증을 순차 수행하도록 구성되어 있으며, CI 파이프라인과 동일 단계로 통합한다.
+- `tests/test_rsl_routing_groups.py`는 `/api/rsl/groups` 성공/충돌/ERP 플래그 무시 시나리오를 커버한다. 【F:tests/test_rsl_routing_groups.py†L19-L148】
 
 ## 7. 승인 & 추적
 - `docs/sprint/logbook.md` 2025-09-29 "Execution Report" 항목에 API/로그 명세 검토 완료 기록이 존재한다.
