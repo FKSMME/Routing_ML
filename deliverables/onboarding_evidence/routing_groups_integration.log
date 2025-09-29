@@ -1,0 +1,14 @@
+# /api/routing/groups integration verification
+# Backend server launched via uvicorn (python - <<'PY' ... uvicorn.run(...))
+
+[2025-09-29T08:36:16Z] LOGIN POST /api/auth/login -> 200
+Request: {"username":"qa_user","password":"Secret123!"}
+Response: {"username":"qa_user","display_name":"QA User","status":"approved","is_admin":true,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJxYV91c2VyIiwiaWF0IjoxNzU5MTM0OTk0LCJleHAiOjE3NTkxMzg1OTQsImp0aSI6ImY0ZmVkNTE5Y2RmZDRiMTRhM2ZiYzgzMDA1ZDJjM2MzIiwiZGlzcGxheV9uYW1lIjoiUUEgVXNlciIsInN0YXR1cyI6ImFwcHJvdmVkIiwiaXNfYWRtaW4iOnRydWV9.AIWwhWUb6fwclzwj1nl2qF6FLcDEHm_E3J0gigZTSsM","issued_at":"2025-09-29T08:36:34.504092","expires_at":"2025-09-29T09:36:34.504092"}
+
+[2025-09-29T08:36:20Z] SUCCESS GET /api/routing/groups -> 200
+Headers: Authorization: Bearer <redacted>
+Response Body: {"items":[],"pagination":{"limit":20,"offset":0,"total":0}}
+
+[2025-09-29T08:36:21Z] ERROR GET /api/routing/groups -> 401
+Headers: (none)
+Response Body: {"detail":"인증 토큰이 필요합니다"}

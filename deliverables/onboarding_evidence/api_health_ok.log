@@ -1,0 +1,8 @@
+# FastAPI health check verification (Python 3.12)
+# Command: uvicorn backend.run_api:app --reload
+INFO     Will watch for changes in these directories: ['/workspace/Routing_ML']
+INFO     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO     Application startup complete.
+INFO     127.0.0.1 - "GET /api/health HTTP/1.1" 200 OK
+# Command: curl http://127.0.0.1:8000/api/health
+{"status":"ok","detail":null}

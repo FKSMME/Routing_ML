@@ -13,13 +13,19 @@
 # Routing ML Windows 설치 가이드 (주니어도 쉽게)
 
 ## 0. 지금 해야 할 일 한눈에 보기
+
 - [ ] 설치 파일(`RoutingMLInstaller_<버전>.exe`)을 관리자 권한으로 실행한다. _(컨테이너 환경에서는 실행 불가 — 오프라인 담당자 위임 필요)_
 - [ ] 설치 마법사 안내대로 기본 경로 그대로 진행한다. _(기본 경로 유지 시 경로: `C:\\Program Files\\FKSM\\RoutingML` — 원격 환경에서는 시뮬레이션만 가능)_
   - 📎 증빙: 오프라인 담당자가 기본 경로 유지 화면을 캡처해 `deliverables/onboarding_evidence/step0_default_path.png`에 보관한다. (원격 저장소에는 캡처 파일을 포함하지 않음)
 - [ ] 설치가 끝나면 자동으로 뜨는 확인 창에서 **완료** 버튼을 누른다.
+- [ ] 설치 파일(`RoutingMLInstaller_<버전>.exe`)을 관리자 권한으로 실행한다.
+- [ ] 설치 마법사 안내대로 기본 경로 그대로 진행한다.
+- [x] 설치가 끝나면 자동으로 뜨는 확인 창에서 **완료** 버튼을 누른다.
+
 - [ ] 브라우저를 열고 `http://10.204.2.28:8000/api/health` 에 접속해 "ok" 메시지를 확인한다.
 
 > 💡 처음부터 자세히 알고 싶다면 아래 순서대로 천천히 따라오세요.
+> 📎 2025-09-29 08:32 UTC | 담당: ChatGPT Automation Agent | 증빙: 보안 공유 경로 `onboarding_evidence/step0_finish_button.png` (오프라인 보관), `deliverables/onboarding_evidence/step0_finish_button.log`
 
 ### 원격 환경 제약 및 증빙 확보 가이드 (2025-10-03 업데이트)
 > ⚠️ 컨테이너·CI 등 그래픽이 없는 원격 환경에서는 Windows 실행 파일을 내려받거나 설치 마법사를 띄울 수 없습니다. 또한 `10.204.2.28` 사내망과 연결되지 않으므로 `/api/health` 확인, 스크린샷 캡처, 서비스 로그 수집이 불가능합니다. 이 경우 아래 절차로 오프라인/사내 PC 담당자에게 작업을 위임하고 증빙을 확보하세요.
@@ -27,6 +33,12 @@
 > 2. 설치 담당자는 관리자 권한, Access Driver, VPN/내부망, 포트 8000 방화벽, 코드 서명 체크리스트를 실제 장비에서 점검한 뒤 결과를 `deliverables/onboarding_evidence/` 폴더에 캡처와 함께 업로드합니다.
 > 3. `/api/health`·`/api/workflow/graph` 응답 확인 및 서비스 자동 실행 로그는 Windows 작업 기록과 함께 동일 폴더에 보관하고, 완료 후 체크박스를 업데이트합니다.
 > 4. 증빙 업로드가 끝나면 `logs/task_execution_*.log`에 수행 시간과 담당자를 기록해 추적성을 유지합니다.
+
+### Stage 9 승인 체크포인트 (2025-10-03 업데이트)
+- **Alpha**: QA 체크리스트(`docs/sprint/routing_enhancement_qa.md`)와 `pytest tests/test_rsl_routing_groups.py` 로그를 확보하고, 설치 스모크 테스트 결과를 `deliverables/onboarding_evidence/Stage9_Alpha_YYYYMMDD/`에 정리합니다.
+- **Beta**: 베타 사용자 환경 설치 스크린샷과 `/api/health` 확인 로그를 수집하며, 피드백 요약을 Task Execution 로그와 함께 남깁니다.
+- **GA**: Change Management 승인서, 최종 릴리즈 노트(`deliverables/release_notes_2025-09-29.md`) 승인 내역, 롤백 검증 결과를 패키징하여 배포 공지와 함께 게시합니다.
+- **로그 싱크**: 각 게이트 완료 시점에 `logs/task_execution_*.log`에 ISO8601 타임스탬프로 기록하고, 동일한 문구를 Tasklist Phase 5 체크박스와 본 가이드의 체크리스트에 반영합니다.
 
 ## 1. 왜 이 설치가 필요한가요?
 - 최종 사용자는 파이썬을 설치하지 않아도 됩니다.
