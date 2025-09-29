@@ -8,6 +8,10 @@
 - [x] Complete Codex self-review and archive decision in docs/logs/codex_activity_log.md.
 
 ## Phase 1 · Design Alignment
+_Reference update_: The previous `deliverables/design/routing_enhancement_state.png` snapshot was removed to comply with the binary asset policy. Key takeaways from that mock are:
+1. Global navigation groups "Overview · Candidates · Timeline" across the top bar with contextual status badges.
+2. The Save panel anchors to the right column with primary/secondary CTA buttons aligned to the bottom edge.
+3. Timeline cards stack vertically with drag handles on the left and real-time KPI chips on the right.
 - [ ] Review `docs/Design/samples` and capture reusable UI tokens/components.
 - [ ] Finalize navigation labels/order and encoding fix in frontend.
 - [ ] Update design specs for all menus (`routing_enhancement_plan.md`, `routing_state_store_plan.md`, new gap analysis).
