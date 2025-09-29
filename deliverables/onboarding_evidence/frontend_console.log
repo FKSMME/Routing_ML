@@ -1,0 +1,17 @@
+[DEBUG] [vite] connecting...
+[DEBUG] [vite] connected.
+[INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e1. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e2. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e3. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e1. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e2. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: e3. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-6f24a164-71c8-4d41-808f-0099deacdeb2-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982-c0ebc189-2336-4bc1-978a-782d45710f46. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-6f24a164-71c8-4d41-808f-0099deacdeb2-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982-c0ebc189-2336-4bc1-978a-782d45710f46. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-6f24a164-71c8-4d41-808f-0099deacdeb2-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982-c0ebc189-2336-4bc1-978a-782d45710f46. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-6f24a164-71c8-4d41-808f-0099deacdeb2-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982. Help: https://reactflow.dev/error#008
+[WARNING] [React Flow]: Couldn't create edge for source handle id: "undefined", edge id: edge-ae11e5aa-dcaa-465e-8c8a-a41c6dd13982-c0ebc189-2336-4bc1-978a-782d45710f46. Help: https://reactflow.dev/error#008
