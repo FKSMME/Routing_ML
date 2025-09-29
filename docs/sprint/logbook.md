@@ -71,6 +71,7 @@
 | 2025-09-29 | Step 1 - Routing Refactor | Execution Report | 전체 워크플로우 중복 점검 및 로그 동기화 보고 | analysis_time_min=40, documents_added=1, tasks_remaining=0 | docs/Design/routing_refactor_execution_report.md | approved (2025-09-29 12:45 KST) | 로그 검증 자동화 스크립트 설계 검토 |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/Design/routing_workflow_final_validation.md | 최종 워크플로우 검증 보고 및 로그 동기화 | documents_added=1, workflow_checks=4, tasks_remaining=0 | docs/Design/routing_workflow_final_validation.md | approved (2025-09-29 12:49 KST) | 로그 자동 검증 훅 설계 착수 |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/Design/routing_workflow_consolidation_report.md | 워크플로우 정비 보고서 작성 및 미사용 컴포넌트 정리 | documents_added=1, components_removed=3, workflow_checks=3, tasks_remaining=0 | docs/Design/routing_workflow_consolidation_report.md | approved (2025-09-29 12:57 KST) | 데이터 소스/옵션 패널 재구현 시 테스트 추가 |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Responsive layout audit @1280px | Chrome DevTools responsive mode review; both side panels remain expanded at 1280px width. | master_column_left=260px, master_column_center=852px, master_column_right=260px | deliverables/onboarding_evidence/layout_ratio_1280.png · deliverables/onboarding_evidence/layout_ratio_1280.log | pending | Validate overflow handling in center grid |
 
 
 ---
