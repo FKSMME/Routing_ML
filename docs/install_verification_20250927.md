@@ -8,6 +8,11 @@
 - 현재 리포지토리에는 `RoutingMLInstaller_*.exe` 파일이 존재하지 않는다. `find` 명령으로 확인한 결과 설치 실행 파일이 배포되지 않았음.【2da467†L1-L2】
 - Windows 환경이 아닌 Linux 컨테이너이므로 관리자 권한 실행 및 설치 마법사 실행은 수행 불가.
 
+### 0.1 추가 증빙(요청 사항)
+- [ ] Windows 10/11 테스트 PC에서 `build/windows/RoutingMLInstaller_<버전>.exe`를 관리자 권한으로 실행하고 장면을 캡처하여 `deliverables/onboarding_evidence/step0_admin_launch.png`에 업로드.
+  - 현 개발 환경에서는 Windows GUI를 사용할 수 없으므로 실제 설치 파일 실행과 화면 캡처를 수행하지 못함.
+  - 캡처와 실행 로그가 확보될 경우, 해당 파일 경로와 상세 절차를 본 섹션에 추가 기록해야 함.
+
 ## 1~2. 사전 요구사항 체크
 - **Access ODBC 드라이버**: `pyodbc.drivers()` 호출 결과 빈 배열이 반환되어 Microsoft Access ODBC 드라이버가 설치되어 있지 않음을 확인함.【e6bdbb†L1-L5】
 - **기타 항목**(관리자 권한, VPN, 방화벽 등)은 컨테이너 환경 특성상 확인 불가하므로 후속 Windows 배포 시 별도 검증 필요.
