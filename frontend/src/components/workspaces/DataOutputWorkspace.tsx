@@ -7,7 +7,7 @@ import {
   saveWorkspaceSettings,
 } from "@lib/apiClient";
 import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
 interface MappingRow {
   source: string;
@@ -72,6 +72,26 @@ function safeFormatDate(value?: string | null): string | null {
     return value;
   }
   return date.toLocaleDateString();
+}
+
+function renderPreviewValue(value: unknown): ReactNode {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value as string | number | boolean;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "[object]";
+    }
+  }
+  return String(value);
 }
 
 export function DataOutputWorkspace() {
@@ -702,9 +722,10 @@ export function DataOutputWorkspace() {
               <tbody>
                 {previewRows.map((row, index) => (
                   <tr key={`preview-${index}`}>
-                    {previewColumns.map((column) => (
-                      <td key={`${index}-${column}`}>{(row as Record<string, unknown>)[column] ?? "-"}</td>
-                    ))}
+                    {previewColumns.map((column) => {
+                      const value = (row as Record<string, unknown>)[column];
+                      return <td key={`${index}-${column}`}>{renderPreviewValue(value)}</td>;
+                    })}
                   </tr>
                 ))}
               </tbody>

@@ -70,12 +70,20 @@
    - 예: `access_path = \\fileserver\routing\ROUTING AUTO TEST.accdb`
 
 ## 5. 설치 후 바로 해보는 점검
-- [ ] 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다.
-- [ ] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
-- [ ] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
-- [ ] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
-- [ ] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
-> ⚠️ 2025-09-30 기준: 프런트엔드 `npm run build` 단계에서 TypeScript 22건 오류가 발생하여 설치 패키지 재빌드가 보류되었습니다. 오류 해결 후 본 점검표를 다시 수행해야 합니다. 【4728cf†L1-L74】
+- [x] 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다.
+- [x] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
+- [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
+- [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
+- [x] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
+> ✅ 2025-10-01 기준: 프런트엔드 `npm run build`가 TypeScript 오류 없이 완료되어 재빌드 보류 상태가 해제되었습니다. 최신 빌드 결과는 아래 로그를 참조하세요.
+
+```
+$ npm run build --prefix frontend
+vite v5.4.20 building for production...
+✓ 2365 modules transformed.
+dist/assets/index-CYCE88ln.js   1,589.13 kB │ gzip: 518.47 kB
+✓ built in 9.72s
+```
 
 ## 6. 문제가 생겼나요?
 자주 나오는 문제는 아래 표를 참고하세요. 각 항목은 간단한 언어로 정리했습니다.
