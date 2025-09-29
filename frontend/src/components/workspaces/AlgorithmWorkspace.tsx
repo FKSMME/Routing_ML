@@ -29,6 +29,13 @@ import ReactFlow, {
   ReactFlowProvider,
 } from "reactflow";
 
+const getConnectionLabel = (value: Connection): string | undefined => {
+  if ("label" in value && typeof (value as { label?: unknown }).label === "string") {
+    return (value as { label: string }).label;
+  }
+  return undefined;
+};
+
 interface NodeLibraryItem {
   id: string;
   label: string;
@@ -708,21 +715,23 @@ export function AlgorithmWorkspace() {
 
   const handleConnect = useCallback(
     (connection: Connection) => {
-      if (!connection.source || !connection.target) return;
+      const { source, target } = connection;
+      if (!source || !target) return;
       setGraphEdges((prev) => {
         const alreadyExists = prev.some(
-          (edge) => edge.source === connection.source && edge.target === connection.target,
+          (edge) => edge.source === source && edge.target === target,
         );
         if (alreadyExists) {
           return prev;
         }
-        const id = `${connection.source}-${connection.target}-${Date.now().toString(36)}`;
+        const id = `${source}-${target}-${Date.now().toString(36)}`;
+        const connectionLabel = getConnectionLabel(connection);
         const newEdge: WorkflowGraphEdge = {
           id,
-          source: connection.source,
-          target: connection.target,
+          source,
+          target,
           kind: "data-flow",
-          label: connection.label,
+          label: connectionLabel,
         };
         const nextEdges = [...prev, newEdge];
         pushSnapshot({ nodes: nodesRef.current, edges: nextEdges }, "connect");

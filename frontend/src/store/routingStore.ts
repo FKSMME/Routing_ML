@@ -572,9 +572,16 @@ const scheduleSnapshotSave = (selection: PersistedSelectionState) => {
   }, SNAPSHOT_DEBOUNCE_MS);
 };
 
-useRoutingStore.subscribe(persistedSelector, (selection) => {
-  scheduleSnapshotSave(selection);
-}, { equalityFn: shallow });
+let lastPersistedSelection: PersistedSelectionState | null = null;
+
+useRoutingStore.subscribe((state) => {
+  const nextSelection = persistedSelector(state);
+  if (lastPersistedSelection && shallow(lastPersistedSelection, nextSelection)) {
+    return;
+  }
+  lastPersistedSelection = nextSelection;
+  scheduleSnapshotSave(nextSelection);
+});
 
 const restoreLatestSnapshot = async () => {
   try {
@@ -613,7 +620,6 @@ const restoreLatestSnapshot = async () => {
         dirty: computeDirty(normalizedTimeline, successMap, activeProductId),
       }),
       false,
-      "routing.snapshot.restore",
     );
 
     await enqueueAuditEntry({
