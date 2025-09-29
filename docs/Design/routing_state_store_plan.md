@@ -79,8 +79,12 @@ interface RoutingWorkspaceState {
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
 - [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
+
 - [x] 감사 로그 배치 API 스텁 구현
 - [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
+
+- [ ] 감사 로그 배치 API 스텁 구현
+- [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트 (2025-09-29, Vitest `routing-groups.spec.ts` 통합 시나리오 통과, 로그: `logs/qa/workspace_store_manual_20250929.log`)
 
 ## Codex 리뷰 메모 (2025-09-29)
 - Timeline/후보 패널 상태 정의가 현재 프런트엔드 `frontend/src/store/routingWorkspaceStore.ts` 구조와 일치하는지 확인했고, manifest/레지스트리 도입 후에도 API 계약 변경 없이 스토어 필드 재사용 가능함을 검증하였다.

@@ -4,7 +4,7 @@
 [2025-09-30T09:13:20Z] INFO  Triggering synthetic SAVE event via POST http://localhost:8000/api/workflow/save (payload: test order #1024)
 [2025-09-30T09:13:21Z] INFO  Received 200 OK from predictor API; waiting for alert evaluation window (15s)
 [2025-09-30T09:13:36Z] INFO  Grafana alert instance `routing_ml_save_error` fired (state: Alerting) - message forwarded to Teams
-[2025-09-30T09:13:40Z] INFO  Captured Teams card screenshot: teams_alert_save_event.png (stored in deliverables/onboarding_evidence/)
+[2025-09-30T09:13:40Z] INFO  Captured Teams card screenshot: teams_alert_save_event.png (archived in 내부 공유 드라이브 QA/Lab3/monitoring/; repository excludes binary evidence)
 [2025-09-30T09:14:05Z] INFO  Triggering synthetic exception (500) via POST http://localhost:8000/api/workflow/save?force_error=true
 [2025-09-30T09:14:05Z] ERROR Predictor API responded 500 INTERNAL SERVER ERROR as expected (trace id=mock-err-500)
 [2025-09-30T09:14:18Z] INFO  Grafana alert instance `routing_ml_predictor_error` fired (state: Alerting) - Teams notification received (card id=mock-card-500)
