@@ -35,16 +35,17 @@
 - [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
 
 
+
 - [x] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청 (2025-09-29 09:05 완료)
 - [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
 - [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
+
 
 - [x] Refactoring execution plan 초안 작성 (`docs/Design/routing_refactor_execution_plan.md`) (2025-09-29 09:41 KST 완료)
 
 ### Step 1 Follow-up Execution (10-stage track)
 
 - [x] (1) 계약 정렬 그룹 준비 – manifest/registry 절대 지침 재검토 (`docs/sprint/next_stage_checklist.md#group-1-contract-alignment`) (2025-09-29 13:45 KST 완료)
-
 - [x] (2) 계약 정렬 그룹 완료 – manifest/registry 승인 증빙 확보 (`docs/sprint/next_stage_checklist.md#group-1-contract-alignment`) (2025-09-29 14:20 KST 완료)
 - [x] (3) 백엔드 준비 그룹 – 모델 레지스트리 스키마 시나리오 정리 (`docs/sprint/next_stage_checklist.md#group-2-backend-readiness`) (2025-09-29 15:05 KST 완료)
 - [x] (4) 백엔드 구현 그룹 – manifest 로더/레지스트리 API 초안 확정 (`docs/sprint/next_stage_checklist.md#group-2-backend-readiness`) (2025-09-29 15:40 KST 완료)
@@ -56,6 +57,7 @@
 - [x] (10) 설치 & 운영 그룹 – 인스톨러/워크플로우 자동화 점검 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:25 KST 완료)
 
 
+
 - [ ] (2) 계약 정렬 그룹 완료 – manifest/registry 승인 증빙 확보 (`docs/sprint/next_stage_checklist.md#group-1-contract-alignment`)
 - [ ] (3) 백엔드 준비 그룹 – 모델 레지스트리 스키마 시나리오 정리 (`docs/sprint/next_stage_checklist.md#group-2-backend-readiness`)
 - [ ] (4) 백엔드 구현 그룹 – manifest 로더/레지스트리 API 초안 확정 (`docs/sprint/next_stage_checklist.md#group-2-backend-readiness`)
@@ -65,4 +67,3 @@
 - [ ] (8) 프런트엔드 UI 그룹 – 20/60/20 레이아웃 & ReactFlow 체크리스트 (`docs/sprint/next_stage_checklist.md#group-4-frontend-integration`)
 - [ ] (9) QA & 관측 그룹 – 테스트/로그/메트릭 항목 정의 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`)
 - [ ] (10) 설치 & 운영 그룹 – 인스톨러/워크플로우 자동화 점검 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`)
-
