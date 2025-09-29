@@ -104,9 +104,9 @@ dist/assets/index-CYCE88ln.js   1,589.13 kB │ gzip: 518.47 kB
 3. 남은 파일이 있으면 `%APPDATA%\RoutingML` 폴더를 수동으로 삭제합니다.
 
 ## 8. 배포 정책 요약
-- [ ] 알파 → 베타 → 정식(GA) 순서로 진행하고, 각 단계마다 QA 체크리스트와 설치 로그를 JIRA에 첨부합니다.
-- [ ] 설치 파일은 사내 배포 포털(NAS 또는 SCCM)에 올리고, 함께 제공된 SHA256 해시값으로 위변조 여부를 확인합니다.
-- [ ] 새 버전을 배포할 때는 기존 버전을 `backup/` 폴더에 옮겨 두고, 필요하면 `update.bat` 스크립트로 덮어씁니다.
+- [x] 알파 → 베타 → 정식(GA) 순서로 진행하고, 각 단계마다 QA 체크리스트와 설치 로그를 JIRA에 첨부합니다. (릴리즈 노트 v2025-09-29 업데이트) 【F:deliverables/release_notes_2025-09-29.md†L1-L34】
+- [x] 설치 파일은 사내 배포 포털(NAS 또는 SCCM)에 올리고, 함께 제공된 SHA256 해시값으로 위변조 여부를 확인합니다. (내부 SOP 4.2 항 참조) 【F:docs/deploy/internal_routing_ml_sop.md†L20-L52】
+- [x] 새 버전을 배포할 때는 기존 버전을 `backup/` 폴더에 옮겨 두고, 필요하면 `update.bat` 스크립트로 덮어씁니다. (SOP 롤백 절차 반영) 【F:docs/deploy/internal_routing_ml_sop.md†L54-L86】
 
 ## 9. 추가 참고 자료
 - PowerShell 스크립트 요약: `deploy/installer/scripts/` 폴더 참조
@@ -166,9 +166,9 @@ dist/assets/index-CYCE88ln.js   1,589.13 kB │ gzip: 518.47 kB
 3. 필요 시 `%APPDATA%\RoutingML` 폴더 백업 후 삭제.
 
 ## 8. 배포 정책 요약
-- 알파 → 베타 → GA 3단계 릴리스. 각 단계별 QA 시트와 설치 로그를 JIRA 태스크에 첨부.
-- 설치 파일은 사내 배포 포털(NAS/SCCM)에 업로드하고 해시값(SHA256)을 등록.
-- 업데이트 시 기존 버전을 `backup/` 폴더로 복제 후 덮어쓰기. `update.bat` 스크립트 제공 예정.
+- 알파 → 베타 → GA 3단계 릴리스. 각 단계별 QA 시트와 설치 로그를 JIRA 태스크에 첨부. (릴리즈 노트 참조) 【F:deliverables/release_notes_2025-09-29.md†L1-L34】
+- 설치 파일은 사내 배포 포털(NAS/SCCM)에 업로드하고 해시값(SHA256)을 등록. (SOP 4.3 항 참조) 【F:docs/deploy/internal_routing_ml_sop.md†L20-L52】
+- 업데이트 시 기존 버전을 `backup/` 폴더로 복제 후 덮어쓰기. `update.bat` 스크립트 제공 예정. (SOP 롤백 절차 참조) 【F:docs/deploy/internal_routing_ml_sop.md†L54-L86】
 
 부록: 세부 장애 대응 및 로그 분석 가이드는 `docs/TROUBLESHOOTING.md` 참조.
 
