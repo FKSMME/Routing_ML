@@ -10,6 +10,7 @@ import json
 import pandas as pd
 
 from backend.api.config import get_settings
+from backend import database
 
 from backend.api.schemas import (
     CandidateRouting,
@@ -363,7 +364,22 @@ class PredictionService:
         if weight_snapshot:
             metrics["feature_weights"] = weight_snapshot
 
+        metrics = self._attach_cache_metrics(metrics)
         return routing_payload, candidate_payload, metrics, routing_df, candidates_df
+
+    def _attach_cache_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        enriched = dict(metrics)
+        try:
+            enriched["cache"] = database.get_cache_snapshot()
+            enriched["cache_versions"] = database.get_cache_versions()
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.warning("캐시 메트릭 수집 실패: %s", exc)
+        return enriched
+
+    def _set_last_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        enriched = self._attach_cache_metrics(metrics)
+        self._last_metrics = enriched
+        return enriched
 
     def predict(
         self,
@@ -405,7 +421,7 @@ class PredictionService:
             if viz_payload:
                 metrics["visualization"] = viz_payload
 
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
         logger.info("[예측] 완료 - routings=%d candidates=%d", len(routing_payload), len(candidate_payload))
         return routing_payload, candidate_payload, metrics
 
@@ -413,8 +429,7 @@ class PredictionService:
         item_code_list = list(dict.fromkeys(request.item_codes))
         logger.info("[유사도] 검색 요청 item=%s", item_code_list)
         if not item_code_list:
-            metrics = {"requested_items": 0, "total_matches": 0}
-            self._last_metrics = metrics
+            metrics = self._set_last_metrics({"requested_items": 0, "total_matches": 0})
             return SimilaritySearchResponse(results=[], metrics=metrics)
 
         limit = request.top_k or self.settings.default_top_k
@@ -536,7 +551,7 @@ class PredictionService:
             "total_matches": total_matches,
             "manifest_revision": manifest_revision,
         })
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
         return SimilaritySearchResponse(results=results, metrics=metrics)
 
     def recommend_groups(self, request: GroupRecommendationRequest) -> GroupRecommendationResponse:
@@ -672,7 +687,7 @@ class PredictionService:
             "recommendations": len(recommendations),
             "inspected_candidates": inspected_candidates,
         }
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
 
         return GroupRecommendationResponse(
             item_code=request.item_code,
@@ -699,11 +714,13 @@ class PredictionService:
             breakdown=breakdown_models,
         )
 
-        self._last_metrics = {
-            "item_code": request.item_code,
-            "process_count": summary["process_count"],
-            "lead_time": summary["totals"].get("lead_time", 0.0),
-        }
+        self._set_last_metrics(
+            {
+                "item_code": request.item_code,
+                "process_count": summary["process_count"],
+                "lead_time": summary["totals"].get("lead_time", 0.0),
+            }
+        )
         return response
 
     def validate_rules(self, request: RuleValidationRequest) -> RuleValidationResponse:
@@ -749,7 +766,7 @@ class PredictionService:
             "process_count": summary["process_count"],
         }
         metrics.update({f"total_{key}": value for key, value in totals.items()})
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
 
         return RuleValidationResponse(
             item_code=request.item_code,
