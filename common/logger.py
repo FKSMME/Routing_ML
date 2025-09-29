@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Union
+from typing import Any, Mapping, MutableMapping, Union
 
 
 class JSONFormatter(logging.Formatter):
@@ -127,4 +127,47 @@ performance_logger = get_logger(
 )
 
 
-__all__ = ["get_logger", "JSONFormatter", "performance_logger"]
+def audit_routing_event(
+    action: str,
+    payload: Mapping[str, Any] | None = None,
+    *,
+    result: str = "success",
+    username: str | None = None,
+    client_host: str | None = None,
+    request_id: str | None = None,
+    correlation_id: str | None = None,
+) -> None:
+    """Emit a structured routing audit event to the ``routing.audit`` logger."""
+
+    try:
+        from backend.api.config import get_settings
+
+        settings = get_settings()
+        audit_logger = get_logger(
+            "routing.audit",
+            log_dir=settings.audit_log_dir,
+            use_json=True,
+        )
+    except Exception:  # pragma: no cover - fallback when settings import fails
+        audit_logger = get_logger("routing.audit", use_json=True)
+
+    event_payload: MutableMapping[str, Any] = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "action": action,
+        "result": result,
+    }
+    if payload is not None:
+        event_payload["payload"] = dict(payload)
+    if username is not None:
+        event_payload["username"] = username
+    if client_host is not None:
+        event_payload["client_host"] = client_host
+    if request_id is not None:
+        event_payload["request_id"] = request_id
+    if correlation_id is not None:
+        event_payload["correlation_id"] = correlation_id
+
+    audit_logger.info(action, extra=event_payload)
+
+
+__all__ = ["get_logger", "JSONFormatter", "performance_logger", "audit_routing_event"]
