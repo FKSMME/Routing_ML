@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-05 | Phase 5 - QA & Release Prep | Tasklist (9) QA coverage cross-ref | ERP 인터페이스 중복 체크 해소 및 QA/관측 커버리지 증빙 정리 | duplicates_resolved=2, coverage_checks=3 | docs/sprint/routing_enhancement_qa.md (라인 60-74 교차 참조) | pending | Chrome 실사 캡처 확보 후 ⚠️ 항목 해제 |
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
