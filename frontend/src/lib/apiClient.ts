@@ -2,6 +2,7 @@ import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayloa
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse, RoutingGroupCreatePayload, RoutingGroupCreateResponse, RoutingGroupDetail, RoutingGroupListResponse, RoutingGroupStep } from "@app-types/routing";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
+import type { TrainingStatusMetrics } from "@app-types/training";
 import axios from "axios";
 
 const fallbackProtocol =
@@ -129,7 +130,7 @@ export interface TrainingStatus {
   progress: number;
   message?: string | null;
   version_path?: string | null;
-  metrics: Record<string, unknown>;
+  metrics: TrainingStatusMetrics;
   latest_version?: Record<string, unknown> | null;
 }
 
@@ -224,6 +225,7 @@ export interface WorkspaceSettingsPayload {
   routing?: Record<string, unknown> | null;
   algorithm?: Record<string, unknown> | null;
   options?: Record<string, unknown> | null;
+  export?: Record<string, unknown> | null;
   output?: Record<string, unknown> | null;
   access?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
