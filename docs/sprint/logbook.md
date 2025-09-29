@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-03 | Stage 1 - Routing Refactor | Routing canvas integration | ReactFlow RoutingCanvas 컴포넌트 구현 및 타임라인 패널 연동 | components_added=1, docs_updated=1, logs_updated=3 | frontend/src/components/routing/RoutingCanvas.tsx; docs/Design/routing_state_store_plan.md; logs/task_execution_20251003.log | pending | Add QA harness for drag/drop persistence |
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
