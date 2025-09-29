@@ -153,6 +153,7 @@ class RslService:
             description=group.description,
             owner=group.owner,
             tags=list(group.tags or []),
+            erp_required=bool(group.erp_required),
             status=group.status,  # type: ignore[arg-type]
             validation_errors=list(group.validation_errors or []),
             last_validated_at=group.last_validated_at,
@@ -239,6 +240,7 @@ class RslService:
                 description=payload.description.strip() if payload.description else None,
                 owner=owner,
                 tags=self._normalize_tags(payload.tags),
+                erp_required=payload.erp_required,
                 status="draft",
                 validation_errors=[],
             )
@@ -278,6 +280,8 @@ class RslService:
                 group.slug = self._ensure_unique_slug(
                     session, self._slugify(desired), current_id=group.id
                 )
+            if payload.erp_required is not None:
+                group.erp_required = payload.erp_required
 
             session.add(group)
             session.flush()

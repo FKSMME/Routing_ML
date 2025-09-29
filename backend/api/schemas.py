@@ -651,6 +651,7 @@ class RslGroupModel(BaseModel):
     description: Optional[str] = None
     owner: str
     tags: List[str] = Field(default_factory=list)
+    erp_required: bool = Field(default=False, description="ERP 인터페이스 필요 여부")
     status: RslGroupStatus
     validation_errors: List[str] = Field(default_factory=list)
     last_validated_at: Optional[datetime] = None
@@ -669,6 +670,10 @@ class RslGroupCreate(BaseModel):
     description: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    erp_required: bool = Field(
+        default=False,
+        description="ERP 인터페이스 필요 여부",
+    )
 
     @validator("tags", each_item=True)
     def _validate_tag(cls, value: str) -> str:  # noqa: N805
@@ -683,6 +688,10 @@ class RslGroupUpdate(BaseModel):
     description: Optional[str] = None
     tags: Optional[List[str]] = None
     slug: Optional[str] = Field(default=None, min_length=1, max_length=64)
+    erp_required: Optional[bool] = Field(
+        default=None,
+        description="ERP 인터페이스 필요 여부",
+    )
 
 
 class RslGroupListResponse(BaseModel):

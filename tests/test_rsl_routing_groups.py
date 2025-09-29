@@ -91,6 +91,7 @@ def test_create_group_success(api_client: Tuple[TestClient, Dict[str, str]]) -> 
     body = response.json()
     assert body["name"] == "QA Routing Group"
     assert body["owner"] == "qa_user"
+    assert body["erp_required"] is False
 
 
 def test_duplicate_step_sequence_conflict(api_client: Tuple[TestClient, Dict[str, str]]) -> None:
@@ -135,7 +136,7 @@ def test_duplicate_step_sequence_conflict(api_client: Tuple[TestClient, Dict[str
     assert "중복된 공정 순번" in conflict_resp.json()["detail"]
 
 
-def test_create_group_with_erp_flag_fails(api_client: Tuple[TestClient, Dict[str, str]]) -> None:
+def test_create_group_with_erp_flag(api_client: Tuple[TestClient, Dict[str, str]]) -> None:
     client, headers = api_client
 
     payload = {
@@ -147,5 +148,26 @@ def test_create_group_with_erp_flag_fails(api_client: Tuple[TestClient, Dict[str
 
     assert response.status_code == 201
     body = response.json()
-    assert "erp_required" not in body
+    assert body["erp_required"] is True
     assert body["tags"] == ["qa"]
+
+
+def test_update_group_toggles_erp_flag(api_client: Tuple[TestClient, Dict[str, str]]) -> None:
+    client, headers = api_client
+
+    create_resp = client.post(
+        "/api/rsl/groups",
+        headers=headers,
+        json={"name": "Toggle ERP", "tags": ["qa"]},
+    )
+    group = create_resp.json()
+    assert group["erp_required"] is False
+
+    update_resp = client.patch(
+        f"/api/rsl/groups/{group['id']}",
+        headers=headers,
+        json={"erp_required": True},
+    )
+    assert update_resp.status_code == 200, update_resp.text
+    updated = update_resp.json()
+    assert updated["erp_required"] is True

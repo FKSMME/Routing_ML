@@ -24,7 +24,7 @@ from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
-from sqlalchemy.sql import sqltypes
+from sqlalchemy.sql import expression, sqltypes
 
 from backend.api.config import get_settings
 
@@ -52,6 +52,12 @@ class RslGroup(Base):
     description = Column(Text, nullable=True)
     owner = Column(String(255), nullable=False, index=True)
     tags = Column(MutableList.as_mutable(_json_type()), default=list, nullable=False)
+    erp_required = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default=expression.false(),
+    )
     status = Column(String(32), nullable=False, default="draft")
     validation_errors = Column(
         MutableList.as_mutable(_json_type()), default=list, nullable=False
