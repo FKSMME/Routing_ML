@@ -26,6 +26,10 @@ class TrainerRuntimeConfig:
     trim_std_enabled: bool = True
     trim_lower_percent: float = 0.05
     trim_upper_percent: float = 0.95
+    time_profiles_enabled: bool = False
+    time_profile_strategy: str = "sigma_profile"
+    time_profile_optimal_sigma: float = 0.67
+    time_profile_safe_sigma: float = 1.28
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -33,6 +37,10 @@ class TrainerRuntimeConfig:
             "trim_std_enabled": self.trim_std_enabled,
             "trim_lower_percent": self.trim_lower_percent,
             "trim_upper_percent": self.trim_upper_percent,
+            "time_profiles_enabled": self.time_profiles_enabled,
+            "time_profile_strategy": self.time_profile_strategy,
+            "time_profile_optimal_sigma": self.time_profile_optimal_sigma,
+            "time_profile_safe_sigma": self.time_profile_safe_sigma,
         }
 
     @classmethod
@@ -44,6 +52,10 @@ class TrainerRuntimeConfig:
             trim_std_enabled=bool(data.get("trim_std_enabled", True)),
             trim_lower_percent=float(data.get("trim_lower_percent", 0.05)),
             trim_upper_percent=float(data.get("trim_upper_percent", 0.95)),
+            time_profiles_enabled=bool(data.get("time_profiles_enabled", False)),
+            time_profile_strategy=str(data.get("time_profile_strategy", "sigma_profile")),
+            time_profile_optimal_sigma=float(data.get("time_profile_optimal_sigma", 0.67)),
+            time_profile_safe_sigma=float(data.get("time_profile_safe_sigma", 1.28)),
         )
 
 

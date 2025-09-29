@@ -3,16 +3,40 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from threading import Lock
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 import json
 
 import pandas as pd
 
 from backend.api.config import get_settings
+
+from backend.api.schemas import (
+    CandidateRouting,
+    CandidateSaveResponse,
+    GroupRecommendation,
+    GroupRecommendationRequest,
+    GroupRecommendationResponse,
+    RuleValidationRequest,
+    RuleValidationResponse,
+    RuleViolation,
+    RoutingSummary,
+    SimilarItem,
+    SimilaritySearchRequest,
+    SimilaritySearchResponse,
+    SimilaritySearchResult,
+    TimeBreakdown,
+    TimeSummaryRequest,
+    TimeSummaryResponse,
+)
+
 from backend.api.schemas import CandidateRouting, CandidateSaveResponse, RoutingSummary
+from backend.maintenance.model_registry import get_active_version, initialize_schema
+
 from backend.predictor_ml import predict_items_with_ml_optimized
 from backend.feature_weights import FeatureWeightManager
 from backend.trainer_ml import load_optimized_model
+from models.manifest import ModelManifest, read_model_manifest
 from common.logger import get_logger
 from common.config_store import (
     ExportFormatConfig,
@@ -26,6 +50,143 @@ from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS
 logger = get_logger("api.prediction")
 
 
+class ManifestLoader:
+    """매니페스트 파일을 안전하게 읽고 캐시한다."""
+
+    def __init__(self) -> None:
+        self._cache: Dict[Path, Dict[str, Any]] = {}
+        self._mtimes: Dict[Path, Optional[float]] = {}
+        self._lock = Lock()
+
+    def load(self, model_dir: Path) -> Dict[str, Any]:
+        manifest_path = model_dir / "manifest.json"
+        default_payload = {"items": [], "rules": [], "revision": None}
+        with self._lock:
+            if not manifest_path.exists():
+                self._cache[manifest_path] = dict(default_payload)
+                self._mtimes[manifest_path] = None
+                return dict(default_payload)
+
+            mtime = manifest_path.stat().st_mtime
+            cached = self._cache.get(manifest_path)
+            if cached is not None and self._mtimes.get(manifest_path) == mtime:
+                return dict(cached)
+
+            try:
+                data = json.loads(manifest_path.read_text(encoding="utf-8"))
+                if not isinstance(data, dict):
+                    data = {}
+            except Exception as exc:  # pragma: no cover - 방어적 로깅
+                logger.warning("매니페스트 로드 실패: %s", exc)
+                data = {}
+
+            normalized = dict(data)
+            normalized.setdefault("items", [])
+            normalized.setdefault("rules", [])
+            normalized.setdefault(
+                "revision",
+                normalized.get("revision")
+                or normalized.get("version")
+                or normalized.get("build"),
+            )
+
+            # 캐시 업데이트 (deep copy 방지용 얕은 사본 저장)
+            self._cache[manifest_path] = {
+                "items": list(normalized.get("items", [])),
+                "rules": list(normalized.get("rules", [])),
+                "revision": normalized.get("revision"),
+                "metadata": normalized.get("metadata"),
+            }
+            self._mtimes[manifest_path] = mtime
+            return dict(self._cache[manifest_path])
+
+
+class TimeAggregator:
+    """공정 시간 합계를 계산하는 헬퍼."""
+
+    def __init__(self) -> None:
+        self._time_columns = {
+            "setup_time": ["SETUP_TIME", "ACT_SETUP_TIME"],
+            "run_time": ["MACH_WORKED_HOURS", "ACT_RUN_TIME", "RUN_TIME", "RUN_TIME_QTY"],
+            "queue_time": ["QUEUE_TIME"],
+            "wait_time": ["WAIT_TIME", "IDLE_TIME"],
+            "move_time": ["MOVE_TIME"],
+        }
+
+    def summarize(
+        self,
+        operations: List[Dict[str, Any]],
+        *,
+        include_breakdown: bool = False,
+    ) -> Dict[str, Any]:
+        normalized = [self._normalize(row) for row in operations if row]
+        totals = {key: 0.0 for key in self._time_columns.keys()}
+        breakdown_records: List[Dict[str, Any]] = []
+
+        for row in normalized:
+            entry_values: Dict[str, float] = {}
+            for key, columns in self._time_columns.items():
+                value = self._value_from(row, columns)
+                totals[key] += value
+                entry_values[key] = value
+
+            total_time = sum(entry_values.values())
+            breakdown_records.append(
+                {
+                    "proc_seq": self._extract_proc_seq(row),
+                    "setup_time": entry_values["setup_time"],
+                    "run_time": entry_values["run_time"],
+                    "queue_time": entry_values["queue_time"],
+                    "wait_time": entry_values["wait_time"],
+                    "move_time": entry_values["move_time"],
+                    "total_time": total_time,
+                }
+            )
+
+        totals["lead_time"] = sum(totals.values())
+
+        return {
+            "totals": totals,
+            "process_count": len(normalized),
+            "breakdown": breakdown_records if include_breakdown else [],
+        }
+
+    @staticmethod
+    def _normalize(row: Dict[str, Any]) -> Dict[str, Any]:
+        return {str(key).upper(): value for key, value in row.items()}
+
+    @staticmethod
+    def _to_float(value: Any) -> float:
+        if value is None:
+            return 0.0
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(str(value).strip())
+        except (TypeError, ValueError):  # pragma: no cover - 방어
+            return 0.0
+
+    def _value_from(self, row: Dict[str, Any], columns: List[str]) -> float:
+        for column in columns:
+            upper = column.upper()
+            if upper in row and row[upper] not in (None, ""):
+                return self._to_float(row[upper])
+            lower = upper.lower()
+            if lower in row and row[lower] not in (None, ""):
+                return self._to_float(row[lower])
+        return 0.0
+
+    @staticmethod
+    def _extract_proc_seq(row: Dict[str, Any]) -> Optional[int]:
+        for key in ("PROC_SEQ", "SEQ", "STEP", "ORDER"):
+            if key in row and row[key] not in (None, ""):
+                try:
+                    return int(float(row[key]))
+                except (TypeError, ValueError):  # pragma: no cover - 방어
+                    continue
+        return None
+
+
 class PredictionService:
     """FastAPI 라우터에서 사용하는 비즈니스 로직."""
 
@@ -33,17 +194,57 @@ class PredictionService:
         self.settings = get_settings()
         self._model_lock: bool = False
         self._last_metrics: Dict[str, Any] = {}
+        self._manifest_loader = ManifestLoader()
+        self.time_aggregator = TimeAggregator()
+
+        self._model_registry_path = self.settings.model_registry_path
+        initialize_schema(self._model_registry_path)
 
     @property
     def model_dir(self) -> Path:
-        return self.settings.model_directory
+        override = self.settings.model_directory
+        if override:
+            return override
+
+        active_version = get_active_version(db_path=self._model_registry_path)
+        if not active_version:
+            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
+        return Path(active_version.artifact_dir)
+
+        self._model_reference = self.settings.model_directory
+        self._model_manifest: Optional[ModelManifest] = None
+        self._model_root: Optional[Path] = None
+
+    @property
+    def model_dir(self) -> Path:
+        if self._model_root is not None:
+            return self._model_root
+        reference = self._model_reference
+        if reference.suffix.lower() == ".json":
+            return reference.parent
+        return reference
+
+    def _refresh_manifest(self, *, strict: bool = True) -> ModelManifest:
+        manifest = read_model_manifest(self._model_reference, strict=strict)
+        self._model_manifest = manifest
+        self._model_root = manifest.root_dir
+        return manifest
+
+    def _get_manifest(self) -> ModelManifest:
+        if self._model_manifest is None:
+            return self._refresh_manifest(strict=False)
+        return self._model_manifest
 
     def _ensure_model(self) -> None:
         """모델 디렉토리 유효성 검사."""
-        if not self.model_dir.exists():
-            raise FileNotFoundError(f"모델 디렉토리를 찾을 수 없습니다: {self.model_dir}")
         try:
-            load_optimized_model(self.model_dir)
+            manifest = self._refresh_manifest(strict=True)
+            load_dir = manifest.require_optimized_model_dir()
+        except Exception as exc:
+            logger.error("모델 매니페스트 검증 실패", exc_info=exc)
+            raise
+        try:
+            load_optimized_model(load_dir)
         except Exception as exc:  # pragma: no cover - 안전장치
             logger.error("모델 로드 실패", exc_info=exc)
             raise
@@ -55,7 +256,8 @@ class PredictionService:
         profile_name: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         try:
-            manager = FeatureWeightManager(self.model_dir)
+            manifest = self._get_manifest()
+            manager = FeatureWeightManager(manifest.root_dir)
         except Exception as exc:  # pragma: no cover - 안전장치
             logger.warning("FeatureWeightManager 초기화 실패: %s", exc)
             return None
@@ -74,6 +276,85 @@ class PredictionService:
         if snapshot is None:
             snapshot = manager.export_state()
         return snapshot
+
+    def _load_manifest(self) -> Dict[str, Any]:
+        return self._manifest_loader.load(self.model_dir)
+
+    @staticmethod
+    def _normalize_item_code(item_code: Optional[str]) -> Optional[str]:
+        if item_code is None:
+            return None
+        code = str(item_code).strip().upper()
+        return code or None
+
+    def _build_manifest_index(self, manifest: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+        index: Dict[str, Dict[str, Any]] = {}
+        for entry in manifest.get("items", []):
+            if not isinstance(entry, dict):
+                continue
+            code = (
+                entry.get("item_code")
+                or entry.get("ITEM_CD")
+                or entry.get("code")
+                or entry.get("id")
+            )
+            normalized = self._normalize_item_code(code)
+            if normalized:
+                index[normalized] = entry
+        return index
+
+    def _execute_prediction(
+        self,
+        item_codes: List[str],
+        *,
+        top_k: int,
+        similarity_threshold: float,
+        mode: str,
+        feature_weights: Optional[Dict[str, float]],
+        weight_profile: Optional[str],
+    ) -> Tuple[
+        List[RoutingSummary],
+        List[CandidateRouting],
+        Dict[str, Any],
+        Optional[pd.DataFrame],
+        Optional[pd.DataFrame],
+    ]:
+        self._ensure_model()
+
+        weight_snapshot: Optional[Dict[str, Any]] = None
+        if feature_weights or weight_profile:
+            weight_snapshot = self._apply_feature_weights(
+                manual_weights=feature_weights,
+                profile_name=weight_profile,
+            )
+
+        routing_df, candidates_df = predict_items_with_ml_optimized(
+
+            item_codes,
+            self.model_dir,
+
+            item_code_list,
+            self._get_manifest().root_dir,
+
+            top_k=top_k,
+            miss_thr=1.0 - similarity_threshold,
+            mode=mode,
+        )
+
+        routing_payload = self._serialize_routing(routing_df)
+        candidate_payload = self._serialize_candidates(candidates_df)
+
+        metrics = {
+            "requested_items": len(item_codes),
+            "returned_routings": len(routing_payload),
+            "returned_candidates": len(candidate_payload),
+            "threshold": similarity_threshold,
+            "generated_at": datetime.utcnow().isoformat(),
+        }
+        if weight_snapshot:
+            metrics["feature_weights"] = weight_snapshot
+
+        return routing_payload, candidate_payload, metrics, routing_df, candidates_df
 
     def predict(
         self,
@@ -95,35 +376,20 @@ class PredictionService:
             similarity_threshold,
             mode,
         )
-        self._ensure_model()
-
-        weight_snapshot: Optional[Dict[str, Any]] = None
-        if feature_weights or weight_profile:
-            weight_snapshot = self._apply_feature_weights(
-                manual_weights=feature_weights,
-                profile_name=weight_profile,
-            )
-
-        routing_df, candidates_df = predict_items_with_ml_optimized(
+        (
+            routing_payload,
+            candidate_payload,
+            metrics,
+            routing_df,
+            candidates_df,
+        ) = self._execute_prediction(
             item_code_list,
-            self.model_dir,
             top_k=top_k,
-            miss_thr=1.0 - similarity_threshold,
+            similarity_threshold=similarity_threshold,
             mode=mode,
+            feature_weights=feature_weights,
+            weight_profile=weight_profile,
         )
-
-        routing_payload = self._serialize_routing(routing_df)
-        candidate_payload = self._serialize_candidates(candidates_df)
-
-        metrics = {
-            "requested_items": len(item_code_list),
-            "returned_routings": len(routing_payload),
-            "returned_candidates": len(candidate_payload),
-            "threshold": similarity_threshold,
-            "generated_at": datetime.utcnow().isoformat(),
-        }
-        if weight_snapshot:
-            metrics["feature_weights"] = weight_snapshot
 
         if with_visualization:
             viz_payload = self.prepare_visualization_snapshot(routing_df, candidates_df)
@@ -133,6 +399,486 @@ class PredictionService:
         self._last_metrics = metrics
         logger.info("[예측] 완료 - routings=%d candidates=%d", len(routing_payload), len(candidate_payload))
         return routing_payload, candidate_payload, metrics
+
+    def search_similar_items(self, request: SimilaritySearchRequest) -> SimilaritySearchResponse:
+        item_code_list = list(dict.fromkeys(request.item_codes))
+        logger.info("[유사도] 검색 요청 item=%s", item_code_list)
+        if not item_code_list:
+            metrics = {"requested_items": 0, "total_matches": 0}
+            self._last_metrics = metrics
+            return SimilaritySearchResponse(results=[], metrics=metrics)
+
+        limit = request.top_k or self.settings.default_top_k
+        threshold = request.min_similarity or self.settings.default_similarity_threshold
+
+        (
+            _routing_payload,
+            candidate_payload,
+            base_metrics,
+            _routing_df,
+            _candidates_df,
+        ) = self._execute_prediction(
+            item_code_list,
+            top_k=limit,
+            similarity_threshold=threshold,
+            mode="summary",
+            feature_weights=request.feature_weights,
+            weight_profile=request.weight_profile,
+        )
+
+        manifest = self._load_manifest()
+        manifest_revision = manifest.get("revision")
+        manifest_index = self._build_manifest_index(manifest)
+
+        grouped_candidates: Dict[str, List[CandidateRouting]] = {}
+        fallback_key = "__default__"
+        default_key = self._normalize_item_code(item_code_list[0]) or fallback_key
+        for candidate in candidate_payload:
+            source_key = self._normalize_item_code(candidate.source_item_code) or default_key
+            grouped_candidates.setdefault(source_key, []).append(candidate)
+
+        results: List[SimilaritySearchResult] = []
+        total_matches = 0
+
+        for original_code in item_code_list:
+            normalized_code = self._normalize_item_code(original_code) or fallback_key
+            candidate_list = grouped_candidates.get(normalized_code, [])
+            if not candidate_list and normalized_code != fallback_key:
+                candidate_list = grouped_candidates.get(fallback_key, [])
+            sorted_candidates = sorted(
+                candidate_list,
+                key=lambda cand: cand.similarity_score or 0.0,
+                reverse=True,
+            )
+
+            matches: List[SimilarItem] = []
+            seen_codes = set()
+            for candidate in sorted_candidates:
+                score = candidate.similarity_score or 0.0
+                if score < threshold:
+                    continue
+                normalized_candidate = self._normalize_item_code(candidate.candidate_item_code)
+                if normalized_candidate and normalized_candidate in seen_codes:
+                    continue
+                metadata: Dict[str, Any] = {}
+                if request.include_manifest_metadata and normalized_candidate:
+                    manifest_entry = manifest_index.get(normalized_candidate)
+                    if manifest_entry:
+                        manifest_meta = manifest_entry.get("metadata") or manifest_entry.get("attributes") or {}
+                        metadata = dict(manifest_meta)
+                matches.append(
+                    SimilarItem(
+                        item_code=str(candidate.candidate_item_code),
+                        similarity_score=score,
+                        source="prediction",
+                        metadata=metadata,
+                    )
+                )
+                if normalized_candidate:
+                    seen_codes.add(normalized_candidate)
+                if len(matches) >= limit:
+                    break
+
+            manifest_entry_for_item = manifest_index.get(self._normalize_item_code(original_code))
+            if manifest_entry_for_item and len(matches) < limit:
+                manifest_similars = manifest_entry_for_item.get("similar_items") or manifest_entry_for_item.get("similarItems") or []
+                for entry in manifest_similars:
+                    if not isinstance(entry, dict):
+                        continue
+                    candidate_code = entry.get("item_code") or entry.get("ITEM_CD") or entry.get("code")
+                    normalized_candidate = self._normalize_item_code(candidate_code)
+                    if not normalized_candidate or normalized_candidate in seen_codes:
+                        continue
+                    score_value = entry.get("score") or entry.get("similarity") or entry.get("similarity_score")
+                    try:
+                        score_float = float(score_value) if score_value is not None else threshold
+                    except (TypeError, ValueError):
+                        score_float = threshold
+                    if score_float < threshold:
+                        continue
+                    metadata = entry.get("metadata") or entry.get("attributes") or {}
+                    matches.append(
+                        SimilarItem(
+                            item_code=str(candidate_code),
+                            similarity_score=score_float,
+                            source="manifest",
+                            metadata=dict(metadata) if request.include_manifest_metadata else {},
+                        )
+                    )
+                    seen_codes.add(normalized_candidate)
+                    if len(matches) >= limit:
+                        break
+
+            matches.sort(key=lambda match: match.similarity_score, reverse=True)
+            if len(matches) > limit:
+                matches = matches[:limit]
+
+            total_matches += len(matches)
+            results.append(
+                SimilaritySearchResult(
+                    item_code=original_code,
+                    matches=matches,
+                    manifest_revision=manifest_revision,
+                )
+            )
+
+        metrics = dict(base_metrics)
+        metrics.update({
+            "total_matches": total_matches,
+            "manifest_revision": manifest_revision,
+        })
+        self._last_metrics = metrics
+        return SimilaritySearchResponse(results=results, metrics=metrics)
+
+    def recommend_groups(self, request: GroupRecommendationRequest) -> GroupRecommendationResponse:
+        logger.info("[추천] 그룹 추천 요청 item=%s", request.item_code)
+        manifest = self._load_manifest()
+        manifest_revision = manifest.get("revision")
+        manifest_index = self._build_manifest_index(manifest)
+
+        limit = request.candidate_limit or 5
+        recommendations: List[GroupRecommendation] = []
+        inspected_candidates = 0
+
+        manifest_entry = manifest_index.get(self._normalize_item_code(request.item_code))
+        if manifest_entry:
+            manifest_groups = manifest_entry.get("groups") or manifest_entry.get("group_recommendations") or []
+            for group in manifest_groups:
+                if not isinstance(group, dict):
+                    continue
+                group_id = (
+                    group.get("id")
+                    or group.get("group_id")
+                    or group.get("code")
+                    or group.get("name")
+                )
+                group_id = str(group_id).strip() if group_id is not None else ""
+                if not group_id:
+                    continue
+                score_value = group.get("score") or group.get("weight") or group.get("priority") or 1.0
+                try:
+                    score = float(score_value)
+                except (TypeError, ValueError):
+                    score = 1.0
+                metadata = group.get("metadata") or group.get("attributes") or {}
+                recommendations.append(
+                    GroupRecommendation(
+                        group_id=group_id,
+                        score=score,
+                        source="manifest",
+                        metadata=dict(metadata),
+                    )
+                )
+                if len(recommendations) >= limit:
+                    break
+
+        routing_payload: List[RoutingSummary] = []
+        if len(recommendations) < limit:
+            (
+                routing_payload,
+                candidate_payload,
+                _metrics,
+                _routing_df,
+                _candidates_df,
+            ) = self._execute_prediction(
+                [request.item_code],
+                top_k=request.candidate_limit or self.settings.default_top_k,
+                similarity_threshold=request.similarity_threshold
+                or self.settings.default_similarity_threshold,
+                mode="summary",
+                feature_weights=None,
+                weight_profile=None,
+            )
+            inspected_candidates = len(candidate_payload)
+
+            group_scores: Dict[str, Dict[str, Any]] = {}
+            for candidate in candidate_payload:
+                manifest_candidate = manifest_index.get(self._normalize_item_code(candidate.candidate_item_code))
+                base_score = candidate.similarity_score or 0.0
+                if manifest_candidate:
+                    candidate_groups = manifest_candidate.get("groups") or manifest_candidate.get("group_recommendations") or []
+                    for group in candidate_groups:
+                        if not isinstance(group, dict):
+                            continue
+                        group_id = (
+                            group.get("id")
+                            or group.get("group_id")
+                            or group.get("code")
+                            or group.get("name")
+                        )
+                        group_id = str(group_id).strip() if group_id is not None else ""
+                        if not group_id:
+                            continue
+                        score_value = group.get("score") or group.get("weight") or group.get("priority") or base_score
+                        try:
+                            score = float(score_value)
+                        except (TypeError, ValueError):
+                            score = float(base_score)
+                        metadata = group.get("metadata") or group.get("attributes") or {}
+                        current = group_scores.get(group_id)
+                        if current is None or score > current["score"]:
+                            group_scores[group_id] = {"score": score, "metadata": dict(metadata)}
+
+            for existing in recommendations:
+                group_scores.pop(existing.group_id, None)
+
+            for group_id, payload in sorted(
+                group_scores.items(), key=lambda item: item[1]["score"], reverse=True
+            ):
+                if len(recommendations) >= limit:
+                    break
+                recommendations.append(
+                    GroupRecommendation(
+                        group_id=group_id,
+                        score=payload["score"],
+                        source="prediction",
+                        metadata=payload["metadata"],
+                    )
+                )
+
+        if not recommendations:
+            operations: List[Dict[str, Any]] = []
+            for summary in routing_payload:
+                if summary.item_code == request.item_code:
+                    operations = summary.operations
+                    break
+            agg_result = self.time_aggregator.summarize(operations, include_breakdown=False)
+            if agg_result["process_count"]:
+                recommendations.append(
+                    GroupRecommendation(
+                        group_id="process-profile",
+                        score=float(agg_result["process_count"]),
+                        source="inference",
+                        metadata={"lead_time": agg_result["totals"].get("lead_time", 0.0)},
+                    )
+                )
+
+        recommendations.sort(key=lambda rec: rec.score, reverse=True)
+        if len(recommendations) > limit:
+            recommendations = recommendations[:limit]
+
+        metrics = {
+            "item_code": request.item_code,
+            "manifest_revision": manifest_revision,
+            "recommendations": len(recommendations),
+            "inspected_candidates": inspected_candidates,
+        }
+        self._last_metrics = metrics
+
+        return GroupRecommendationResponse(
+            item_code=request.item_code,
+            recommendations=recommendations,
+            inspected_candidates=inspected_candidates,
+            manifest_revision=manifest_revision,
+        )
+
+    def summarize_process_times(self, request: TimeSummaryRequest) -> TimeSummaryResponse:
+        operations_payload = [op.dict(by_alias=True, exclude_none=True) for op in request.operations]
+        summary = self.time_aggregator.summarize(
+            operations_payload,
+            include_breakdown=request.include_breakdown,
+        )
+
+        breakdown_models: Optional[List[TimeBreakdown]] = None
+        if request.include_breakdown and summary.get("breakdown"):
+            breakdown_models = [TimeBreakdown(**record) for record in summary["breakdown"]]
+
+        response = TimeSummaryResponse(
+            item_code=request.item_code,
+            totals=summary["totals"],
+            process_count=summary["process_count"],
+            breakdown=breakdown_models,
+        )
+
+        self._last_metrics = {
+            "item_code": request.item_code,
+            "process_count": summary["process_count"],
+            "lead_time": summary["totals"].get("lead_time", 0.0),
+        }
+        return response
+
+    def validate_rules(self, request: RuleValidationRequest) -> RuleValidationResponse:
+        operations_payload = [op.dict(by_alias=True, exclude_none=True) for op in request.operations]
+        summary = self.time_aggregator.summarize(operations_payload, include_breakdown=True)
+        totals = summary["totals"]
+
+        manifest = self._load_manifest()
+        manifest_revision = manifest.get("revision")
+        rules = [rule for rule in manifest.get("rules", []) if isinstance(rule, dict)]
+
+        if request.rule_ids:
+            requested_ids = {str(rule_id).strip().lower() for rule_id in request.rule_ids}
+            rules = [
+                rule
+                for rule in rules
+                if str(rule.get("id") or rule.get("name") or "").strip().lower() in requested_ids
+            ]
+
+        violations: List[RuleViolation] = []
+        evaluated_rules = 0
+        context = request.context or {}
+
+        for rule in rules:
+            evaluated_rules += 1
+            violations.extend(
+                self._evaluate_rule(
+                    rule,
+                    operations_payload,
+                    totals,
+                    context,
+                    summary.get("breakdown", []),
+                )
+            )
+
+        passed = not any(violation.severity == "error" for violation in violations)
+
+        metrics = {
+            "item_code": request.item_code,
+            "evaluated_rules": evaluated_rules,
+            "violations": len(violations),
+            "manifest_revision": manifest_revision,
+            "process_count": summary["process_count"],
+        }
+        metrics.update({f"total_{key}": value for key, value in totals.items()})
+        self._last_metrics = metrics
+
+        return RuleValidationResponse(
+            item_code=request.item_code,
+            passed=passed,
+            violations=violations,
+            evaluated_rules=evaluated_rules,
+        )
+
+    def _evaluate_rule(
+        self,
+        rule: Dict[str, Any],
+        operations: List[Dict[str, Any]],
+        totals: Dict[str, float],
+        context: Dict[str, Any],
+        _breakdown: List[Dict[str, Any]],
+    ) -> List[RuleViolation]:
+        rule_id = str(rule.get("id") or rule.get("name") or "rule").strip() or "rule"
+        severity = str(rule.get("severity", "error")).lower()
+        if severity not in {"info", "warning", "error"}:
+            severity = "error"
+
+        rule_type = str(rule.get("type") or rule.get("kind") or "").lower()
+        violations: List[RuleViolation] = []
+
+        if rule_type == "threshold":
+            field = str(rule.get("field") or rule.get("metric") or "").upper()
+            if not field:
+                return violations
+            operator = str(rule.get("operator") or rule.get("op") or ">=").strip() or ">="
+            target_value = rule.get("value", 0)
+            scope = str(rule.get("scope") or "total").lower()
+
+            if scope == "per_operation":
+                for idx, op in enumerate(operations, start=1):
+                    value = self._extract_numeric(op, field)
+                    if value is None:
+                        continue
+                    if not self._compare(value, operator, target_value):
+                        message = rule.get("message") or (
+                            f"공정 {idx}의 {field} 값 {value}이(가) 조건 {operator} {target_value}을 만족하지 않습니다."
+                        )
+                        violations.append(
+                            RuleViolation(rule_id=rule_id, message=message, severity=severity)
+                        )
+            else:
+                value = self._resolve_metric(field, totals, context)
+                if value is None:
+                    return violations
+                if not self._compare(value, operator, target_value):
+                    message = rule.get("message") or (
+                        f"{field} 값 {value}이(가) 조건 {operator} {target_value}을 만족하지 않습니다."
+                    )
+                    violations.append(
+                        RuleViolation(rule_id=rule_id, message=message, severity=severity)
+                    )
+
+        elif rule_type == "max_operations":
+            limit_raw = rule.get("value")
+            try:
+                limit = int(limit_raw)
+            except (TypeError, ValueError):
+                limit = None
+            if limit is not None and len(operations) > limit:
+                message = rule.get("message") or (
+                    f"공정 수 {len(operations)}가 최대 {limit}을 초과합니다."
+                )
+                violations.append(
+                    RuleViolation(rule_id=rule_id, message=message, severity=severity)
+                )
+
+        elif rule_type == "required_field":
+            field = str(rule.get("field") or rule.get("column") or "").upper()
+            if field:
+                missing_indices: List[int] = []
+                for idx, op in enumerate(operations, start=1):
+                    normalized = {str(key).upper(): value for key, value in op.items()}
+                    value = normalized.get(field)
+                    if value in (None, "", []):
+                        missing_indices.append(idx)
+                if missing_indices:
+                    message = rule.get("message") or (
+                        f"{field} 값이 필요한 공정: {', '.join(map(str, missing_indices))}"
+                    )
+                    violations.append(
+                        RuleViolation(rule_id=rule_id, message=message, severity=severity)
+                    )
+
+        return violations
+
+    @staticmethod
+    def _compare(value: float, operator: str, target: Any) -> bool:
+        try:
+            target_value = float(target)
+        except (TypeError, ValueError):
+            target_value = 0.0
+
+        op = operator.strip()
+        if op == ">=" or op == "ge":
+            return value >= target_value
+        if op == ">":
+            return value > target_value
+        if op == "<=" or op == "le":
+            return value <= target_value
+        if op == "<":
+            return value < target_value
+        if op in {"==", "=", "eq"}:
+            return value == target_value
+        if op in {"!=", "<>", "ne"}:
+            return value != target_value
+        return value >= target_value
+
+    def _resolve_metric(
+        self,
+        field: str,
+        totals: Dict[str, float],
+        context: Dict[str, Any],
+    ) -> Optional[float]:
+        normalized_field = field.lower()
+        for key, value in totals.items():
+            if key.lower() == normalized_field or key.upper() == field:
+                return float(value)
+        context_value = context.get(field) or context.get(field.lower()) or context.get(field.upper())
+        if context_value is None:
+            return None
+        try:
+            return float(context_value)
+        except (TypeError, ValueError):
+            return None
+
+    def _extract_numeric(self, row: Dict[str, Any], field: str) -> Optional[float]:
+        normalized = {str(key).upper(): value for key, value in row.items()}
+        value = normalized.get(field)
+        if value in (None, ""):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
 
     def save_candidate(self, item_code: str, candidate_id: str, payload: Dict[str, Any]) -> CandidateSaveResponse:
         """후보 라우팅 저장."""
