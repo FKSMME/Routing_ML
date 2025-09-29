@@ -140,7 +140,7 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 ### 8. 온보딩 체크리스트
 - [ ] 절대 지령 준수 여부 확인
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
-- [ ] 예측 API Health OK
+- [x] 예측 API Health OK
 - [ ] UI에서 후보 라우팅 3건 이상 확인
 - [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
 
