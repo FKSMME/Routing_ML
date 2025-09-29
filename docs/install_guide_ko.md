@@ -30,7 +30,7 @@
 ### 원격 환경 제약 및 증빙 확보 가이드 (2025-10-03 업데이트)
 > ⚠️ 컨테이너·CI 등 그래픽이 없는 원격 환경에서는 Windows 실행 파일을 내려받거나 설치 마법사를 띄울 수 없습니다. 또한 `10.204.2.28` 사내망과 연결되지 않으므로 `/api/health` 확인, 스크린샷 캡처, 서비스 로그 수집이 불가능합니다. 이 경우 아래 절차로 오프라인/사내 PC 담당자에게 작업을 위임하고 증빙을 확보하세요.
 > 1. 최신 설치 파일 해시와 빌드 로그(`logs/installer_build.log`)를 첨부해 설치 담당자에게 전달합니다.
-> 2. 설치 담당자는 관리자 권한, Access Driver, VPN/내부망, 포트 8000 방화벽, 코드 서명 체크리스트를 실제 장비에서 점검한 뒤 결과를 `deliverables/onboarding_evidence/` 폴더에 캡처와 함께 업로드합니다.
+> 2. 설치 담당자는 관리자 권한, Access Driver, VPN/내부망, 포트 8000 방화벽, 코드 서명 체크리스트를 실제 장비에서 점검한 뒤 결과를 `deliverables/onboarding_evidence/` 폴더(로컬 경로)에 정리합니다. Access ODBC 검증 시에는 `AccessDatabaseEngine_X64.exe` 설치 화면, `odbcad32.exe`(64비트)에서 "Microsoft Access Driver (*.mdb, *.accdb)"가 노출된 화면, `verify_odbc.ps1` 실행 로그를 순서대로 확보하여 `step2_access_driver.png`로 병합 저장합니다. **주의:** 증빙 이미지는 용량 및 보안 정책으로 인해 Git 리포지토리에 커밋하지 말고, 사내 공유 드라이브 또는 전용 증빙 저장소에 업로드한 뒤 경로만 기록하세요.
 > 3. `/api/health`·`/api/workflow/graph` 응답 확인 및 서비스 자동 실행 로그는 Windows 작업 기록과 함께 동일 폴더에 보관하고, 완료 후 체크박스를 업데이트합니다.
 > 4. 증빙 업로드가 끝나면 `logs/task_execution_*.log`에 수행 시간과 담당자를 기록해 추적성을 유지합니다.
 
@@ -49,6 +49,8 @@
 - [ ] **관리자 권한**이 있는 계정으로 로그인했나요?
 - [ ] "Microsoft Access Driver (*.mdb, *.accdb)" (64비트)가 설치되어 있나요?
   - 없다면 사내 소프트웨어 센터에서 `AccessDatabaseEngine_X64.exe`를 설치하세요.
+  - 설치 후 **ODBC 데이터 원본(64비트)**(`C:\Windows\System32\odbcad32.exe`)을 열어 드라이버 목록에 항목이 표시되는지 확인하고, `scripts\verify_odbc.ps1`을 실행해 로그를 남깁니다.
+  - 캡처 및 로그는 로컬 `deliverables\onboarding_evidence\step2_access_driver.png`에 저장하되, 리포지토리에는 커밋하지 말고 사내 증빙 저장소(예: SharePoint, NAS)에 업로드한 뒤 위치를 기록합니다.
 - [ ] 회사 내부망 또는 VPN이 연결되어 있나요?
 - [ ] Windows 방화벽에서 포트 8000을 허용했나요?
   - 설치 중 자동 설정되지만, 막혀 있으면 IT팀에 예외 등록을 요청하세요.
