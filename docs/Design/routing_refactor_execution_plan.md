@@ -2,6 +2,7 @@
 
 ## 1. Scope Review & Constraints
 - **Absolute directives** (PRD.md §절대 지령, Tasklist.md §절대 지령) stay in force. Every implementation stage requires prior approval, background execution, and regression review before hand-off.
+
 - **Artifact reuse mandate** (user directive, PRD.md §C.4, Tasklist Step 1 backlog) requires us to retain existing contents of `models/<version>` (`*.joblib`, `*.json`) and introduce only lightweight manifest/registry layers to avoid duplicating or renaming assets.
 - **RSL persistence goal** (PRD.md §C.1~C.3; docs/sprint/routing_enhancement_tasklist.md §Phase 2~4) reiterates that CRUD-ready workflow with drag/drop UI must operate on a database supporting pagination, search, tagging, releases, and import/export while keeping the DB as the source of truth.
 - **Deployment/installer guardrails** (PRD.md §C.4, §C.5) mandate Windows packaging, trainer/predictor separation, and configuration hot-loading via `/api/workflow/graph`.
@@ -20,6 +21,18 @@
 | PRD.md §C | Predictor APIs (`/api/similar/search`, `/api/recommend/group`, `/api/time/summary`, `/api/rules/validate`) with ML + rule validation, time aggregation, ERP toggles | Current code only provides `/api/predict` and lacks manifest-aware routing | Section 4 extends PredictionService, schemas, and auditing |
 | PRD.md §C.4–C.5 | Trainer/predictor separation, workflow settings hot-reload, installer packaging | Risk of manifest/registry changes breaking packaging | Section 7 ensures CLI, container, and installer updates remain compatible |
 
+- **Artifact reuse mandate** (user directive, PRD.md §C.4, Tasklist Step 1 backlog): retain existing contents of `models/<version>` (`*.joblib`, `*.json`) and introduce only lightweight manifest/registry layers to avoid duplicating or renaming assets.
+- **RSL persistence goal** (PRD.md §C.1~C.3): CRUD-ready workflow with drag/drop UI must operate on a database that supports pagination, search, tagging, releases, and import/export while keeping DB as the source of truth.
+
+## 2. Targeted Task Alignment
+| Source Checklist | Gap | Plan Alignment |
+| --- | --- | --- |
+| Tasklist Step 1 – `docs/design/routing_enhancement_plan.md` review | Need concrete implementation path for manifest, registry, and API extensions | Sections 3 & 4 map each enhancement theme to code modules and migration tasks |
+| Tasklist Step 1 – `docs/backend_api_routing_groups_spec.md` review | Missing execution plan for RSL DB/API | Section 5 details schema, migration bootstrap, and API rollout |
+| Tasklist Step 1 – `docs/design/routing_state_store_plan.md` review | Frontend refactor (20/60/20 layout, IndexedDB persistence) lacks actionable breakdown | Section 6 enumerates store changes, component rewrites, and QA hooks |
+| PRD deployment notes (training/prediction separation, installer packaging) | Ensure manifest/registry don’t break packaging flow | Section 7 covers ops updates and installer touchpoints |
+
+
 ## 3. Manifest-Driven Model Loading
 1. **Manifest generation hook** – Extend `backend/trainer_ml.py` and `backend/api/services/training_service.py` to emit `manifest.json` after saving the existing artifacts. Capture relative paths, SHA256 hashes, schema version flags, and optional `time_profiles.json` presence.
 2. **Loader abstraction** – Introduce `common/models/manifest_loader.py` that resolves file handles based on `manifest.json`. Update `backend/api/services/prediction_service.py` and any CLI utilities to consume the manifest before touching `joblib/json` files. Preserve legacy fallback by generating a manifest for the current active directory during migration.
@@ -36,6 +49,7 @@
 3. **Routes & Import/Export** – Add `backend/api/routes/rsl.py` endpoints: list/search (paginated), detail fetch, create/update with optimistic locking, release/deprecate toggles, and CSV/JSON import/export endpoints that operate through the service layer. Ensure audit logs track signature changes and release actions.
 
 ## 6. Frontend Workspace & State Store Refactor
+
 ### 6.1 State store upgrade
 Rework `frontend/src/store/routingWorkspaceStore.ts` (and related slices) per `routing_state_store_plan.md`: maintain history stacks, audit buffer, runtime config bindings, and IndexedDB persistence using existing utilities.
 
@@ -50,6 +64,13 @@ Surface z-score/trimmed-STD/sigma options tied to backend aggregator settings. S
 
 ### 6.5 QA hooks
 Add automated Jest/Vitest component tests for store mutations and Cypress (if available) smoke flows for drag/drop and save interactions, recording logs per absolute directive 8 and feeding QA checklist artifacts.
+
+1. **State store upgrade** – Rework `frontend/src/store/routingWorkspaceStore.ts` (and related slices) per `routing_state_store_plan.md`: maintain history stacks, audit buffer, runtime config bindings, and IndexedDB persistence using existing utilities.
+2. **Layout implementation** – Recompose workspace components under `frontend/src/components/workspaces/routing/` into the documented 20/60/20 layout. Integrate ReactFlow (or existing flow lib) for horizontal timeline with drag-and-drop support and candidate cards column.
+3. **RSL integration** – Connect UI to new RSL APIs for list/pagination, detail editing, tagging, release status. Implement import/export modals that call backend endpoints and handle CSV/JSON downloads/uploads.
+4. **Time profiles & options panel** – Surface z-score/trimmed-STD/sigma options tied to backend aggregator settings. Sync with runtime config updates and ensure SAVE propagates via `/api/workflow/graph`.
+5. **QA hooks** – Add automated Jest/Vitest component tests for store mutations and Cypress (if available) smoke flows for drag/drop and save interactions, recording logs per absolute directive 8.
+
 
 ## 7. Training/Prediction Ops & Installer Touchpoints
 1. **Batch pipeline** – Update training CLI scripts under `scripts/` to generate manifests, register versions, and optionally compute `time_profiles.json` using shared aggregator utilities.
