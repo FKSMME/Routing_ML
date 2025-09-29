@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 34 | Completed 8 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 27 | Completed 1 | Blockers 1
 
 # Routing Enhancement QA 시나리오 (Codex 자가 테스트)
 
@@ -53,3 +53,6 @@
 - [ ] GET 단건 로드 후 dirty 해제 → 미수행: 동일 세션에서 불러오기 플로우 검증 예정.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 미수행: ERP 토글 타입 오류 해결 후 백엔드 동기화와 함께 검증 예정.
 - [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 미수행: 감사 로그 스냅샷 수집을 2025-10 QA 체크포인트로 설정.
+
+---
+_Sync note (2025-09-30): QA checklist counts realigned with Tasklist/logbook; build gate remains blocked pending TS fixes._
