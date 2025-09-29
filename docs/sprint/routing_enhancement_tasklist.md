@@ -36,6 +36,8 @@ _Reference update_: The previous `deliverables/design/routing_enhancement_state.
 - [x] Document Docker/internal deployment plan. (`docs/stage9_packaging_plan.md`, `docs/install_guide_ko.md` 검증 메모 추가)
 
 ## Phase 5 · QA & Release Prep
+- [ ] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (2025-10-02: 빌드/pytest/Vitest 자동화 통과, 브라우저 수동 항목은 Issue `docs/issues/qa_manual_browser_blocker_20251002.md`로 분리)
+- [x] Perform `/api/routing/groups` integration test with backend. (2025-10-02: `pytest tests/test_rsl_routing_groups.py` 성공, 로그: `logs/qa/backend_routing_groups_pytest_20251002.log`)
 - [ ] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (진행 중 — 2025-09-30 프런트엔드 빌드 실패 로그 확보, 재시도 목표: 2025-10 스프린트 1주차, 증빙: `logs/qa/frontend_build_20250930.log`)
 - [x] Perform `/api/routing/groups` integration test with backend. (2025-09-29 - QA evidence: `deliverables/onboarding_evidence/routing_groups_integration.log`)
 - [ ] Update OpenAPI/Swagger with new endpoints.

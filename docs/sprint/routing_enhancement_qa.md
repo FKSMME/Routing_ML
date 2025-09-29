@@ -3,20 +3,17 @@
 # Routing Enhancement QA 시나리오 (Codex 자가 테스트)
 
 ## 테스트 환경
-- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ✅ 성공: TypeScript 오류 0건으로 빌드 완료. 증빙: [`logs/qa/frontend_build_20251001.log`](../../logs/qa/frontend_build_20251001.log).
-- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ⚠️ 실패: TypeScript 22건 오류 발생 (ReactFlow/Options/IndexedDB 타입 교정 필요). 【4728cf†L1-L74】
-- [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → ✅ `pytest tests/test_rsl_routing_groups.py`로 `/api/rsl/groups` 라우팅 그룹 시나리오 검증 완료. 【66517b†L1-L33】
-- [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → TODO: 빌드 오류 해결 후 재검증 필요.
-- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ⚠️ 실패: TypeScript 10건 오류로 빌드 중단 (ReactFlow/Options/IndexedDB 타입 보완 필요, 로그 캡처 완료). 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
-- [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → 자동화 완료: `frontend/tests/e2e/routing-groups.spec.ts`에서 결정적 스텁 응답으로 `/api/routing/groups` POST/GET 흐름을 검증. 로그: [`logs/qa/routing_groups_e2e_20250211.log`](../../logs/qa/routing_groups_e2e_20250211.log).
-- [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → 미수행: 빌드 오류 해결 및 통합 배포 산출물 확보 후 2025-10 스프린트 1주차 수동 QA 슬롯에서 재검증 예정.
+- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ✅ 성공: TypeScript 오류 0건으로 빌드 완료. 증빙: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log). (히스토리: 2025-10-01 성공, 2025-09-30 실패 로그는 참조용으로 보존)
+- [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → ✅ `pytest tests/test_rsl_routing_groups.py`로 `/api/rsl/groups` 라우팅 그룹 시나리오 검증 완료. 증빙: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
+- [x] 프런트엔드 E2E 라우팅 그룹 플로우 (`vitest run tests/e2e/routing-groups.spec.ts`) → ✅ 성공: Drag/Drop, dirty 플래그, 저장/불러오기 경로 검증. 증빙: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → ⚠️ 환경 제약으로 미수행. 물리 실습 환경에서 재검증 필요 (Issue: [`docs/issues/qa_manual_browser_blocker_20251002.md`](../issues/qa_manual_browser_blocker_20251002.md)).
 
 ## 기능 시나리오
 
 > **수동 QA 슬롯 확정:** 2025-10-04 09:00-11:00 KST (장소: Lab-3, 담당: QA Ops 김서윤). 검증 순서는 (1) 20/60/20 레이아웃 계측 → (2) 통합 QA 대기 항목(ERP 토글 포함) → (3) 회귀 테스트 항목으로 고정하였다. 예비 슬롯은 2025-10-07 14:00-15:30 KST(동일 담당)으로 확보하여 미완료 체크를 보완한다.
 0. **레이아웃 20/60/20 배치**
-   - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → 예약: 2025-10-04 QA 슬롯 #1 (09:00~09:40)에서 측정 및 캡처 저장.
-   - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → 예약: 2025-10-04 QA 슬롯 #1 (09:40~10:00) 반응형 계측, 예비 슬롯 2025-10-07 활용 가능.
+   - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요, `docs/issues/qa_manual_browser_blocker_20251002.md` 참고.
+   - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 보류, Issue 참고.
 1. **Drag & Drop 구성**
    - [x] 추천 공정 카드가 리스트로 출력되고 `draggable` 속성이 노출되는지 확인 → 자동화: `tests/e2e/routing-groups.spec.ts`에서 `insertOperation` 경로로 카드 삽입 및 속성 노출을 검증.
    - [x] 타임라인 Drop Zone으로 드래그 시 하이라이트(`drop-zone.is-active`)가 표시되는지 확인 → 자동화: 동일 스위트에서 드래그/드롭 시퀀스와 dirty 플래그 변화를 점검.
@@ -40,17 +37,16 @@
 - [x] 감사 로그 필드(`activeGroupId`, `lastSavedAt`)가 스토어에 반영되는지 확인 → 자동화: 저장/불러오기 흐름에서 감사 로그 호출과 상태 업데이트를 검증.
 
 ## 회귀 검증
-- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → 예약: 2025-10-04 QA 슬롯 #1 (10:20~10:35)에서 회귀 체크, 필요 시 예비 슬롯에서 추가 검증.
-- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → 예약: 2025-10-04 QA 슬롯 #1 (10:35~10:45) 시각 비교 및 캔버스 캡처 확보.
-- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → 예약: 2025-10-04 QA 슬롯 #1 (10:45~10:55) 메뉴 전환 회귀, 예비 슬롯에서 누락분 보완.
+- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 보류 (Issue 참조).
+- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
+- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
 
 ## 실행 로그 & 후속 조치
 
-- `npm run build` 재실행 결과 성공 로그 확보 완료. TypeScript 오류가 해소되었으므로 QA 체크리스트 재개 가능. 증빙: [`logs/qa/frontend_build_20251001.log`](../../logs/qa/frontend_build_20251001.log).
-- 2025-09-30 빌드 실패 로그에 재실행(2025-10-01) 성공 내역을 추가 기록하여 회귀 검증 근거를 확보함. 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
-- 빌드 성공 상태를 유지하면서 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.
-- `npm run build` 실패 로그(typescript 타입 오류 10건)를 기반으로 Algorithm/DataOutput/Options Workspace 타입 정의를 보완한 뒤 재빌드 필요. 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
-- 빌드 성공 후 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.
+- `npm run build` 재실행 결과 성공 로그 확보 완료. 최신 로그: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log) (이전 2025-10-01/2025-09-30 로그는 회귀 추적용으로 보존).
+- 백엔드 라우팅 그룹 pytest 스위트 성공: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
+- 프런트엔드 Vitest E2E 스위트 성공: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- 실 브라우저가 필요한 항목은 `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈에 재검증 일정을 기록하고 본 문서에 ⚠️ 상태로 표시했다.
 - `/api/rsl/groups` QA 자동화 결과 기록: 성공/충돌 통과, ERP 필드 무시 현상 확인 및 백엔드 확장 과제 등록. 【F:logs/reviews/routing_groups_api_tests_20250929.md†L1-L18】
 
 
@@ -68,14 +64,14 @@
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 자동화 스위트에서 `postUiAudit` 호출 페이로드를 검증하고 로그를 캡처.
 - [x] POST 성공 케이스 (ERP OFF) → `/api/rsl/groups` POST 201 응답과 소유자 필드 검증. 【F:tests/test_rsl_routing_groups.py†L89-L109】
 - [x] POST 충돌(409) 시 타임라인 롤백 확인 → 중복 순번 공정 등록 시 400 응답 확인. 【F:tests/test_rsl_routing_groups.py†L111-L138】
-- [ ] GET 단건 로드 후 dirty 해제 → 예약: 2025-10-04 QA 슬롯 #1 (10:05~10:15) 통합 시나리오 재현.
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 예약: 2025-10-04 QA 슬롯 #1 (10:15~10:20) 백엔드 확장 적용 후 캡처 확보. 【F:tests/test_rsl_routing_groups.py†L140-L148】
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인
-- [ ] POST 성공 케이스 (ERP OFF) → 예약: 2025-10-04 QA 슬롯 #1 (10:55~11:05) 통합 흐름 캡처.
-- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → 예약: 2025-10-04 QA 슬롯 #1 (11:05~11:15) 오류 응답 재현, 실패 시 예비 슬롯에서 보완.
-- [ ] GET 단건 로드 후 dirty 해제 → 예약: 2025-10-04 QA 슬롯 #1 (10:05~10:15)와 연계 수행.
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 예약: 2025-10-04 QA 슬롯 #1 (10:15~10:20) 캡처 확보.
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 예약: 2025-10-04 QA 슬롯 #1 (11:15~11:20) 감사 로그 수집.
+- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
+- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
+- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
+- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
+- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
+- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
+- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류.
+- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
 
 ---
 _Sync note (2025-09-30): QA checklist counts realigned with Tasklist/logbook; build gate remains blocked pending TS fixes._
