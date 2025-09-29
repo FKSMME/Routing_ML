@@ -45,7 +45,7 @@ const enqueueAuditEntryMock = vi.hoisted(() =>
 );
 const readLatestSnapshotMock = vi.hoisted(() => vi.fn(async () => undefined));
 
-vi.mock("@lib/indexedDb", () => ({
+vi.mock("@lib/persistence", () => ({
   __esModule: true,
   writeRoutingWorkspaceSnapshot: writeSnapshotMock,
   enqueueAuditEntry: enqueueAuditEntryMock,
@@ -316,6 +316,92 @@ describe("Routing group end-to-end flows", () => {
         createRoutingGroupMock.mock.calls.length - 1
       ]?.[0];
     expect(payload?.erpRequired).toBe(true);
+  });
+
+  it("maintains history integrity across undo/redo, ERP toggle, and save", async () => {
+    seedTimeline();
+    const { insertOperation, moveStep, undo, redo, setERPRequired } = useRoutingStore.getState();
+
+    act(() => {
+      setERPRequired(true);
+    });
+
+    act(() => {
+      insertOperation(
+        {
+          itemCode: baseItemCode,
+          candidateId: null,
+          operation: seedOperation(3, "PAINT"),
+        },
+        1,
+      );
+    });
+
+    let state = useRoutingStore.getState();
+    expect(state.erpRequired).toBe(true);
+    expect(state.dirty).toBe(true);
+    expect(state.history.past).toHaveLength(1);
+    expect(state.history.past[0]?.reason).toBe("insert-operation");
+    expect(state.timeline.map((step) => step.processCode)).toEqual(["CUT", "PAINT", "WELD"]);
+
+    const insertedStepId = state.timeline[1]?.id;
+    expect(insertedStepId).toBeDefined();
+
+    act(() => {
+      moveStep(insertedStepId!, 2);
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.timeline.map((step) => step.processCode)).toEqual(["CUT", "WELD", "PAINT"]);
+    expect(state.history.past).toHaveLength(2);
+    expect(state.history.past[1]?.reason).toBe("reorder-step");
+
+    act(() => {
+      undo();
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.timeline.map((step) => step.processCode)).toEqual(["CUT", "PAINT", "WELD"]);
+    expect(state.history.future[0]?.reason).toBe("undo");
+    expect(state.erpRequired).toBe(true);
+
+    act(() => {
+      redo();
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.timeline.map((step) => step.processCode)).toEqual(["CUT", "WELD", "PAINT"]);
+    expect(state.history.future).toHaveLength(0);
+
+    const { result } = renderHook(() => useRoutingGroups());
+    await act(async () => {
+      await result.current.saveGroup({ groupName: "Workspace History" });
+    });
+
+    expect(createRoutingGroupMock).toHaveBeenCalledTimes(1);
+    const payload = createRoutingGroupMock.mock.calls[0]?.[0];
+    expect(payload).toMatchObject({
+      groupName: "Workspace History",
+      erpRequired: true,
+    });
+    expect(payload.steps.map((step: { process_code: string }) => step.process_code)).toEqual([
+      "CUT",
+      "WELD",
+      "PAINT",
+    ]);
+
+    const auditPayload = postUiAuditMock.mock.calls[0]?.[0]?.payload as { erp_required?: boolean; step_count?: number } | undefined;
+    expect(auditPayload?.erp_required).toBe(true);
+    expect(auditPayload?.step_count).toBe(3);
+
+    state = useRoutingStore.getState();
+    expect(state.dirty).toBe(false);
+    expect(state.lastSavedAt).toBe(deterministicTimestamp);
+    expect(state.lastSuccessfulTimeline[baseItemCode]?.map((step) => step.processCode)).toEqual([
+      "CUT",
+      "WELD",
+      "PAINT",
+    ]);
   });
 
   it("loads routing groups and clears dirty state", async () => {

@@ -6,7 +6,7 @@ import {
   enqueueAuditEntry,
   readLatestRoutingWorkspaceSnapshot,
   writeRoutingWorkspaceSnapshot,
-} from "../lib/indexedDb";
+} from "../lib/persistence";
 
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;
