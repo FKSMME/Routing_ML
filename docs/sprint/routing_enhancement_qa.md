@@ -3,7 +3,7 @@
 # Routing Enhancement QA 시나리오 (Codex 자가 테스트)
 
 ## 테스트 환경
-- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ⚠️ 실패: TypeScript 10건 오류로 빌드 중단 (ReactFlow/Options/IndexedDB 타입 보완 필요, 로그 캡처 완료). 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
+- [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ✅ 성공: TypeScript 오류 0건으로 빌드 완료. 증빙: [`logs/qa/frontend_build_20251001.log`](../../logs/qa/frontend_build_20251001.log).
 - [ ] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → 미수행: 프런트엔드 빌드 복구 후 2025-10 스프린트 1주차 QA 세션에서 `/api/routing/groups` 스텁 연결 점검 예정.
 - [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → 미수행: 빌드 오류 해결 및 통합 배포 산출물 확보 후 2025-10 스프린트 1주차 수동 QA 슬롯에서 재검증 예정.
 
@@ -39,8 +39,8 @@
 - [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → 미수행: 빌드 복구 후 메뉴 전환 시나리오 재검증 예정.
 
 ## 실행 로그 & 후속 조치
-- `npm run build` 실패 로그(typescript 타입 오류 10건)를 기반으로 Algorithm/DataOutput/Options Workspace 타입 정의를 보완한 뒤 재빌드 필요. 증빙: [`logs/qa/frontend_build_20250930.log`](../../logs/qa/frontend_build_20250930.log).
-- 빌드 성공 후 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.
+- `npm run build` 재실행 결과 성공 로그 확보 완료. TypeScript 오류가 해소되었으므로 QA 체크리스트 재개 가능. 증빙: [`logs/qa/frontend_build_20251001.log`](../../logs/qa/frontend_build_20251001.log).
+- 빌드 성공 상태를 유지하면서 위 기능 시나리오/회귀 검증 체크리스트를 순차적으로 수행하고, 성공 여부에 따라 본 문서에 ✅/⚠️ 상태를 갱신한다.
 
 ## 위험/대응 메모
 - 타임라인 상태를 외부 API 응답으로 덮어쓸 때 `dirty` 상태 장치 필요 → 현재는 새 추천 도착 시 자동 초기화 (향후 사용자 확인 다이얼로그 고려).

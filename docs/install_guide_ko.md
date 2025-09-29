@@ -75,14 +75,14 @@
 - [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
 - [x] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
-> ✅ 2025-10-01 기준: 프런트엔드 `npm run build`가 TypeScript 오류 없이 완료되어 재빌드 보류 상태가 해제되었습니다. 최신 빌드 결과는 아래 로그를 참조하세요.
+> ✅ 2025-10-01 기준: 프런트엔드 `npm run build`가 TypeScript 오류 없이 완료되어 재빌드 보류 상태가 해제되었습니다. 최신 빌드 결과는 [`logs/qa/frontend_build_20251001.log`](../logs/qa/frontend_build_20251001.log)을 참조하세요.
 
 ```
 $ npm run build --prefix frontend
 vite v5.4.20 building for production...
 ✓ 2365 modules transformed.
-dist/assets/index-CYCE88ln.js   1,589.13 kB │ gzip: 518.47 kB
-✓ built in 9.72s
+dist/assets/index-D_vEkLqm.js   1,589.25 kB │ gzip: 518.54 kB
+✓ built in 16.84s
 ```
 
 ## 6. 문제가 생겼나요?
