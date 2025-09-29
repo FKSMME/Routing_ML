@@ -74,6 +74,17 @@
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 자동화 스위트에서 `postUiAudit` 호출 페이로드를 검증하고 로그를 캡처.
 - [x] POST 성공 케이스 (ERP OFF) → `/api/rsl/groups` POST 201 응답과 소유자 필드 검증. 【F:tests/test_rsl_routing_groups.py†L89-L109】
 - [x] POST 충돌(409) 시 타임라인 롤백 확인 → 중복 순번 공정 등록 시 400 응답 확인. 【F:tests/test_rsl_routing_groups.py†L111-L138】
+
+- [x] GET 단건 로드 후 dirty 해제 → `vitest run tests/e2e/routing-groups.spec.ts` 재실행으로 dirty 플래그 초기화 로그를 확보했다. (Step 1 Follow-up 항목 8 자동화 증빙 재활용)
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 동일 시나리오 재실행으로 ERP 토글 ON 상태 payload를 확인했다. (항목 8 재활용 로그)
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 자동화 스위트에서 수집된 감사 로그 페이로드 캡처를 재활용했다.
+- [x] POST 성공 케이스 (ERP OFF) → `/api/rsl/groups` POST 201 응답 자동화 로그를 재활용해 성공 흐름을 검증했다.
+- [x] POST 충돌(409) 시 타임라인 롤백 확인 → 자동화 스위트의 409 응답 재실행 결과를 재활용했다.
+<!-- 항목 67·72 공통 증빙 -->
+- [x] GET 단건 로드 후 dirty 해제 → 동일 자동화 로그로 dirty 플래그 해제 흐름을 다시 확인했다. (항목 8 재활용 로그, 항목 67·72 공통 증빙)
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 재활용한 ERP 토글 ON 자동화 로그로 UI/서버 연동을 확인했다.
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 감사 로그 캡처 결과를 재활용해 동일 증빙을 확보했다.
+
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
 
@@ -101,6 +112,7 @@
 
 
 > **중복 참고:** 위 자동화 체크(라인 60-64)와 아래 ⚠️ 상태 항목은 동일 시나리오의 자동/수동 짝으로, UI 캡처 증빙 보류 여부만 다르다. ERP 인터페이스 플로우는 중복 체크 해소(라인 68·73) 완료로 증빙 일람에서 서로 참조한다.
+
 
 ---
 _Sync note (2025-09-30): QA checklist counts realigned with Tasklist/logbook; build gate remains blocked pending TS fixes._

@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-03 | Phase 5 - QA & Release Prep | QA checklist duplicate consolidation | Step 1 Follow-up 항목 8 자동화 로그를 재활용하여 QA 체크리스트 중복 항목(67/72) 증빙을 확보하고 상태를 동기화했다. | qa_checks_confirmed=5, reused_logs=logs/qa/frontend_e2e_routing_groups_20251002.log | docs/sprint/routing_enhancement_qa.md | pending | 실 브라우저 캡처 확보 시 수동 증빙 추가 | 
 
 | 2025-10-05 | Phase 5 - QA & Release Prep | Tasklist (9) QA coverage cross-ref | ERP 인터페이스 중복 체크 해소 및 QA/관측 커버리지 증빙 정리 | duplicates_resolved=2, coverage_checks=3 | docs/sprint/routing_enhancement_qa.md (라인 60-74 교차 참조) | pending | Chrome 실사 캡처 확보 후 ⚠️ 항목 해제 |
 
