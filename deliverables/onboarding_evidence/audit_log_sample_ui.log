@@ -1,0 +1,24 @@
+=== UI Audit Request Capture ===
+UTC Timestamp: 2025-09-29T23:19:21.195710
+Endpoint: POST /api/audit/ui
+Request Payload:
+{
+  "action": "ui.training.features.save",
+  "username": "qa_user",
+  "ip_address": "127.0.0.1",
+  "payload": {
+    "featureProfile": "baseline",
+    "selectedFeatures": [
+      "setup_time",
+      "run_time",
+      "queue_time"
+    ],
+    "variants": 4,
+    "notes": "UI audit sample generated during onboarding evidence capture"
+  }
+}
+
+HTTP Response:
+HTTP/1.1 204 No Content
+date: Mon, 29 Sep 2025 23:19:20 GMT
+server: uvicorn

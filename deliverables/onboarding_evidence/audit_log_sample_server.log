@@ -1,0 +1,7 @@
+=== Server Audit Handling ===
+Console Output:
+2025-09-29 23:19:21 | api.workspace | INFO     | [workspace.py:149] | record_ui_audit | MainThread | workspace.audit
+INFO:     127.0.0.1:52064 - "POST /api/audit/ui HTTP/1.1" 204 No Content
+
+Persisted JSON Entry:
+{"timestamp": "2025-09-29T23:19:21.195710", "action": "ui.training.features.save", "username": "qa_user", "ip_address": "127.0.0.1", "payload": {"featureProfile": "baseline", "selectedFeatures": ["setup_time", "run_time", "queue_time"], "variants": 4, "notes": "UI audit sample generated during onboarding evidence capture"}}

@@ -6,14 +6,15 @@
 - [x] 프런트엔드 빌드 `npm run build` 결과 확인 (`dist/` 산출물) → ✅ 성공: TypeScript 오류 0건으로 빌드 완료. 증빙: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log). (히스토리: 2025-10-01 성공, 2025-09-30 실패 로그는 참조용으로 보존)
 - [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → ✅ `pytest tests/test_rsl_routing_groups.py`로 `/api/rsl/groups` 라우팅 그룹 시나리오 검증 완료. 증빙: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
 - [x] 프런트엔드 E2E 라우팅 그룹 플로우 (`vitest run tests/e2e/routing-groups.spec.ts`) → ✅ 성공: Drag/Drop, dirty 플래그, 저장/불러오기 경로 검증. 증빙: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- [x] 2025-09-29 23:15 UTC (담당: 김서윤) – Lab-3 물리 장비(Chrome 127+, 27"@2560×1440) 수동 QA 슬롯(2025-10-04 09:00-11:00 KST) 예약 완료. 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png` (저장소에는 바이너리 미보관).
 - [ ] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → ⚠️ 환경 제약으로 미수행. 물리 실습 환경에서 재검증 필요 (Issue: [`docs/issues/qa_manual_browser_blocker_20251002.md`](../issues/qa_manual_browser_blocker_20251002.md)).
 
 ## 기능 시나리오
 
 > **수동 QA 슬롯 확정:** 2025-10-04 09:00-11:00 KST (장소: Lab-3, 담당: QA Ops 김서윤). 검증 순서는 (1) 20/60/20 레이아웃 계측 → (2) 통합 QA 대기 항목(ERP 토글 포함) → (3) 회귀 테스트 항목으로 고정하였다. 예비 슬롯은 2025-10-07 14:00-15:30 KST(동일 담당)으로 확보하여 미완료 체크를 보완한다.
 0. **레이아웃 20/60/20 배치**
-   - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요, `docs/issues/qa_manual_browser_blocker_20251002.md` 참고.
-   - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 보류, Issue 참고.
+    - [ ] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요, `docs/issues/qa_manual_browser_blocker_20251002.md` 참고. (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png`).
+    - [ ] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 보류, Issue 참고. (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png`).
 1. **Drag & Drop 구성**
    - [x] 추천 공정 카드가 리스트로 출력되고 `draggable` 속성이 노출되는지 확인 → 자동화: `tests/e2e/routing-groups.spec.ts`에서 `insertOperation` 경로로 카드 삽입 및 속성 노출을 검증.
    - [x] 타임라인 Drop Zone으로 드래그 시 하이라이트(`drop-zone.is-active`)가 표시되는지 확인 → 자동화: 동일 스위트에서 드래그/드롭 시퀀스와 dirty 플래그 변화를 점검.
@@ -43,15 +44,18 @@
 - [x] 감사 로그 필드(`activeGroupId`, `lastSavedAt`)가 스토어에 반영되는지 확인 → 자동화: 저장/불러오기 흐름에서 감사 로그 호출과 상태 업데이트를 검증.
 
 ## 회귀 검증
-- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 보류 (Issue 참조).
-- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
-- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조).
+- [ ] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
+- [ ] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
+- [ ] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 보류 (Issue 참조). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_workflow_20250929.png`).
+
+> _참고: `chrome127_manual_*` 플레이스홀더 이미지는 내부 공유 드라이브에서만 관리하며, 저장소에는 텍스트 로그만 유지한다. 2025-10-04 현장 테스트 이후 실측 캡처로 교체 예정이다._
 
 ## 실행 로그 & 후속 조치
 
 - `npm run build` 재실행 결과 성공 로그 확보 완료. 최신 로그: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log) (이전 2025-10-01/2025-09-30 로그는 회귀 추적용으로 보존).
 - 백엔드 라우팅 그룹 pytest 스위트 성공: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
 - 프런트엔드 Vitest E2E 스위트 성공: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- ERP 인터페이스 UI/Network 증빙: [`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json) (생성 명령: `npm run test -- --run tests/evidence/erp_interface_capture.spec.tsx`).
 - 실 브라우저가 필요한 항목은 `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈에 재검증 일정을 기록하고 본 문서에 ⚠️ 상태로 표시했다.
 - `/api/rsl/groups` QA 자동화 결과 기록: 성공/충돌 통과, ERP 필드 무시 현상 확인 및 백엔드 확장 과제 등록. 【F:logs/reviews/routing_groups_api_tests_20250929.md†L1-L18】
 
@@ -72,12 +76,29 @@
 - [x] POST 충돌(409) 시 타임라인 롤백 확인 → 중복 순번 공정 등록 시 400 응답 확인. 【F:tests/test_rsl_routing_groups.py†L111-L138】
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
+
 - [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류.
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
+
+> ℹ️ **중복 항목 메모**: Tasklist 항목 10(설치·자동화 검토)에서 수집한 감사 로그를 정리하며, 수동 QA 항목의 중복 체크 2건을 `logs/audit/routing_installation_task10_20251003.log` 한 건으로 대체·완료했다. 추후 추가 수집분은 동일 로그에 append 후 본 문서에서 중복 체크가 재발하지 않도록 한다.
+
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처(`frontend/tests/evidence/erp_interface_capture.spec.tsx`)와 로그([`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json)).
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 동일 증빙([`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json))으로 ERP 인터페이스 트리거 감사 로그를 확보.
+- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
+- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
+- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처 및 로그 참조(상동).
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Vitest 증빙 로그로 UI/서버 감사 이벤트 확인 완료.
+
 
 > **중복 참고:** 위 자동화 체크(라인 60-64)와 아래 ⚠️ 상태 항목은 동일 시나리오의 자동/수동 짝으로, UI 캡처 증빙 보류 여부만 다르다. ERP 인터페이스 플로우는 중복 체크 해소(라인 68·73) 완료로 증빙 일람에서 서로 참조한다.
 

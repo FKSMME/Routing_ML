@@ -1,12 +1,12 @@
 ﻿import type { OperationStep, PredictionResponse, RoutingGroupDetail } from "@app-types/routing";
-import { create } from "zustand";
+import { create, type StateCreator, type StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 
 import {
   enqueueAuditEntry,
   readLatestRoutingWorkspaceSnapshot,
   writeRoutingWorkspaceSnapshot,
-} from "../lib/indexedDb";
+} from "../lib/persistence";
 
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;
@@ -231,7 +231,7 @@ export interface RoutingStoreState {
   redo: () => void;
 }
 
-export const useRoutingStore = create<RoutingStoreState>((set) => ({
+const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   loading: false,
   saving: false,
   dirty: false,
@@ -530,7 +530,7 @@ export const useRoutingStore = create<RoutingStoreState>((set) => ({
         dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
       };
     }),
-}));
+});
 
 let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -574,16 +574,18 @@ const scheduleSnapshotSave = (selection: PersistedSelectionState) => {
 
 let lastPersistedSelection: PersistedSelectionState | null = null;
 
-useRoutingStore.subscribe((state) => {
-  const nextSelection: PersistedSelectionState = persistedSelector(state);
-  if (lastPersistedSelection && shallow(lastPersistedSelection, nextSelection)) {
-    return;
-  }
-  lastPersistedSelection = nextSelection;
-  scheduleSnapshotSave(nextSelection);
-});
+const initializeRoutingPersistence = (store: StoreApi<RoutingStoreState>) => {
+  store.subscribe((state) => {
+    const nextSelection: PersistedSelectionState = persistedSelector(state);
+    if (lastPersistedSelection && shallow(lastPersistedSelection, nextSelection)) {
+      return;
+    }
+    lastPersistedSelection = nextSelection;
+    scheduleSnapshotSave(nextSelection);
+  });
+};
 
-const restoreLatestSnapshot = async () => {
+const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
   try {
     const snapshot = await readLatestRoutingWorkspaceSnapshot<RoutingWorkspacePersistedState>();
     if (!snapshot || !snapshot.state) {
@@ -607,7 +609,7 @@ const restoreLatestSnapshot = async () => {
       ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
       : {};
 
-      useRoutingStore.setState((current) => ({
+      store.setState((current) => ({
         ...current,
         activeProductId,
         activeItemId: persisted.activeItemId ?? activeProductId,
@@ -637,7 +639,14 @@ const restoreLatestSnapshot = async () => {
   }
 };
 
-void restoreLatestSnapshot();
+export const createRoutingStore = () => {
+  const store = create<RoutingStoreState>()(routingStateCreator);
+  initializeRoutingPersistence(store);
+  void restoreLatestSnapshot(store);
+  return store;
+};
+
+export const useRoutingStore = createRoutingStore();
 
 
 
