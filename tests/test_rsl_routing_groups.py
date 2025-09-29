@@ -171,3 +171,20 @@ def test_update_group_toggles_erp_flag(api_client: Tuple[TestClient, Dict[str, s
     assert update_resp.status_code == 200, update_resp.text
     updated = update_resp.json()
     assert updated["erp_required"] is True
+
+
+def test_list_groups_includes_erp_flag(api_client: Tuple[TestClient, Dict[str, str]]) -> None:
+    client, headers = api_client
+
+    create_resp = client.post(
+        "/api/rsl/groups",
+        headers=headers,
+        json={"name": "List ERP Flag", "erp_required": True},
+    )
+    assert create_resp.status_code == 201
+
+    list_resp = client.get("/api/rsl/groups", headers=headers)
+    assert list_resp.status_code == 200, list_resp.text
+    body = list_resp.json()
+    assert body["total"] >= 1
+    assert any(item["erp_required"] is True for item in body["items"])
