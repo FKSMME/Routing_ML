@@ -45,7 +45,7 @@ const enqueueAuditEntryMock = vi.hoisted(() =>
 );
 const readLatestSnapshotMock = vi.hoisted(() => vi.fn(async () => undefined));
 
-vi.mock("@lib/indexedDb", () => ({
+vi.mock("@lib/persistence", () => ({
   __esModule: true,
   writeRoutingWorkspaceSnapshot: writeSnapshotMock,
   enqueueAuditEntry: enqueueAuditEntryMock,
