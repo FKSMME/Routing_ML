@@ -167,22 +167,42 @@ class TrainingService:
                 json.dumps(metrics, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-            manifest_path = version_dir / "manifest.json"
-            manifest_payload = {
+            manifest_metadata = {
                 "version": version_name,
-                "job_id": job_id,
-                "requested_by": requested_by,
-                "started_at": meta["started_at"],
-                "completed_at": completed_at.isoformat(),
-                "artifacts": {
-                    "metrics": str((version_dir / "training_metrics.json").resolve()),
+                "job": {
+                    "id": job_id,
+                    "requested_by": requested_by,
+                    "dry_run": dry_run,
+                    "started_at": meta["started_at"],
+                    "completed_at": completed_at.isoformat(),
                 },
                 "metrics": metrics,
             }
-            manifest_path.write_text(
-                json.dumps(manifest_payload, ensure_ascii=False, indent=2),
-                encoding="utf-8",
-            )
+            if projector_metadata:
+                manifest_metadata["projector_metadata_columns"] = list(projector_metadata)
+            files_payload = {}
+            for key, filename in (
+                ("training_request", "training_request.json"),
+                ("training_metrics", "training_metrics.json"),
+                ("time_profiles", "time_profiles.json"),
+            ):
+                candidate = version_dir / filename
+                if candidate.exists():
+                    files_payload[key] = candidate.relative_to(version_dir).as_posix()
+            if files_payload:
+                manifest_metadata["files"] = files_payload
+
+            try:
+                manifest_path = write_manifest(
+                    version_dir,
+                    strict=not dry_run,
+                    metadata=manifest_metadata,
+                )
+                logger.info("매니페스트 생성 완료", extra={"job_id": job_id, "manifest": str(manifest_path)})
+            except Exception as exc:
+                logger.error("매니페스트 생성 실패", extra={"job_id": job_id, "error": str(exc)})
+                manifest_path = version_dir / "manifest.json"
+
             if not dry_run:
                 try:
                     register_version(
@@ -197,13 +217,6 @@ class TrainingService:
                     logger.exception(
                         "모델 레지스트리 업데이트 실패", extra={"job_id": job_id, "error": str(registry_error)}
                     )
-
-
-            try:
-                manifest_path = write_manifest(version_dir, strict=not dry_run)
-                logger.info("매니페스트 생성 완료", extra={"job_id": job_id, "manifest": str(manifest_path)})
-            except Exception as exc:
-                logger.error("매니페스트 생성 실패", extra={"job_id": job_id, "error": str(exc)})
 
 
             if trained is None:

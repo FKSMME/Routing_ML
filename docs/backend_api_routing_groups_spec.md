@@ -141,5 +141,13 @@
 - [ ] 감사 로그 헬퍼 함수 작성 (`audit_routing_event(action, payload)`)
 - [ ] DB persistence 계층 설계 (`routing_groups` 테이블 스키마, 인덱스) 문서화
 - [x] OpenAPI 문서를 Codex가 직접 갱신하고 자체 QA 시나리오를 작성
-\n\n## 6. OpenAPI/QA 업데이트 기록\n- 2025-09-28 Codex: /api/routing/groups POST/GET 스펙을 프런트엔드 저장/불러오기 플로우와 동기화, OpenAPI 문서 초안 반영 완료.\n- 2025-09-28 Codex: QA 체크리스트는 docs/sprint/routing_enhancement_qa.md 문서에 정리함.\n
+
+## 6. OpenAPI/QA 업데이트 기록
+- 2025-09-28 Codex: /api/routing/groups POST/GET 스펙을 프런트엔드 저장/불러오기 플로우와 동기화, OpenAPI 문서 초안 반영 완료.
+- 2025-09-28 Codex: QA 체크리스트는 `docs/sprint/routing_enhancement_qa.md` 문서에 정리함.
+
+## Codex 리뷰 메모 (2025-09-29)
+- manifest 기반 모델 로더/레지스트리 설계와 충돌 여부를 검토한 결과, `paths`/`metadata` 필드가 manifest 정보를 중복 저장하지 않고 참조만 하도록 정의되어 있어 재사용 전략과 일치함을 확인하였다.
+- 감사 로그 체계가 절대 지령의 추적성 요구를 충족하는지 확인했으며, `routing.audit` 채널이 기존 `common/logging/schema.json` 스키마와 호환된다. 추가 필드로 `correlation_id`를 강제하도록 FastAPI 미들웨어 의존성이 명시되어 있음.
+- 구현 체크리스트 항목은 아직 미완료 상태로 남겨 두되, Tasklist Stage 2와 연동되는 선행 작업이며 API 파라미터 범위/에러 코드가 UI 스펙과 일치하므로 별도 수정 사항 없음.
 

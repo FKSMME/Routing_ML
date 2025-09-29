@@ -46,7 +46,12 @@ def _compute_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_manifest(directory: Path, *, strict: bool = True) -> Dict[str, Any]:
+def build_manifest(
+    directory: Path,
+    *,
+    strict: bool = True,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Build a manifest payload for ``directory``.
 
     Args:
@@ -90,13 +95,20 @@ def build_manifest(directory: Path, *, strict: bool = True) -> Dict[str, Any]:
         "hash_algorithm": HASH_ALGORITHM,
         "artifacts": artifacts,
     }
+    if metadata:
+        payload["metadata"] = metadata
     return payload
 
 
-def write_manifest(directory: Path, *, strict: bool = True) -> Path:
+def write_manifest(
+    directory: Path,
+    *,
+    strict: bool = True,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Path:
     """Generate and persist ``manifest.json`` under ``directory``."""
 
-    manifest = build_manifest(directory, strict=strict)
+    manifest = build_manifest(directory, strict=strict, metadata=metadata)
     manifest_path = Path(directory).expanduser().resolve() / MANIFEST_FILENAME
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
     return manifest_path

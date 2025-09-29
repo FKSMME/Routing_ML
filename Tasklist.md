@@ -29,6 +29,7 @@
 
 - [x] Stage 1 UI + metadata stub baseline (2025-09-28 19:05 완료)
 - [x] Stage 2 routing save/interface flow (2025-09-28 23:29 완료)
-- [ ] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청
-- [ ] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰
-- [ ] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰
+- [x] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청 (2025-09-29 09:05 완료)
+- [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
+- [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
+- [x] Refactoring execution plan 초안 작성 (`docs/Design/routing_refactor_execution_plan.md`) (2025-09-29 09:41 KST 완료)

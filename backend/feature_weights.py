@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from common.logger import get_logger
+from models.manifest import ModelManifest
 
 logger = get_logger("feature_weights")
 
@@ -176,8 +177,15 @@ class FeatureWeightManager:
     # ----------------------------------------------------------------------
     # ❷ 객체 초기화
     # ----------------------------------------------------------------------
-    def __init__(self, model_dir: Optional[Path] = None):
-        self.model_dir = Path(model_dir) if model_dir else None
+    def __init__(self, model_dir: Optional[Path] = None, *, manifest: Optional[ModelManifest] = None):
+        if manifest is not None and model_dir is not None:
+            raise ValueError("model_dir와 manifest를 동시에 지정할 수 없습니다")
+
+        self._manifest: Optional[ModelManifest] = manifest
+        if manifest is not None:
+            self.model_dir = manifest.root_dir
+        else:
+            self.model_dir = Path(model_dir) if model_dir else None
         self.feature_weights: Dict[str, float] = self.DEFAULT_WEIGHTS.copy()
         self.active_features: Dict[str, bool] = self.DEFAULT_ACTIVE_FEATURES.copy()
         self.feature_importance: Dict[str, float] = {}
@@ -505,34 +513,78 @@ class FeatureWeightManager:
         )
         logger.info("피처 분석 결과 저장 완료")
 
+    def _resolve_artifact(self, name: str, default_filename: str) -> Optional[Path]:
+        if self._manifest is not None:
+            try:
+                artifact_path = self._manifest.resolve_path(name)
+                if artifact_path.exists():
+                    return artifact_path
+            except KeyError:
+                pass
+            except Exception as exc:  # pragma: no cover - 방어적 로깅
+                logger.debug("매니페스트 아티팩트 해석 실패 (%s): %s", name, exc)
+
+        if self.model_dir:
+            candidate = self.model_dir / default_filename
+            if candidate.exists():
+                return candidate
+        return None
+
     def load_weights(self):
-        if not self.model_dir:
+        if not self.model_dir and self._manifest is None:
             logger.info("모델 디렉토리 미지정 → 기본 가중치 사용")
             return
-        fp = self.model_dir / "feature_weights.json"
-        if fp.exists():
+
+        json_path = self._resolve_artifact("feature_weights_state", "feature_weights.json")
+
+        if json_path is not None:
             try:
-                data = json.loads(fp.read_text(encoding="utf-8"))
+                data = json.loads(json_path.read_text(encoding="utf-8"))
                 self.feature_weights = data.get("weights", data)
                 self.active_features = data.get(
                     "active_features", self.DEFAULT_ACTIVE_FEATURES.copy()
                 )
                 logger.info(
-                    "Feature weights 로드 완료 (%d개, 활성 %d개)",
+                    "Feature weights 로드 완료 (%d개, 활성 %d개) [json]",
                     len(self.feature_weights),
                     sum(self.active_features.values()),
                 )
-            except Exception as e:
-                logger.warning("weights 로드 실패: %s", e)
-        # importance/statistics 별도 로드
+            except Exception as exc:
+                logger.warning("weights JSON 로드 실패(%s): %s", json_path, exc)
+        joblib_path = self._resolve_artifact("feature_weights", "feature_weights.joblib")
+        if joblib_path is not None:
+            try:
+                loaded_weights = joblib.load(joblib_path)
+                if isinstance(loaded_weights, dict):
+                    self.feature_weights.update(loaded_weights)
+                    logger.info(
+                        "Feature weights 로드 완료 (%d개) [joblib]",
+                        len(self.feature_weights),
+                    )
+            except Exception as exc:
+                logger.warning("weights joblib 로드 실패(%s): %s", joblib_path, exc)
+
+        active_path = self._resolve_artifact("active_features", "active_features.json")
+        if active_path is not None and active_path != json_path:
+            try:
+                active_payload = json.loads(active_path.read_text(encoding="utf-8"))
+                if isinstance(active_payload, dict):
+                    overrides = self.DEFAULT_ACTIVE_FEATURES.copy()
+                    overrides.update({key: bool(value) for key, value in active_payload.items()})
+                    self.active_features = overrides
+                    logger.info("Active features 로드 완료 (%d개)", sum(self.active_features.values()))
+            except Exception as exc:
+                logger.warning("active_features 로드 실패(%s): %s", active_path, exc)
+
         for name in ("feature_importance", "feature_statistics"):
-            p = self.model_dir / f"{name}.json"
-            if p.exists():
-                try:
-                    setattr(self, name, json.loads(p.read_text(encoding="utf-8")))
-                    logger.info("%s 로드 완료", name)
-                except Exception as e:
-                    logger.warning("%s 로드 실패: %s", name, e)
+            resolved = self._resolve_artifact(name, f"{name}.json")
+            if resolved is None:
+                continue
+            try:
+                setattr(self, name, json.loads(resolved.read_text(encoding="utf-8")))
+                logger.info("%s 로드 완료", name)
+            except Exception as exc:
+                logger.warning("%s 로드 실패(%s): %s", name, resolved, exc)
 
     def save_weights(self):
         if not self.model_dir:
