@@ -99,6 +99,54 @@ class ManifestLoader:
             return dict(self._cache[manifest_path])
 
 
+class JsonArtifactCache:
+    """모델 디렉터리 내 JSON 아티팩트를 안전하게 캐시한다."""
+
+    def __init__(self) -> None:
+        self._cache: Dict[Path, Optional[Dict[str, Any]]] = {}
+        self._mtimes: Dict[Path, Optional[float]] = {}
+        self._lock = Lock()
+
+    def load(self, path: Path) -> Optional[Dict[str, Any]]:
+        resolved = path.expanduser().resolve()
+        if not resolved.exists():
+            with self._lock:
+                self._cache.pop(resolved, None)
+                self._mtimes.pop(resolved, None)
+            return None
+
+        mtime = resolved.stat().st_mtime
+
+        with self._lock:
+            cached = self._cache.get(resolved, object())
+            cached_mtime = self._mtimes.get(resolved)
+            if cached_mtime == mtime:
+                if cached is None:
+                    return None
+                return json.loads(json.dumps(cached))
+
+        try:
+            payload = json.loads(resolved.read_text(encoding="utf-8"))
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.warning("JSON 아티팩트 로드 실패 (%s): %s", resolved, exc)
+            with self._lock:
+                self._cache[resolved] = None
+                self._mtimes[resolved] = mtime
+            return None
+
+        with self._lock:
+            self._cache[resolved] = payload
+            self._mtimes[resolved] = mtime
+
+        return json.loads(json.dumps(payload))
+
+    def invalidate(self, path: Path) -> None:
+        resolved = path.expanduser().resolve()
+        with self._lock:
+            self._cache.pop(resolved, None)
+            self._mtimes.pop(resolved, None)
+
+
 class TimeAggregator:
     """공정 시간 합계를 계산하는 헬퍼."""
 
@@ -193,6 +241,7 @@ class PredictionService:
         self._model_lock: bool = False
         self._last_metrics: Dict[str, Any] = {}
         self._manifest_loader = ManifestLoader()
+        self._json_artifacts = JsonArtifactCache()
         self.time_aggregator = TimeAggregator()
 
         self._model_registry_path = self.settings.model_registry_path
@@ -293,6 +342,51 @@ class PredictionService:
 
     def _load_manifest(self) -> Dict[str, Any]:
         return self._manifest_loader.load(self.model_dir)
+
+    def _resolve_optional_artifact(
+        self,
+        manifest: ModelManifest,
+        artifact_name: str,
+        default_filename: str,
+    ) -> Optional[Path]:
+        try:
+            artifact_path = manifest.resolve_path(artifact_name)
+            if artifact_path.exists():
+                return artifact_path
+        except KeyError:
+            pass
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.debug(
+                "매니페스트 아티팩트 해석 실패 (%s): %s",
+                artifact_name,
+                exc,
+            )
+
+        candidate = manifest.root_dir / default_filename
+        if candidate.exists():
+            return candidate
+        return None
+
+    def _load_json_artifact(
+        self,
+        manifest: ModelManifest,
+        artifact_name: str,
+        default_filename: str,
+    ) -> Optional[Dict[str, Any]]:
+        artifact_path = self._resolve_optional_artifact(
+            manifest, artifact_name, default_filename
+        )
+        if artifact_path is None:
+            return None
+        return self._json_artifacts.load(artifact_path)
+
+    def get_time_profiles(self) -> Optional[Dict[str, Any]]:
+        try:
+            manifest = self._get_manifest()
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.debug("시간 프로파일 매니페스트 로드 실패: %s", exc)
+            return None
+        return self._load_json_artifact(manifest, "time_profiles", "time_profiles.json")
 
     @staticmethod
     def _normalize_item_code(item_code: Optional[str]) -> Optional[str]:

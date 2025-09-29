@@ -13,7 +13,7 @@ import pandas as pd
 
 from backend.api.config import get_settings
 from backend.maintenance.model_registry import register_version
-from backend.trainer_ml import train_model_with_ml_improved
+from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS, train_model_with_ml_improved
 from common.config_store import workflow_config_store
 from common.logger import get_logger
 from models.manifest import write_manifest
@@ -167,6 +167,49 @@ class TrainingService:
                 json.dumps(metrics, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+
+            time_profiles_path = version_dir / "time_profiles.json"
+            if (
+                TRAINER_RUNTIME_SETTINGS.get("time_profiles_enabled")
+                and not time_profiles_path.exists()
+            ):
+                placeholder = {
+                    "generated_at": datetime.utcnow().isoformat(),
+                    "strategy": str(
+                        TRAINER_RUNTIME_SETTINGS.get(
+                            "time_profile_strategy", "sigma_profile"
+                        )
+                    ),
+                    "time_columns": [],
+                    "columns": {},
+                    "profiles": {"OPT": {}, "STD": {}, "SAFE": {}},
+                    "parameters": {
+                        "trim_std_enabled": bool(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_std_enabled", True)
+                        ),
+                        "trim_lower_percent": float(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_lower_percent", 0.05)
+                        ),
+                        "trim_upper_percent": float(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_upper_percent", 0.95)
+                        ),
+                        "optimal_sigma": float(
+                            TRAINER_RUNTIME_SETTINGS.get("time_profile_optimal_sigma", 0.67)
+                        ),
+                        "safe_sigma": float(
+                            TRAINER_RUNTIME_SETTINGS.get("time_profile_safe_sigma", 1.28)
+                        ),
+                        "min_samples": 0,
+                    },
+                }
+                time_profiles_path.write_text(
+                    json.dumps(placeholder, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                logger.info(
+                    "시간 프로파일 기본 템플릿 생성",
+                    extra={"job_id": job_id, "path": str(time_profiles_path)},
+                )
             manifest_metadata = {
                 "version": version_name,
                 "job": {
