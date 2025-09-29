@@ -7,7 +7,7 @@ import {
   saveWorkspaceSettings,
 } from "@lib/apiClient";
 import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
-import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 interface MappingRow {
   source: string;
@@ -74,12 +74,14 @@ function safeFormatDate(value?: string | null): string | null {
   return date.toLocaleDateString();
 }
 
-function renderPreviewValue(value: unknown): ReactNode {
+type PreviewRenderable = string | number | boolean;
+
+function renderPreviewValue(value: unknown): PreviewRenderable {
   if (value === null || value === undefined) {
     return "-";
   }
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return value as string | number | boolean;
+    return value;
   }
   if (value instanceof Date) {
     return value.toISOString();

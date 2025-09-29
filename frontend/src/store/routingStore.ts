@@ -575,7 +575,7 @@ const scheduleSnapshotSave = (selection: PersistedSelectionState) => {
 let lastPersistedSelection: PersistedSelectionState | null = null;
 
 useRoutingStore.subscribe((state) => {
-  const nextSelection = persistedSelector(state);
+  const nextSelection: PersistedSelectionState = persistedSelector(state);
   if (lastPersistedSelection && shallow(lastPersistedSelection, nextSelection)) {
     return;
   }
@@ -607,8 +607,7 @@ const restoreLatestSnapshot = async () => {
       ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
       : {};
 
-    useRoutingStore.setState(
-      (current) => ({
+      useRoutingStore.setState((current) => ({
         ...current,
         activeProductId,
         activeItemId: persisted.activeItemId ?? activeProductId,
@@ -618,9 +617,7 @@ const restoreLatestSnapshot = async () => {
         lastSuccessfulTimeline: successMap,
         lastSavedAt: persisted.lastSavedAt,
         dirty: computeDirty(normalizedTimeline, successMap, activeProductId),
-      }),
-      false,
-    );
+      }));
 
     await enqueueAuditEntry({
       action: "routing.snapshot.restore",

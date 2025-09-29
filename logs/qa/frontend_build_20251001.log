@@ -1,0 +1,16 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> routing-ml-frontend@0.1.0 build
+> tsc && vite build
+
+vite v5.4.20 building for production...
+✓ 2365 modules transformed.
+dist/index.html                     0.50 kB │ gzip:   0.33 kB
+dist/assets/index-7eeIC63G.css     62.84 kB │ gzip:  11.57 kB
+dist/assets/index-D_vEkLqm.js   1,589.25 kB │ gzip: 518.54 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 16.84s

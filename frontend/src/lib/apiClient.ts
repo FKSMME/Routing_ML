@@ -426,16 +426,6 @@ const isOutputProfileDetail = (value: unknown): value is OutputProfileDetail => 
   return Array.isArray((value as OutputProfileDetail).mappings);
 };
 
-const isOutputProfileEnvelope = (
-  value: unknown,
-): value is { profile: OutputProfileDetail } =>
-  Boolean(
-    value &&
-      typeof value === "object" &&
-      "profile" in value &&
-      isOutputProfileDetail((value as { profile?: unknown }).profile),
-  );
-
 export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
   const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
   const payload = response.data;
@@ -449,16 +439,21 @@ export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
 }
 
 export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
-  const response = await api.get<OutputProfileDetail | { profile: OutputProfileDetail }>(
+  const { data } = await api.get<OutputProfileDetail | { profile: OutputProfileDetail }>(
     `/routing/output-profiles/${encodeURIComponent(profileId)}`,
   );
-  const payload = response.data;
-  if (isOutputProfileEnvelope(payload)) {
-    return payload.profile;
+
+  if (typeof data === "object" && data !== null && "profile" in data) {
+    const maybeProfile = (data as { profile?: unknown }).profile;
+    if (isOutputProfileDetail(maybeProfile)) {
+      return maybeProfile;
+    }
   }
-  if (isOutputProfileDetail(payload)) {
-    return payload;
+
+  if (isOutputProfileDetail(data)) {
+    return data;
   }
+
   throw new Error("Unexpected output profile response shape");
 }
 
