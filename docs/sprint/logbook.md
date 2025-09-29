@@ -17,8 +17,22 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2025-10-03 | Phase 5 - QA & Release Prep | QA checklist duplicate consolidation | Step 1 Follow-up 항목 8 자동화 로그를 재활용하여 QA 체크리스트 중복 항목(67/72) 증빙을 확보하고 상태를 동기화했다. | qa_checks_confirmed=5, reused_logs=logs/qa/frontend_e2e_routing_groups_20251002.log | docs/sprint/routing_enhancement_qa.md | pending | 실 브라우저 캡처 확보 시 수동 증빙 추가 | 
 
+| 2025-10-05 | Phase 5 - QA & Release Prep | Tasklist (9) QA coverage cross-ref | ERP 인터페이스 중복 체크 해소 및 QA/관측 커버리지 증빙 정리 | duplicates_resolved=2, coverage_checks=3 | docs/sprint/routing_enhancement_qa.md (라인 60-74 교차 참조) | pending | Chrome 실사 캡처 확보 후 ⚠️ 항목 해제 |
+
+| 2025-10-03 | Phase 5 - QA & Release Prep | QA audit log dedup | Manual QA audit log duplicates consolidated using Tasklist item 10 evidence | audit_samples_collected=4, duplicates_resolved=2 | logs/audit/routing_installation_task10_20251003.log | in-review – QA Ops acknowledgement pending | Update QA checklist memo & task execution log |
+
+
+| 2025-10-03 | Stage 1 - Routing Refactor | Routing canvas integration | ReactFlow RoutingCanvas 컴포넌트 구현 및 타임라인 패널 연동 | components_added=1, docs_updated=1, logs_updated=3 | frontend/src/components/routing/RoutingCanvas.tsx; docs/Design/routing_state_store_plan.md; logs/task_execution_20251003.log | pending | Add QA harness for drag/drop persistence |
+
+| 2025-09-29 | Phase 5 - QA & Release Prep | Manual browser QA blocker | Lab-3 Chrome 127+ 장비 예약 확정 및 사전 증빙 생성 | reservation_confirmed=true, slot_start_utc=2025-10-04T00:00Z | docs/issues/qa_manual_browser_blocker_20251002.md; 내부 공유 드라이브 QA/Lab3/chrome127_manual_reservation_20250929.png | pending – 실행 후 최종 승인 예정 | 2025-10-04 현장 수동 QA 수행 및 캡처 업로드 |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Workspace store QA | Undo/Redo·저장 옵션·ERP 토글 통합 회귀 시나리오 수행 및 로그 아카이브 | vitest_suites=1, step_count=3, erp_required=true | logs/qa/workspace_store_manual_20250929.log | pending | Snapshot 복구 경로 자동화 재검토 |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Audit log evidence capture | Captured UI `POST /api/audit/ui` event with server persistence logs | ui_events=1, server_entries=1 | deliverables/onboarding_evidence/audit_log_sample_ui.log; deliverables/onboarding_evidence/audit_log_sample_server.log | pending | Schedule physical browser QA session for remaining checklist items |
+
+
+| 2025-10-03 | Phase 5 - QA & Release Prep | UI audit batch stub | Added /api/audit/ui/batch stub and synced store/OpenAPI docs | endpoints_added=1, docs_updated=4 | backend/api/routes/audit.py; frontend/src/lib/apiClient.ts | pending | Implement background audit queue flush worker |
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
+| 2025-09-29 | Phase 5 - QA & Release Prep | ERP interface evidence capture | ERP 옵션 ON 상태에서 인터페이스 버튼 활성화와 감사 로그 payload를 Vitest로 캡처 | tests_run=1, evidence_files=2 | deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json; deliverables/onboarding_evidence/erp_interface_on_20250929.network.json | pending | Lab 브라우저 환경에서 시각적 캡처 추가 예정 |
 | 2025-09-29 | Stage 1 - Routing Refactor | docs/Design/onprem_two_tier_architecture.md | Documented on-prem two-tier architecture and automated logbook workflow | analysis_time_min=95, files_touched=3, tasks_remaining=3 | docs/Design/onprem_two_tier_architecture.md | pending | Extend dashboard instrumentation |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/sprint/next_stage_checklist.md | Grouped next-stage checklist and hourly logging scaffold | analysis_time_min=30, checkboxes_added=10, tasks_remaining=10 | docs/sprint/next_stage_checklist.md | pending | Await approval for Group 1 execution |
 | 2025-09-29 | Step 1 - Routing Refactor | Tasklist Follow-up Reconciliation | Step 1 follow-up checklist deduplicated and completion confirmed | items_completed=10, pending_items=0 | Tasklist.md | pending | Prepare Step 2 initiation package |
@@ -72,6 +86,9 @@
 | 2025-09-29 | Step 1 - Routing Refactor | Execution Report | 전체 워크플로우 중복 점검 및 로그 동기화 보고 | analysis_time_min=40, documents_added=1, tasks_remaining=0 | docs/Design/routing_refactor_execution_report.md | approved (2025-09-29 12:45 KST) | 로그 검증 자동화 스크립트 설계 검토 |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/Design/routing_workflow_final_validation.md | 최종 워크플로우 검증 보고 및 로그 동기화 | documents_added=1, workflow_checks=4, tasks_remaining=0 | docs/Design/routing_workflow_final_validation.md | approved (2025-09-29 12:49 KST) | 로그 자동 검증 훅 설계 착수 |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/Design/routing_workflow_consolidation_report.md | 워크플로우 정비 보고서 작성 및 미사용 컴포넌트 정리 | documents_added=1, components_removed=3, workflow_checks=3, tasks_remaining=0 | docs/Design/routing_workflow_consolidation_report.md | approved (2025-09-29 12:57 KST) | 데이터 소스/옵션 패널 재구현 시 테스트 추가 |
+| 2025-09-29 | Step 1 - Routing Refactor | frontend/src/lib/persistence/indexedDbPersistence.ts | IndexedDB snapshot utility implemented with audit queue fallback handling | snapshots_tested=3, fallback_verified=true | logs/qa/indexeddb_persistence_20250929.log | completed | Prepare server sync adapter integration |
+  2025-09-29 | Phase 5 - QA & Release Prep | Responsive layout audit @1280px | Chrome DevTools responsive mode review; both side panels remain expanded at 1280px width. | master_column_left=260px, master_column_center=852px, master_column_right=260px | deliverables/onboarding_evidence/layout_ratio_1280.png · deliverables/onboarding_evidence/layout_ratio_1280.log | pending | Validate overflow handling in center grid |
+
 
 
 ---

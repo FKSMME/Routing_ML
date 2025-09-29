@@ -2574,6 +2574,43 @@ export const openApiSchema = {
           }
         }
       }
+    },
+    "/api/audit/ui/batch": {
+      "post": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Record Ui Audit Batch",
+        "operationId": "record_ui_audit_batch_api_audit_ui_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UiAuditBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -6186,9 +6223,29 @@ export const openApiSchema = {
           "updated_at"
         ],
         "title": "WorkspaceSettingsResponse"
+      },
+      "UiAuditBatchRequest": {
+        "title": "UiAuditBatchRequest",
+        "type": "object",
+        "properties": {
+          "events": {
+            "title": "Events",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEvent"
+            },
+            "default": []
+          },
+          "source": {
+            "title": "Source",
+            "type": "string",
+            "maxLength": 64
+          }
+        }
       }
     }
   }
+}
 } as const;
 
 export type OpenApiSchema = typeof openApiSchema;
