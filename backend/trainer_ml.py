@@ -14,6 +14,7 @@ from joblib import Parallel, delayed
 import multiprocessing
 import time
 import json
+from importlib import metadata as importlib_metadata
 
 # 패키지 루트 경로를 sys.path에 추가하여 `python backend/trainer_ml.py` 직접 실행을 지원
 if __package__ in (None, ""):
@@ -60,6 +61,22 @@ TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool] = {
     "time_profile_optimal_sigma": 0.67,
     "time_profile_safe_sigma": 1.28,
 }
+
+
+def _collect_training_runtime_versions() -> Dict[str, Optional[str]]:
+    """Gather runtime version information for training metadata."""
+
+    versions: Dict[str, Optional[str]] = {
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        "joblib": getattr(joblib, "__version__", None),
+    }
+
+    try:
+        versions["scikit_learn"] = importlib_metadata.version("scikit-learn")
+    except importlib_metadata.PackageNotFoundError:
+        versions["scikit_learn"] = None
+
+    return versions
 
 
 def apply_trainer_runtime_config(config: TrainerRuntimeConfig) -> None:
@@ -669,6 +686,7 @@ def _train_model_with_ml_improved_core(
                     'target_dimension': 128,
                     'note': 'Active features are applied only during prediction',
                     'workflow_runtime': dict(TRAINER_RUNTIME_SETTINGS),
+                    'runtime_versions': _collect_training_runtime_versions(),
                 }
                 (model_dir / "training_metadata.json").write_text(
                     json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -923,6 +941,7 @@ def train_model_with_ml_improved(
                         "target_dimension": target_dim if balance_dimensions else None,
                         "note": "Active features are applied only during prediction",
                         "workflow_runtime": dict(TRAINER_RUNTIME_SETTINGS),
+                        "runtime_versions": _collect_training_runtime_versions(),
                         "time_profiles": {
                             "enabled": bool(time_profiles_payload and time_profiles_payload.get("columns")),
                             "strategy": (time_profiles_payload or {}).get("strategy"),
