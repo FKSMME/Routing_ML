@@ -12,6 +12,8 @@ from common.logger import get_logger
 from common.sql_schema import (
     DEFAULT_POWER_QUERY_PROFILES,
     DEFAULT_SQL_OUTPUT_COLUMNS,
+    DEFAULT_SQL_KEY_COLUMNS,
+    DEFAULT_TRAINING_OUTPUT_MAPPING,
     ensure_default_aliases,
 )
 
@@ -131,6 +133,11 @@ class SQLColumnConfig:
         ]
     )
     active_profile: Optional[str] = None
+    exclusive_column_groups: List[List[str]] = field(default_factory=list)
+    key_columns: List[str] = field(default_factory=lambda: list(DEFAULT_SQL_KEY_COLUMNS))
+    training_output_mapping: Dict[str, str] = field(
+        default_factory=lambda: dict(DEFAULT_TRAINING_OUTPUT_MAPPING)
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -139,6 +146,9 @@ class SQLColumnConfig:
             "available_columns": list(self.available_columns),
             "profiles": [profile.to_dict() for profile in self.profiles],
             "active_profile": self.active_profile,
+            "exclusive_column_groups": [list(group) for group in self.exclusive_column_groups],
+            "key_columns": list(self.key_columns),
+            "training_output_mapping": dict(self.training_output_mapping),
         }
 
     @classmethod
@@ -163,6 +173,14 @@ class SQLColumnConfig:
             available_columns=data.get("available_columns") or list(DEFAULT_SQL_OUTPUT_COLUMNS),
             profiles=profiles,
             active_profile=active_profile,
+            exclusive_column_groups=[
+                list(group)
+                for group in data.get("exclusive_column_groups", [])
+                if isinstance(group, (list, tuple))
+            ],
+            key_columns=data.get("key_columns") or list(DEFAULT_SQL_KEY_COLUMNS),
+            training_output_mapping=data.get("training_output_mapping")
+            or dict(DEFAULT_TRAINING_OUTPUT_MAPPING),
         )
         instance.validate_columns()
         return instance
@@ -193,6 +211,58 @@ class SQLColumnConfig:
             raise ValueError(
                 "column_aliases가 허용되지 않은 대상 컬럼을 가리킵니다: "
                 + ", ".join(sorted(invalid_aliases))
+            )
+
+        for group in self.exclusive_column_groups:
+            if not group:
+                continue
+            invalid_group_columns = [col for col in group if col not in allowed]
+            if invalid_group_columns:
+                raise ValueError(
+                    "exclusive_column_groups에 허용되지 않은 컬럼이 포함되어 있습니다: "
+                    + ", ".join(sorted(invalid_group_columns))
+                )
+            selected_in_group = [col for col in self.output_columns if col in group]
+            if len(selected_in_group) > 1:
+                raise ValueError(
+                    "상호 배타 그룹에서 둘 이상의 컬럼이 선택되었습니다: "
+                    + ", ".join(sorted(selected_in_group))
+                )
+
+        invalid_key_columns = [col for col in self.key_columns if col not in allowed]
+        if invalid_key_columns:
+            raise ValueError(
+                "key_columns에 허용되지 않은 컬럼이 포함되어 있습니다: "
+                + ", ".join(sorted(invalid_key_columns))
+            )
+
+        missing_key_columns = [col for col in self.key_columns if col not in self.output_columns]
+        if missing_key_columns:
+            raise ValueError(
+                "key_columns에 포함된 컬럼은 output_columns에도 포함되어야 합니다: "
+                + ", ".join(sorted(missing_key_columns))
+            )
+
+        invalid_training_targets = [
+            column
+            for column in self.training_output_mapping.values()
+            if column not in allowed
+        ]
+        if invalid_training_targets:
+            raise ValueError(
+                "training_output_mapping이 허용되지 않은 컬럼을 참조합니다: "
+                + ", ".join(sorted(invalid_training_targets))
+            )
+
+        mapping_missing_outputs = [
+            column
+            for column in self.training_output_mapping.values()
+            if column not in self.output_columns
+        ]
+        if mapping_missing_outputs:
+            raise ValueError(
+                "training_output_mapping에 포함된 컬럼은 output_columns에도 포함되어야 합니다: "
+                + ", ".join(sorted(set(mapping_missing_outputs)))
             )
 
         profile_names = {profile.name for profile in self.profiles}
