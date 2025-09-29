@@ -1,6 +1,13 @@
 import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
-import type { PredictionResponse, RoutingGroupCreatePayload, RoutingGroupCreateResponse, RoutingGroupDetail, RoutingGroupListResponse, RoutingGroupStep } from "@app-types/routing";
+import type {
+  PredictionResponse,
+  RoutingGroupCreatePayload,
+  RoutingGroupCreateResponse,
+  RoutingGroupDetail,
+  RoutingGroupListResponse,
+  RoutingGroupStep,
+} from "@app-types/routing";
 import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
 import axios from "axios";
 
@@ -287,4 +294,47 @@ export interface AccessMetadataResponse {
 export async function fetchAccessMetadata(params?: { table?: string; path?: string }): Promise<AccessMetadataResponse> {
   const response = await api.get<AccessMetadataResponse>("/access/metadata", { params });
   return response.data;
+}
+
+export interface OutputProfileSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  format?: string | null;
+  updated_at?: string | null;
+}
+
+export interface OutputProfileColumn {
+  source: string;
+  mapped: string;
+  type?: string | null;
+  required?: boolean;
+}
+
+export interface OutputProfileDetail extends OutputProfileSummary {
+  mappings: OutputProfileColumn[];
+  sample?: Array<Record<string, unknown>>;
+}
+
+export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
+  const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
+  const payload = response.data;
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (Array.isArray(payload.profiles)) {
+    return payload.profiles;
+  }
+  return [];
+}
+
+export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
+  const response = await api.get<OutputProfileDetail | { profile: OutputProfileDetail }>(
+    `/routing/output-profiles/${encodeURIComponent(profileId)}`,
+  );
+  const payload = response.data;
+  if ("profile" in payload && payload.profile) {
+    return payload.profile;
+  }
+  return payload;
 }
