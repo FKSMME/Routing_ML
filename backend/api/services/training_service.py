@@ -1,62 +1,55 @@
-"""학습 오케스트레이션 서비스."""
+"""학습 오케스트레이션 상태 조회 서비스."""
 from __future__ import annotations
 
-import json
-import threading
-import time
-from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import pandas as pd
-
 from backend.api.config import get_settings
-from backend.maintenance.model_registry import register_version
-from backend.trainer_ml import train_model_with_ml_improved
-from common.config_store import workflow_config_store
-from common.logger import get_logger
-from models.manifest import write_manifest
 
-performance_logger = get_logger("training.performance", log_dir=Path("logs/performance"))
+from backend.maintenance.model_registry import register_version
+from backend.trainer_ml import TRAINER_RUNTIME_SETTINGS, train_model_with_ml_improved
+from common.config_store import workflow_config_store
+
+from backend.maintenance.model_registry import list_versions
+
+from common.logger import get_logger
+from common.training_state import DEFAULT_STATUS_PATH, load_status
+
 logger = get_logger("api.training")
 
 
-@dataclass
-class TrainingStatus:
-    job_id: Optional[str] = None
-    status: str = "idle"
-    started_at: Optional[str] = None
-    finished_at: Optional[str] = None
-    progress: int = 0
-    message: Optional[str] = None
-    version_path: Optional[str] = None
-    metrics: Dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "job_id": self.job_id,
-            "status": self.status,
-            "started_at": self.started_at,
-            "finished_at": self.finished_at,
-            "progress": self.progress,
-            "message": self.message,
-            "version_path": self.version_path,
-            "metrics": self.metrics,
-        }
-
-
 class TrainingService:
-    """모델 학습 실행/상태 관리."""
+    """Expose scheduler produced training state to the API layer."""
 
-    def __init__(self) -> None:
-        self._lock = threading.RLock()
-        self._status = TrainingStatus()
-        self._thread: Optional[threading.Thread] = None
+    def __init__(self, *, status_path: Optional[Path] = None) -> None:
+        self._status_path = status_path or DEFAULT_STATUS_PATH
+        self._registry_path = get_settings().model_registry_path
 
     def get_status(self) -> Dict[str, Any]:
-        with self._lock:
-            return self._status.to_dict()
+        record = load_status(self._status_path)
+        payload = record.to_dict()
+        payload.setdefault("status", "idle")
+        payload.setdefault("progress", 0)
+
+        latest_version: Optional[Dict[str, Any]] = None
+        try:
+            versions = list_versions(db_path=self._registry_path, limit=1)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.exception("모델 레지스트리 조회 실패", extra={"error": str(exc)})
+            versions = []
+        if versions:
+            latest_version = versions[0].to_dict()
+            metrics = dict(payload.get("metrics", {}))
+            metrics["latest_version"] = latest_version
+            payload["metrics"] = metrics
+            payload.setdefault("version_path", latest_version.get("artifact_dir"))
+            payload.setdefault(
+                "finished_at",
+                latest_version.get("trained_at") or latest_version.get("created_at"),
+            )
+
+        payload["latest_version"] = latest_version
+        return payload
 
     def start_training(
         self,
@@ -66,63 +59,11 @@ class TrainingService:
         projector_metadata: Optional[list[str]] = None,
         dry_run: bool = False,
     ) -> Dict[str, Any]:
-        with self._lock:
-            if self._status.status == "running":
-                raise RuntimeError("이미 학습 작업이 실행 중입니다")
-
-            job_id = datetime.utcnow().strftime("train-%Y%m%d%H%M%S")
-            self._status = TrainingStatus(
-                job_id=job_id,
-                status="running",
-                started_at=datetime.utcnow().isoformat(),
-                progress=1,
-                message="데이터 소스 초기화 중",
-            )
-
-            self._thread = threading.Thread(
-                target=self._run_training,
-                kwargs={
-                    "job_id": job_id,
-                    "requested_by": requested_by,
-                    "version_label": version_label,
-                    "projector_metadata": projector_metadata,
-                    "dry_run": dry_run,
-                },
-                daemon=True,
-            )
-            self._thread.start()
-            logger.info("학습 작업 시작", extra={"job_id": job_id, "requested_by": requested_by})
-            return self._status.to_dict()
-
-    def _run_training(
-        self,
-        *,
-        job_id: str,
-        requested_by: str,
-        version_label: Optional[str],
-        projector_metadata: Optional[list[str]],
-        dry_run: bool,
-    ) -> None:
-        start_time = time.time()
-        version_time = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-        version_name = version_label or f"version_{version_time}"
-        version_dir = Path("models") / version_name
-        version_dir.mkdir(parents=True, exist_ok=True)
-
-        data_cfg = workflow_config_store.get_data_source_config()
-        viz_cfg = workflow_config_store.get_visualization_config()
-
-        meta = {
-            "job_id": job_id,
-            "requested_by": requested_by,
-            "started_at": datetime.utcnow().isoformat(),
-            "data_source": data_cfg.to_dict(),
-            "visualization": viz_cfg.to_dict(),
-            "dry_run": dry_run,
-        }
-        (version_dir / "training_request.json").write_text(
-            json.dumps(meta, ensure_ascii=False, indent=2),
-            encoding="utf-8",
+        del requested_by, version_label, projector_metadata, dry_run
+        message = (
+            "API를 통한 학습 실행은 비활성화되었습니다. "
+            "Windows 작업 스케줄러 혹은 PowerShell 서비스에서 "
+            "`python scripts/train_build_index.py --dataset <path> --save-dir <dir>`을 실행해 주세요."
         )
 
         settings = get_settings()
@@ -167,6 +108,49 @@ class TrainingService:
                 json.dumps(metrics, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+
+            time_profiles_path = version_dir / "time_profiles.json"
+            if (
+                TRAINER_RUNTIME_SETTINGS.get("time_profiles_enabled")
+                and not time_profiles_path.exists()
+            ):
+                placeholder = {
+                    "generated_at": datetime.utcnow().isoformat(),
+                    "strategy": str(
+                        TRAINER_RUNTIME_SETTINGS.get(
+                            "time_profile_strategy", "sigma_profile"
+                        )
+                    ),
+                    "time_columns": [],
+                    "columns": {},
+                    "profiles": {"OPT": {}, "STD": {}, "SAFE": {}},
+                    "parameters": {
+                        "trim_std_enabled": bool(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_std_enabled", True)
+                        ),
+                        "trim_lower_percent": float(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_lower_percent", 0.05)
+                        ),
+                        "trim_upper_percent": float(
+                            TRAINER_RUNTIME_SETTINGS.get("trim_upper_percent", 0.95)
+                        ),
+                        "optimal_sigma": float(
+                            TRAINER_RUNTIME_SETTINGS.get("time_profile_optimal_sigma", 0.67)
+                        ),
+                        "safe_sigma": float(
+                            TRAINER_RUNTIME_SETTINGS.get("time_profile_safe_sigma", 1.28)
+                        ),
+                        "min_samples": 0,
+                    },
+                }
+                time_profiles_path.write_text(
+                    json.dumps(placeholder, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                logger.info(
+                    "시간 프로파일 기본 템플릿 생성",
+                    extra={"job_id": job_id, "path": str(time_profiles_path)},
+                )
             manifest_metadata = {
                 "version": version_name,
                 "job": {
@@ -266,7 +250,10 @@ class TrainingService:
             if status in {"failed", "completed"}:
                 self._status.finished_at = datetime.utcnow().isoformat()
 
+        raise RuntimeError(message)
+
+
 
 training_service = TrainingService()
 
-__all__ = ["training_service", "TrainingService", "TrainingStatus"]
+__all__ = ["training_service", "TrainingService"]

@@ -1,135 +1,92 @@
-"""Windows 인증 서비스 PoC 테스트."""
-from __future__ import annotations
-
-import hashlib
-import sys
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
+from typing import Iterator
 
 import pytest
-import types
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:  # pragma: no cover - 타입 검사 전용
-    from backend.api.config import Settings
-
-# 필요한 외부 모듈이 설치되지 않은 환경에서도 테스트가 동작하도록 최소 스텁을 주입한다.
-if "ldap3" not in sys.modules:
-    class _DummyConnection:
-        def __init__(self, *args, **kwargs) -> None:
-            pass
-
-        def bind(self) -> bool:  # pragma: no cover - LDAP 호출은 테스트에서 사용하지 않음
-            return True
-
-        def unbind(self) -> None:  # pragma: no cover
-            pass
-
-    ldap3_stub = types.SimpleNamespace(
-        ALL="ALL",
-        Connection=_DummyConnection,
-        NTLM="NTLM",
-        Server=lambda *args, **kwargs: object(),
-        Tls=lambda *args, **kwargs: object(),
-    )
-    sys.modules["ldap3"] = ldap3_stub
-    core_module = types.ModuleType("ldap3.core")
-    exceptions_module = types.ModuleType("ldap3.core.exceptions")
-    exceptions_module.LDAPException = Exception
-    sys.modules["ldap3.core"] = core_module
-    sys.modules["ldap3.core.exceptions"] = exceptions_module
-
+import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-
-@dataclass
-class DummySessionRecord:
-    token: str
-    username: str
-    display_name: str | None
-    domain: str | None
-    issued_at: datetime
-    expires_at: datetime
-    client_host: str | None
-
-
-class DummySessionManager:
-    """테스트용 인메모리 세션 매니저."""
-
-    def __init__(self) -> None:
-        self.created: list[DummySessionRecord] = []
-
-    def create_session(
-        self,
-        *,
-        username: str,
-        display_name: str | None,
-        domain: str | None,
-        client_host: str | None,
-    ) -> DummySessionRecord:
-        record = DummySessionRecord(
-            token="test-token",
-            username=username,
-            display_name=display_name,
-            domain=domain,
-            issued_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(minutes=30),
-            client_host=client_host,
-        )
-        self.created.append(record)
-        return record
+from backend.api.config import Settings, get_settings
+from backend.api.schemas import LoginRequest, RegisterRequest
+from backend.api.services.auth_service import AuthService
+from backend.database_rsl import Base, UserAccount, get_engine, session_scope
 
 
 @pytest.fixture()
-def fallback_settings(tmp_path: Path) -> "Settings":
-    """폴백 사용자만 사용하는 Settings 인스턴스."""
+def isolated_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Settings]:
+    db_path = tmp_path / "auth.db"
+    monkeypatch.setenv("ROUTING_ML_RSL_DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("ROUTING_ML_JWT_SECRET_KEY", "unit-test-secret")
+    get_settings.cache_clear()
+    settings = get_settings()
 
-    from backend.api.config import Settings
+    engine = get_engine()
+    Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine)
 
-    hashed = hashlib.sha256("Secr3t!".encode("utf-8")).hexdigest()
-    return Settings(
-        windows_auth_enabled=False,
-        windows_ldap_server=None,
-        windows_fallback_users={"codex": f"sha256${hashed}"},
-        windows_domain="EXAMPLE",
-        audit_log_dir=tmp_path / "audit",
+    yield settings
+
+    get_settings.cache_clear()
+
+
+def _get_user(username: str) -> UserAccount:
+    with session_scope() as session:
+        user = (
+            session.query(UserAccount)
+            .filter(UserAccount.username == username)
+            .one()
+        )
+        session.expunge(user)
+        return user
+
+
+def test_register_creates_pending_user(isolated_settings: Settings) -> None:
+    service = AuthService(settings=isolated_settings)
+
+    response = service.register(
+        RegisterRequest(username="tester", password="Secret!23", display_name="Tester"),
     )
 
-
-def test_windows_auth_service_fallback_success(fallback_settings: "Settings") -> None:
-    """폴백 사용자로 로그인하면 세션이 발급된다."""
-
-    from backend.api.schemas import LoginRequest
-    from backend.api.services.auth_service import WindowsAuthService
-
-    session_manager = DummySessionManager()
-    service = WindowsAuthService(settings=fallback_settings, session_manager=session_manager)
-
-    request = LoginRequest(username="codex", password="Secr3t!")
-    result = service.authenticate(request, client_host="127.0.0.1")
-
-    assert result.success is True
-    assert result.session is session_manager.created[0]
-    expected_username = f"{fallback_settings.windows_domain}\\codex"
-    assert session_manager.created[0].username == expected_username
+    assert response.status == "pending"
+    user = _get_user("tester")
+    assert user.status == "pending"
+    assert user.display_name == "Tester"
+    assert user.password_hash != "Secret!23"
 
 
-def test_windows_auth_service_rejects_unknown_user(fallback_settings: "Settings") -> None:
-    """미등록 사용자는 인증에 실패한다."""
+def test_login_requires_approval(isolated_settings: Settings) -> None:
+    service = AuthService(settings=isolated_settings)
+    service.register(RegisterRequest(username="pending", password="Secret!23"))
 
-    from backend.api.schemas import LoginRequest
-    from backend.api.services.auth_service import WindowsAuthService
+    with pytest.raises(PermissionError):
+        service.login(LoginRequest(username="pending", password="Secret!23"), client_host=None)
 
-    fallback_settings.windows_fallback_users = {"codex": fallback_settings.windows_fallback_users["codex"]}
-    service = WindowsAuthService(settings=fallback_settings, session_manager=DummySessionManager())
 
-    request = LoginRequest(username="intruder", password="bad")
-    result = service.authenticate(request, client_host=None)
+def test_approve_and_login_success(isolated_settings: Settings) -> None:
+    service = AuthService(settings=isolated_settings)
+    service.register(RegisterRequest(username="active", password="Secret!23"))
+    service.approve_user("active")
 
-    assert result.success is False
-    assert result.session is None
-    assert "실패" in result.message
+    response = service.login(
+        LoginRequest(username="active", password="Secret!23"),
+        client_host="127.0.0.1",
+    )
+
+    assert response.status == "approved"
+    assert response.token
+    assert response.issued_at <= datetime.utcnow()
+    assert response.expires_at > response.issued_at
+
+
+def test_reject_sets_status(isolated_settings: Settings) -> None:
+    service = AuthService(settings=isolated_settings)
+    service.register(RegisterRequest(username="reject-me", password="Secret!23"))
+    service.reject_user("reject-me", reason="mismatch")
+
+    user = _get_user("reject-me")
+    assert user.status == "rejected"
+    assert user.rejected_at is not None

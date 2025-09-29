@@ -6,10 +6,15 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
 import json
+import sys
+
+import joblib
+from importlib import metadata as importlib_metadata
 
 import pandas as pd
 
 from backend.api.config import get_settings
+from backend import database
 
 from backend.api.schemas import (
     CandidateRouting,
@@ -45,6 +50,12 @@ from common.config_store import (
 from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS
 
 from .time_aggregator import TimeAggregator
+
+
+try:
+    from models.save_load import load_model_with_metadata as _ENHANCED_MODEL_LOADER
+except Exception:  # pragma: no cover - 선택적 의존성
+    _ENHANCED_MODEL_LOADER = None
 
 
 logger = get_logger("api.prediction")
@@ -101,6 +112,142 @@ class ManifestLoader:
             return dict(self._cache[manifest_path])
 
 
+
+class JsonArtifactCache:
+    """모델 디렉터리 내 JSON 아티팩트를 안전하게 캐시한다."""
+
+    def __init__(self) -> None:
+        self._cache: Dict[Path, Optional[Dict[str, Any]]] = {}
+        self._mtimes: Dict[Path, Optional[float]] = {}
+        self._lock = Lock()
+
+    def load(self, path: Path) -> Optional[Dict[str, Any]]:
+        resolved = path.expanduser().resolve()
+        if not resolved.exists():
+            with self._lock:
+                self._cache.pop(resolved, None)
+                self._mtimes.pop(resolved, None)
+            return None
+
+        mtime = resolved.stat().st_mtime
+
+        with self._lock:
+            cached = self._cache.get(resolved, object())
+            cached_mtime = self._mtimes.get(resolved)
+            if cached_mtime == mtime:
+                if cached is None:
+                    return None
+                return json.loads(json.dumps(cached))
+
+        try:
+            payload = json.loads(resolved.read_text(encoding="utf-8"))
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.warning("JSON 아티팩트 로드 실패 (%s): %s", resolved, exc)
+            with self._lock:
+                self._cache[resolved] = None
+                self._mtimes[resolved] = mtime
+            return None
+
+        with self._lock:
+            self._cache[resolved] = payload
+            self._mtimes[resolved] = mtime
+
+        return json.loads(json.dumps(payload))
+
+    def invalidate(self, path: Path) -> None:
+        resolved = path.expanduser().resolve()
+        with self._lock:
+            self._cache.pop(resolved, None)
+            self._mtimes.pop(resolved, None)
+
+
+class TimeAggregator:
+    """공정 시간 합계를 계산하는 헬퍼."""
+
+    def __init__(self) -> None:
+        self._time_columns = {
+            "setup_time": ["SETUP_TIME", "ACT_SETUP_TIME"],
+            "run_time": ["MACH_WORKED_HOURS", "ACT_RUN_TIME", "RUN_TIME", "RUN_TIME_QTY"],
+            "queue_time": ["QUEUE_TIME"],
+            "wait_time": ["WAIT_TIME", "IDLE_TIME"],
+            "move_time": ["MOVE_TIME"],
+        }
+
+    def summarize(
+        self,
+        operations: List[Dict[str, Any]],
+        *,
+        include_breakdown: bool = False,
+    ) -> Dict[str, Any]:
+        normalized = [self._normalize(row) for row in operations if row]
+        totals = {key: 0.0 for key in self._time_columns.keys()}
+        breakdown_records: List[Dict[str, Any]] = []
+
+        for row in normalized:
+            entry_values: Dict[str, float] = {}
+            for key, columns in self._time_columns.items():
+                value = self._value_from(row, columns)
+                totals[key] += value
+                entry_values[key] = value
+
+            total_time = sum(entry_values.values())
+            breakdown_records.append(
+                {
+                    "proc_seq": self._extract_proc_seq(row),
+                    "setup_time": entry_values["setup_time"],
+                    "run_time": entry_values["run_time"],
+                    "queue_time": entry_values["queue_time"],
+                    "wait_time": entry_values["wait_time"],
+                    "move_time": entry_values["move_time"],
+                    "total_time": total_time,
+                }
+            )
+
+        totals["lead_time"] = sum(totals.values())
+
+        return {
+            "totals": totals,
+            "process_count": len(normalized),
+            "breakdown": breakdown_records if include_breakdown else [],
+        }
+
+    @staticmethod
+    def _normalize(row: Dict[str, Any]) -> Dict[str, Any]:
+        return {str(key).upper(): value for key, value in row.items()}
+
+    @staticmethod
+    def _to_float(value: Any) -> float:
+        if value is None:
+            return 0.0
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            return float(str(value).strip())
+        except (TypeError, ValueError):  # pragma: no cover - 방어
+            return 0.0
+
+    def _value_from(self, row: Dict[str, Any], columns: List[str]) -> float:
+        for column in columns:
+            upper = column.upper()
+            if upper in row and row[upper] not in (None, ""):
+                return self._to_float(row[upper])
+            lower = upper.lower()
+            if lower in row and row[lower] not in (None, ""):
+                return self._to_float(row[lower])
+        return 0.0
+
+    @staticmethod
+    def _extract_proc_seq(row: Dict[str, Any]) -> Optional[int]:
+        for key in ("PROC_SEQ", "SEQ", "STEP", "ORDER"):
+            if key in row and row[key] not in (None, ""):
+                try:
+                    return int(float(row[key]))
+                except (TypeError, ValueError):  # pragma: no cover - 방어
+                    continue
+        return None
+
+
+
 class PredictionService:
     """FastAPI 라우터에서 사용하는 비즈니스 로직."""
 
@@ -109,7 +256,10 @@ class PredictionService:
         self._model_lock: bool = False
         self._last_metrics: Dict[str, Any] = {}
         self._manifest_loader = ManifestLoader()
+        self._json_artifacts = JsonArtifactCache()
         self.time_aggregator = TimeAggregator()
+        self._compatibility_notes: List[str] = []
+        self._loader_strategy: str = "default"
 
         self._model_registry_path = self.settings.model_registry_path
         initialize_schema(self._model_registry_path)
@@ -196,6 +346,139 @@ class PredictionService:
             return self._refresh_manifest(strict=False)
         return self._model_manifest
 
+    @staticmethod
+    def _collect_runtime_versions() -> Dict[str, Optional[str]]:
+        versions: Dict[str, Optional[str]] = {
+            "python": f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+            "joblib": getattr(joblib, "__version__", None),
+        }
+
+        try:
+            versions["scikit_learn"] = importlib_metadata.version("scikit-learn")
+        except importlib_metadata.PackageNotFoundError:
+            versions["scikit_learn"] = None
+
+        return versions
+
+    @staticmethod
+    def _parse_version_tuple(version: Optional[str], *, length: int = 3) -> Optional[Tuple[int, ...]]:
+        if not version:
+            return None
+
+        parts: List[int] = []
+        for token in str(version).replace("-", ".").split("."):
+            digits = ''.join(ch for ch in token if ch.isdigit())
+            if not digits:
+                continue
+            parts.append(int(digits))
+            if len(parts) >= length:
+                break
+
+        if not parts:
+            return None
+
+        while len(parts) < length:
+            parts.append(0)
+
+        return tuple(parts[:length])
+
+    def _load_training_metadata(self, model_dir: Path, manifest: ModelManifest) -> Dict[str, Any]:
+        metadata_path: Optional[Path] = None
+        try:
+            metadata_path = manifest.resolve_path("training_metadata")
+        except (KeyError, FileNotFoundError):
+            candidate = model_dir / "training_metadata.json"
+            if candidate.exists():
+                metadata_path = candidate
+
+        if not metadata_path or not metadata_path.exists():
+            return {}
+
+        try:
+            payload = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except Exception as exc:  # pragma: no cover - JSON 오류 방어
+            logger.warning("학습 메타데이터 로드 실패: %s", exc)
+            return {}
+
+        if not isinstance(payload, dict):
+            return {}
+        return payload
+
+    def _evaluate_runtime_compatibility(
+        self,
+        training_versions: Dict[str, Any],
+        runtime_versions: Dict[str, Optional[str]],
+    ) -> Dict[str, Any]:
+        warnings: List[str] = []
+        guidance: List[str] = []
+        strategy = "default"
+
+        train_py = self._parse_version_tuple(training_versions.get("python"))
+        runtime_py = self._parse_version_tuple(runtime_versions.get("python"))
+        if train_py and runtime_py and train_py[:2] != runtime_py[:2]:
+            raise RuntimeError(
+                "Python 런타임 불일치: 모델은 Python %s에서 학습되었고 현재 런타임은 %s 입니다. "
+                "동일한 Python 버전으로 환경을 맞추거나 모델을 재학습하세요."
+                % (training_versions.get("python"), runtime_versions.get("python"))
+            )
+
+        fallback_required = False
+
+        for key, label in (("scikit_learn", "scikit-learn"), ("joblib", "joblib")):
+            train_ver = training_versions.get(key)
+            runtime_ver = runtime_versions.get(key)
+            if not train_ver or not runtime_ver:
+                continue
+
+            train_tuple = self._parse_version_tuple(train_ver)
+            runtime_tuple = self._parse_version_tuple(runtime_ver)
+
+            if not train_tuple or not runtime_tuple:
+                continue
+
+            if train_tuple[0] != runtime_tuple[0]:
+                fallback_required = True
+                warnings.append(
+                    f"{label} 주요 버전 불일치: 학습({train_ver}) ↔ 런타임({runtime_ver})."
+                )
+            elif train_tuple != runtime_tuple:
+                warnings.append(
+                    f"{label} 버전 차이 감지: 학습({train_ver}) ↔ 런타임({runtime_ver})."
+                )
+
+        if fallback_required:
+            if _ENHANCED_MODEL_LOADER is not None:
+                strategy = "enhanced-metadata"
+                guidance.append(
+                    "호환 모드: 향상된 메타데이터 로더를 사용하여 교차 버전 모델을 로드합니다. "
+                    "운영 환경을 학습 시점과 맞추거나 모델 재학습을 검토하세요."
+                )
+            else:
+                raise RuntimeError(
+                    "모델을 학습한 scikit-learn/joblib 주요 버전과 현재 런타임이 다릅니다. "
+                    "런타임을 학습 환경과 맞추거나 모델을 재학습하세요."
+                )
+        elif warnings:
+            guidance.append(
+                "경미한 버전 차이가 감지되었습니다. 호환성 확인 후 필요 시 라이브러리 버전을 조정하세요."
+            )
+
+        return {"strategy": strategy, "warnings": warnings, "guidance": guidance}
+
+    def _resolve_loader(self, strategy: str):
+        if strategy == "default":
+            return load_optimized_model
+        if strategy == "enhanced-metadata":
+            if _ENHANCED_MODEL_LOADER is None:  # pragma: no cover - 방어 로직
+                raise RuntimeError("향상된 메타데이터 로더를 사용할 수 없습니다.")
+
+            def _loader(path: Path) -> Dict[str, Any]:
+                return _ENHANCED_MODEL_LOADER(str(path), load_sample_data=False)
+
+            return _loader
+
+        raise ValueError(f"알 수 없는 로더 전략: {strategy}")
+
     def _ensure_model(self) -> None:
         """모델 디렉토리 유효성 검사."""
         try:
@@ -204,10 +487,25 @@ class PredictionService:
         except Exception as exc:
             logger.error("모델 매니페스트 검증 실패", exc_info=exc)
             raise
+
+        training_metadata = self._load_training_metadata(load_dir, manifest)
+        training_versions = training_metadata.get("runtime_versions", {}) if isinstance(training_metadata, dict) else {}
+        runtime_versions = self._collect_runtime_versions()
+
+        assessment = self._evaluate_runtime_compatibility(training_versions, runtime_versions)
+        self._loader_strategy = assessment.get("strategy", "default")
+        self._compatibility_notes = assessment.get("warnings", []) + assessment.get("guidance", [])
+
+        for warning in assessment.get("warnings", []):
+            logger.warning(warning)
+        for note in assessment.get("guidance", []):
+            logger.info(note)
+
+        loader = self._resolve_loader(self._loader_strategy)
         try:
-            load_optimized_model(load_dir)
+            loader(load_dir)
         except Exception as exc:  # pragma: no cover - 안전장치
-            logger.error("모델 로드 실패", exc_info=exc)
+            logger.error("모델 로드 실패 (loader=%s)", self._loader_strategy, exc_info=exc)
             raise
 
     def _apply_feature_weights(
@@ -240,6 +538,51 @@ class PredictionService:
 
     def _load_manifest(self) -> Dict[str, Any]:
         return self._manifest_loader.load(self.model_dir)
+
+    def _resolve_optional_artifact(
+        self,
+        manifest: ModelManifest,
+        artifact_name: str,
+        default_filename: str,
+    ) -> Optional[Path]:
+        try:
+            artifact_path = manifest.resolve_path(artifact_name)
+            if artifact_path.exists():
+                return artifact_path
+        except KeyError:
+            pass
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.debug(
+                "매니페스트 아티팩트 해석 실패 (%s): %s",
+                artifact_name,
+                exc,
+            )
+
+        candidate = manifest.root_dir / default_filename
+        if candidate.exists():
+            return candidate
+        return None
+
+    def _load_json_artifact(
+        self,
+        manifest: ModelManifest,
+        artifact_name: str,
+        default_filename: str,
+    ) -> Optional[Dict[str, Any]]:
+        artifact_path = self._resolve_optional_artifact(
+            manifest, artifact_name, default_filename
+        )
+        if artifact_path is None:
+            return None
+        return self._json_artifacts.load(artifact_path)
+
+    def get_time_profiles(self) -> Optional[Dict[str, Any]]:
+        try:
+            manifest = self._get_manifest()
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.debug("시간 프로파일 매니페스트 로드 실패: %s", exc)
+            return None
+        return self._load_json_artifact(manifest, "time_profiles", "time_profiles.json")
 
     @staticmethod
     def _normalize_item_code(item_code: Optional[str]) -> Optional[str]:
@@ -310,7 +653,22 @@ class PredictionService:
         if weight_snapshot:
             metrics["feature_weights"] = weight_snapshot
 
+        metrics = self._attach_cache_metrics(metrics)
         return routing_payload, candidate_payload, metrics, routing_df, candidates_df
+
+    def _attach_cache_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        enriched = dict(metrics)
+        try:
+            enriched["cache"] = database.get_cache_snapshot()
+            enriched["cache_versions"] = database.get_cache_versions()
+        except Exception as exc:  # pragma: no cover - 방어적 로깅
+            logger.warning("캐시 메트릭 수집 실패: %s", exc)
+        return enriched
+
+    def _set_last_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
+        enriched = self._attach_cache_metrics(metrics)
+        self._last_metrics = enriched
+        return enriched
 
     def predict(
         self,
@@ -352,7 +710,7 @@ class PredictionService:
             if viz_payload:
                 metrics["visualization"] = viz_payload
 
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
         logger.info("[예측] 완료 - routings=%d candidates=%d", len(routing_payload), len(candidate_payload))
         return routing_payload, candidate_payload, metrics
 
@@ -360,8 +718,7 @@ class PredictionService:
         item_code_list = list(dict.fromkeys(request.item_codes))
         logger.info("[유사도] 검색 요청 item=%s", item_code_list)
         if not item_code_list:
-            metrics = {"requested_items": 0, "total_matches": 0}
-            self._last_metrics = metrics
+            metrics = self._set_last_metrics({"requested_items": 0, "total_matches": 0})
             return SimilaritySearchResponse(results=[], metrics=metrics)
 
         limit = request.top_k or self.settings.default_top_k
@@ -483,7 +840,7 @@ class PredictionService:
             "total_matches": total_matches,
             "manifest_revision": manifest_revision,
         })
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
         return SimilaritySearchResponse(results=results, metrics=metrics)
 
     def recommend_groups(self, request: GroupRecommendationRequest) -> GroupRecommendationResponse:
@@ -619,7 +976,7 @@ class PredictionService:
             "recommendations": len(recommendations),
             "inspected_candidates": inspected_candidates,
         }
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
 
         return GroupRecommendationResponse(
             item_code=request.item_code,
@@ -646,11 +1003,13 @@ class PredictionService:
             breakdown=breakdown_models,
         )
 
-        self._last_metrics = {
-            "item_code": request.item_code,
-            "process_count": summary["process_count"],
-            "lead_time": summary["totals"].get("lead_time", 0.0),
-        }
+        self._set_last_metrics(
+            {
+                "item_code": request.item_code,
+                "process_count": summary["process_count"],
+                "lead_time": summary["totals"].get("lead_time", 0.0),
+            }
+        )
         return response
 
     def validate_rules(self, request: RuleValidationRequest) -> RuleValidationResponse:
@@ -696,7 +1055,7 @@ class PredictionService:
             "process_count": summary["process_count"],
         }
         metrics.update({f"total_{key}": value for key, value in totals.items()})
-        self._last_metrics = metrics
+        metrics = self._set_last_metrics(metrics)
 
         return RuleValidationResponse(
             item_code=request.item_code,

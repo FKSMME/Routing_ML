@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     audit_log_dir: Path = Field(default=Path("logs/audit"))
     session_ttl_seconds: int = Field(default=3600, ge=300)
 
+    jwt_secret_key: str = Field(
+        default="change-me",
+        description="JWT 서명을 위한 비밀 키",
+    )
+    jwt_algorithm: str = Field(default="HS256")
+    jwt_access_token_ttl_seconds: int = Field(default=3600, ge=300)
+    jwt_cookie_name: str = Field(default="routing_ml_session")
+    jwt_cookie_secure: bool = Field(default=False)
+
     class Config:
         env_prefix = "ROUTING_ML_"
         env_file = ".env"

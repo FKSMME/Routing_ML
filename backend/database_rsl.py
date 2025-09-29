@@ -6,7 +6,6 @@ from contextlib import contextmanager
 from datetime import datetime
 
 from typing import Generator, Iterable, Optional
-from typing import Any, Dict, Generator, Iterable, Optional
 
 
 from sqlalchemy import (
@@ -132,6 +131,33 @@ class RslRuleRef(Base):
     )
 
 
+class UserAccount(Base):
+    """Registered user stored in the local authentication database."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(150), nullable=False)
+    normalized_username = Column(String(150), nullable=False, unique=True, index=True)
+    display_name = Column(String(255), nullable=True)
+    password_hash = Column(String(255), nullable=False)
+    status = Column(String(32), nullable=False, default="pending")
+    is_admin = Column(Boolean, nullable=False, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    approved_at = Column(DateTime, nullable=True)
+    rejected_at = Column(DateTime, nullable=True)
+    last_login_at = Column(DateTime, nullable=True)
+
+
+def normalize_username(username: str) -> str:
+    """Normalize usernames for case-insensitive lookups."""
+
+    return username.strip().lower()
+
+
 _ENGINE: Optional[Engine] = None
 _SESSION_FACTORY: Optional[sessionmaker] = None
 
@@ -209,10 +235,12 @@ __all__ = [
     "RslGroup",
     "RslStep",
     "RslRuleRef",
+    "UserAccount",
     "bootstrap_schema",
     "get_engine",
     "get_session_factory",
     "session_scope",
     "iter_groups",
+    "normalize_username",
 ]
 

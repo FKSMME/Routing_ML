@@ -35,6 +35,7 @@ ARTIFACT_SPECS: Sequence[ArtifactSpec] = (
     ArtifactSpec("active_features", "active_features.json", "routing-ml/feature-weights@1", optional=True),
     ArtifactSpec("training_request", "training_request.json", "routing-ml/training-request@1", optional=True),
     ArtifactSpec("training_metrics", "training_metrics.json", "routing-ml/training-metrics@1", optional=True),
+    ArtifactSpec("time_profiles", "time_profiles.json", "routing-ml/time-profiles@1", optional=True),
 )
 
 
