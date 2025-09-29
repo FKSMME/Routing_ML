@@ -197,32 +197,48 @@ class PredictionService:
 
         self._model_registry_path = self.settings.model_registry_path
         initialize_schema(self._model_registry_path)
-
-    @property
-    def model_dir(self) -> Path:
-        override = self.settings.model_directory
-        if override:
-            return override
-
-        active_version = get_active_version(db_path=self._model_registry_path)
-        if not active_version:
-            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
-        return Path(active_version.artifact_dir)
-
-        self._model_reference = self.settings.model_directory
+        self._model_reference = self._resolve_model_reference()
         self._model_manifest: Optional[ModelManifest] = None
         self._model_root: Optional[Path] = None
 
+    def _resolve_model_reference(self) -> Path:
+        """Determine the manifest or directory to load the model from."""
+
+        override = self.settings.model_directory
+        if override is not None:
+            return Path(override).expanduser().resolve(strict=False)
+
+        active_version = get_active_version(db_path=self._model_registry_path)
+        if active_version is None:
+            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
+
+        manifest_path = Path(active_version.manifest_path).expanduser().resolve(strict=False)
+        if manifest_path.suffix.lower() == ".json":
+            return manifest_path
+
+        artifact_dir = Path(active_version.artifact_dir).expanduser().resolve(strict=False)
+        if manifest_path.exists():
+            return manifest_path
+        return artifact_dir
+
     @property
     def model_dir(self) -> Path:
-        if self._model_root is not None:
-            return self._model_root
-        reference = self._model_reference
-        if reference.suffix.lower() == ".json":
-            return reference.parent
-        return reference
+        if self._model_root is None:
+            try:
+                self._model_root = self._get_manifest().root_dir
+            except FileNotFoundError:
+                reference = self._model_reference
+                self._model_root = reference if reference.is_dir() else reference.parent
+        return self._model_root
 
     def _refresh_manifest(self, *, strict: bool = True) -> ModelManifest:
+        if self.settings.model_directory is None:
+            resolved_reference = self._resolve_model_reference()
+            if resolved_reference != self._model_reference:
+                self._model_reference = resolved_reference
+                self._model_manifest = None
+                self._model_root = None
+
         manifest = read_model_manifest(self._model_reference, strict=strict)
         self._model_manifest = manifest
         self._model_root = manifest.root_dir
@@ -327,13 +343,8 @@ class PredictionService:
             )
 
         routing_df, candidates_df = predict_items_with_ml_optimized(
-
             item_codes,
             self.model_dir,
-
-            item_code_list,
-            self._get_manifest().root_dir,
-
             top_k=top_k,
             miss_thr=1.0 - similarity_threshold,
             mode=mode,

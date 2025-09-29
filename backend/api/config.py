@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
+        return value
 
     @validator("model_directory")
     def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
