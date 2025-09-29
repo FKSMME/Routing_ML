@@ -3,10 +3,12 @@ import type {
   SQLConfigModel,
   TrainerRuntimeModel,
   WorkflowConfigPatch,
+  WorkflowConfigResponse,
   WorkflowGraphEdge,
   WorkflowGraphNode,
 } from "@app-types/workflow";
-import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
+import { fetchWorkflowConfig, patchWorkflowConfig } from "@lib/apiClient";
+import { useWorkflowGraphHistory } from "@store/workflowGraphStore";
 import {
   useCallback,
   useEffect,
@@ -19,7 +21,6 @@ import ReactFlow, {
   Connection,
   Controls,
   Edge,
-  EdgeChange,
   MiniMap,
   Node,
   NodeProps,
@@ -68,10 +69,6 @@ const NODE_LIBRARY: NodeLibraryItem[] = [
     description: "CSV · Excel · JSON",
   },
 ];
-
-const NODE_TYPES = {
-  module: ModuleNode,
-};
 
 interface ModuleNodeData {
   label: string;
@@ -128,6 +125,10 @@ function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
   );
 }
 
+const nodeTypes = {
+  module: ModuleNode,
+};
+
 interface NodeFormState {
   label: string;
   status: string;
@@ -154,8 +155,8 @@ const INITIAL_FORM: NodeFormState = {
   sqlProfile: "",
 };
 
-function createReactFlowNodes(nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[] {
-  return nodes.map((node) => ({
+const createReactFlowNodes = (nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[] =>
+  nodes.map((node) => ({
     id: node.id,
     type: "module",
     position: node.position ?? { x: 0, y: 0 },
@@ -164,17 +165,18 @@ function createReactFlowNodes(nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[
       category: node.category,
       status: node.status,
       description:
-        typeof node.settings?.description === "string" ? (node.settings.description as string) : undefined,
+        typeof node.settings?.description === "string"
+          ? (node.settings.description as string)
+          : undefined,
       metrics: node.metrics,
       docRefs: node.doc_refs ?? [],
     },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
   }));
-}
 
-function createReactFlowEdges(edges: WorkflowGraphEdge[]): Edge[] {
-  return edges.map((edge) => ({
+const createReactFlowEdges = (edges: WorkflowGraphEdge[]): Edge[] =>
+  edges.map((edge) => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
@@ -182,15 +184,38 @@ function createReactFlowEdges(edges: WorkflowGraphEdge[]): Edge[] {
     animated: edge.kind !== "data-flow",
     style: {
       stroke:
-        edge.kind === "ui-flow" ? "#34d399" : edge.kind === "model-flow" ? "#38bdf8" : "#0ea5e9",
+        edge.kind === "ui-flow"
+          ? "#34d399"
+          : edge.kind === "model-flow"
+            ? "#38bdf8"
+            : "#0ea5e9",
       strokeWidth: 2,
     },
     labelBgPadding: [6, 3],
     labelBgBorderRadius: 8,
-    labelBgStyle: { fill: "rgba(15, 23, 42, 0.8)", stroke: "rgba(56, 189, 248, 0.4)" },
+    labelBgStyle: {
+      fill: "rgba(15, 23, 42, 0.8)",
+      stroke: "rgba(56, 189, 248, 0.4)",
+    },
     labelStyle: { fill: "#e0f2fe", fontSize: 12, fontWeight: 600 },
   }));
-}
+
+const createLibraryNode = (
+  item: NodeLibraryItem,
+  position: { x: number; y: number },
+): WorkflowGraphNode => ({
+  id: `${item.id}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 6)}`,
+  label: item.label,
+  type: "module",
+  category: item.category,
+  status: item.status ?? "draft",
+  position,
+  settings: { description: item.description ?? "" },
+  metrics: {},
+  doc_refs: [],
+});
 
 interface NodeSettingsDialogProps {
   node: WorkflowGraphNode;
@@ -220,10 +245,12 @@ function NodeSettingsDialog({
       <div className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
         <header className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-sky-300/80">{node.category ?? "module"}</p>
+            <p className="text-xs uppercase tracking-wide text-sky-300/80">
+              {node.category ?? "module"}
+            </p>
             <h2 className="text-2xl font-semibold text-sky-100">{node.label} 설정</h2>
             <p className="mt-1 text-sm text-slate-300">
-              더블클릭한 도형의 속성을 편집하고 즉시 SAVE 할 수 있습니다.
+              더블클릭한 도형의 속성을 편집하고 SAVE 하면 즉시 반영됩니다.
             </p>
           </div>
           <button
@@ -291,7 +318,7 @@ function NodeSettingsDialog({
                     onChange={(event) => onChange({ ...form, trimStdEnabled: event.target.checked })}
                     className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
                   />
-                  <span>상/하위 5% Trim 표준편차 적용</span>
+                  <span>상/하위 Trim 표준편차 적용</span>
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -321,7 +348,8 @@ function NodeSettingsDialog({
                 </label>
               </div>
               <p className="text-xs text-slate-400">
-                현재 임계값: {trainer.similarity_threshold} · Trim: {trainer.trim_lower_percent}~{trainer.trim_upper_percent}
+                현재 임계값: {trainer.similarity_threshold} · Trim: {trainer.trim_lower_percent}~
+                {trainer.trim_upper_percent}
               </p>
             </section>
           ) : null}
@@ -385,7 +413,7 @@ function NodeSettingsDialog({
         </div>
         <footer className="mt-6 flex items-center justify-between">
           <span className="text-xs text-slate-400">
-            변경 사항은 SAVE 시 `config/workflow_settings.json`과 런타임에 즉시 반영됩니다.
+            변경 사항은 SAVE 시 백엔드 Workflow JSON과 동기화됩니다.
           </span>
           <div className="flex gap-3">
             <button
@@ -410,262 +438,299 @@ function NodeSettingsDialog({
   );
 }
 
-function createLibraryNode(item: NodeLibraryItem, position: { x: number; y: number }): WorkflowGraphNode {
-  const id = `${item.id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-  return {
-    id,
-    label: item.label,
-    type: "module",
-    category: item.category,
-    status: item.status ?? "draft",
-    position,
-    settings: { description: item.description ?? "" },
-    metrics: {},
-    doc_refs: [],
-  } satisfies WorkflowGraphNode;
-}
-
 export function AlgorithmWorkspace() {
-  const {
-    data,
-    isLoading,
-    isFetching,
-    saveConfig,
-    saving,
-  } = useWorkflowConfig();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [workflowConfig, setWorkflowConfig] = useState<WorkflowConfigResponse | null>(null);
   const [graphNodes, setGraphNodes] = useState<WorkflowGraphNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<WorkflowGraphEdge[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [editingNode, setEditingNode] = useState<WorkflowGraphNode | null>(null);
+  const [isDialogOpen, setDialogOpen] = useState(false);
   const [formState, setFormState] = useState<NodeFormState>(INITIAL_FORM);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const nodesRef = useRef<WorkflowGraphNode[]>([]);
+  const edgesRef = useRef<WorkflowGraphEdge[]>([]);
 
-  useEffect(() => {
-    if (data?.graph?.nodes) {
-      setGraphNodes(data.graph.nodes);
-    }
-    if (data?.graph?.edges) {
-      setGraphEdges(data.graph.edges);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (!statusMessage && !errorMessage) return;
-    const timer = window.setTimeout(() => {
-      setStatusMessage(null);
-      setErrorMessage(null);
-    }, 4000);
-    return () => window.clearTimeout(timer);
-  }, [statusMessage, errorMessage]);
-
-  useEffect(() => {
-    if (selectedNodeId && !graphNodes.some((node) => node.id === selectedNodeId)) {
-      setSelectedNodeId(null);
-    }
-  }, [graphNodes, selectedNodeId]);
-
-  const selectedNode = useMemo(
-    () => graphNodes.find((node) => node.id === (editingNode?.id ?? selectedNodeId)) ?? null,
-    [graphNodes, editingNode, selectedNodeId],
+  const { pushSnapshot, undo, redo, canUndo, canRedo, reset } = useWorkflowGraphHistory(
+    (state) => ({
+      pushSnapshot: state.pushSnapshot,
+      undo: state.undo,
+      redo: state.redo,
+      canUndo: state.canUndo,
+      canRedo: state.canRedo,
+      reset: state.reset,
+    }),
   );
 
-  const updateFormFromNode = useCallback(
-    (node: WorkflowGraphNode) => {
-      if (!data) return;
-      const description =
-        typeof node.settings?.description === "string" ? (node.settings.description as string) : "";
+  useEffect(() => {
+    nodesRef.current = graphNodes;
+  }, [graphNodes]);
+
+  useEffect(() => {
+    edgesRef.current = graphEdges;
+  }, [graphEdges]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await fetchWorkflowConfig();
+        if (cancelled) return;
+        setWorkflowConfig(response);
+        const nodes = response.graph?.nodes ?? [];
+        const edges = response.graph?.edges ?? [];
+        setGraphNodes(nodes);
+        setGraphEdges(edges);
+        reset();
+        setStatusMessage("워크플로우 구성을 불러왔습니다.");
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setErrorMessage("워크플로우 설정을 불러오지 못했습니다.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [reset]);
+
+  const reactFlowNodes = useMemo(() => createReactFlowNodes(graphNodes), [graphNodes]);
+  const reactFlowEdges = useMemo(() => createReactFlowEdges(graphEdges), [graphEdges]);
+
+  const selectedNode = useMemo(
+    () => graphNodes.find((node) => node.id === selectedNodeId) ?? null,
+    [graphNodes, selectedNodeId],
+  );
+
+  const hydrateFormFromNode = useCallback(
+    (node: WorkflowGraphNode, config: WorkflowConfigResponse | null) => {
+      const trainer = config?.trainer;
+      const predictor = config?.predictor;
+      const sql = config?.sql;
       setFormState({
         label: node.label,
         status: node.status ?? "",
-        description,
-        similarityThreshold: data.trainer.similarity_threshold.toString(),
-        trimStdEnabled: data.trainer.trim_std_enabled,
-        trimLowerPercent: data.trainer.trim_lower_percent.toString(),
-        trimUpperPercent: data.trainer.trim_upper_percent.toString(),
-        predictorSimilarity: data.predictor.similarity_high_threshold.toString(),
-        maxRoutingVariants: data.predictor.max_routing_variants.toString(),
-        sqlProfile: data.sql.active_profile ?? (data.sql.profiles[0]?.name ?? ""),
+        description:
+          typeof node.settings?.description === "string"
+            ? (node.settings.description as string)
+            : "",
+        similarityThreshold: trainer ? trainer.similarity_threshold.toString() : INITIAL_FORM.similarityThreshold,
+        trimStdEnabled: trainer ? trainer.trim_std_enabled : INITIAL_FORM.trimStdEnabled,
+        trimLowerPercent: trainer ? trainer.trim_lower_percent.toString() : INITIAL_FORM.trimLowerPercent,
+        trimUpperPercent: trainer ? trainer.trim_upper_percent.toString() : INITIAL_FORM.trimUpperPercent,
+        predictorSimilarity: predictor
+          ? predictor.similarity_high_threshold.toString()
+          : INITIAL_FORM.predictorSimilarity,
+        maxRoutingVariants: predictor
+          ? predictor.max_routing_variants.toString()
+          : INITIAL_FORM.maxRoutingVariants,
+        sqlProfile: sql?.active_profile ?? sql?.profiles[0]?.name ?? INITIAL_FORM.sqlProfile,
       });
     },
-    [data],
+    [],
   );
 
   useEffect(() => {
     if (selectedNode) {
-      updateFormFromNode(selectedNode);
+      hydrateFormFromNode(selectedNode, workflowConfig);
     }
-  }, [selectedNode, updateFormFromNode]);
+  }, [selectedNode, workflowConfig, hydrateFormFromNode]);
 
-  const nodes = useMemo(() => createReactFlowNodes(graphNodes), [graphNodes]);
-  const edges = useMemo(() => createReactFlowEdges(graphEdges), [graphEdges]);
+  const persistWorkflow = useCallback(
+    async (payload: WorkflowConfigPatch, successMessage?: string) => {
+      setSaving(true);
+      try {
+        const response = await patchWorkflowConfig(payload);
+        setWorkflowConfig(response);
+        const nodes = response.graph?.nodes ?? [];
+        const edges = response.graph?.edges ?? [];
+        setGraphNodes(nodes);
+        setGraphEdges(edges);
+        reset();
+        setStatusMessage(successMessage ?? "워크플로우 구성을 저장했습니다.");
+        setErrorMessage(null);
+      } catch (error) {
+        console.error(error);
+        setErrorMessage("워크플로우 저장에 실패했습니다. 입력값을 확인하세요.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [reset],
+  );
+
+  const handleSaveGraph = useCallback(async () => {
+    await persistWorkflow(
+      {
+        graph: {
+          nodes: nodesRef.current,
+          edges: edgesRef.current,
+        },
+      },
+      "그래프 레이아웃을 저장했습니다.",
+    );
+  }, [persistWorkflow]);
+
+  const handleDialogSave = useCallback(async () => {
+    if (!selectedNode || !workflowConfig) {
+      return;
+    }
+
+    const updatedNodes = nodesRef.current.map((node) =>
+      node.id === selectedNode.id
+        ? {
+            ...node,
+            label: formState.label,
+            status: formState.status || undefined,
+            settings: {
+              ...node.settings,
+              description: formState.description,
+            },
+          }
+        : node,
+    );
+
+    const payload: WorkflowConfigPatch = {
+      graph: {
+        nodes: updatedNodes,
+      },
+    };
+
+    const trainer = workflowConfig.trainer;
+    const predictor = workflowConfig.predictor;
+
+    if (selectedNode.id === "trainer") {
+      const similarity = Number.parseFloat(formState.similarityThreshold);
+      const trimLower = Number.parseFloat(formState.trimLowerPercent);
+      const trimUpper = Number.parseFloat(formState.trimUpperPercent);
+      payload.trainer = {
+        similarity_threshold: Number.isFinite(similarity) ? similarity : trainer.similarity_threshold,
+        trim_std_enabled: formState.trimStdEnabled,
+        trim_lower_percent: Number.isFinite(trimLower) ? trimLower : trainer.trim_lower_percent,
+        trim_upper_percent: Number.isFinite(trimUpper) ? trimUpper : trainer.trim_upper_percent,
+      };
+    }
+
+    if (selectedNode.id === "predictor") {
+      const similarity = Number.parseFloat(formState.predictorSimilarity);
+      const variants = Number.parseInt(formState.maxRoutingVariants, 10);
+      payload.predictor = {
+        similarity_high_threshold: Number.isFinite(similarity)
+          ? similarity
+          : predictor.similarity_high_threshold,
+        max_routing_variants: Number.isFinite(variants) ? variants : predictor.max_routing_variants,
+      };
+    }
+
+    if (selectedNode.id === "sql-mapper") {
+      payload.sql = {
+        active_profile: formState.sqlProfile,
+      };
+    }
+
+    await persistWorkflow(payload, `${formState.label} 설정을 저장했습니다.`);
+    setDialogOpen(false);
+  }, [formState, persistWorkflow, selectedNode, workflowConfig]);
 
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
-      const target = graphNodes.find((item) => item.id === node.id);
-      if (!target || !data) return;
-      setEditingNode(target);
-      setSelectedNodeId(target.id);
-      updateFormFromNode(target);
+      setSelectedNodeId(node.id);
+      setDialogOpen(true);
     },
-    [graphNodes, data, updateFormFromNode],
+    [],
   );
 
-  const handleNodeClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      const target = graphNodes.find((item) => item.id === node.id);
-      if (!target) return;
-      setSelectedNodeId(target.id);
-      setEditingNode(null);
-      updateFormFromNode(target);
-    },
-    [graphNodes, updateFormFromNode],
-  );
-
-  const handleNodeDragStop = useCallback((_: React.MouseEvent, node: Node) => {
-    setGraphNodes((prev) =>
-      prev.map((item) =>
-        item.id === node.id
-          ? {
-              ...item,
-              position: node.position ?? { x: 0, y: 0 },
-            }
-          : item,
-      ),
-    );
-  }, []);
-
-  const handleNodesDelete = useCallback((deleted: Node[]) => {
-    if (deleted.length === 0) return;
-    setGraphNodes((prev) => prev.filter((item) => !deleted.some((node) => node.id === item.id)));
-  }, []);
-
-  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
-    const removed = changes
-      .filter((change) => change.type === "remove")
-      .map((change) => change.id)
-      .filter((id): id is string => Boolean(id));
-    if (removed.length === 0) {
-      return;
-    }
-    setGraphEdges((prev) => prev.filter((edge) => !removed.includes(edge.id)));
-  }, []);
-
-  const handleEdgesDelete = useCallback((edgesToDelete: Edge[]) => {
-    if (edgesToDelete.length === 0) return;
-    setGraphEdges((prev) => prev.filter((edge) => !edgesToDelete.some((item) => item.id === edge.id)));
-  }, []);
-
-  const handleConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    setGraphEdges((prev) => {
-      const alreadyExists = prev.some(
-        (edge) => edge.source === connection.source && edge.target === connection.target,
-      );
-      if (alreadyExists) {
-        return prev;
-      }
-      const id = `${connection.source}-${connection.target}-${Date.now().toString(36)}`;
-      const newEdge: WorkflowGraphEdge = {
-        id,
-        source: connection.source,
-        target: connection.target,
-        kind: "data-flow",
-        label: connection.label,
-      };
-      return [...prev, newEdge];
-    });
+  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
   }, []);
 
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
-    setEditingNode(null);
   }, []);
 
-  const handleSaveLayout = useCallback(async () => {
-    try {
-      setErrorMessage(null);
-      await saveConfig({
-        graph: {
-          nodes: graphNodes,
-          edges: graphEdges,
-        },
+  const handleNodeDragStop = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      setGraphNodes((prev) => {
+        const next = prev.map((item) =>
+          item.id === node.id
+            ? {
+                ...item,
+                position: node.position ?? { x: 0, y: 0 },
+              }
+            : item,
+        );
+        pushSnapshot({ nodes: next, edges: edgesRef.current }, "position");
+        return next;
       });
-      setStatusMessage("그래프 레이아웃이 저장되었습니다.");
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("그래프 저장에 실패했습니다. 로그를 확인하세요.");
-    }
-  }, [graphNodes, graphEdges, saveConfig]);
+    },
+    [pushSnapshot],
+  );
 
-  const handleSaveNode = useCallback(async () => {
-    const target = selectedNode;
-    if (!target || !data) return;
-    try {
-      setErrorMessage(null);
-      const updatedNodes = graphNodes.map((node) => {
-        if (node.id !== target.id) {
-          return node;
+  const handleNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      if (deleted.length === 0) return;
+      setGraphNodes((prev) => {
+        const deletedIds = new Set(deleted.map((node) => node.id));
+        const nextNodes = prev.filter((node) => !deletedIds.has(node.id));
+        const nextEdges = edgesRef.current.filter(
+          (edge) => !deletedIds.has(edge.source) && !deletedIds.has(edge.target),
+        );
+        setGraphEdges(nextEdges);
+        pushSnapshot({ nodes: nextNodes, edges: nextEdges }, "delete-node");
+        return nextNodes;
+      });
+    },
+    [pushSnapshot],
+  );
+
+  const handleEdgesDelete = useCallback(
+    (edgesToDelete: Edge[]) => {
+      if (edgesToDelete.length === 0) return;
+      setGraphEdges((prev) => {
+        const deleteIds = new Set(edgesToDelete.map((edge) => edge.id));
+        const nextEdges = prev.filter((edge) => !deleteIds.has(edge.id));
+        pushSnapshot({ nodes: nodesRef.current, edges: nextEdges }, "disconnect");
+        return nextEdges;
+      });
+    },
+    [pushSnapshot],
+  );
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
+      setGraphEdges((prev) => {
+        const alreadyExists = prev.some(
+          (edge) => edge.source === connection.source && edge.target === connection.target,
+        );
+        if (alreadyExists) {
+          return prev;
         }
-        return {
-          ...node,
-          label: formState.label,
-          status: formState.status || undefined,
-          settings: {
-            ...node.settings,
-            description: formState.description,
-          },
-        } satisfies WorkflowGraphNode;
+        const id = `${connection.source}-${connection.target}-${Date.now().toString(36)}`;
+        const newEdge: WorkflowGraphEdge = {
+          id,
+          source: connection.source,
+          target: connection.target,
+          kind: "data-flow",
+          label: connection.label,
+        };
+        const nextEdges = [...prev, newEdge];
+        pushSnapshot({ nodes: nodesRef.current, edges: nextEdges }, "connect");
+        return nextEdges;
       });
-
-      const payload: WorkflowConfigPatch = {
-        graph: {
-          nodes: updatedNodes,
-        },
-      };
-
-      if (target.id === "trainer") {
-        const similarity = Number.parseFloat(formState.similarityThreshold);
-        const trimLower = Number.parseFloat(formState.trimLowerPercent);
-        const trimUpper = Number.parseFloat(formState.trimUpperPercent);
-        payload.trainer = {
-          similarity_threshold: Number.isFinite(similarity) ? similarity : data.trainer.similarity_threshold,
-          trim_std_enabled: formState.trimStdEnabled,
-          trim_lower_percent: Number.isFinite(trimLower) ? trimLower : data.trainer.trim_lower_percent,
-          trim_upper_percent: Number.isFinite(trimUpper) ? trimUpper : data.trainer.trim_upper_percent,
-        };
-      }
-
-      if (target.id === "predictor") {
-        const similarity = Number.parseFloat(formState.predictorSimilarity);
-        const variants = Number.parseInt(formState.maxRoutingVariants, 10);
-        payload.predictor = {
-          similarity_high_threshold: Number.isFinite(similarity) ? similarity : data.predictor.similarity_high_threshold,
-          max_routing_variants: Number.isFinite(variants) ? variants : data.predictor.max_routing_variants,
-        };
-      }
-
-      if (target.id === "sql-mapper") {
-        payload.sql = {
-          active_profile: formState.sqlProfile,
-        };
-      }
-
-      await saveConfig(payload);
-      setGraphNodes(updatedNodes);
-      setStatusMessage(`${formState.label} 설정을 저장했습니다.`);
-      setEditingNode(null);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage("설정 저장에 실패했습니다. 입력값을 확인하세요.");
-    }
-  }, [selectedNode, data, graphNodes, formState, saveConfig]);
-
-  const handleDialogClose = useCallback(() => {
-    setEditingNode(null);
-  }, []);
+    },
+    [pushSnapshot],
+  );
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -691,11 +756,15 @@ export function AlgorithmWorkspace() {
         y: event.clientY - bounds.top,
       });
       const newNode = createLibraryNode(parsed, position);
-      setGraphNodes((prev) => [...prev, newNode]);
+      setGraphNodes((prev) => {
+        const next = [...prev, newNode];
+        pushSnapshot({ nodes: next, edges: edgesRef.current }, "insert-node");
+        return next;
+      });
       setSelectedNodeId(newNode.id);
       setStatusMessage(`${parsed.label} 노드를 추가했습니다.`);
     },
-    [reactFlowInstance],
+    [pushSnapshot, reactFlowInstance],
   );
 
   const handleDragStart = useCallback((event: React.DragEvent<HTMLButtonElement>, item: NodeLibraryItem) => {
@@ -703,13 +772,29 @@ export function AlgorithmWorkspace() {
     event.dataTransfer.effectAllowed = "move";
   }, []);
 
+  const handleUndo = useCallback(() => {
+    const snapshot = undo({ nodes: nodesRef.current, edges: edgesRef.current });
+    if (snapshot) {
+      setGraphNodes(snapshot.nodes);
+      setGraphEdges(snapshot.edges);
+    }
+  }, [undo]);
+
+  const handleRedo = useCallback(() => {
+    const snapshot = redo({ nodes: nodesRef.current, edges: edgesRef.current });
+    if (snapshot) {
+      setGraphNodes(snapshot.nodes);
+      setGraphEdges(snapshot.edges);
+    }
+  }, [redo]);
+
   return (
     <div className="flex h-full flex-col gap-6" role="region" aria-label="알고리즘 편집 워크스페이스">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-sky-100">워크플로우 알고리즘 편집기</h1>
           <p className="text-sm text-slate-300">
-            ReactFlow 캔버스에서 노드를 구성하고, 런타임 파라미터를 Inspector와 설정 다이얼로그로 관리합니다.
+            ReactFlow 캔버스에서 노드를 구성하고, 더블클릭으로 런타임 파라미터를 동기화합니다.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs">
@@ -717,8 +802,24 @@ export function AlgorithmWorkspace() {
           {errorMessage ? <span className="text-rose-300">{errorMessage}</span> : null}
           <button
             type="button"
-            onClick={handleSaveLayout}
-            disabled={saving || isLoading || isFetching}
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-400 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-400 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500"
+          >
+            Redo
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveGraph}
+            disabled={saving || loading}
             className="rounded-lg border border-sky-500/60 px-4 py-2 text-sm font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-600 disabled:text-slate-500"
           >
             {saving ? "저장 중..." : "레이아웃 SAVE"}
@@ -726,7 +827,7 @@ export function AlgorithmWorkspace() {
         </div>
       </div>
 
-      <div className="grid flex-1 grid-cols-[280px_1fr_320px] gap-6">
+      <div className="grid flex-1 grid-cols-[280px_1fr] gap-6 lg:grid-cols-[280px_1fr_320px]">
         <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
           <header className="mb-4 space-y-1">
             <h2 className="text-lg font-semibold text-sky-100">노드 라이브러리</h2>
@@ -739,7 +840,6 @@ export function AlgorithmWorkspace() {
                   type="button"
                   draggable
                   onDragStart={(event) => handleDragStart(event, item)}
-                  onClick={() => setSelectedNodeId(item.id)}
                   className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-left transition hover:border-sky-400 hover:text-sky-200"
                 >
                   <h3 className="text-sm font-semibold text-slate-100">{item.label}</h3>
@@ -750,224 +850,94 @@ export function AlgorithmWorkspace() {
           </ul>
         </aside>
 
-        <section className="relative rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-blue-950/70 to-slate-900" ref={wrapperRef}>
-          {isLoading ? (
+        <section
+          className="relative rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-blue-950/70 to-slate-900"
+          ref={wrapperRef}
+        >
+          {loading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
             </div>
           ) : null}
           <ReactFlowProvider>
             <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={NODE_TYPES}
-              onNodeDoubleClick={handleNodeDoubleClick}
-              onNodeClick={handleNodeClick}
-              onNodeDragStop={handleNodeDragStop}
-              onNodesDelete={handleNodesDelete}
-              onEdgesDelete={handleEdgesDelete}
-              onEdgesChange={handleEdgesChange}
-              onConnect={handleConnect}
-              onPaneClick={handlePaneClick}
+              nodeTypes={nodeTypes}
+              nodes={reactFlowNodes}
+              edges={reactFlowEdges}
               onInit={setReactFlowInstance}
               onDrop={onDrop}
               onDragOver={onDragOver}
+              onNodeClick={handleNodeClick}
+              onPaneClick={handlePaneClick}
+              onNodeDoubleClick={handleNodeDoubleClick}
+              onNodeDragStop={handleNodeDragStop}
+              onNodesDelete={handleNodesDelete}
+              onEdgesDelete={handleEdgesDelete}
+              onConnect={handleConnect}
               fitView
-              proOptions={{ hideAttribution: true }}
+              className="rounded-3xl"
             >
-              <MiniMap pannable zoomable className="!bg-slate-950/80" nodeColor={() => "#38bdf8"} maskColor="rgba(15,23,42,0.7)" />
-              <Controls className="bg-slate-900/80 text-slate-100" showInteractive={false} />
-              <Background color="rgba(56,189,248,0.25)" gap={28} />
+              <MiniMap pannable zoomable />
+              <Controls />
+              <Background gap={24} color="#1e293b" />
             </ReactFlow>
           </ReactFlowProvider>
-          {editingNode && data ? (
-            <NodeSettingsDialog
-              node={editingNode}
-              trainer={data.trainer}
-              predictor={data.predictor}
-              sql={data.sql}
-              form={formState}
-              onChange={setFormState}
-              onClose={handleDialogClose}
-              onSave={handleSaveNode}
-              saving={saving}
-            />
-          ) : null}
         </section>
 
-        <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-          <header className="mb-4">
-            <h2 className="text-lg font-semibold text-sky-100">Inspector</h2>
-            <p className="text-xs text-slate-400">
-              {selectedNode ? `${selectedNode.label} · ${selectedNode.category ?? "module"}` : "노드를 선택하세요"}
-            </p>
-          </header>
-          {selectedNode && data ? (
-            <form
-              className="flex h-full flex-col gap-4 text-sm"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void handleSaveNode();
-              }}
-            >
-              <div className="space-y-3">
-                <label className="space-y-2">
-                  <span className="text-slate-300">레이블</span>
-                  <input
-                    type="text"
-                    value={formState.label}
-                    onChange={(event) => setFormState({ ...formState, label: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-slate-300">상태</span>
-                  <input
-                    type="text"
-                    value={formState.status}
-                    onChange={(event) => setFormState({ ...formState, status: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-slate-300">설명</span>
-                  <textarea
-                    value={formState.description}
-                    onChange={(event) => setFormState({ ...formState, description: event.target.value })}
-                    rows={3}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
+        {selectedNode && workflowConfig ? (
+          <aside className="hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-4 lg:block">
+            <header className="mb-4 space-y-1">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Inspector</p>
+              <h2 className="text-lg font-semibold text-sky-100">{selectedNode.label}</h2>
+            </header>
+            <dl className="space-y-2 text-sm text-slate-300">
+              <div>
+                <dt className="font-semibold text-slate-200">상태</dt>
+                <dd>{selectedNode.status ?? "-"}</dd>
               </div>
-
-              {selectedNode.id === "trainer" ? (
-                <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-                  <h3 className="text-sm font-semibold text-sky-200">트레이너 런타임</h3>
-                  <label className="space-y-2">
-                    <span className="text-slate-300">유사도 임계값</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={formState.similarityThreshold}
-                      onChange={(event) => setFormState({ ...formState, similarityThreshold: event.target.value })}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                    />
-                  </label>
-                  <label className="flex items-center gap-3 rounded-lg border border-slate-700/80 bg-slate-950 px-3 py-2 text-slate-200">
-                    <input
-                      type="checkbox"
-                      checked={formState.trimStdEnabled}
-                      onChange={(event) => setFormState({ ...formState, trimStdEnabled: event.target.checked })}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
-                    />
-                    <span>상/하위 5% Trim 표준편차 적용</span>
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="space-y-1">
-                      <span className="text-slate-300">하위 Trim 비율</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={0.5}
-                        step={0.01}
-                        value={formState.trimLowerPercent}
-                        onChange={(event) => setFormState({ ...formState, trimLowerPercent: event.target.value })}
-                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="text-slate-300">상위 Trim 비율</span>
-                      <input
-                        type="number"
-                        min={0.5}
-                        max={1}
-                        step={0.01}
-                        value={formState.trimUpperPercent}
-                        onChange={(event) => setFormState({ ...formState, trimUpperPercent: event.target.value })}
-                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                      />
-                    </label>
-                  </div>
-                </section>
-              ) : null}
-
-              {selectedNode.id === "predictor" ? (
-                <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-                  <h3 className="text-sm font-semibold text-sky-200">예측기 파라미터</h3>
-                  <label className="space-y-2">
-                    <span className="text-slate-300">상위 유사도 임계값</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={formState.predictorSimilarity}
-                      onChange={(event) => setFormState({ ...formState, predictorSimilarity: event.target.value })}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                    />
-                  </label>
-                  <label className="space-y-2">
-                    <span className="text-slate-300">최대 라우팅 조합 수</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={formState.maxRoutingVariants}
-                      onChange={(event) => setFormState({ ...formState, maxRoutingVariants: event.target.value })}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                    />
-                  </label>
-                </section>
-              ) : null}
-
-              {selectedNode.id === "sql-mapper" ? (
-                <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-                  <h3 className="text-sm font-semibold text-sky-200">SQL 프로파일</h3>
-                  <label className="space-y-2">
-                    <span className="text-slate-300">활성 프로파일</span>
-                    <select
-                      value={formState.sqlProfile}
-                      onChange={(event) => setFormState({ ...formState, sqlProfile: event.target.value })}
-                      className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                    >
-                      {data.sql.profiles.map((profile) => (
-                        <option key={profile.name} value={profile.name}>
-                          {profile.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </section>
-              ) : null}
-
-              <div className="mt-auto flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingNode(selectedNode);
-                  }}
-                  className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-sky-400 hover:text-sky-200"
-                >
-                  설정 다이얼로그
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-800 disabled:text-slate-400"
-                >
-                  {saving ? "저장 중..." : "SAVE"}
-                </button>
+              <div>
+                <dt className="font-semibold text-slate-200">설명</dt>
+                <dd className="whitespace-pre-wrap text-xs text-slate-400">
+                  {typeof selectedNode.settings?.description === "string"
+                    ? (selectedNode.settings.description as string)
+                    : "-"}
+                </dd>
               </div>
-            </form>
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-slate-500">
-              노드를 선택하거나 드래그해서 추가하세요.
+            </dl>
+            <div className="mt-6 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-sky-400 hover:text-sky-200"
+              >
+                설정 다이얼로그
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveGraph}
+                disabled={saving || loading}
+                className="flex-1 rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-800 disabled:text-slate-400"
+              >
+                {saving ? "저장 중" : "SAVE"}
+              </button>
             </div>
-          )}
-        </aside>
+          </aside>
+        ) : null}
       </div>
+
+      {selectedNode && workflowConfig && isDialogOpen ? (
+        <NodeSettingsDialog
+          node={selectedNode}
+          trainer={workflowConfig.trainer}
+          predictor={workflowConfig.predictor}
+          sql={workflowConfig.sql}
+          form={formState}
+          onChange={setFormState}
+          onClose={() => setDialogOpen(false)}
+          onSave={handleDialogSave}
+          saving={saving}
+        />
+      ) : null}
     </div>
   );
 }
