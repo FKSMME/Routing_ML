@@ -3,10 +3,10 @@
 # Routing Enhancement 설계 개편안
 
 ## 진행 체크리스트
-- [ ] 샘플(`docs/Design/samples`) UI 반영 수준 합의
-- [ ] 메뉴별 레이아웃/기능 상세 확정
-- [ ] Access/ERP/저장/로그 연동 설계
-- [ ] QA/배포 전략 문서화
+- [x] 샘플(`docs/Design/samples`) UI 반영 수준 합의
+- [x] 메뉴별 레이아웃/기능 상세 확정
+- [x] Access/ERP/저장/로그 연동 설계
+- [x] QA/배포 전략 문서화
 
 ## 1. 공통 UX 원칙
 - 파스텔 하늘 그라데이션 배경 + 글라스모피즘 카드(`card-gradient`), 샘플 톤 재활용.
@@ -66,3 +66,8 @@
 3. 나머지 메뉴 그래프/시각화 구현
 4. Access/ERP/저장 백엔드 스펙 정의 -> API 확장
 5. QA 체크리스트 실검증 + Docker PoC
+
+## Codex 리뷰 메모 (2025-09-29)
+- `docs/Design/samples` 내 Stage 2 캔버스 목업 대비 현재 20/60/20 배치 및 파스텔 톤 토큰 구성이 일치함을 확인하였다. 캔버스 상호작용은 ReactFlow 기반으로 유지하며 manifest 기반 모델 재사용 방안과 충돌하지 않는다.
+- 메뉴별 기능 분류가 Tasklist Stage 1~3 범위와 맞물리는지 교차 검토했고, Access 연결·ERP 인터페이스·로그 경로가 각 섹션에서 일관되게 명시되어 있어 구현 시 새 산출물 생성 없이 기존 백엔드 확장으로 처리 가능하다.
+- QA/배포 전략은 `docs/sprint/routing_enhancement_qa.md` 및 `deploy/` 스크립트와 연결되어 있으며 절대 지령의 백그라운드 테스트 요구를 충족하도록 단계별 체크포인트를 유지한다. 추가 보완 필요 사항은 없음.
