@@ -1,5 +1,6 @@
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) blocking QA checklist execution | build_status=failed, ts_errors=10 | logs/qa/frontend_build_20250930.log | pending | Fix ReactFlow/Options/IndexedDB TS types and rerun QA in 2025-10 Sprint Week 1 |
 | 2025-09-29 | Stage 1 - Routing Refactor | docs/Design/onprem_two_tier_architecture.md | Documented on-prem two-tier architecture and automated logbook workflow | analysis_time_min=95, files_touched=3, tasks_remaining=3 | docs/Design/onprem_two_tier_architecture.md | pending | Extend dashboard instrumentation |
 | 2025-09-29 | Step 1 - Routing Refactor | docs/sprint/next_stage_checklist.md | Grouped next-stage checklist and hourly logging scaffold | analysis_time_min=30, checkboxes_added=10, tasks_remaining=10 | docs/sprint/next_stage_checklist.md | pending | Await approval for Group 1 execution |
 | 2025-09-29 | Step 1 - Routing Refactor | Tasklist Follow-up Reconciliation | Step 1 follow-up checklist deduplicated and completion confirmed | items_completed=10, pending_items=0 | Tasklist.md | pending | Prepare Step 2 initiation package |

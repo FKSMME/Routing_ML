@@ -36,7 +36,7 @@ _Reference update_: The previous `deliverables/design/routing_enhancement_state.
 - [x] Document Docker/internal deployment plan. (`docs/stage9_packaging_plan.md`, `docs/install_guide_ko.md` 검증 메모 추가)
 
 ## Phase 5 · QA & Release Prep
-- [x] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (2025-09-30 업데이트 — 빌드 실패 로그/후속 조치 기록)
+- [ ] Execute QA checklist (`docs/sprint/routing_enhancement_qa.md`). (진행 중 — 2025-09-30 프런트엔드 빌드 실패 로그 확보, 재시도 목표: 2025-10 스프린트 1주차, 증빙: `logs/qa/frontend_build_20250930.log`)
 - [ ] Perform `/api/routing/groups` integration test with backend.
 - [ ] Update OpenAPI/Swagger with new endpoints.
 - [ ] Prepare release notes and internal deployment SOP.
