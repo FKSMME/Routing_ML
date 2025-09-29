@@ -1,16 +1,13 @@
+import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import {
-  fetchOutputProfileDetail,
-  fetchOutputProfiles,
+  generateOutputPreview,
   type OutputProfileColumn,
-  type OutputProfileDetail,
-  type OutputProfileSummary,
   postUiAudit,
   saveWorkspaceSettings,
 } from "@lib/apiClient";
-import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 interface MappingRow {
   source: string;
@@ -26,6 +23,16 @@ const COLUMN_TYPES: Array<{ value: string; label: string }> = [
   { value: "date", label: "Date/Time" },
 ];
 
+const FORMAT_EXTENSIONS: Record<string, string> = {
+  CSV: ".csv",
+  TXT: ".txt",
+  JSON: ".json",
+  XML: ".xml",
+  EXCEL: ".xlsx",
+  PARQUET: ".parquet",
+  ACCESS: ".accdb",
+};
+
 function toMappingRow(column: OutputProfileColumn): MappingRow {
   return {
     source: column.source ?? "",
@@ -35,10 +42,14 @@ function toMappingRow(column: OutputProfileColumn): MappingRow {
   };
 }
 
-function buildGeneratedPreview(rows: MappingRow[]): Array<Record<string, string>> {
-  const columns = rows
+function buildColumnNames(rows: MappingRow[]): string[] {
+  return rows
     .map((row) => row.mapped.trim() || row.source.trim())
     .filter((column, index, all) => column !== "" && all.indexOf(column) === index);
+}
+
+function buildGeneratedPreview(rows: MappingRow[]): Array<Record<string, string>> {
+  const columns = buildColumnNames(rows);
   if (columns.length === 0) {
     return [];
   }
@@ -66,16 +77,15 @@ function safeFormatDate(value?: string | null): string | null {
 export function DataOutputWorkspace() {
   const { data: workflowConfig, saveConfig, saving: configSaving, isLoading: configLoading } = useWorkflowConfig();
 
-  const profilesQuery = useQuery<OutputProfileSummary[]>({
-    queryKey: ["output-profiles"],
-    queryFn: fetchOutputProfiles,
-    staleTime: 60_000,
-  });
+  const profilesQuery = useOutputProfiles();
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [format, setFormat] = useState<string>("CSV");
   const [mappingRows, setMappingRows] = useState<MappingRow[]>([]);
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
+  const [previewColumnsState, setPreviewColumnsState] = useState<string[]>([]);
+  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const [previewErrorMessage, setPreviewErrorMessage] = useState<string>("");
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
@@ -105,12 +115,7 @@ export function DataOutputWorkspace() {
     }
   }, [profilesQuery.data, workflowConfig?.sql.active_profile, selectedProfileId]);
 
-  const profileDetailQuery = useQuery<OutputProfileDetail>({
-    queryKey: ["output-profile", selectedProfileId],
-    queryFn: () => fetchOutputProfileDetail(selectedProfileId ?? ""),
-    enabled: Boolean(selectedProfileId),
-    staleTime: 30_000,
-  });
+  const profileDetailQuery = useOutputProfile(selectedProfileId);
 
   useEffect(() => {
     if (!selectedProfileId && workflowConfig?.sql.output_columns?.length) {
@@ -122,6 +127,9 @@ export function DataOutputWorkspace() {
       }));
       setMappingRows(fallbackRows);
       setPreviewRows(buildGeneratedPreview(fallbackRows));
+      setPreviewColumnsState(buildColumnNames(fallbackRows));
+      setPreviewErrorMessage("");
+      setPreviewLoading(false);
     }
   }, [selectedProfileId, workflowConfig?.sql.output_columns]);
 
@@ -137,7 +145,15 @@ export function DataOutputWorkspace() {
     setMappingRows(nextRows);
     if (!dirty) {
       const previewFromApi = detail.sample && detail.sample.length > 0 ? detail.sample : null;
-      setPreviewRows(previewFromApi ?? buildGeneratedPreview(nextRows));
+      const previewRowsFromData = previewFromApi ?? buildGeneratedPreview(nextRows);
+      setPreviewRows(previewRowsFromData);
+      if (previewFromApi && previewFromApi[0]) {
+        setPreviewColumnsState(Object.keys(previewFromApi[0]));
+      } else {
+        setPreviewColumnsState(buildColumnNames(nextRows));
+      }
+      setPreviewErrorMessage("");
+      setPreviewLoading(false);
     }
     if (detail.format) {
       setFormat(detail.format);
@@ -147,13 +163,31 @@ export function DataOutputWorkspace() {
 
   useEffect(() => {
     if (profileDetailQuery.isLoading) {
+      if (!dirty) {
+        setPreviewLoading(true);
+      }
       return;
     }
+
     if (!dirty && profileDetailQuery.data?.sample && profileDetailQuery.data.sample.length > 0) {
-      setPreviewRows(profileDetailQuery.data.sample);
+      const sampleRows = profileDetailQuery.data.sample;
+      setPreviewRows(sampleRows);
+      setPreviewColumnsState(Object.keys(sampleRows[0] ?? {}));
+      setPreviewErrorMessage("");
+      setPreviewLoading(false);
       return;
     }
-    setPreviewRows(buildGeneratedPreview(mappingRows));
+
+    const generated = buildGeneratedPreview(mappingRows);
+    setPreviewRows(generated);
+    const generatedColumns = generated[0] ? Object.keys(generated[0]) : buildColumnNames(mappingRows);
+    setPreviewColumnsState(generatedColumns);
+    if (dirty) {
+      setPreviewErrorMessage("Save to refresh backend preview.");
+    } else {
+      setPreviewErrorMessage("");
+    }
+    setPreviewLoading(false);
   }, [dirty, mappingRows, profileDetailQuery.data?.sample, profileDetailQuery.isLoading]);
 
   const availableColumns = useMemo(() => {
@@ -162,6 +196,87 @@ export function DataOutputWorkspace() {
     const merged = new Set<string>([...base, ...fromRows]);
     return Array.from(merged).sort((a, b) => a.localeCompare(b));
   }, [mappingRows, workflowConfig?.sql.available_columns]);
+
+  useEffect(() => {
+    if (dirty) {
+      return;
+    }
+
+    if (profileDetailQuery.isLoading || profileDetailQuery.isFetching) {
+      return;
+    }
+
+    const trimmedRows = mappingRows
+      .map((row) => ({
+        source: row.source.trim(),
+        mapped: row.mapped.trim(),
+        type: row.type.trim() || "string",
+        required: row.required,
+      }))
+      .filter((row) => row.source !== "");
+
+    if (trimmedRows.length === 0) {
+      setPreviewRows([]);
+      setPreviewColumnsState([]);
+      setPreviewLoading(false);
+      setPreviewErrorMessage("");
+      return;
+    }
+
+    let ignore = false;
+    setPreviewLoading(true);
+    setPreviewErrorMessage("");
+
+    generateOutputPreview({
+      profileId: selectedProfileId,
+      mappings: trimmedRows,
+      format,
+    })
+      .then(({ rows, columns }) => {
+        if (ignore) {
+          return;
+        }
+        if (rows.length > 0) {
+          setPreviewRows(rows);
+          setPreviewColumnsState(columns.length > 0 ? columns : Object.keys(rows[0]));
+          setPreviewErrorMessage("");
+        } else {
+          const generated = buildGeneratedPreview(mappingRows);
+          setPreviewRows(generated);
+          const generatedColumns = generated[0]
+            ? Object.keys(generated[0])
+            : buildColumnNames(mappingRows);
+          setPreviewColumnsState(generatedColumns);
+          setPreviewErrorMessage("No preview rows returned. Showing generated sample.");
+        }
+      })
+      .catch(() => {
+        if (ignore) {
+          return;
+        }
+        const generated = buildGeneratedPreview(mappingRows);
+        setPreviewRows(generated);
+        const generatedColumns = generated[0] ? Object.keys(generated[0]) : buildColumnNames(mappingRows);
+        setPreviewColumnsState(generatedColumns);
+        setPreviewErrorMessage("Failed to load backend preview. Showing generated sample.");
+      })
+      .finally(() => {
+        if (!ignore) {
+          setPreviewLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [
+    dirty,
+    mappingRows,
+    selectedProfileId,
+    format,
+    profileDetailQuery.isFetching,
+    profileDetailQuery.isLoading,
+  ]);
 
   const formatOptions = useMemo(() => {
     const exportCfg = workflowConfig?.export;
@@ -187,13 +302,36 @@ export function DataOutputWorkspace() {
     }
   }, [format, formatOptions]);
 
+  const previewFileLabel = useMemo(() => {
+    const extension = FORMAT_EXTENSIONS[format] ?? "";
+    if (extension) {
+      return `Sample export ${extension}`;
+    }
+    return `${format} preview`;
+  }, [format]);
+
+  const handleFormatChange = (nextFormat: string) => {
+    setFormat(nextFormat);
+    setDirty(true);
+    setStatusMessage("");
+    setErrorMessage("");
+    const generated = buildGeneratedPreview(mappingRows);
+    setPreviewRows(generated);
+    const generatedColumns = generated[0] ? Object.keys(generated[0]) : buildColumnNames(mappingRows);
+    setPreviewColumnsState(generatedColumns);
+    setPreviewErrorMessage("Save to refresh backend preview.");
+  };
+
   const previewColumns = useMemo(() => {
+    if (previewColumnsState.length > 0) {
+      return previewColumnsState;
+    }
     const firstRow = previewRows[0];
     if (!firstRow) {
       return [];
     }
     return Object.keys(firstRow);
-  }, [previewRows]);
+  }, [previewColumnsState, previewRows]);
 
   const validationIssues = useMemo(() => {
     const issues: string[] = [];
@@ -230,11 +368,17 @@ export function DataOutputWorkspace() {
   const handleAddRow = () => {
     setMappingRows((rows) => [...rows, { source: "", mapped: "", type: "string", required: false }]);
     setDirty(true);
+    setStatusMessage("");
+    setErrorMessage("");
+    setPreviewErrorMessage("Save to refresh backend preview.");
   };
 
   const handleRemoveRow = (index: number) => {
     setMappingRows((rows) => rows.filter((_, rowIndex) => rowIndex !== index));
     setDirty(true);
+    setStatusMessage("");
+    setErrorMessage("");
+    setPreviewErrorMessage("Save to refresh backend preview.");
   };
 
   const handleRowChange = (index: number, field: keyof MappingRow, value: string | boolean) => {
@@ -254,6 +398,9 @@ export function DataOutputWorkspace() {
       return next;
     });
     setDirty(true);
+    setStatusMessage("");
+    setErrorMessage("");
+    setPreviewErrorMessage("Save to refresh backend preview.");
   };
 
   const handleSaveProfile = async () => {
@@ -298,12 +445,19 @@ export function DataOutputWorkspace() {
       setSaving(true);
       setStatusMessage("");
       setErrorMessage("");
+      setPreviewErrorMessage("");
       const aliasMap: Record<string, string> = {};
       trimmedRows.forEach((row) => {
         if (row.mapped && row.mapped !== row.source) {
           aliasMap[row.mapped] = row.source;
         }
       });
+      const normalizedRows: MappingRow[] = trimmedRows.map((row) => ({
+        source: row.source,
+        mapped: row.mapped || row.source,
+        type: row.type,
+        required: row.required,
+      }));
       await saveWorkspaceSettings({
         version: Date.now(),
         output: {
@@ -330,13 +484,24 @@ export function DataOutputWorkspace() {
           required_columns: trimmedRows.filter((row) => row.required).map((row) => row.source),
         },
       });
+      setMappingRows(normalizedRows);
+      setPreviewColumnsState(buildColumnNames(normalizedRows));
+      setPreviewRows(buildGeneratedPreview(normalizedRows));
+      setPreviewLoading(true);
       setStatusMessage("Output profile saved.");
       setDirty(false);
+      void profilesQuery.refresh();
+      void profileDetailQuery.refresh();
     } catch (error) {
       setErrorMessage("Failed to save output profile.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmitForm = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await handleSaveProfile();
   };
 
   const isSaving = saving || configSaving;
@@ -371,7 +536,12 @@ export function DataOutputWorkspace() {
                     setDirty(false);
                     setStatusMessage("");
                     setErrorMessage("");
+                    setPreviewRows([]);
+                    setPreviewColumnsState([]);
+                    setPreviewErrorMessage("");
+                    setPreviewLoading(true);
                   }}
+                  onMouseEnter={() => profileDetailQuery.prefetch(profile.id)}
                 >
                   <span className="output-profile-list__name">{profile.name}</span>
                   <span className="output-profile-list__desc">
@@ -388,121 +558,126 @@ export function DataOutputWorkspace() {
       </aside>
 
       <section className="output-column output-column--center">
-        <header className="workspace-panel__header">
-          <div>
-            <h2>Column Mapping</h2>
-            {selectedProfile ? (
-              <p className="workspace-panel__subtitle">{selectedProfile.description ?? selectedProfile.name}</p>
-            ) : null}
-          </div>
-          <div className="workspace-toolbar">
-            <button type="button" className="workspace-toolbar__btn" onClick={handleAddRow} disabled={isSaving}>
-              <Plus size={14} /> Add column
-            </button>
-            <button type="button" className="workspace-toolbar__btn" disabled>
-              <Upload size={14} /> Import
-            </button>
-            <button type="button" className="workspace-toolbar__btn" onClick={handleSaveProfile} disabled={isSaving}>
-              <Save size={14} />
-              {isSaving ? "Saving…" : "Save"}
-            </button>
-          </div>
-        </header>
-        {isLoading ? (
-          <p className="output-status">Loading profile mappings…</p>
-        ) : (
-          <table className="mapping-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>Mapped</th>
-                <th>Type</th>
-                <th>Required</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mappingRows.map((row, index) => (
-                <tr key={`${row.source}-${index}`}>
-                  <td>
-                    <select
-                      value={row.source}
-                      onChange={(event) => handleRowChange(index, "source", event.target.value)}
-                    >
-                      <option value="">Select column…</option>
-                      {availableColumns.map((column) => (
-                        <option key={column} value={column}>
-                          {column}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      type="text"
-                      value={row.mapped}
-                      placeholder="Alias or export name"
-                      onChange={(event) => handleRowChange(index, "mapped", event.target.value)}
-                    />
-                  </td>
-                  <td>
-                    <select value={row.type} onChange={(event) => handleRowChange(index, "type", event.target.value)}>
-                      {COLUMN_TYPES.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="mapping-table__cell--checkbox">
-                    <input
-                      type="checkbox"
-                      checked={row.required}
-                      onChange={(event) => handleRowChange(index, "required", event.target.checked)}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="workspace-toolbar__btn"
-                      onClick={() => handleRemoveRow(index)}
-                      aria-label="Remove row"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {mappingRows.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <p className="output-status">No columns mapped yet. Add a column to get started.</p>
-                  </td>
-                </tr>
+        <form className="mapping-form" onSubmit={handleSubmitForm}>
+          <header className="workspace-panel__header">
+            <div>
+              <h2>Column Mapping</h2>
+              {selectedProfile ? (
+                <p className="workspace-panel__subtitle">{selectedProfile.description ?? selectedProfile.name}</p>
               ) : null}
-            </tbody>
-          </table>
-        )}
-        {validationIssues.length > 0 ? (
-          <div className="output-status output-status--warning" role="alert">
-            <p>
-              <AlertCircle size={14} /> Resolve the following before saving:
-            </p>
-            <ul>
-              {validationIssues.map((issue) => (
-                <li key={issue}>{issue}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-        {statusMessage ? <p className="output-status output-status--success">{statusMessage}</p> : null}
-        {errorMessage ? <p className="output-status output-status--error">{errorMessage}</p> : null}
+            </div>
+            <div className="workspace-toolbar">
+              <button type="button" className="workspace-toolbar__btn" onClick={handleAddRow} disabled={isSaving}>
+                <Plus size={14} /> Add column
+              </button>
+              <button type="button" className="workspace-toolbar__btn" disabled>
+                <Upload size={14} /> Import
+              </button>
+              <button type="submit" className="workspace-toolbar__btn" disabled={isSaving}>
+                <Save size={14} />
+                {isSaving ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </header>
+          {isLoading ? (
+            <p className="output-status">Loading profile mappings…</p>
+          ) : (
+            <table className="mapping-table">
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Mapped</th>
+                  <th>Type</th>
+                  <th>Required</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mappingRows.map((row, index) => (
+                  <tr key={`${row.source}-${index}`}>
+                    <td>
+                      <select
+                        value={row.source}
+                        onChange={(event) => handleRowChange(index, "source", event.target.value)}
+                      >
+                        <option value="">Select column…</option>
+                        {availableColumns.map((column) => (
+                          <option key={column} value={column}>
+                            {column}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={row.mapped}
+                        placeholder="Alias or export name"
+                        onChange={(event) => handleRowChange(index, "mapped", event.target.value)}
+                      />
+                    </td>
+                    <td>
+                      <select value={row.type} onChange={(event) => handleRowChange(index, "type", event.target.value)}>
+                        {COLUMN_TYPES.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="mapping-table__cell--checkbox">
+                      <input
+                        type="checkbox"
+                        checked={row.required}
+                        onChange={(event) => handleRowChange(index, "required", event.target.checked)}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="workspace-toolbar__btn"
+                        onClick={() => handleRemoveRow(index)}
+                        aria-label="Remove row"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {mappingRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <p className="output-status">No columns mapped yet. Add a column to get started.</p>
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          )}
+          {validationIssues.length > 0 ? (
+            <div className="output-status output-status--warning" role="alert">
+              <p>
+                <AlertCircle size={14} /> Resolve the following before saving:
+              </p>
+              <ul>
+                {validationIssues.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {statusMessage ? <p className="output-status output-status--success">{statusMessage}</p> : null}
+          {errorMessage ? <p className="output-status output-status--error">{errorMessage}</p> : null}
+        </form>
       </section>
 
       <aside className="output-column output-column--right">
         <header className="workspace-panel__header">
-          <h2>Preview</h2>
-          <select value={format} onChange={(event) => setFormat(event.target.value)}>
+          <div>
+            <h2>Preview</h2>
+            <p className="workspace-panel__subtitle">{previewFileLabel}</p>
+          </div>
+          <select value={format} onChange={(event) => handleFormatChange(event.target.value)}>
             {formatOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -511,9 +686,11 @@ export function DataOutputWorkspace() {
           </select>
         </header>
         <div className="output-preview" role="table">
-          {previewColumns.length === 0 ? (
+          {previewLoading ? <p className="output-status">Loading preview…</p> : null}
+          {previewColumns.length === 0 && !previewLoading ? (
             <p className="output-status">No preview data.</p>
-          ) : (
+          ) : null}
+          {previewColumns.length > 0 ? (
             <table>
               <thead>
                 <tr>
@@ -532,10 +709,17 @@ export function DataOutputWorkspace() {
                 ))}
               </tbody>
             </table>
-          )}
+          ) : null}
         </div>
+        {previewErrorMessage ? (
+          <p className="output-status output-status--warning">{previewErrorMessage}</p>
+        ) : null}
         <div className="output-preview__actions">
-          <button type="button" className="btn-secondary" disabled={previewColumns.length === 0}>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={previewColumns.length === 0 || previewLoading}
+          >
             <DownloadCloud size={16} /> Download sample
           </button>
         </div>

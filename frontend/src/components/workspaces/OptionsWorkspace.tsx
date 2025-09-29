@@ -1,6 +1,8 @@
-﻿import {
+import type { WorkflowConfigResponse } from "@app-types/workflow";
+import {
   type AccessMetadataResponse,
   fetchAccessMetadata,
+  fetchWorkflowConfig,
   fetchWorkspaceSettings,
   postUiAudit,
   saveWorkspaceSettings,
@@ -9,7 +11,7 @@
   type WorkspaceSettingsResponse,
 } from "@lib/apiClient";
 import { useRoutingStore } from "@store/routingStore";
-import { AlertTriangle, Check, Shield, XCircle } from "lucide-react";
+import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const STANDARD_OPTIONS = [
@@ -22,13 +24,6 @@ const SIMILARITY_OPTIONS = [
   { id: "cosine", label: "Cosine", description: "Vector cosine similarity" },
   { id: "hnsw", label: "HNSW", description: "High dimensional nearest neighbor" },
   { id: "profile", label: "Weighted Profile", description: "Feature profile matching" },
-];
-
-const COLUMN_MAPPINGS = [
-  { scope: "Routing Generation", source: "ITEM_CD", target: "items.item_code" },
-  { scope: "Routing Generation", source: "ROUTING_ID", target: "items.routing_id" },
-  { scope: "Training", source: "SETUP_TIME", target: "training.setup_minutes" },
-  { scope: "Output", source: "PROC_SEQ", target: "output.sequence" },
 ];
 
 const DEFAULT_OPTIONS = {
@@ -44,6 +39,160 @@ interface ErrorWithDetail {
     };
   };
 }
+
+interface ColumnMappingRow {
+  id: string;
+  scope: string;
+  source: string;
+  target: string;
+}
+
+const randomId = (): string =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `map-${Math.random().toString(36).slice(2)}`;
+
+const makeRow = (row?: Partial<ColumnMappingRow>): ColumnMappingRow => ({
+  id: row?.id ?? randomId(),
+  scope: row?.scope ?? "",
+  source: row?.source ?? "",
+  target: row?.target ?? "",
+});
+
+const normalizeMappingCandidate = (value: unknown, fallbackScope?: string): ColumnMappingRow[] => {
+  if (!value) {
+    return [];
+  }
+  const rows: ColumnMappingRow[] = [];
+
+  const pushRow = (candidate: Partial<ColumnMappingRow>) => {
+    const scope = `${candidate.scope ?? fallbackScope ?? ""}`.trim();
+    const source = `${candidate.source ?? ""}`.trim();
+    const target = `${candidate.target ?? ""}`.trim();
+    if (!scope && !source && !target) {
+      return;
+    }
+    rows.push(
+      makeRow({
+        id: candidate.id,
+        scope,
+        source,
+        target,
+      }),
+    );
+  };
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => {
+      if (typeof entry === "string") {
+        pushRow({ scope: fallbackScope ?? `Mapping ${index + 1}`, source: entry, target: entry });
+        return;
+      }
+      if (typeof entry === "object" && entry !== null) {
+        const scopedEntry = entry as Record<string, unknown>;
+        pushRow({
+          id: typeof scopedEntry.id === "string" ? scopedEntry.id : undefined,
+          scope: typeof scopedEntry.scope === "string" ? scopedEntry.scope : fallbackScope,
+          source: typeof scopedEntry.source === "string" ? scopedEntry.source : "",
+          target: typeof scopedEntry.target === "string" ? scopedEntry.target : "",
+        });
+      }
+    });
+    return rows;
+  }
+
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    Object.entries(record).forEach(([scopeKey, entry]) => {
+      if (Array.isArray(entry)) {
+        entry.forEach((inner) => {
+          if (typeof inner === "string") {
+            pushRow({ scope: scopeKey || fallbackScope, source: inner, target: inner });
+          } else if (typeof inner === "object" && inner !== null) {
+            const nested = inner as Record<string, unknown>;
+            pushRow({
+              id: typeof nested.id === "string" ? nested.id : undefined,
+              scope: typeof nested.scope === "string" ? nested.scope : scopeKey || fallbackScope,
+              source: typeof nested.source === "string" ? nested.source : "",
+              target: typeof nested.target === "string" ? nested.target : "",
+            });
+          }
+        });
+        return;
+      }
+      if (typeof entry === "object" && entry !== null) {
+        const nestedRecord = entry as Record<string, unknown>;
+        Object.entries(nestedRecord).forEach(([sourceKey, targetValue]) => {
+          pushRow({
+            scope: scopeKey || fallbackScope,
+            source: sourceKey,
+            target: typeof targetValue === "string" ? targetValue : `${targetValue ?? ""}`,
+          });
+        });
+        return;
+      }
+      if (typeof entry === "string") {
+        pushRow({ scope: scopeKey || fallbackScope, source: entry, target: entry });
+      }
+    });
+    return rows;
+  }
+
+  return rows;
+};
+
+const dedupeMappings = (rows: ColumnMappingRow[]): ColumnMappingRow[] => {
+  const map = new Map<string, ColumnMappingRow>();
+  rows.forEach((row) => {
+    const key = `${row.scope.toLowerCase()}::${row.source.toLowerCase()}`;
+    if (!map.has(key)) {
+      map.set(key, row);
+    }
+  });
+  return Array.from(map.values());
+};
+
+const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undefined): ColumnMappingRow[] => {
+  if (!workflow) {
+    return [];
+  }
+  const candidates: ColumnMappingRow[] = [];
+  const asAny = workflow as unknown as Record<string, unknown>;
+  const collect = (value: unknown, scope?: string) => {
+    candidates.push(...normalizeMappingCandidate(value, scope));
+  };
+
+  collect(asAny.column_mappings);
+  collect(asAny.column_mapping);
+
+  if (workflow.graph?.nodes) {
+    workflow.graph.nodes.forEach((node) => {
+      if (node.settings && typeof node.settings === "object") {
+        const settings = node.settings as Record<string, unknown>;
+        if ("column_mappings" in settings) {
+          collect(settings.column_mappings, node.label || node.id);
+        }
+        if ("column_mapping" in settings) {
+          collect(settings.column_mapping, node.label || node.id);
+        }
+      }
+    });
+  }
+
+  if (workflow.data_source && typeof workflow.data_source === "object") {
+    const dataSource = workflow.data_source as Record<string, unknown>;
+    collect(dataSource.column_mappings, "Data Source");
+    collect(dataSource.column_mapping, "Data Source");
+  }
+
+  if (workflow.sql && typeof workflow.sql === "object") {
+    const sql = workflow.sql as Record<string, unknown>;
+    collect(sql.column_mappings, "Output");
+    collect(sql.column_mapping, "Output");
+  }
+
+  return dedupeMappings(candidates);
+};
 
 export function OptionsWorkspace() {
   const setERPRequired = useRoutingStore((state) => state.setERPRequired);
@@ -64,6 +213,8 @@ export function OptionsWorkspace() {
   const [dirty, setDirty] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [testMessage, setTestMessage] = useState<string>("");
+  const [columnMappings, setColumnMappings] = useState<ColumnMappingRow[]>([]);
+  const [columnMappingSource, setColumnMappingSource] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -84,6 +235,28 @@ export function OptionsWorkspace() {
         const erpEnabled = Boolean((options.erp_interface as boolean | undefined) ?? (data.export?.erp_interface_enabled as boolean | undefined));
         setErpInterface(erpEnabled);
         setERPRequired(erpEnabled);
+
+        let mappingRows = dedupeMappings(normalizeMappingCandidate((options.column_mappings as unknown) ?? null));
+        let mappingSource = "workspace";
+        if (mappingRows.length === 0) {
+          try {
+            const workflow = await fetchWorkflowConfig();
+            if (cancelled) return;
+            const extracted = extractWorkflowMappings(workflow);
+            if (extracted.length > 0) {
+              mappingRows = extracted;
+              mappingSource = "workflow";
+            }
+          } catch {
+            // Ignore workflow fetch errors. A fallback row will be used below.
+          }
+        }
+        if (mappingRows.length === 0) {
+          mappingRows = [makeRow({ scope: "Routing Generation" })];
+          mappingSource = "fallback";
+        }
+        setColumnMappings(mappingRows);
+        setColumnMappingSource(mappingSource);
         setDirty(false);
       } catch {
         if (!cancelled) {
@@ -101,7 +274,7 @@ export function OptionsWorkspace() {
     };
   }, [setERPRequired]);
 
-  const conflicts = useMemo(() => {
+  const standardConflicts = useMemo(() => {
     const warnings: string[] = [];
     STANDARD_OPTIONS.forEach((option) => {
       if (standardOptions.includes(option.id)) {
@@ -115,6 +288,45 @@ export function OptionsWorkspace() {
     });
     return warnings;
   }, [standardOptions]);
+
+  const mappingDiagnostics = useMemo(() => {
+    const rowErrors = new Map<string, string>();
+    const conflictSummary: string[] = [];
+    const seenSourceTarget = new Map<string, { id: string; target: string }>();
+    const seenTarget = new Map<string, string>();
+
+    columnMappings.forEach((row) => {
+      const scope = row.scope.trim();
+      const source = row.source.trim();
+      const target = row.target.trim();
+      if (!scope || !source || !target) {
+        rowErrors.set(row.id, "Complete all fields");
+        return;
+      }
+      const key = `${scope.toLowerCase()}::${source.toLowerCase()}`;
+      const existing = seenSourceTarget.get(key);
+      if (existing && existing.target !== target) {
+        rowErrors.set(row.id, `Conflicts with ${existing.target}`);
+        rowErrors.set(existing.id, `Conflicts with ${target}`);
+        conflictSummary.push(`${scope}: ${source} → ${target}`);
+        return;
+      }
+      seenSourceTarget.set(key, { id: row.id, target });
+      const targetKey = `${scope.toLowerCase()}::${target.toLowerCase()}`;
+      const existingTarget = seenTarget.get(targetKey);
+      if (existingTarget && existingTarget !== source) {
+        rowErrors.set(row.id, `Target reused by ${existingTarget}`);
+        conflictSummary.push(`${scope}: ${source} ↔ ${target}`);
+      } else {
+        seenTarget.set(targetKey, source);
+      }
+    });
+
+    return {
+      rowErrors,
+      conflictSummary: Array.from(new Set(conflictSummary)),
+    };
+  }, [columnMappings]);
 
   const toggleStandard = (id: string) => {
     setStandardOptions((prev) => {
@@ -143,7 +355,60 @@ export function OptionsWorkspace() {
     }).catch(() => undefined);
   };
 
+  const handleAddMappingRow = () => {
+    setColumnMappings((prev) => [...prev, makeRow({ scope: prev[prev.length - 1]?.scope ?? "" })]);
+    setDirty(true);
+  };
+
+  const handleUpdateMappingRow = (id: string, patch: Partial<Omit<ColumnMappingRow, "id">>) => {
+    let changed = false;
+    setColumnMappings((prev) =>
+      prev.map((row) => {
+        if (row.id !== id) {
+          return row;
+        }
+        const nextRow = { ...row, ...patch };
+        if (nextRow.scope !== row.scope || nextRow.source !== row.source || nextRow.target !== row.target) {
+          changed = true;
+        }
+        return nextRow;
+      }),
+    );
+    if (changed) {
+      setDirty(true);
+    }
+  };
+
+  const handleRemoveMappingRow = (id: string) => {
+    let removed = false;
+    setColumnMappings((prev) => {
+      if (prev.length <= 1) {
+        return prev;
+      }
+      const next = prev.filter((row) => row.id !== id);
+      if (next.length !== prev.length) {
+        removed = true;
+      }
+      return next.length > 0 ? next : [makeRow()];
+    });
+    if (removed) {
+      setDirty(true);
+    }
+  };
+
   const handleSave = async () => {
+    if (mappingDiagnostics.rowErrors.size > 0) {
+      const issues = Array.from(new Set(mappingDiagnostics.rowErrors.values()));
+      setStatusMessage(`Resolve column mapping issues: ${issues.join(", ")}`);
+      await postUiAudit({
+        action: "ui.options.column_mapping.conflict",
+        username: "codex",
+        payload: {
+          issues: Array.from(mappingDiagnostics.rowErrors.entries()).map(([id, message]) => ({ id, message })),
+        },
+      }).catch(() => undefined);
+      return;
+    }
     try {
       setSaving(true);
       setStatusMessage("");
@@ -163,6 +428,13 @@ export function OptionsWorkspace() {
           access_path: accessPath,
           access_table: accessTable || null,
           erp_interface: erpInterface,
+          column_mappings: columnMappings
+            .map((row) => ({
+              scope: row.scope.trim(),
+              source: row.source.trim(),
+              target: row.target.trim(),
+            }))
+            .filter((row) => row.scope || row.source || row.target),
         },
         access: {
           path: accessPath || null,
@@ -180,6 +452,12 @@ export function OptionsWorkspace() {
           access_path: accessPath,
           access_table: accessTable || null,
           erp_interface: erpInterface,
+          column_mappings: columnMappings.map((row) => ({
+            scope: row.scope.trim(),
+            source: row.source.trim(),
+            target: row.target.trim(),
+          })),
+          column_mapping_source: columnMappingSource,
         },
       });
       setStatusMessage("Options saved successfully.");
@@ -273,7 +551,6 @@ export function OptionsWorkspace() {
     };
   }, [accessTable, accessPath, testedPath]);
 
-
   return (
     <div className="options-workspace" role="region" aria-label="System Options">
       <section className="panel-card options-card">
@@ -292,9 +569,9 @@ export function OptionsWorkspace() {
             </label>
           ))}
         </div>
-        {conflicts.length > 0 ? (
+        {standardConflicts.length > 0 ? (
           <div className="option-conflict">
-            <AlertTriangle size={16} /> Conflicting combination: {conflicts.join(", ")}
+            <AlertTriangle size={16} /> Conflicting combination: {standardConflicts.join(", ")}
           </div>
         ) : null}
       </section>
@@ -322,7 +599,11 @@ export function OptionsWorkspace() {
           <div>
             <h2 className="panel-title">Column Mapping</h2>
             <p className="panel-subtitle">Relationships between training, generation, and output fields.</p>
+            {columnMappingSource === "workflow" ? <span className="panel-subtitle">Loaded from workflow configuration.</span> : null}
           </div>
+          <button type="button" className="btn-secondary" onClick={handleAddMappingRow}>
+            <Plus size={16} /> Add mapping
+          </button>
         </header>
         <table className="mapping-table">
           <thead>
@@ -331,21 +612,71 @@ export function OptionsWorkspace() {
               <th>Source</th>
               <th>Target</th>
               <th>Status</th>
+              <th aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
-            {COLUMN_MAPPINGS.map((row) => (
-              <tr key={`${row.scope}-${row.source}`}>
-                <td>{row.scope}</td>
-                <td>{row.source}</td>
-                <td>{row.target}</td>
-                <td>
-                  <Check size={14} className="text-accent" /> mapped
-                </td>
-              </tr>
-            ))}
+            {columnMappings.map((row) => {
+              const error = mappingDiagnostics.rowErrors.get(row.id);
+              return (
+                <tr key={row.id}>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.scope}
+                      onChange={(event) => handleUpdateMappingRow(row.id, { scope: event.target.value })}
+                      placeholder="Routing Generation"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.source}
+                      onChange={(event) => handleUpdateMappingRow(row.id, { source: event.target.value })}
+                      placeholder="ITEM_CD"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.target}
+                      onChange={(event) => handleUpdateMappingRow(row.id, { target: event.target.value })}
+                      placeholder="items.item_code"
+                    />
+                  </td>
+                  <td>
+                    {error ? (
+                      <span className="option-conflict">
+                        <AlertTriangle size={14} /> {error}
+                      </span>
+                    ) : (
+                      <span className="text-accent">
+                        <Check size={14} className="text-accent" /> linked
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => handleRemoveMappingRow(row.id)}
+                      aria-label="Remove mapping"
+                      disabled={columnMappings.length <= 1}
+                      style={{ padding: "0.25rem 0.6rem" }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+        {mappingDiagnostics.conflictSummary.length > 0 ? (
+          <div className="option-conflict">
+            <AlertTriangle size={16} /> Resolve mapping conflicts: {mappingDiagnostics.conflictSummary.join(", ")}
+          </div>
+        ) : null}
       </section>
 
       <section className="panel-card options-card">
@@ -383,7 +714,7 @@ export function OptionsWorkspace() {
                   setMetadataError("");
                   setAvailableTables([]);
                 }}
-                placeholder="\\Share\Routing\ROUTING.accdb"
+                placeholder="\\\\Share\\Routing\\ROUTING.accdb"
               />
             </label>
             <label>
@@ -454,7 +785,12 @@ export function OptionsWorkspace() {
       </section>
 
       <footer className="options-footer">
-        <button type="button" className="primary-button" onClick={handleSave} disabled={saving || loading || !dirty}>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={handleSave}
+          disabled={saving || loading || !dirty || mappingDiagnostics.rowErrors.size > 0}
+        >
           {saving ? "Saving..." : dirty ? "Save changes" : "Saved"}
         </button>
         {statusMessage ? <p className="options-footer__status">{statusMessage}</p> : null}

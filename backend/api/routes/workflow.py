@@ -1,6 +1,7 @@
 """워크플로우 그래프 및 런타임 설정 API."""
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -70,6 +71,9 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
             available_columns=sql_cfg.available_columns,
             profiles=[PowerQueryProfileModel(**profile.to_dict()) for profile in sql_cfg.profiles],
             active_profile=sql_cfg.active_profile,
+            exclusive_column_groups=sql_cfg.exclusive_column_groups,
+            key_columns=sql_cfg.key_columns,
+            training_output_mapping=sql_cfg.training_output_mapping,
         ),
         data_source=DataSourceConfigModel(
             access_path=data_source_cfg.access_path,
@@ -199,6 +203,20 @@ async def patch_workflow_graph(
             sql_cfg.output_columns = payload.sql.output_columns
 
         if payload.sql.column_aliases is not None:
+            empty_alias_keys = [key for key in payload.sql.column_aliases if not key.strip()]
+            if empty_alias_keys:
+                message = "column_aliases에 빈 별칭 키가 포함되어 있습니다"
+                logger.warning("SQL column_aliases 검증 실패", extra={"reason": "empty-key", "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            alias_key_counter = Counter(payload.sql.column_aliases.keys())
+            duplicate_aliases = [alias for alias, count in alias_key_counter.items() if count > 1]
+            if duplicate_aliases:
+                message = "column_aliases에 중복된 별칭이 있습니다: " + ", ".join(sorted(duplicate_aliases))
+                logger.warning(
+                    "SQL column_aliases 검증 실패",
+                    extra={"invalid_columns": duplicate_aliases, "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
             alias_targets = list(payload.sql.column_aliases.values())
             invalid_aliases = [alias for alias in alias_targets if alias not in allowed_columns]
             if invalid_aliases:
@@ -206,6 +224,63 @@ async def patch_workflow_graph(
                 logger.warning("SQL column_aliases 검증 실패", extra={"invalid_columns": invalid_aliases, "username": current_user.username})
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
             sql_cfg.column_aliases = ensure_default_aliases(payload.sql.column_aliases)
+
+        if payload.sql.exclusive_column_groups is not None:
+            normalized_groups = []
+            for group in payload.sql.exclusive_column_groups:
+                if not group:
+                    continue
+                invalid_group = sorted({column for column in group if column not in allowed_columns})
+                if invalid_group:
+                    message = "exclusive_column_groups에 허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(invalid_group)
+                    logger.warning(
+                        "SQL exclusive_column_groups 검증 실패",
+                        extra={"invalid_columns": invalid_group, "username": current_user.username},
+                    )
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+                deduped_group: list[str] = []
+                for column in group:
+                    if column in allowed_columns and column not in deduped_group:
+                        deduped_group.append(column)
+                if len(deduped_group) > 1:
+                    normalized_groups.append(deduped_group)
+            sql_cfg.exclusive_column_groups = normalized_groups
+
+        if payload.sql.key_columns is not None:
+            if not payload.sql.key_columns:
+                message = "key_columns는 최소 1개 이상의 컬럼을 포함해야 합니다"
+                logger.warning("SQL key_columns 검증 실패", extra={"reason": "empty", "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            invalid_keys = sorted(set(payload.sql.key_columns) - allowed_columns)
+            if invalid_keys:
+                message = "key_columns에 허용되지 않은 컬럼이 포함되어 있습니다: " + ", ".join(invalid_keys)
+                logger.warning("SQL key_columns 검증 실패", extra={"invalid_columns": invalid_keys, "username": current_user.username})
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.key_columns = payload.sql.key_columns
+
+        if payload.sql.training_output_mapping is not None:
+            empty_features = [key for key in payload.sql.training_output_mapping if not key.strip()]
+            if empty_features:
+                message = "training_output_mapping에 빈 피처명이 포함되어 있습니다"
+                logger.warning(
+                    "SQL training_output_mapping 검증 실패",
+                    extra={"reason": "empty-feature", "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            invalid_training_targets = sorted(
+                {column for column in payload.sql.training_output_mapping.values() if column not in allowed_columns}
+            )
+            if invalid_training_targets:
+                message = (
+                    "training_output_mapping이 허용되지 않은 컬럼을 참조합니다: "
+                    + ", ".join(invalid_training_targets)
+                )
+                logger.warning(
+                    "SQL training_output_mapping 검증 실패",
+                    extra={"invalid_columns": invalid_training_targets, "username": current_user.username},
+                )
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+            sql_cfg.training_output_mapping = payload.sql.training_output_mapping
 
         if payload.sql.profiles is not None:
             sql_cfg.profiles = [
@@ -230,6 +305,7 @@ async def patch_workflow_graph(
             extra={
                 "username": current_user.username,
                 "active_profile": sql_cfg.active_profile,
+                "key_columns": sql_cfg.key_columns,
             },
         )
 
@@ -337,10 +413,29 @@ async def patch_workflow_graph(
             },
         )
 
-    audit_logger.info(
-        "workflow.graph.patch",
-        extra={"username": current_user.username, "updated_keys": list(payload.dict(exclude_none=True).keys())},
-    )
+    payload_dict = payload.dict(exclude_none=True)
+    audit_details: dict[str, object] = {
+        "username": current_user.username,
+        "updated_keys": list(payload_dict.keys()),
+    }
+    sql_payload = payload_dict.get("sql")
+    if isinstance(sql_payload, dict):
+        sql_summary: dict[str, object] = {}
+        if "output_columns" in sql_payload:
+            sql_summary["output_columns_count"] = len(sql_payload.get("output_columns", []))
+        if "column_aliases" in sql_payload:
+            alias_keys = list(sql_payload.get("column_aliases", {}).keys())
+            sql_summary["column_aliases"] = sorted(alias_keys)
+        if "active_profile" in sql_payload:
+            sql_summary["active_profile"] = sql_payload.get("active_profile")
+        if "key_columns" in sql_payload:
+            sql_summary["key_columns"] = list(sql_payload.get("key_columns", []))
+        if "training_output_mapping" in sql_payload:
+            mapping_keys = list(sql_payload.get("training_output_mapping", {}).keys())
+            sql_summary["training_mapping_keys"] = sorted(mapping_keys)
+        if sql_summary:
+            audit_details["sql_changes"] = sql_summary
+    audit_logger.info("workflow.graph.patch", extra=audit_details)
     return _build_response(snapshot)
 
 
