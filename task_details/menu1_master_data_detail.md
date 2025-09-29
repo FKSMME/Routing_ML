@@ -72,4 +72,5 @@
 ## TODO 체크리스트 업데이트
 - [ ] UI 스토리보드 제작 (Figma 또는 Excalidraw) 후 deliverables/design/menu1_master_data_storyboard.png 업로드.
 - [ ] API 스펙 문서화 (docs/backend_api_overview.md에 /api/master-data/* 추가).
-- [ ] React 컴포넌트 구조 정의 (rontend/src/components/master-data/*).
+- [ ] React 컴포넌트 구조 정의 (frontend/src/components/master-data/*).
+rontend/src/components/master-data/*).
