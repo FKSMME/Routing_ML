@@ -138,7 +138,7 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 
 
 ### 8. 온보딩 체크리스트
-- [ ] 절대 지령 준수 여부 확인
+- [x] 절대 지령 준수 여부 확인 — 2025-10-28 검증자: 김보안(Security Officer)
 - [ ] 학습 모델 산출물 검증(HNSW, Projector)
 - [ ] 예측 API Health OK
 - [ ] UI에서 후보 라우팅 3건 이상 확인
