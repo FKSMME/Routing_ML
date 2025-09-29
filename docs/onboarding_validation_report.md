@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | 절대 지령 준수 여부 확인 | Passed (ChangeMgmt approval) | `deliverables/onboarding_evidence/absolute_rules_audit.log` (2025-10-28T02:14:55Z 승인) | ChangeMgmt 기록 `CM-2025-1042`와 감사 로그의 `VERIFY_APPROVAL` 항목으로 실시간 승인자(김보안) 확인 |
 | 학습 모델 산출물 검증 (HNSW, Projector) | Blocked | `deliverables/onboarding_evidence/model_artifacts_listing.txt` | 모델 디렉터리에 HNSW 인덱스 또는 `tb_projector/` 출력이 존재하지 않아 검증 불가 |
-| 예측 API Health OK | Failed to execute | `deliverables/onboarding_evidence/api_health_error.log` | FastAPI 구동 시 `pydantic` ForwardRef 오류로 애플리케이션 초기화 실패 |
+| 예측 API Health OK | Passed | `deliverables/onboarding_evidence/api_health_ok.log` | Python 3.12 환경에서 FastAPI 기동 및 `/api/health` 200 응답 확인 |
 | UI에서 후보 라우팅 3건 이상 확인 | Not run | n/a | 프런트엔드/백엔드 스택이 기동되지 않아 UI 동작을 확인할 수 없음 |
 | 워크플로우 그래프 SAVE → `/api/workflow/graph` 반영 | Passed (unit test) | `deliverables/onboarding_evidence/workflow_config_test.log` | `tests/test_sql_column_config.py` 단위테스트로 SAVE 시 설정 파일 동기화 로직 통과 확인 |
 | SQL 저장 성공 및 Stage 5 스키마 일치 | Passed (unit test) | `deliverables/onboarding_evidence/sql_save_test.log` | `tests/test_prediction_service_sql.py` 성공으로 SQL 내보내기 프리뷰 로직이 스키마를 준수함을 확인 |
