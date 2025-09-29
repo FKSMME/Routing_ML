@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     sql_preview_row_limit: int = Field(default=20, ge=1, le=500)
 
     rsl_database_url: str = Field(default="sqlite:///logs/rsl_store.db")
+    routing_groups_database_url: str = Field(
+        default="sqlite:///logs/routing_groups.db",
+        description="라우팅 그룹 저장소 SQLite 파일 경로",
+    )
 
 
     # Windows 인증/LDAP 설정
@@ -74,12 +78,13 @@ class Settings(BaseSettings):
         value.mkdir(parents=True, exist_ok=True)
         return value
 
-    @validator("rsl_database_url")
-    def _prepare_rsl_path(cls, value: str) -> str:  # noqa: N805
+    @validator("rsl_database_url", "routing_groups_database_url")
+    def _prepare_sqlite_path(cls, value: str) -> str:  # noqa: N805
         if value.startswith("sqlite:///"):
             path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
             path.parent.mkdir(parents=True, exist_ok=True)
             return f"sqlite:///{path}"
+        return value
 
 
     @validator("model_directory", always=True)

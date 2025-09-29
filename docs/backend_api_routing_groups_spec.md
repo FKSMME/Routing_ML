@@ -135,11 +135,38 @@
 - 모든 이벤트에 공통 필드 포함: `timestamp`, `username`, `client_host`, `action`, `request_id`.
 - 고유 상관 ID(`correlation_id`)를 FastAPI middleware에서 주입하고 감사 로그에도 기록.
 
+## 4. 데이터 모델 및 마이그레이션 전략
+### 4.1 `routing_groups` 테이블 스키마
+| 컬럼 | 타입 | Nullable | 기본값 | 설명 |
+| --- | --- | --- | --- | --- |
+| `id` | CHAR(36) | NO | UUID v4 | 라우팅 그룹 PK. |
+| `group_name` | VARCHAR(64) | NO | - | 사용자 정의 그룹명, 소유자별 고유. |
+| `owner` | VARCHAR(255) | NO | - | 그룹을 생성한 사용자(username). |
+| `item_codes` | JSON | NO | `[]` | 품목 코드 배열, Pydantic에서 중복 제거. |
+| `steps` | JSON | NO | `[]` | `RoutingStep` 직렬화 배열, `seq` 기준 정렬 저장. |
+| `erp_required` | BOOLEAN | NO | `0` | ERP 연계 필요 여부. |
+| `metadata` | JSON | YES | `null` | 추가 메타데이터, 비어 있을 경우 null 저장. |
+| `version` | INTEGER | NO | `1` | 낙관적 잠금 버전. |
+| `created_at` | DATETIME | NO | `CURRENT_TIMESTAMP` | 생성 시각. |
+| `updated_at` | DATETIME | NO | `CURRENT_TIMESTAMP` | 수정 시각, SQLAlchemy `onupdate`. |
+| `deleted_at` | DATETIME | YES | `null` | 소프트 삭제 시각. |
+
+### 4.2 인덱스 및 제약 조건
+- PK: `id`.
+- Unique: (`owner`, `group_name`) → 동일 사용자의 중복 그룹명 차단.
+- Index: `ix_routing_groups_updated` (`updated_at`) → 최신순 조회 최적화.
+- JSON 필드는 SQLite/SQLiteJSON 타입으로 저장되며, 다른 백엔드 사용 시 native JSON으로 매핑됨.
+
+### 4.3 부트스트랩 및 롤백
+- `backend/models/routing_groups.bootstrap_schema()`가 FastAPI 로드 시 테이블을 자동 생성.
+- `backend/models/routing_groups.drop_schema()`는 롤백/테스트 초기화 시 전체 테이블 제거용으로 제공.
+- 트랜잭션 유틸: `session_scope()` 컨텍스트 매니저가 커밋/롤백을 일관되게 처리.
+
 ## 5. 구현 체크리스트
-- [ ] FastAPI Router(`/api/routing/groups`) 생성 및 인증 의존성 연결
-- [ ] Pydantic 모델 초안 작성 (`RoutingGroupCreate`, `RoutingGroupResponse` 등)
-- [ ] 감사 로그 헬퍼 함수 작성 (`audit_routing_event(action, payload)`)
-- [ ] DB persistence 계층 설계 (`routing_groups` 테이블 스키마, 인덱스) 문서화
+- [x] FastAPI Router(`/api/routing/groups`) 생성 및 인증 의존성 연결
+- [x] Pydantic 모델 초안 작성 (`RoutingGroupCreate`, `RoutingGroupResponse` 등)
+- [x] 감사 로그 헬퍼 함수 작성 (`audit_routing_event(action, payload)`)
+- [x] DB persistence 계층 설계 (`routing_groups` 테이블 스키마, 인덱스) 문서화
 - [x] OpenAPI 문서를 Codex가 직접 갱신하고 자체 QA 시나리오를 작성
 
 ## 6. OpenAPI/QA 업데이트 기록
