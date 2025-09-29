@@ -318,6 +318,22 @@ export interface OutputProfileDetail extends OutputProfileSummary {
   sample?: Array<Record<string, unknown>>;
 }
 
+export interface OutputPreviewRequest {
+  profileId?: string | null;
+  mappings: OutputProfileColumn[];
+  format?: string | null;
+  limit?: number;
+}
+
+export interface OutputPreviewResponse {
+  format?: string | null;
+  columns?: string[] | null;
+  rows?: Array<Record<string, unknown>>;
+  sample?: Array<Record<string, unknown>>;
+  data?: Array<Record<string, unknown>>;
+  preview?: Array<Record<string, unknown>>;
+}
+
 export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
   const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
   const payload = response.data;
@@ -339,4 +355,29 @@ export async function fetchOutputProfileDetail(profileId: string): Promise<Outpu
     return payload.profile;
   }
   return payload;
+}
+
+export async function generateOutputPreview(
+  payload: OutputPreviewRequest,
+): Promise<{ columns: string[]; rows: Array<Record<string, unknown>>; format?: string | null }> {
+  const response = await api.post<OutputPreviewResponse | Array<Record<string, unknown>>>(
+    "/routing/output-profiles/preview",
+    {
+      profile_id: payload.profileId ?? null,
+      mappings: payload.mappings,
+      format: payload.format ?? null,
+      limit: payload.limit ?? 5,
+    },
+  );
+
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    const columns = data[0] ? Object.keys(data[0]) : [];
+    return { columns, rows: data, format: payload.format ?? null };
+  }
+
+  const rows = data.rows ?? data.sample ?? data.data ?? data.preview ?? [];
+  const columns = data.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
+  return { columns, rows, format: data.format ?? payload.format ?? null };
 }
