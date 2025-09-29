@@ -68,6 +68,8 @@ class PredictorRuntimeConfig:
     trim_std_enabled: bool = True
     trim_lower_percent: float = 0.05
     trim_upper_percent: float = 0.95
+    encoding_cache_maxsize: int = 20000
+    encoding_cache_ttl_seconds: int = 900
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -76,6 +78,8 @@ class PredictorRuntimeConfig:
             "trim_std_enabled": self.trim_std_enabled,
             "trim_lower_percent": self.trim_lower_percent,
             "trim_upper_percent": self.trim_upper_percent,
+            "encoding_cache_maxsize": self.encoding_cache_maxsize,
+            "encoding_cache_ttl_seconds": self.encoding_cache_ttl_seconds,
         }
 
     @classmethod
@@ -88,6 +92,8 @@ class PredictorRuntimeConfig:
             trim_std_enabled=bool(data.get("trim_std_enabled", True)),
             trim_lower_percent=float(data.get("trim_lower_percent", 0.05)),
             trim_upper_percent=float(data.get("trim_upper_percent", 0.95)),
+            encoding_cache_maxsize=int(data.get("encoding_cache_maxsize", 20000)),
+            encoding_cache_ttl_seconds=int(data.get("encoding_cache_ttl_seconds", 900)),
         )
 
 
