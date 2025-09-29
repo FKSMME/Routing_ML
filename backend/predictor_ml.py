@@ -2,13 +2,20 @@
 from __future__ import annotations
 
 # ── 표준 라이브러리
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple, Dict, Optional, Any, Union
+import json
 import logging
 from collections import Counter, defaultdict
+from threading import RLock
+import time
 import numpy as np
 import pandas as pd
 from datetime import datetime
+
+# ── 서드파티
+from cachetools import LRUCache
 
 # ── 사내 모듈
 from backend.constants import (
@@ -53,6 +60,28 @@ ROUTING_ALIAS_MAP = {
 }
 
 
+@dataclass
+class ModelCacheEntry:
+    components: Dict[str, Any]
+    metadata: Dict[str, Any]
+    is_enhanced: bool
+
+
+_MODEL_CACHE_LOCK = RLock()
+_MODEL_CACHE: Dict[str, ModelCacheEntry] = {}
+
+DEFAULT_ENCODING_CACHE_MAXSIZE: int = 20000
+DEFAULT_ENCODING_CACHE_TTL_SECONDS: int = 900
+
+ENCODING_CACHE_MAXSIZE: int = DEFAULT_ENCODING_CACHE_MAXSIZE
+ENCODING_CACHE_TTL_SECONDS: int = DEFAULT_ENCODING_CACHE_TTL_SECONDS
+
+_ENCODING_CACHE_LOCK = RLock()
+_ENCODING_CACHE: Optional[LRUCache[str, Tuple[float, Tuple[np.ndarray, float]]]] = LRUCache(
+    maxsize=DEFAULT_ENCODING_CACHE_MAXSIZE
+)
+
+
 def _active_alias_map() -> Dict[str, str]:
     """현재 설정 기반 컬럼 별칭을 반환한다."""
 
@@ -60,6 +89,226 @@ def _active_alias_map() -> Dict[str, str]:
         return get_routing_alias_map()
     except Exception:  # pragma: no cover - 설정 파일 손상 시 기본값 사용
         return dict(ROUTING_ALIAS_MAP)
+
+
+def _configure_encoding_cache(maxsize: int, ttl_seconds: int) -> None:
+    """재사용 인코딩 캐시를 재구성한다."""
+
+    global ENCODING_CACHE_MAXSIZE, ENCODING_CACHE_TTL_SECONDS, _ENCODING_CACHE
+
+    ENCODING_CACHE_MAXSIZE = max(0, int(maxsize))
+    ENCODING_CACHE_TTL_SECONDS = max(0, int(ttl_seconds))
+
+    with _ENCODING_CACHE_LOCK:
+        if ENCODING_CACHE_MAXSIZE == 0:
+            _ENCODING_CACHE = None
+        else:
+            _ENCODING_CACHE = LRUCache(maxsize=ENCODING_CACHE_MAXSIZE)
+
+
+def _normalize_value_for_cache(value: Any) -> Any:
+    """캐시 키를 생성하기 위한 입력 값을 정규화한다."""
+
+    if isinstance(value, (pd.Timestamp, datetime)):
+        return value.isoformat()
+
+    if isinstance(value, np.generic):
+        value = value.item()
+
+    if isinstance(value, (list, tuple)):
+        return [_normalize_value_for_cache(v) for v in value]
+
+    if isinstance(value, dict):
+        return {str(k): _normalize_value_for_cache(v) for k, v in sorted(value.items())}
+
+    try:
+        if pd.isna(value):
+            return None
+    except Exception:
+        pass
+
+    return value
+
+
+def _build_encoding_cache_key(df: pd.DataFrame) -> str:
+    """입력 레코드를 직렬화하여 캐시 키를 생성한다."""
+
+    if df.empty:
+        return "{}"
+
+    record = df.iloc[0]
+    normalized: Dict[str, Any] = {}
+    for column in sorted(df.columns):
+        normalized[column] = _normalize_value_for_cache(record.get(column))
+
+    return json.dumps(normalized, sort_keys=True, ensure_ascii=False, default=str)
+
+
+def _get_cached_encoding(key: str) -> Optional[Tuple[np.ndarray, float]]:
+    cache = _ENCODING_CACHE
+    if cache is None:
+        return None
+
+    with _ENCODING_CACHE_LOCK:
+        entry = cache.get(key)
+
+    if entry is None:
+        return None
+
+    timestamp, payload = entry
+
+    if ENCODING_CACHE_TTL_SECONDS > 0 and (time.time() - timestamp) > ENCODING_CACHE_TTL_SECONDS:
+        with _ENCODING_CACHE_LOCK:
+            try:
+                cache.pop(key, None)
+            except Exception:
+                pass
+        return None
+
+    return payload
+
+
+def _store_cached_encoding(key: str, value: Tuple[np.ndarray, float]) -> None:
+    cache = _ENCODING_CACHE
+    if cache is None:
+        return
+
+    with _ENCODING_CACHE_LOCK:
+        cache[key] = (time.time(), value)
+
+
+def _has_enhanced_model(model_dir: Path) -> bool:
+    enhanced_files = [
+        'training_metadata.json',
+        'feature_metadata.json',
+        'model_metadata.json'
+    ]
+    return any((model_dir / filename).exists() for filename in enhanced_files)
+
+
+def _load_legacy_weights(model_dir: Path, feature_columns: List[str]) -> Optional[Dict[str, float]]:
+    weights_path = model_dir / "feature_weights.joblib"
+    if weights_path.exists():
+        try:
+            import joblib
+
+            weights = joblib.load(weights_path)
+            if isinstance(weights, dict):
+                return {k: v for k, v in weights.items() if k not in COLUMNS_TO_EXCLUDE}
+            return weights
+        except Exception as exc:
+            logger.warning(f"joblib 가중치 로드 실패: {exc}")
+
+    npy_path = model_dir / "feature_weights.npy"
+    if npy_path.exists():
+        try:
+            weights_array = np.load(npy_path)
+            if feature_columns and len(weights_array) >= len(feature_columns):
+                return {
+                    col: float(weights_array[i])
+                    for i, col in enumerate(feature_columns)
+                    if col not in COLUMNS_TO_EXCLUDE
+                }
+        except Exception as exc:
+            logger.warning(f"numpy 가중치 로드 실패: {exc}")
+
+    return None
+
+
+def _load_model_entry(model_dir: Path) -> ModelCacheEntry:
+    metadata: Dict[str, Any] = {}
+    components: Dict[str, Any] = {}
+    is_enhanced = False
+
+    if load_model_with_metadata and _has_enhanced_model(model_dir):
+        try:
+            logger.info("개선된 모델 로드 시도...")
+            enhanced_components = load_model_with_metadata(model_dir, load_sample_data=False)
+
+            feature_weights = enhanced_components.get('feature_weights')
+            if feature_weights is None or isinstance(feature_weights, (dict, np.ndarray)):
+                try:
+                    from backend.feature_weights import FeatureWeightManager
+
+                    fw_manager = FeatureWeightManager(model_dir)
+                    fw_manager.load_weights()
+                    feature_weights = fw_manager
+                    logger.debug("FeatureWeightManager로 가중치 로드 성공")
+                except Exception as exc:
+                    logger.debug(f"FeatureWeightManager 로드 실패, 기존 방식 사용: {exc}")
+                    if feature_weights is None:
+                        feature_columns = enhanced_components.get('feature_columns') or []
+                        feature_weights = _load_legacy_weights(
+                            model_dir, [c for c in feature_columns if c not in COLUMNS_TO_EXCLUDE]
+                        )
+
+            feature_columns = [
+                c for c in enhanced_components.get('feature_columns', [])
+                if c not in COLUMNS_TO_EXCLUDE
+            ]
+
+            components = {
+                'searcher': enhanced_components['searcher'],
+                'encoder': enhanced_components['encoder'],
+                'scaler': enhanced_components['scaler'],
+                'feature_columns': feature_columns,
+                'pca': enhanced_components.get('pca'),
+                'variance_selector': enhanced_components.get('variance_selector'),
+                'feature_weights': feature_weights,
+                'active_features': enhanced_components.get('active_features'),
+            }
+
+            metadata = {
+                'model_metadata': enhanced_components.get('model_metadata', {}),
+                'feature_metadata': enhanced_components.get('feature_metadata', {}),
+                'training_metadata': enhanced_components.get('training_metadata', {}),
+                'vector_statistics': enhanced_components.get('vector_statistics', {}),
+            }
+
+            is_enhanced = True
+            logger.info("✅ 개선된 모델 로드 성공 (캐시 저장)")
+            return ModelCacheEntry(components=components, metadata=metadata, is_enhanced=is_enhanced)
+        except Exception as exc:
+            logger.warning(f"개선된 모델 로드 실패, 기본 로드 시도: {exc}")
+
+    searcher, encoder, scaler, feature_columns = load_optimized_model(model_dir)
+
+    clean_feature_columns = [
+        c for c in feature_columns
+        if c not in COLUMNS_TO_EXCLUDE
+    ]
+
+    components = {
+        'searcher': searcher,
+        'encoder': encoder,
+        'scaler': scaler,
+        'feature_columns': clean_feature_columns,
+        'pca': None,
+        'variance_selector': None,
+        'feature_weights': _load_legacy_weights(model_dir, clean_feature_columns),
+        'active_features': None,
+    }
+
+    logger.info("✅ 기본 모델 로드 성공 (캐시 저장)")
+    return ModelCacheEntry(components=components, metadata=metadata, is_enhanced=is_enhanced)
+
+
+def get_loaded_model(model_dir: Union[str, Path]) -> ModelCacheEntry:
+    """모델 디렉터리별 로드 결과를 캐시에 저장하고 재활용한다."""
+
+    path = Path(model_dir).resolve()
+    cache_key = str(path)
+
+    with _MODEL_CACHE_LOCK:
+        cached = _MODEL_CACHE.get(cache_key)
+        if cached is not None:
+            logger.debug("모델 캐시 히트: %s", cache_key)
+            return cached
+
+        logger.debug("모델 캐시 미스: %s", cache_key)
+        entry = _load_model_entry(path)
+        _MODEL_CACHE[cache_key] = entry
+        return entry
 
 
 SUMMARY_META_COLUMNS = {
@@ -297,149 +546,39 @@ SCENARIO_CONFIG = TimeScenarioConfig()
 
 class EnhancedModelManager:
     """개선된 모델 관리자 - 메타데이터 및 추가 컴포넌트 지원"""
-    
+
     def __init__(self, model_dir: Union[str, Path]):
         self.model_dir = Path(model_dir)
-        self.model_components = {}
-        self.metadata = {}
+        self.model_components: Dict[str, Any] = {}
+        self.metadata: Dict[str, Any] = {}
         self.is_enhanced = False
-        
+        self._cache_entry: Optional[ModelCacheEntry] = None
+
     def __enter__(self):
         """Context manager 진입"""
         return self
-        
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager 종료 시 리소스 정리"""
         self.cleanup()
         
     def cleanup(self):
         """메모리 리소스 정리"""
-        if hasattr(self, 'model_components') and self.model_components:
-            # 큰 모델 객체들 정리
-            for key in ['searcher', 'encoder', 'scaler', 'pca']:
-                if key in self.model_components:
-                    del self.model_components[key]
-            self.model_components.clear()
-            
-        if hasattr(self, 'metadata') and self.metadata:
-            self.metadata.clear()
-            
-        logger.debug("모델 매니저 리소스 정리 완료")
-        
+        self.model_components = {}
+        self.metadata = {}
+        self.is_enhanced = False
+        self._cache_entry = None
+        logger.debug("모델 매니저 리소스 참조 해제")
+
     def load(self):
         """모델 로드 - 개선된 버전 우선, 호환성 유지"""
-        
-        if load_model_with_metadata and self._has_enhanced_model():
-            try:
-                logger.info("개선된 모델 로드 시도...")
-                components = load_model_with_metadata(self.model_dir, load_sample_data=False)
-                
-                # feature_weights 로드 - FeatureWeightManager 우선
-                feature_weights = components.get('feature_weights')
-                if feature_weights is None or isinstance(feature_weights, (dict, np.ndarray)):
-                    # FeatureWeightManager로 로드 시도
-                    try:
-                        from backend.feature_weights import FeatureWeightManager
-                        fw_manager = FeatureWeightManager(self.model_dir)
-                        fw_manager.load_weights()
-                        feature_weights = fw_manager
-                        logger.debug("FeatureWeightManager로 가중치 로드 성공")
-                    except Exception as e:
-                        logger.debug(f"FeatureWeightManager 로드 실패, 기존 방식 사용: {e}")
-                        if feature_weights is None:
-                            feature_weights = self._load_legacy_weights(len(components['feature_columns']))
-                
-                # feature_columns 정리 - COLUMNS_TO_EXCLUDE 제외
-                clean_feature_columns = [
-                    c for c in components['feature_columns']
-                    if c not in COLUMNS_TO_EXCLUDE
-                ]
-                
-                self.model_components = {
-                    'searcher': components['searcher'],
-                    'encoder': components['encoder'],
-                    'scaler': components['scaler'],
-                    'feature_columns': clean_feature_columns,
-                    'pca': components.get('pca'),
-                    'variance_selector': components.get('variance_selector'),
-                    'feature_weights': feature_weights,
-                    'active_features': components.get('active_features'),
-                }
-                
-                self.metadata = {
-                    'model_metadata': components.get('model_metadata', {}),
-                    'feature_metadata': components.get('feature_metadata', {}),
-                    'training_metadata': components.get('training_metadata', {}),
-                    'vector_statistics': components.get('vector_statistics', {}),
-                }
-                
-                self.is_enhanced = True
-                logger.info("✅ 개선된 모델 로드 성공")
-                
-            except Exception as e:
-                logger.warning(f"개선된 모델 로드 실패, 기본 로드 시도: {e}")
-                self._load_basic()
-        else:
-            self._load_basic()
-    
-    def _has_enhanced_model(self) -> bool:
-        enhanced_files = [
-            'training_metadata.json',
-            'feature_metadata.json',
-            'model_metadata.json'
-        ]
-        return any((self.model_dir / f).exists() for f in enhanced_files)
-    
-    def _load_basic(self):
-        searcher, encoder, scaler, feature_columns = load_optimized_model(self.model_dir)
-        
-        # feature_columns 정리 - COLUMNS_TO_EXCLUDE 제외
-        clean_feature_columns = [
-            c for c in feature_columns
-            if c not in COLUMNS_TO_EXCLUDE
-        ]
-        
-        self.model_components = {
-            'searcher': searcher,
-            'encoder': encoder,
-            'scaler': scaler,
-            'feature_columns': clean_feature_columns,
-            'pca': None,
-            'variance_selector': None,
-            'feature_weights': self._load_legacy_weights(len(clean_feature_columns)),
-            'active_features': None,
-        }
-        
-        self.is_enhanced = False
-        logger.info("✅ 기본 모델 로드 성공")
-    
-    def _load_legacy_weights(self, n_features: int) -> Optional[Dict[str, float]]:
-        weights_path = self.model_dir / "feature_weights.joblib"
-        if weights_path.exists():
-            try:
-                import joblib
-                weights = joblib.load(weights_path)
-                # COLUMNS_TO_EXCLUDE에 있는 컬럼 제거
-                if isinstance(weights, dict):
-                    return {k: v for k, v in weights.items() if k not in COLUMNS_TO_EXCLUDE}
-                return weights
-            except Exception as e:
-                logger.warning(f"joblib 가중치 로드 실패: {e}")
-        
-        npy_path = self.model_dir / "feature_weights.npy"
-        if npy_path.exists():
-            try:
-                weights_array = np.load(npy_path)
-                feature_cols = self.model_components.get('feature_columns', [])
-                if feature_cols and len(weights_array) >= len(feature_cols):
-                    return {col: float(weights_array[i]) 
-                           for i, col in enumerate(feature_cols) 
-                           if col not in COLUMNS_TO_EXCLUDE}
-            except Exception as e:
-                logger.warning(f"numpy 가중치 로드 실패: {e}")
-        
-        return None
-    
+
+        entry = get_loaded_model(self.model_dir)
+        self._cache_entry = entry
+        self.model_components = entry.components
+        self.metadata = entry.metadata
+        self.is_enhanced = entry.is_enhanced
+
     def get_feature_weights_array(self) -> np.ndarray:
         feature_cols = self.model_components['feature_columns']
         weights_dict = self.model_components.get('feature_weights')
@@ -505,16 +644,23 @@ class EnhancedModelManager:
 # ════════════════════════════════════════════════
 
 def _clean_and_encode_enhanced(
-    df: pd.DataFrame, 
-    feature_cols: List[str], 
+    df: pd.DataFrame,
+    feature_cols: List[str],
     model_manager: EnhancedModelManager
 ) -> Tuple[np.ndarray, float]:
     """
     아이템 정보를 정리하고 인코딩 (개선 버전)
     OrdinalEncoder와 StandardScaler의 요구사항을 모두 충족
     """
+    cache_key = _build_encoding_cache_key(df)
+    cached = _get_cached_encoding(cache_key)
+    if cached is not None:
+        cached_vector, cached_miss_ratio = cached
+        logger.debug("인코딩 캐시 히트 - 재사용")
+        return cached_vector.copy(), float(cached_miss_ratio)
+
     df = df.copy()
-    
+
     # 제외할 컬럼 실제 제거
     for col in COLUMNS_TO_EXCLUDE:
         if col in df.columns:
@@ -598,7 +744,9 @@ def _clean_and_encode_enhanced(
     
     # 7) 추가 변환 (PCA 등)
     result = model_manager.transform_features(scaled)
-    
+
+    _store_cached_encoding(cache_key, (result.copy(), float(miss_ratio)))
+
     return result, miss_ratio
 
 # ════════════════════════════════════════════════
@@ -1650,13 +1798,20 @@ def apply_runtime_config(runtime: PredictorRuntimeConfig) -> None:
     SCENARIO_CONFIG.TRIM_LOWER_PERCENT = runtime.trim_lower_percent
     SCENARIO_CONFIG.TRIM_UPPER_PERCENT = runtime.trim_upper_percent
 
+    _configure_encoding_cache(
+        runtime.encoding_cache_maxsize,
+        runtime.encoding_cache_ttl_seconds,
+    )
+
     logger.info(
-        "런타임 설정 갱신: threshold=%.2f, variants=%d, trim_std=%s (%.2f~%.2f)",
+        "런타임 설정 갱신: threshold=%.2f, variants=%d, trim_std=%s (%.2f~%.2f), encoding_cache=(size=%d, ttl=%ds)",
         SIMILARITY_HIGH_THRESHOLD,
         MAX_ROUTING_VARIANTS,
         SCENARIO_CONFIG.TRIM_STD_ENABLED,
         SCENARIO_CONFIG.TRIM_LOWER_PERCENT,
         SCENARIO_CONFIG.TRIM_UPPER_PERCENT,
+        ENCODING_CACHE_MAXSIZE,
+        ENCODING_CACHE_TTL_SECONDS,
     )
 
 
