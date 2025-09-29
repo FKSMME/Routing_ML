@@ -62,7 +62,7 @@ interface RoutingWorkspaceState {
 ## 3. Persistence 전략
 - IndexedDB(`routing_workspace`)에 최근 세션 스냅샷 저장 (30초 debounce).
 - 서버 저장: `/api/settings/workspace` PUT (사용자별, 버전 관리).
-- 감사 로그: 프런트 임시 큐 → `/api/audit/ui` 배치 전송.
+- 감사 로그: 프런트 임시 큐 → `/api/audit/ui/batch` 배치 전송.
 - Access 연결: 암호화된 자격 증명 저장 금지, 경로만 저장.
 
 ## 4. Undo/Redo/Dirty 규칙
@@ -79,6 +79,10 @@ interface RoutingWorkspaceState {
 - [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
 - [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
 - [ ] IndexedDB persistence 유틸 (`idb-keyval`)
+
+- [x] 감사 로그 배치 API 스텁 구현
+- [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
+
 - [ ] 감사 로그 배치 API 스텁 구현
 - [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트 (2025-09-29, Vitest `routing-groups.spec.ts` 통합 시나리오 통과, 로그: `logs/qa/workspace_store_manual_20250929.log`)
 
