@@ -144,7 +144,7 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 - [ ] UI에서 후보 라우팅 3건 이상 확인
 - [ ] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인
 
-- [ ] SQL 저장 성공 및 Stage 5 스키마 일치
+- [ ] SQL 저장 성공 및 Stage 5 스키마 일치 (2025-09-29, 검증자: ChatGPT, 상태: 실패 - Stage 5 SQL export endpoint 연결 거부)
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람)
 
 > **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다.
