@@ -4,3 +4,4 @@
 2025-10-03T08:22Z | RSL `erp_required` 백엔드 갱신 및 QA 슬롯 예약 | 수동 QA 슬롯(2025-10-04/10-07) 확정 후 체크 순서 기록, RSL 그룹 스키마·서비스·DB에 `erp_required` 필드 추가하고 테스트 보강.
 2025-10-03T08:10Z | 현장 증빙 수집 계획 작성 | docs/install_evidence_collection_plan.md로 0·2단계 항목 증빙 지시사항 전달 초안 확정.
 
+2025-10-03T09:15:00Z | BOT-AUTO | Phase5 #034 - Stage 9 문서/체크리스트 정비 | Stage 9 SOP 및 설치 가이드 업데이트, Tasklist Phase 5 체크박스 동기화, 릴리즈 노트 하이라이트에 반영. 이전 단계 오류 재확인: 완료. Next Stage Ready.
