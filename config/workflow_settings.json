@@ -4,24 +4,49 @@
       {
         "id": "source",
         "label": "Data Source",
-        "type": "start"
+        "type": "start",
+        "category": null,
+        "status": null,
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "settings": {},
+        "metrics": {},
+        "doc_refs": []
       },
       {
         "id": "trainer",
-        "label": "Train Model",
-        "type": "process"
-      }
-    ],
-    "edges": [
-      {
-        "id": "e1",
-        "source": "source",
-        "target": "trainer"
-      }
-    ],
-        "id": "trainer",
-        "label": "Trainer",
+        "label": "Model Trainer",
         "type": "process",
+        "category": null,
+        "status": null,
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "settings": {},
+        "metrics": {},
+        "doc_refs": []
+      },
+      {
+        "id": "validator",
+        "label": "Quality Gate",
+        "type": "process",
+        "category": null,
+        "status": null,
+        "position": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "settings": {},
+        "metrics": {},
+        "doc_refs": []
+      },
+      {
+        "id": "deployer",
+        "label": "Deployer",
+        "type": "end",
         "category": null,
         "status": null,
         "position": {
@@ -33,26 +58,53 @@
         "doc_refs": []
       }
     ],
-    "edges": [],
-
-    "design_refs": [
-      "main/1.jpg"
+    "edges": [
+      {
+        "id": "e1",
+        "source": "source",
+        "target": "trainer",
+        "kind": "direct",
+        "label": null
+      },
+      {
+        "id": "e2",
+        "source": "trainer",
+        "target": "validator",
+        "kind": "direct",
+        "label": null
+      },
+      {
+        "id": "e3",
+        "source": "validator",
+        "target": "deployer",
+        "kind": "direct",
+        "label": null
+      }
     ],
-    "last_saved": "2025-09-27T01:12:46.940538"
-    "last_saved": "2025-09-27T01:08:10.442335"
+    "design_refs": [
+      "main/1.jpg",
+      "main/2.jpg"
+    ],
+    "last_saved": "2025-09-29T08:59:07.750265"
   },
   "trainer": {
-    "similarity_threshold": 0.8,
+    "similarity_threshold": 0.85,
     "trim_std_enabled": true,
-    "trim_lower_percent": 0.05,
-    "trim_upper_percent": 0.95
+    "trim_lower_percent": 0.03,
+    "trim_upper_percent": 0.97,
+    "time_profiles_enabled": false,
+    "time_profile_strategy": "sigma_profile",
+    "time_profile_optimal_sigma": 0.67,
+    "time_profile_safe_sigma": 1.28
   },
   "predictor": {
-    "similarity_high_threshold": 0.8,
-    "max_routing_variants": 5,
+    "similarity_high_threshold": 0.82,
+    "max_routing_variants": 6,
     "trim_std_enabled": true,
-    "trim_lower_percent": 0.05,
-    "trim_upper_percent": 0.95
+    "trim_lower_percent": 0.04,
+    "trim_upper_percent": 0.96,
+    "encoding_cache_maxsize": 20000,
+    "encoding_cache_ttl_seconds": 900
   },
   "sql": {
     "output_columns": [
@@ -179,10 +231,20 @@
         }
       }
     ],
-    "active_profile": "Access 7.1 기본"
+    "active_profile": null,
+    "exclusive_column_groups": [],
+    "key_columns": [
+      "ITEM_CD",
+      "CANDIDATE_ID",
+      "ROUTING_SIGNATURE"
+    ],
+    "training_output_mapping": {
+      "item_code": "ITEM_CD",
+      "candidate_id": "CANDIDATE_ID",
+      "routing_signature": "ROUTING_SIGNATURE",
+      "similarity_score": "SIMILARITY_SCORE"
+    }
   },
-  "updated_at": "2025-09-27T01:12:46.940928",
-  "updated_at": "2025-09-27T01:08:10.442495",
   "data_source": {
     "access_path": "routing_data/ROUTING AUTO TEST.accdb",
     "default_table": "dbo_BI_ITEM_INFO_VIEW",
@@ -291,5 +353,6 @@
     "neo4j_workspace": "neo4j+routing",
     "publish_service_enabled": true,
     "publish_notes": "TensorBoard Projector와 Neo4j 모두 동일한 임베딩을 사용합니다."
-  }
+  },
+  "updated_at": "2025-09-29T08:59:07.750985"
 }
