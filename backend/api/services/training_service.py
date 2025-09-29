@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
 
 import shutil
 import sys
@@ -138,8 +141,160 @@ class TrainingService:
                 latest_version.get("trained_at") or latest_version.get("created_at"),
             )
 
+        version_path = self._resolve_version_path(payload, latest_version)
+        metrics = self._augment_metrics(dict(payload.get("metrics", {})), version_path)
+        payload["metrics"] = metrics
         payload["latest_version"] = latest_version
         return payload
+
+    def _resolve_version_path(
+        self,
+        payload: Dict[str, Any],
+        latest_version: Optional[Dict[str, Any]],
+    ) -> Optional[Path]:
+        """Return the most suitable artifact directory for the current status."""
+
+        candidates: List[Path] = []
+        version_path = payload.get("version_path")
+        if isinstance(version_path, str):
+            candidates.append(Path(version_path))
+        if latest_version and isinstance(latest_version.get("artifact_dir"), str):
+            candidates.append(Path(str(latest_version["artifact_dir"])))
+        candidates.append(Path("models"))
+
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return None
+
+    def _augment_metrics(self, metrics: Dict[str, Any], version_path: Optional[Path]) -> Dict[str, Any]:
+        """Populate metrics with artifact-backed data if available."""
+
+        if version_path is None:
+            metrics.setdefault("run_history", [])
+            metrics.setdefault("metric_history", [])
+            return metrics
+
+        feature_weights = self._load_json_artifact(version_path, "feature_weights.json")
+        if feature_weights:
+            metrics.setdefault("feature_weights", feature_weights)
+
+        training_metrics = self._load_json_artifact(version_path, "training_metrics.json")
+        if training_metrics:
+            metrics.setdefault("training_metrics", training_metrics)
+
+        training_metadata = self._load_json_artifact(version_path, "training_metadata.json")
+        if training_metadata:
+            metrics.setdefault("training_metadata", training_metadata)
+
+        feature_statistics = self._load_json_artifact(version_path, "feature_statistics.json")
+        if feature_statistics:
+            metrics.setdefault("feature_statistics", feature_statistics)
+
+        metrics.setdefault("run_history", self._build_run_history())
+        metrics.setdefault(
+            "metric_history",
+            self._build_metric_history(version_path, training_metrics, training_metadata),
+        )
+        return metrics
+
+    def _load_json_artifact(self, root: Path, filename: str) -> Optional[Dict[str, Any]]:
+        """Attempt to load an artifact JSON file from several known locations."""
+
+        for candidate in self._artifact_candidates(root, filename):
+            if candidate.exists():
+                try:
+                    return json.loads(candidate.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    logger.warning("JSON 파싱 실패", extra={"artifact": str(candidate)})
+        return None
+
+    def _artifact_candidates(self, root: Path, filename: str) -> Iterable[Path]:
+        """Yield candidate paths for a specific artifact."""
+
+        search_roots: Tuple[Path, ...] = (
+            root,
+            root / "default",
+            Path("deliverables/v1.0/models"),
+            Path("deliverables/v1.0/models/default"),
+        )
+        seen: set[Path] = set()
+        for base in search_roots:
+            candidate = base / filename
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            yield candidate
+
+    def _build_run_history(self) -> List[Dict[str, Any]]:
+        """Build a lightweight run history using the model registry."""
+
+        try:
+            versions = list_versions(db_path=self._registry_path, limit=10)
+        except Exception as exc:  # pragma: no cover - diagnostics only
+            logger.warning("모델 버전 이력 조회 실패", extra={"error": str(exc)})
+            return []
+
+        history: List[Dict[str, Any]] = []
+        for version in versions:
+            payload = version.to_dict()
+            history.append(
+                {
+                    "version_name": payload.get("version_name"),
+                    "status": payload.get("status"),
+                    "artifact_dir": payload.get("artifact_dir"),
+                    "trained_at": payload.get("trained_at"),
+                    "requested_by": payload.get("requested_by"),
+                    "activated_at": payload.get("activated_at"),
+                    "active_flag": payload.get("active_flag", False),
+                }
+            )
+        return history
+
+    def _build_metric_history(
+        self,
+        version_root: Path,
+        _training_metrics: Optional[Dict[str, Any]],
+        _training_metadata: Optional[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        """Collect representative training metrics for visualization."""
+
+        snapshots: List[Tuple[str, Dict[str, Any], Optional[Dict[str, Any]]]] = []
+
+        def append_snapshot(label: str, root: Path) -> None:
+            metrics_payload = self._load_json_artifact(root, "training_metrics.json")
+            metadata_payload = self._load_json_artifact(root, "training_metadata.json")
+            if metrics_payload or metadata_payload:
+                snapshots.append((label, metrics_payload or {}, metadata_payload))
+
+        append_snapshot("current", version_root)
+
+        deliverable_root = Path("deliverables/v1.0/models")
+        if deliverable_root.exists():
+            append_snapshot("v1.0", deliverable_root)
+
+        history: List[Dict[str, Any]] = []
+        for label, metrics_payload, metadata_payload in snapshots:
+            entry: Dict[str, Any] = {"label": label, "metrics": metrics_payload}
+            if metadata_payload:
+                entry["metadata"] = metadata_payload
+                training_info = metadata_payload.get("training_info", {})
+                entry["timestamp"] = training_info.get("timestamp")
+            if metrics_payload:
+                entry.setdefault("timestamp", metrics_payload.get("completed_at"))
+            history.append(entry)
+
+        seen: set[Tuple[str, Optional[str]]] = set()
+        unique_history: List[Dict[str, Any]] = []
+        for item in history:
+            key = (str(item.get("label")), item.get("timestamp"))
+            if key in seen:
+                continue
+            seen.add(key)
+            unique_history.append(item)
+
+        unique_history.sort(key=lambda item: item.get("timestamp") or "", reverse=True)
+        return unique_history
 
     def start_training(
         self,
