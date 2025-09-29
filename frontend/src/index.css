@@ -2093,6 +2093,93 @@
   color: var(--accent);
 }
 
+.training-toast {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.6rem 0.9rem;
+  background: color-mix(in oklch, var(--surface-card) 96%, transparent);
+  box-shadow: var(--shadow-hover);
+  font-size: 0.78rem;
+  max-width: min(420px, 100%);
+}
+
+.training-toast strong {
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.training-toast span {
+  color: var(--text-muted);
+}
+
+.training-toast--success {
+  border-color: rgba(12, 166, 120, 0.35);
+  background: rgba(12, 166, 120, 0.12);
+  color: rgb(10, 87, 63);
+}
+
+.training-toast--error {
+  border-color: rgba(208, 61, 46, 0.4);
+  background: rgba(208, 61, 46, 0.12);
+  color: rgb(130, 32, 24);
+}
+
+.training-toast--info {
+  border-color: rgba(66, 120, 207, 0.35);
+  background: rgba(66, 120, 207, 0.12);
+  color: rgb(30, 64, 122);
+}
+
+.panel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.spin {
+  animation: training-spin 1s linear infinite;
+}
+
+@keyframes training-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.training-chart,
+.training-heatmap {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: color-mix(in oklch, var(--surface) 98%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  min-height: 200px;
+}
+
+.training-empty {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-align: center;
+  width: 100%;
+}
+
+.training-chart .echarts-for-react,
+.training-heatmap .echarts-for-react {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 .training-chart-placeholder {
   height: 180px;
   border: 1px dashed var(--border);

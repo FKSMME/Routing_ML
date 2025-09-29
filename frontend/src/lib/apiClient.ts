@@ -151,6 +151,91 @@ export async function fetchTrainingStatus(): Promise<TrainingStatus> {
   return response.data;
 }
 
+export interface TrainingMetricCard {
+  id?: string;
+  title: string;
+  value: string | number;
+  subtitle?: string | null;
+}
+
+export interface TrainingMetricTrendPoint {
+  timestamp: string;
+  value: number;
+  label?: string | null;
+}
+
+export interface TrainingHeatmapPayload {
+  xLabels: string[];
+  yLabels: string[];
+  values: number[][];
+  unit?: string | null;
+  label?: string | null;
+}
+
+export interface TrainingMetricsResponse {
+  cards?: TrainingMetricCard[];
+  tensorboard_url?: string | null;
+  metric_trend?: TrainingMetricTrendPoint[];
+  metric_trend_label?: string | null;
+  heatmap?: TrainingHeatmapPayload | null;
+}
+
+export interface TrainingFeatureWeight {
+  id: string;
+  label: string;
+  weight: number;
+  enabled: boolean;
+  description?: string | null;
+}
+
+export interface TrainingRunRecord {
+  id?: string;
+  timestamp: string;
+  user: string;
+  result: string;
+  duration_seconds?: number | null;
+  duration_label?: string | null;
+  metadata?: Record<string, unknown> | null;
+}
+
+export interface TrainingFeaturePatchRequest {
+  features: Record<string, boolean>;
+}
+
+export interface TrainingFeaturePatchResponse {
+  updated: string[];
+  disabled?: string[];
+  timestamp: string;
+}
+
+export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
+  const response = await api.get<TrainingMetricsResponse>("/trainer/metrics");
+  return response.data;
+}
+
+export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
+  const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
+    "/trainer/features",
+  );
+  const payload = response.data;
+  return Array.isArray(payload) ? payload : payload.features ?? [];
+}
+
+export async function fetchTrainingRunHistory(limit = 10): Promise<TrainingRunRecord[]> {
+  const response = await api.get<TrainingRunRecord[] | { runs?: TrainingRunRecord[] }>("/trainer/runs", {
+    params: { limit },
+  });
+  const payload = response.data;
+  return Array.isArray(payload) ? payload : payload.runs ?? [];
+}
+
+export async function patchTrainingFeatures(
+  payload: TrainingFeaturePatchRequest,
+): Promise<TrainingFeaturePatchResponse> {
+  const response = await api.patch<TrainingFeaturePatchResponse>("/trainer/features", payload);
+  return response.data;
+}
+
 export async function fetchMasterDataTree(params?: { query?: string }): Promise<MasterDataTreeResponse> {
   const response = await api.get<MasterDataTreeResponse>("/master-data/tree", {
     params: params?.query ? { query: params.query } : undefined,
