@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2025-09-29T23:21:48.698Z",
+  "requestPayload": {
+    "groupName": "ERP Enabled Group",
+    "itemCodes": [
+      "ITEM-ERP"
+    ],
+    "steps": [
+      {
+        "seq": 1,
+        "process_code": "CUT",
+        "description": "CUT operation",
+        "duration_min": 20,
+        "setup_time": 5,
+        "wait_time": 0
+      }
+    ],
+    "erpRequired": true,
+    "metadata": {
+      "format": "CSV",
+      "destination": "server",
+      "item_codes": [
+        "ITEM-ERP"
+      ],
+      "step_count": 1,
+      "trigger": "interface"
+    }
+  },
+  "auditTrail": [
+    {
+      "action": "ui.routing.save",
+      "username": "codex",
+      "payload": {
+        "group_id": "grp-erp-001",
+        "version": 2,
+        "step_count": 1,
+        "erp_required": true
+      }
+    },
+    {
+      "action": "ui.routing.interface",
+      "username": "codex",
+      "payload": {
+        "format": "CSV",
+        "step_count": 1
+      }
+    }
+  ]
+}
