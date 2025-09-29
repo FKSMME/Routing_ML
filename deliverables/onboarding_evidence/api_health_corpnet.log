@@ -1,0 +1,8 @@
+[2025-09-29T08:33:43.942053] curl http://10.204.2.28:8000/api/health
+HTTP/1.1 503 Service Unavailable
+content-length: 167
+content-type: text/plain
+date: Mon, 29 Sep 2025 08:33:36 GMT
+server: envoy
+
+upstream connect error or disconnect/reset before headers. reset reason: remote connection failure, transport failure reason: delayed connect error: Connection refused
