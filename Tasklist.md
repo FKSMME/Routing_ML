@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 31 | Completed 11 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 0 | Completed 27 | Blockers 0
 
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
@@ -34,6 +34,7 @@
 - [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
 - [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
 
+
 - [x] `docs/design/routing_enhancement_plan.md` 초안 검토 및 승인 요청 (2025-09-29 09:05 완료)
 - [x] `docs/backend_api_routing_groups_spec.md` API 명세 리뷰 (2025-09-29 09:07 완료)
 - [x] `docs/design/routing_state_store_plan.md` 상태 설계 리뷰 (2025-09-29 09:09 완료)
@@ -53,6 +54,7 @@
 - [x] (8) 프런트엔드 UI 그룹 – 20/60/20 레이아웃 & ReactFlow 체크리스트 (`docs/sprint/next_stage_checklist.md#group-4-frontend-integration`) (2025-09-29 17:30 KST 완료)
 - [x] (9) QA & 관측 그룹 – 테스트/로그/메트릭 항목 정의 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:00 KST 완료)
 - [x] (10) 설치 & 운영 그룹 – 인스톨러/워크플로우 자동화 점검 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:25 KST 완료)
+
 
 - [ ] (2) 계약 정렬 그룹 완료 – manifest/registry 승인 증빙 확보 (`docs/sprint/next_stage_checklist.md#group-1-contract-alignment`)
 - [ ] (3) 백엔드 준비 그룹 – 모델 레지스트리 스키마 시나리오 정리 (`docs/sprint/next_stage_checklist.md#group-2-backend-readiness`)
