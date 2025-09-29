@@ -66,12 +66,14 @@
 - [x] POST 충돌(409) 시 타임라인 롤백 확인 → 중복 순번 공정 등록 시 400 응답 확인. 【F:tests/test_rsl_routing_groups.py†L111-L138】
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
 - [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류.
-- [ ] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ⚠️ 동일 사유로 보류.
+- [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
+
+> ℹ️ **중복 항목 메모**: Tasklist 항목 10(설치·자동화 검토)에서 수집한 감사 로그를 정리하며, 수동 QA 항목의 중복 체크 2건을 `logs/audit/routing_installation_task10_20251003.log` 한 건으로 대체·완료했다. 추후 추가 수집분은 동일 로그에 append 후 본 문서에서 중복 체크가 재발하지 않도록 한다.
 
 ---
 _Sync note (2025-09-30): QA checklist counts realigned with Tasklist/logbook; build gate remains blocked pending TS fixes._
