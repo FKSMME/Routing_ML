@@ -72,6 +72,7 @@ class Settings(BaseSettings):
             path.parent.mkdir(parents=True, exist_ok=True)
             return f"sqlite:///{path}"
 
+
     @validator("model_directory", always=True)
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:

@@ -4,7 +4,6 @@
 import sys
 from pathlib import Path
 from typing import Tuple, List, Optional, Dict, Any
-import os
 
 # backend 경로 (joblib 역직렬화용)
 sys.path.insert(0, r"D:\routing\machine")

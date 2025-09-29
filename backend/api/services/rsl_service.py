@@ -17,6 +17,7 @@ from backend.api.pydantic_compat import ensure_forward_ref_compat
 
 ensure_forward_ref_compat()
 
+
 from backend.api.schemas import (
     RslExportBundle,
     RslGroupCreate,
@@ -60,6 +61,8 @@ class RslService:
     """Encapsulates business logic for the Rule Set Library."""
 
     def __init__(self) -> None:
+        ensure_forward_ref_compat()
+
         bootstrap_schema()
         self._logger = get_logger("service.rsl")
 

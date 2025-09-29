@@ -65,7 +65,7 @@ async def get_master_data_item(
     except ValueError as exc:
         logger.warning("/master-data/items/%s 404: %s", item_code, exc)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-    except Exception as exc:  # pragma: no cover
+    except Exception:  # pragma: no cover
         logger.exception("/master-data/items/%s 조회 실패", item_code)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="품목 정보를 불러오지 못했습니다.")
 

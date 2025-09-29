@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from datetime import datetime
+
+from typing import Generator, Iterable, Optional
 from typing import Any, Dict, Generator, Iterable, Optional
+
 
 from sqlalchemy import (
     Boolean,
@@ -127,7 +130,6 @@ class RslRuleRef(Base):
     __table_args__ = (
         UniqueConstraint("step_id", "rule_name", "rule_version", name="uq_rsl_rule_unique"),
     )
-
 
 
 _ENGINE: Optional[Engine] = None

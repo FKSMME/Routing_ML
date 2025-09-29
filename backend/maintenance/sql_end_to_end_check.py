@@ -5,7 +5,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -31,8 +31,20 @@ if "faiss" not in sys.modules:  # pragma: no cover - optional dependency
     )
     sys.modules["faiss"] = faiss_stub
 
-from backend.api.services.prediction_service import PredictionService
-from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS
+if TYPE_CHECKING:  # pragma: no cover - 타입 검사 전용
+    from backend.api.services.prediction_service import PredictionService
+
+
+def _load_prediction_service():
+    from backend.api.services.prediction_service import PredictionService
+
+    return PredictionService()
+
+
+def _load_sql_columns() -> List[str]:
+    from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS
+
+    return list(DEFAULT_SQL_OUTPUT_COLUMNS)
 
 LOG_DIR = Path("logs/sql")
 
@@ -60,11 +72,11 @@ def build_sample_payload() -> Dict[str, object]:
     return {"summary": summary, "operations": operations}
 
 
-def validate_sql_payload(service: PredictionService) -> Dict[str, object]:
+def validate_sql_payload(service: "PredictionService") -> Dict[str, object]:
     payload = build_sample_payload()
     response = service.save_candidate("ITEM_TEST", "ITEM_TEST_C01", payload)
 
-    schema = set(DEFAULT_SQL_OUTPUT_COLUMNS)
+    schema = set(_load_sql_columns())
     invalid_columns: List[str] = []
     for row in payload["operations"]:
         invalid_columns.extend(col for col in row.keys() if col not in schema)
@@ -79,7 +91,7 @@ def validate_sql_payload(service: PredictionService) -> Dict[str, object]:
 
 
 def main() -> Path:
-    service = PredictionService()
+    service = _load_prediction_service()
     result = validate_sql_payload(service)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")

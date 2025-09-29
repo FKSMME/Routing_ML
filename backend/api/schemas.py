@@ -8,6 +8,10 @@ from typing_extensions import Literal
 
 from pydantic import BaseModel, Field, validator
 
+from backend.api.pydantic_compat import ensure_forward_ref_compat
+
+ensure_forward_ref_compat()
+
 
 class LoginRequest(BaseModel):
     """Windows ?몄쬆 濡쒓렇???붿껌."""
@@ -70,7 +74,7 @@ class PredictionRequest(BaseModel):
         description="Whether to include visualization artifacts (TensorBoard, Neo4j)",
     )
 
-    @validator("item_codes", each_item=True)
+    @validator("item_codes", each_item=True, allow_reuse=True)
     def _strip_item_code(cls, value: str) -> str:  # noqa: N805
         cleaned = value.strip()
         if not cleaned:

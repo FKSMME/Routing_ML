@@ -9,6 +9,10 @@ from pathlib import Path
 
 import pytest
 import types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover - 타입 검사 전용
+    from backend.api.config import Settings
 
 # 필요한 외부 모듈이 설치되지 않은 환경에서도 테스트가 동작하도록 최소 스텁을 주입한다.
 if "ldap3" not in sys.modules:
@@ -40,10 +44,6 @@ if "ldap3" not in sys.modules:
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-from backend.api.config import Settings
-from backend.api.schemas import LoginRequest
-from backend.api.services.auth_service import WindowsAuthService
 
 
 @dataclass
@@ -85,8 +85,10 @@ class DummySessionManager:
 
 
 @pytest.fixture()
-def fallback_settings(tmp_path: Path) -> Settings:
+def fallback_settings(tmp_path: Path) -> "Settings":
     """폴백 사용자만 사용하는 Settings 인스턴스."""
+
+    from backend.api.config import Settings
 
     hashed = hashlib.sha256("Secr3t!".encode("utf-8")).hexdigest()
     return Settings(
@@ -98,8 +100,11 @@ def fallback_settings(tmp_path: Path) -> Settings:
     )
 
 
-def test_windows_auth_service_fallback_success(fallback_settings: Settings) -> None:
+def test_windows_auth_service_fallback_success(fallback_settings: "Settings") -> None:
     """폴백 사용자로 로그인하면 세션이 발급된다."""
+
+    from backend.api.schemas import LoginRequest
+    from backend.api.services.auth_service import WindowsAuthService
 
     session_manager = DummySessionManager()
     service = WindowsAuthService(settings=fallback_settings, session_manager=session_manager)
@@ -113,8 +118,11 @@ def test_windows_auth_service_fallback_success(fallback_settings: Settings) -> N
     assert session_manager.created[0].username == expected_username
 
 
-def test_windows_auth_service_rejects_unknown_user(fallback_settings: Settings) -> None:
+def test_windows_auth_service_rejects_unknown_user(fallback_settings: "Settings") -> None:
     """미등록 사용자는 인증에 실패한다."""
+
+    from backend.api.schemas import LoginRequest
+    from backend.api.services.auth_service import WindowsAuthService
 
     fallback_settings.windows_fallback_users = {"codex": fallback_settings.windows_fallback_users["codex"]}
     service = WindowsAuthService(settings=fallback_settings, session_manager=DummySessionManager())

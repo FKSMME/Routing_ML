@@ -30,7 +30,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
 
 # ── 사내 모듈
-from backend.constants import TRAIN_FEATURES, NUMERIC_FEATURES
+from backend.constants import NUMERIC_FEATURES
 from common.config_store import TrainerRuntimeConfig, workflow_config_store
 from common.file_lock import FileLock, FileLockTimeout
 from backend.index_hnsw import HNSWSearch
@@ -281,12 +281,14 @@ class ImprovedPreprocessor:
         df_num = df[num_cols].apply(self._safe_numeric) if num_cols else pd.DataFrame()
 
         if cat_cols:
-            self.encoder = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1, dtype=np.float32)
-            enc_cat = self.encoder.fit_transform(df_cat)
-            enc_cat_df = pd.DataFrame(enc_cat, columns=cat_cols, index=df_cat.index)
+            self.encoder = OrdinalEncoder(
+                handle_unknown="use_encoded_value",
+                unknown_value=-1,
+                dtype=np.float32,
+            )
+            self.encoder.fit(df_cat)
         else:
             self.encoder = OrdinalEncoder(dtype=np.float32)
-            enc_cat_df = pd.DataFrame(index=df_sample.index)
 
         # 전체 데이터에 대해 인코딩 적용
         df_cat_full = df[cat_cols].apply(self._safe_string) if cat_cols else pd.DataFrame()
@@ -512,7 +514,7 @@ class ImprovedPreprocessor:
 # ════════════════════════════════════════════════
 # 개선된 학습 파이프라인
 # ════════════════════════════════════════════════
-def train_model_with_ml_improved(
+def _train_model_with_ml_improved_core(
     df: pd.DataFrame,
     *,
     progress_cb: Optional[Callable[[int], None]] = None,
@@ -715,10 +717,10 @@ def train_model_with_ml_improved(
     auto_feature_weights: bool = True,
     variance_threshold: float = 0.001,
     balance_dimensions: bool = True,
+    export_tb_projector: bool = False,
+    projector_metadata_cols: Optional[List[str]] = None,
 ) -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
-    """개선된 ML 학습 함수 - 파일 잠금을 통해 안전하게 실행."""
-
-    logger.info("🚀 개선된 ML 모델 학습 시작")
+    """Run the improved ML training pipeline with a file-lock guard."""
 
     lock_dir = Path(save_dir) if save_dir else Path("models")
     lock_dir.mkdir(parents=True, exist_ok=True)
@@ -727,6 +729,22 @@ def train_model_with_ml_improved(
     logger.debug("학습 잠금 파일 경로: %s", lock_file)
 
     def _run_training() -> Optional[Tuple[HNSWSearch, LabelEncoder, StandardScaler, List[str]]]:
+
+        return _train_model_with_ml_improved_core(
+            df,
+            progress_cb=progress_cb,
+            stop_flag=stop_flag,
+            save_dir=save_dir,
+            save_metadata=save_metadata,
+            optimize_for_seal=optimize_for_seal,
+            auto_feature_weights=auto_feature_weights,
+            variance_threshold=variance_threshold,
+            balance_dimensions=balance_dimensions,
+            export_tb_projector=export_tb_projector,
+            projector_metadata_cols=projector_metadata_cols,
+        )
+
+
         def update_progress(pct: int) -> bool:
             if progress_cb:
                 progress_cb(pct)
@@ -934,6 +952,7 @@ def train_model_with_ml_improved(
 
         logger.info("✅ ML 모델 학습 완료!")
         return searcher, encoder, scaler, feature_cols
+
 
     try:
         with file_lock.context(timeout=300):

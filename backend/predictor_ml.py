@@ -6,10 +6,8 @@ from pathlib import Path
 from typing import List, Tuple, Dict, Optional, Any, Union
 import logging
 from collections import Counter, defaultdict
-import threading
 import numpy as np
 import pandas as pd
-import json
 from datetime import datetime
 
 # ── 사내 모듈
@@ -21,11 +19,9 @@ from backend.constants import (
 )
 from common.config_store import PredictorRuntimeConfig, workflow_config_store
 from backend.trainer_ml import load_optimized_model
-from backend.feature_weights import FeatureWeightManager
 from backend.database import (
     fetch_single_item, 
     fetch_routing_for_item, 
-    fetch_routings_for_items,
     check_item_has_routing,
 )
 from common.logger import get_logger
@@ -575,7 +571,7 @@ def _clean_and_encode_enhanced(
     if hasattr(weights_obj, 'get_weights_as_array'):
         # FeatureWeightManager를 사용하는 경우 - 활성화 상태 반영
         weights = weights_obj.get_weights_as_array(scaler_cols, apply_active_mask=True)
-        logger.debug(f"FeatureWeightManager 사용 - 활성화된 피처만 가중치 적용")
+        logger.debug("FeatureWeightManager 사용 - 활성화된 피처만 가중치 적용")
     elif isinstance(weights_obj, dict):
         # 기존 딕셔너리 방식 (하위 호환성)
         weights = []
@@ -1298,7 +1294,7 @@ def predict_routing_from_similar_items(
         }
         
         routing_df = pd.DataFrame([prediction])
-        logger.info(f"요약 라우팅 예측 완료: 1개 레코드")
+        logger.info("요약 라우팅 예측 완료: 1개 레코드")
         return routing_df
 
 # ════════════════════════════════════════════════
