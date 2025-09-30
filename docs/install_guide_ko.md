@@ -94,7 +94,7 @@
    3. 드라이버가 설치되지 않았거나 경로가 잘못되면 오류 메시지가 표시되므로, 설치 스크립트(`verify_odbc.ps1`)와 경로 권한을 재확인하세요.
 
 ## 5. 설치 후 바로 해보는 점검
-- [ ] <a id="check-api-health"></a>(❌ 2025-09-29) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 현재 컨테이너 환경에서 연결이 거부되었으며, 바이너리 업로드 제한으로 스크린샷은 제외하고 텍스트 로그(`deliverables/onboarding_evidence/api_health_corpnet.log`)만 보관했다.
+- [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30에 재시도했으나 컨테이너 환경에서 여전히 연결이 거부되어 503(Service Unavailable) 응답만 확보했으며, 바이너리 업로드 제한으로 스크린샷은 제외하고 텍스트 로그(`deliverables/onboarding_evidence/api_health_corpnet.log`)만 보관했다.
 - [x] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
 - [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
