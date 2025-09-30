@@ -54,3 +54,4 @@
 
 
 - 2025-10-29 14:45:00: Sprint header pending count corrected to 4 with completed total 28, and step1/state-store documents cross-checked to mirror Tasklist summaries (QA automation pending noted).
+- 2025-09-30 06:32:56 UTC: Compiled local-environment pending checklist (35 items) into `docs/logs/local_env_pending_checklist.md` and categorized tasks by approval, Windows install, and Lab-3 evidence requirements per directive.
