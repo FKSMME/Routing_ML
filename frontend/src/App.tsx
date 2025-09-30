@@ -17,11 +17,10 @@ import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useRoutingStore } from "@store/routingStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
 import { useResponsiveLayout } from "@styles/responsive";
 import { BarChart3, Database, FileOutput, Route, Settings, Workflow } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-
-const DEFAULT_ITEM = "ITEM-001";
+import { useEffect } from "react";
 
 const NAVIGATION_ITEMS = [
   {
@@ -81,26 +80,39 @@ function MenuPlaceholder({ menuId }: { menuId: string }) {
 }
 
 export default function App() {
-  const [itemCodes, setItemCodes] = useState<string[]>([DEFAULT_ITEM]);
-  const [topK, setTopK] = useState<number>(10);
-  const [threshold, setThreshold] = useState<number>(0.3);
-  const [selectedProfile, setSelectedProfile] = useState<string | null>("geometry-focus");
-  const [manualWeights, setManualWeights] = useState<Record<string, number>>({});
-  const [activeMenu, setActiveMenu] = useState<string>("master-data");
-
   const layout = useResponsiveLayout();
+
+  const activeMenu = useWorkspaceStore((state) => state.activeMenu);
+  const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
+  const itemCodes = useWorkspaceStore((state) => state.itemSearch.itemCodes);
+  const topK = useWorkspaceStore((state) => state.itemSearch.topK);
+  const threshold = useWorkspaceStore((state) => state.itemSearch.threshold);
+  const updateItemCodes = useWorkspaceStore((state) => state.updateItemCodes);
+  const updateTopK = useWorkspaceStore((state) => state.updateTopK);
+  const updateThreshold = useWorkspaceStore((state) => state.updateThreshold);
+  const featureWeights = useWorkspaceStore((state) => state.featureWeights);
+  const setFeatureWeightProfile = useWorkspaceStore((state) => state.setFeatureWeightProfile);
+  const setManualWeight = useWorkspaceStore((state) => state.setManualWeight);
+  const resetManualWeights = useWorkspaceStore((state) => state.resetManualWeights);
+  const exportProfile = useWorkspaceStore((state) => state.exportProfile);
+  const applyPredictionResponse = useWorkspaceStore((state) => state.applyPredictionResponse);
+  const setWorkspaceLayout = useWorkspaceStore((state) => state.setLayout);
+
+  useEffect(() => {
+    setWorkspaceLayout(layout);
+  }, [layout, setWorkspaceLayout]);
 
   const { data, isLoading, isFetching, refetch } = usePredictRoutings({
     itemCodes,
     topK,
     threshold,
-    featureWeights: manualWeights,
-    weightProfile: selectedProfile,
-    exportFormats: ["csv", "excel"],
+    featureWeights: featureWeights.manualWeights,
+    weightProfile: featureWeights.profile,
+    exportFormats: exportProfile.formats,
+    withVisualization: exportProfile.withVisualization,
   });
 
   const setRoutingLoading = useRoutingStore((state) => state.setLoading);
-  const loadRecommendations = useRoutingStore((state) => state.loadRecommendations);
 
   useEffect(() => {
     setRoutingLoading(isLoading || isFetching);
@@ -108,21 +120,9 @@ export default function App() {
 
   useEffect(() => {
     if (data) {
-      loadRecommendations(data);
+      applyPredictionResponse(data);
     }
-  }, [data, loadRecommendations]);
-
-  const availableProfiles = useMemo(() => {
-    const profiles = data?.metrics.feature_weights?.profiles;
-    if (profiles && profiles.length > 0) {
-      return profiles.map((profile) => ({ name: profile.name, description: profile.description ?? undefined }));
-    }
-    return [
-      { name: "default", description: "Default" },
-      { name: "geometry-focus", description: "Geometry emphasis" },
-      { name: "operation-history", description: "Runtime emphasis" },
-    ];
-  }, [data?.metrics.feature_weights?.profiles]);
+  }, [applyPredictionResponse, data]);
 
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
@@ -131,11 +131,11 @@ export default function App() {
       <aside className="routing-column routing-column--left">
         <PredictionControls
           itemCodes={itemCodes}
-          onChangeItemCodes={setItemCodes}
+          onChangeItemCodes={updateItemCodes}
           topK={topK}
-          onChangeTopK={setTopK}
+          onChangeTopK={updateTopK}
           threshold={threshold}
-          onChangeThreshold={setThreshold}
+          onChangeThreshold={updateThreshold}
           loading={isLoading || isFetching}
           onSubmit={refetch}
         />
@@ -147,18 +147,12 @@ export default function App() {
         <TimelinePanel />
         <VisualizationSummary metrics={data?.metrics} />
         <FeatureWeightPanel
-          profiles={availableProfiles}
-          selectedProfile={selectedProfile}
-          onSelectProfile={setSelectedProfile}
-          manualWeights={manualWeights}
-          onChangeManualWeight={(feature, value) => {
-            setManualWeights((prev) => ({ ...prev, [feature]: value }));
-            setSelectedProfile("custom");
-          }}
-          onReset={() => {
-            setManualWeights({});
-            setSelectedProfile("default");
-          }}
+          profiles={featureWeights.availableProfiles}
+          selectedProfile={featureWeights.profile}
+          onSelectProfile={setFeatureWeightProfile}
+          manualWeights={featureWeights.manualWeights}
+          onChangeManualWeight={setManualWeight}
+          onReset={resetManualWeights}
         />
         <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
       </section>
