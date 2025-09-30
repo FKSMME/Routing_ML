@@ -1,0 +1,6 @@
+# Playwright mobile viewport regression
+- Timestamp: 2025-10-03T09:45:00+09:00
+- Command: `npx playwright test --project=mobile-chrome --project=mobile-safari`
+- Result: ⚠️ 실행 보류 – 로컬 환경에서 Playwright 브라우저 바이너리 미설치 및 Vite dev 서버 구문 오류(`src/App.tsx:166`)로 테스트 시작 전 중단됨.
+- Notes: 테스트 스위트(`tests/e2e/mobile/routing.mobile.spec.ts`)와 CI 파이프라인 단계는 구성 완료. 브라우저 종속성 설치 및 Vite 구문 오류 해결 후 재시도 예정.
+- CI reference: GitHub Actions workflow `Quality Checks` → job `lint-and-test` (step "Run Playwright tests (desktop + mobile)").
