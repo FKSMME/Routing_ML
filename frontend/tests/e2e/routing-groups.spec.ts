@@ -9,6 +9,7 @@ import type {
 } from "@app-types/routing";
 import { useRoutingGroups } from "@hooks/useRoutingGroups";
 import { useRoutingStore } from "@store/routingStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
 
 const deterministicTimestamp = "2025-10-01T09:00:00.000Z";
 const baseItemCode = "ITEM-001";
@@ -17,6 +18,13 @@ const createRoutingGroupMock = vi.hoisted(() => vi.fn());
 const fetchRoutingGroupMock = vi.hoisted(() => vi.fn());
 const listRoutingGroupsMock = vi.hoisted(() => vi.fn());
 const postUiAuditMock = vi.hoisted(() => vi.fn());
+const saveRoutingSelectorMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    exportProfile: { formats: ["csv"], destination: "server", withVisualization: false },
+    erpInterfaceEnabled: false,
+    columnMappings: [],
+  })),
+);
 
 vi.mock("@lib/apiClient", () => ({
   __esModule: true,
@@ -25,6 +33,23 @@ vi.mock("@lib/apiClient", () => ({
   listRoutingGroups: listRoutingGroupsMock,
   postUiAudit: postUiAuditMock,
 }));
+
+vi.mock("@store/workspaceStore", () => {
+  const store = { saveRouting: saveRoutingSelectorMock };
+  const useWorkspaceStore: any = (selector?: unknown) => {
+    if (typeof selector === "function") {
+      return (selector as (state: typeof store) => unknown)(store);
+    }
+    return store;
+  };
+
+  useWorkspaceStore.getState = () => store;
+  useWorkspaceStore.setState = () => undefined;
+
+  return {
+    useWorkspaceStore,
+  };
+});
 
 const writeSnapshotMock = vi.hoisted(() =>
   vi.fn(async <TState>(state: TState) => ({
@@ -95,6 +120,53 @@ const createInitialState = () => ({
   erpRequired: false,
   saving: false,
   loading: false,
+});
+
+const workspaceBlueprint = (() => {
+  const state = useWorkspaceStore.getState();
+  return {
+    ...state,
+    itemSearch: { ...state.itemSearch, itemCodes: [...state.itemSearch.itemCodes] },
+    featureWeights: {
+      profile: state.featureWeights.profile,
+      manualWeights: { ...state.featureWeights.manualWeights },
+      availableProfiles: state.featureWeights.availableProfiles.map((profile) => ({ ...profile })),
+    },
+    exportProfile: { ...state.exportProfile, formats: [...state.exportProfile.formats] },
+    workspaceOptions: {
+      ...state.workspaceOptions,
+      data: {
+        ...state.workspaceOptions.data,
+        standard: [...state.workspaceOptions.data.standard],
+        similarity: [...state.workspaceOptions.data.similarity],
+        columnMappings: state.workspaceOptions.data.columnMappings.map((row) => ({ ...row })),
+      },
+    },
+    referenceMatrixColumns: [...state.referenceMatrixColumns],
+    outputMappings: state.outputMappings.map((row) => ({ ...row })),
+  };
+})();
+
+const createWorkspaceInitialState = () => ({
+  ...workspaceBlueprint,
+  itemSearch: { ...workspaceBlueprint.itemSearch, itemCodes: [...workspaceBlueprint.itemSearch.itemCodes] },
+  featureWeights: {
+    profile: workspaceBlueprint.featureWeights.profile,
+    manualWeights: { ...workspaceBlueprint.featureWeights.manualWeights },
+    availableProfiles: workspaceBlueprint.featureWeights.availableProfiles.map((profile) => ({ ...profile })),
+  },
+  exportProfile: { ...workspaceBlueprint.exportProfile, formats: [...workspaceBlueprint.exportProfile.formats] },
+  workspaceOptions: {
+    ...workspaceBlueprint.workspaceOptions,
+    data: {
+      ...workspaceBlueprint.workspaceOptions.data,
+      standard: [...workspaceBlueprint.workspaceOptions.data.standard],
+      similarity: [...workspaceBlueprint.workspaceOptions.data.similarity],
+      columnMappings: workspaceBlueprint.workspaceOptions.data.columnMappings.map((row) => ({ ...row })),
+    },
+  },
+  referenceMatrixColumns: [...workspaceBlueprint.referenceMatrixColumns],
+  outputMappings: workspaceBlueprint.outputMappings.map((row) => ({ ...row })),
 });
 
 const createTimelineStep = (seq: number, processCode: string) => ({
@@ -209,10 +281,20 @@ const resetStore = () => {
   useRoutingStore.setState(createInitialState(), true);
 };
 
+const resetWorkspaceStore = () => {
+  useWorkspaceStore.setState(createWorkspaceInitialState(), true);
+};
+
 describe("Routing group end-to-end flows", () => {
   beforeEach(() => {
     resetStore();
+    resetWorkspaceStore();
     vi.clearAllMocks();
+    saveRoutingSelectorMock.mockReturnValue({
+      exportProfile: { formats: ["csv"], destination: "server", withVisualization: false },
+      erpInterfaceEnabled: false,
+      columnMappings: [],
+    });
     createRoutingGroupMock.mockResolvedValue(seedCreateResponse);
     fetchRoutingGroupMock.mockResolvedValue(seedGroupDetail);
     listRoutingGroupsMock.mockResolvedValue(seedListResponse);
@@ -266,6 +348,65 @@ describe("Routing group end-to-end flows", () => {
     expect(state.timeline.map((step) => step.processCode)).toEqual(["PAINT", "CUT"]);
   });
 
+  it("caps undo/redo stacks and clears redo history on branching edits", () => {
+    seedTimeline();
+    const { insertOperation, undo, redo } = useRoutingStore.getState();
+
+    act(() => {
+      for (let index = 0; index < 55; index += 1) {
+        const code = `GEN-${index.toString().padStart(2, "0")}`;
+        const timelineLength = useRoutingStore.getState().timeline.length;
+        insertOperation(
+          {
+            itemCode: baseItemCode,
+            candidateId: null,
+            operation: seedOperation(index + 3, code),
+          },
+          timelineLength,
+        );
+      }
+    });
+
+    let state = useRoutingStore.getState();
+    expect(state.timeline.length).toBeGreaterThan(2);
+    expect(state.history.past.length).toBeLessThanOrEqual(50);
+    expect(state.history.future).toHaveLength(0);
+    expect(state.history.past[state.history.past.length - 1]?.reason).toBe("insert-operation");
+
+    act(() => {
+      undo();
+      undo();
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.history.future.length).toBeGreaterThanOrEqual(2);
+    expect(state.history.future[0]?.reason).toBe("undo");
+    expect(state.history.future[0]?.steps.length).toBeGreaterThan(0);
+
+    act(() => {
+      redo();
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.history.past.length).toBeLessThanOrEqual(50);
+
+    act(() => {
+      insertOperation(
+        {
+          itemCode: baseItemCode,
+          candidateId: null,
+          operation: seedOperation(200, "FINAL"),
+        },
+        useRoutingStore.getState().timeline.length,
+      );
+    });
+
+    state = useRoutingStore.getState();
+    expect(state.timeline[state.timeline.length - 1]?.processCode).toBe("FINAL");
+    expect(state.history.future).toHaveLength(0);
+    expect(state.history.past[state.history.past.length - 1]?.reason).toBe("insert-operation");
+  });
+
   it("saves routing groups through the API and resets dirty state", async () => {
     seedTimeline();
     const { result } = renderHook(() => useRoutingGroups());
@@ -300,22 +441,108 @@ describe("Routing group end-to-end flows", () => {
     expect(state.lastSavedAt).toBe(deterministicTimestamp);
   });
 
-  it("includes ERP toggle state in the save payload", async () => {
+  const metadataPermutations = [
+    {
+      label: "default metadata without workspace mappings",
+      metadataArg: undefined as Record<string, unknown> | null | undefined,
+      mappings: [],
+      assert: (metadata: Record<string, unknown>) => {
+        expect(metadata).toMatchObject({ source: "codex-ui" });
+        expect(metadata).not.toHaveProperty("output_mappings");
+      },
+    },
+    {
+      label: "explicit metadata merged with workspace mappings",
+      metadataArg: { note: "permutation-a" } as Record<string, unknown> | null | undefined,
+      mappings: [
+        { id: "map-1", source: "SEQ", mapped: "seq_out", type: "number", required: true },
+        { id: "map-2", source: "DESC", mapped: "desc_out", type: "string", required: false },
+      ],
+      assert: (metadata: Record<string, unknown>) => {
+        const payload = metadata as Record<string, unknown> & {
+          output_mappings?: Array<Record<string, unknown>>;
+          output_mapping_count?: number;
+        };
+        expect(payload).toMatchObject({ note: "permutation-a", output_mapping_count: 2 });
+        expect(payload.output_mappings).toEqual([
+          { source: "SEQ", mapped: "seq_out", type: "number", required: true },
+          { source: "DESC", mapped: "desc_out", type: "string", required: false },
+        ]);
+      },
+    },
+    {
+      label: "null metadata falls back to default while including mappings",
+      metadataArg: null as Record<string, unknown> | null | undefined,
+      mappings: [
+        { id: "map-9", source: "WAIT", mapped: "wait_time", type: "number", required: false },
+      ],
+      assert: (metadata: Record<string, unknown>) => {
+        const payload = metadata as Record<string, unknown> & {
+          output_mappings?: Array<Record<string, unknown>>;
+          output_mapping_count?: number;
+        };
+        expect(payload).toMatchObject({ source: "codex-ui", output_mapping_count: 1 });
+        expect(payload.output_mappings).toEqual([
+          { source: "WAIT", mapped: "wait_time", type: "number", required: false },
+        ]);
+      },
+    },
+  ];
+
+  it.each(metadataPermutations)(
+    "prepares save payload metadata permutations (%s)",
+    async ({ label, metadataArg, mappings, assert }) => {
+      seedTimeline();
+
+      act(() => {
+        useWorkspaceStore.getState().setOutputMappings(mappings);
+      });
+
+      const { result } = renderHook(() => useRoutingGroups());
+      const args: { groupName: string; metadata?: Record<string, unknown> | null } = {
+        groupName: `Permutation - ${label}`,
+      };
+      if (metadataArg !== undefined) {
+        args.metadata = metadataArg;
+      }
+
+      await act(async () => {
+        await result.current.saveGroup(args);
+      });
+
+      const payload = createRoutingGroupMock.mock.calls[0]?.[0] as {
+        metadata: Record<string, unknown>;
+      };
+
+      expect(payload).toBeDefined();
+      assert(payload.metadata);
+    },
+  );
+
+  it.each([
+    { label: "disabled", toggle: false },
+    { label: "enabled", toggle: true },
+  ])("aligns ERP toggle state in API and audit payload (%s)", async ({ label, toggle }) => {
     seedTimeline();
+
     act(() => {
-      useRoutingStore.getState().setERPRequired(true);
+      useWorkspaceStore.getState().setErpInterfaceEnabled(toggle);
     });
 
     const { result } = renderHook(() => useRoutingGroups());
     await act(async () => {
-      await result.current.saveGroup({ groupName: "ERP Enabled" });
+      await result.current.saveGroup({ groupName: `ERP ${label}` });
     });
 
-    const payload =
-      createRoutingGroupMock.mock.calls[
-        createRoutingGroupMock.mock.calls.length - 1
-      ]?.[0];
-    expect(payload?.erpRequired).toBe(true);
+    const payload = createRoutingGroupMock.mock.calls[0]?.[0] as {
+      erpRequired: boolean;
+    };
+    const auditPayload = postUiAuditMock.mock.calls[0]?.[0]?.payload as { erp_required?: boolean } | undefined;
+
+    expect(payload.erpRequired).toBe(toggle);
+    expect(auditPayload?.erp_required).toBe(toggle);
+    expect(useRoutingStore.getState().erpRequired).toBe(toggle);
+    expect(useWorkspaceStore.getState().erpInterfaceEnabled).toBe(toggle);
   });
 
   it("maintains history integrity across undo/redo, ERP toggle, and save", async () => {

@@ -9,7 +9,7 @@
 | Feature | Requirement | Notes |
 | --- | --- | --- |
 | Drag-and-drop nodes | Support palette -> canvas drop with validation hooks. | Use `onDragOver` gating to enforce manifest constraints. |
-| Edge validation | Prevent cycles and invalid transitions using DSL rules. | Display badge with rule ID + message on violation. |
+| Edge validation | Prevent cycles and invalid transitions using DSL rules. | ✅ ReactFlow timeline badge renders DSL rule id + message (`RoutingCanvas` + Vitest coverage). |
 | Snapshot preview | Button to render latest inference preview for selected node. | Calls inference API with staging flag. |
 | Undo/Redo | Maintain action stack integrated with state store. | Limit depth to 50; expose keyboard shortcuts. |
 | Autosave | Every 60s or on focus loss, persist to local draft. | Indicate autosave timestamp in footer. |
@@ -22,6 +22,8 @@
 ## Testing Checklist
 - [ ] Dragging 100 nodes maintains < 16ms frame budget _(2025-09-30 profiling run logged max 240.518 ms; ReactFlow layout batching follow-up required — see `deliverables/2025-09-29/frontend_reactflow_testcases.csv`)._
 - [ ] Rule violation badge shows for at least one invalid connection.
+- [ ] Dragging 100 nodes maintains < 16ms frame budget.
+- [x] Rule violation badge shows for at least one invalid connection. Evidence: `tests/frontend/routingDragAndDrop.spec.tsx` (DSL-R001 badge assertion) + dev demo `/#rule-badge-demo`.
 - [ ] Autosave persists and reloads after browser refresh.
 - [ ] Responsive layout holds 20/60/20 ratio above 1280px; stacks gracefully below 1024px.
 - [ ] Screen reader announces node selection and validation status.

@@ -165,4 +165,53 @@ describe("Routing drag and drop integration", () => {
 
     expect(useRoutingStore.getState().dirty).toBe(true);
   });
+
+  it("renders DSL violation badges with rule id and message", async () => {
+    const violationMessage = "First step must be LOADER";
+    useRoutingStore.setState((state) => ({
+      ...state,
+      activeProductId: "ITEM-200",
+      activeItemId: "ITEM-200",
+      productTabs: [
+        {
+          id: "ITEM-200",
+          productCode: "ITEM-200",
+          productName: "데모 품목",
+          candidateId: "cand-violation",
+          timeline: [],
+        },
+      ],
+      timeline: [
+        {
+          id: "violation-step-1",
+          seq: 1,
+          processCode: "CUT-200",
+          description: "테스트 절단 공정",
+          setupTime: 3,
+          runTime: 12,
+          waitTime: 1,
+          itemCode: "ITEM-200",
+          candidateId: "cand-violation",
+          positionX: 0,
+          violations: [
+            {
+              ruleId: "DSL-R001",
+              message: violationMessage,
+              severity: "error",
+            },
+          ],
+        },
+      ],
+    }));
+
+    render(<RoutingCanvas autoFit={false} />);
+
+    const badges = await screen.findAllByTestId("rule-badge-DSL-R001");
+    expect(badges.length).toBeGreaterThan(0);
+    badges.forEach((badge) => {
+      expect(badge).toHaveTextContent("DSL-R001");
+      expect(badge).toHaveTextContent(violationMessage);
+      expect(badge).toHaveAttribute("title", `DSL-R001: ${violationMessage}`);
+    });
+  });
 });

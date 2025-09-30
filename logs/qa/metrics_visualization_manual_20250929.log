@@ -2,3 +2,4 @@
 2025-09-29T23:48:30Z | step=app_start | result=skipped | note=Frontend dev server not launched because manual browser session could not be executed in container environment.
 2025-09-29T23:49:00Z | step=metrics_visualization_panel | result=not_run | note=Unable to capture Metrics/Visualization panel rendering. No screenshot generated. Physical lab session required.
 2025-09-29T23:49:30Z | step=console_review | result=not_applicable | note=No browser session; therefore no console errors collected.
+2025-10-02T10:15:00Z | step=dirty_reset_manual | result=blocked | note=Dirty reset Chrome 127+ scenario deferred; awaiting Lab-3 session (2025-10-04 09:00-11:00 KST) for UI screenshot and network HAR capture.
