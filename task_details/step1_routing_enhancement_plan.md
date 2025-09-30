@@ -31,3 +31,7 @@
 - [x] 라우팅 고도화 기술 설계 초안 (신규 문서) — Step 2 기능 범위 확정 후 `deliverables/step1/design_draft.md`로 편성(2025-10-02).
 - [x] API 명세 추가안 (`docs/backend_api_overview.md` 갱신 초안) — Step 1 승인 패킷에 `deliverables/step1/api_update.md`로 반영(2025-10-02).
 - [x] Tasklist/로그 업데이트 및 승인 요청서 초안 — 스폰서 서명 일정(2025-10-02) 맞춰 `deliverables/step1/approval_request_memo.md` 제출 및 서명 확보.
+- [x] 라우팅 고도화 기술 설계 초안 (신규 문서) — Step 2 기능 범위 확정(2025-10-01) 후 `docs/Design/routing_enhancement_detailed_design.md` 작성 및 2025-10-01 11:30 KST 승인.
+- [ ] API 명세 추가안 (`docs/backend_api_overview.md` 갱신 초안) — 신규 엔드포인트 검증을 2025-10-01 백엔드 리뷰 이후로 연기.
+- [ ] Tasklist/로그 업데이트 및 승인 요청서 초안 — 스폰서 서명 일정(2025-10-02) 확정 후 제출 예정.
+

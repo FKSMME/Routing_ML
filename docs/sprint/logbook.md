@@ -15,6 +15,10 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-01 | Step 1 - Routing Refactor | Step 2 detailed design circulation | Confirmed Step 2 feature freeze with scope owner and circulated the detailed design for approval. | sections_documented=4, approval_time_kst=11:30 | docs/Design/routing_enhancement_detailed_design.md; docs/Design/routing_enhancement_plan.md | approved (2025-10-01 11:30 KST) | Tasklist.md; task_details/step1_routing_enhancement_plan.md updated |
+
+| 2025-10-05 | Step 1 - Routing Refactor | RSL groups rehearsal | `/api/rsl/groups` ERP 토글 리허설 재실행 및 API 명세에 요청/응답 스키마·예시 반영 | tests_run=1, schemas_documented=2 | tests/test_rsl_routing_groups.py; docs/backend_api_overview.md; Tasklist.md | ready – 문서 리뷰 대기 | ERP 통합 QA 자동화(`tests/e2e/routing-groups.spec.ts`) 재개 시 스키마 예시 동기화 |
+
 | 2025-10-05 | Governance | Log/task duplication review | docs/logs/codex_activity_log.md 및 docs/sprint/logbook.md 전수 검사 후 중복 로그/체크 항목에 취소선·[x] 표기 적용 | duplicates_flagged=11 | docs/logs/codex_activity_log.md; docs/sprint/logbook.md | pending | 중복 감시 자동화 스크립트 검토 |
 | 2025-10-02 | Step 1 - Routing Refactor | Sponsor approval packet | Packaged design/API/QA artifacts in `deliverables/step1/` and submitted memo for sponsor signature (scheduled 2025-10-02). | artifacts_packaged=3, signature_date=2025-10-02 | deliverables/step1/approval_request_memo.md; Tasklist.md | approved (2025-10-02 10:15 KST) | Step 2 initiation go/no-go review |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Routing groups QA | Confirmed GET /api/routing/groups clears dirty flag and captured UI proof | api_calls=1, dirty_state=cleared | deliverables/onboarding_evidence/get_group_dirty_release.png | pending | Update API QA checklist status |

@@ -76,6 +76,72 @@ python -m backend.run_api
 | 트레이너 | `/api/trainer/versions` | GET | 모델 버전 목록 조회 (limit 지원).【F:backend/api/routes/trainer.py†L88-L102】 |
 | 트레이너 | `/api/trainer/versions/{version_name}/activate` | POST | 모델 버전 활성화 및 감사 로깅.【F:backend/api/routes/trainer.py†L105-L123】 |
 
+### `/api/rsl/groups` 요청/응답 스키마
+
+- **GET `/api/rsl/groups`**
+  - **쿼리 파라미터**: `page`(기본 1, ≥1), `page_size`(기본 20, 1~200), `tags`(다중 태그 필터), `status`(배포/검증 상태), `search`(이름/슬러그/태그 부분 일치).
+  - **응답 모델**: `RslGroupListResponse` → `total`, `page`, `page_size`, `items[]` (`RslGroupModel`). 각 `item.erp_required`는 ERP 인터페이스 연계 필요 여부를 나타내며, ERP 토글 QA 플래그와 용어를 일치시켰다.【F:backend/api/routes/rsl.py†L31-L190】【F:backend/api/schemas.py†L659-L731】
+  - **응답 예시**:
+    ```json
+    {
+      "total": 1,
+      "page": 1,
+      "page_size": 20,
+      "items": [
+        {
+          "id": 42,
+          "slug": "laser-calibration",
+          "name": "Laser Calibration",
+          "description": "QA rehearsal set for ERP required flows",
+          "owner": "qa.ops",
+          "tags": ["qa", "erp"],
+          "erp_required": true,
+          "status": "draft",
+          "validation_errors": [],
+          "last_validated_at": null,
+          "released_at": null,
+          "released_by": null,
+          "created_at": "2025-10-05T01:02:03Z",
+          "updated_at": "2025-10-05T01:02:03Z",
+          "steps": []
+        }
+      ]
+    }
+    ```
+- **POST `/api/rsl/groups`**
+  - **요청 모델**: `RslGroupCreate` → `name`, `description?`, `tags[]`, `slug?`, `erp_required` (기본 `false`). 태그는 공백 불가, ERP 플래그는 라우팅 그룹 ERP 연동 토글과 동일한 용어 체계를 사용한다.【F:backend/api/routes/rsl.py†L61-L90】【F:backend/api/schemas.py†L680-L705】
+  - **요청 예시**:
+    ```json
+    {
+      "name": "Laser Calibration",
+      "description": "ERP-required QA rehearsal payload",
+      "tags": ["qa", "erp"],
+      "slug": "laser-calibration",
+      "erp_required": true
+    }
+    ```
+  - **응답 모델**: `RslGroupModel` (생성된 그룹 세부 정보 전체 반환).
+  - **응답 예시**:
+    ```json
+    {
+      "id": 42,
+      "slug": "laser-calibration",
+      "name": "Laser Calibration",
+      "description": "ERP-required QA rehearsal payload",
+      "owner": "qa.ops",
+      "tags": ["qa", "erp"],
+      "erp_required": true,
+      "status": "draft",
+      "validation_errors": [],
+      "last_validated_at": null,
+      "released_at": null,
+      "released_by": null,
+      "created_at": "2025-10-05T01:02:03Z",
+      "updated_at": "2025-10-05T01:02:03Z",
+      "steps": []
+    }
+    ```
+
 ## 4. 예측 & 라우팅 흐름
 1. `/api/predict`는 가중치·프로파일·내보내기 옵션과 함께 품목 후보 및 메트릭을 반환하고 저장된 파일 목록을 메트릭에 포함시킨다.【F:backend/api/routes/prediction.py†L42-L93】
 2. 유사도 검색(`/api/similarity/search`)과 그룹 추천(`/api/groups/recommendations`)은 예측 서비스 내 공통 모델 자원을 재사용하며 감사 로그로 요청 항목과 결과 수를 남긴다.【F:backend/api/routes/prediction.py†L95-L149】
