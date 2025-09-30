@@ -57,6 +57,11 @@
 - [x] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설·QA 완료 후 2025-10-02 승인 패킷에 `deliverables/step1/api_update.md`로 편입, 2025-10-05 RSL 그룹 ERP 토글 리허설 결과까지 반영 완료.
 - [x] 승인 요청 패킷 (Tasklist/로그 업데이트 포함) — 2025-10-02 `deliverables/step1/approval_request_memo.md` 제출 및 서명 획득으로 후속 계획 종료.
 
+## 신규 우선 과제 (Sprint 2025-10 W2 목표)
+
+- [ ] **ef_search 런타임 슬라이더 배포** — 우선순위: High. 의존 모듈: `common/config_store.py`, `backend/index_hnsw.py`, `frontend/src/components/routing/RoutingOptionsPanel.tsx`. 런타임 슬라이더를 통한 HNSW 탐색 파라미터 실시간 조정 기능을 Sprint 2025-10 W2 내 베타 배포 대상으로 지정하고, QA 게이트 및 배포 체크리스트를 준비한다.
+- [ ] **Polars 시간 집계 적용** — 우선순위: High. 의존 모듈: `backend/api/services/time_aggregator.py`, `common/config_store.py`, `frontend/src/components/analytics/TimeSeriesPanel.tsx`. 라우팅 성능 대시보드의 시간 집계 로직을 Polars 기반으로 전환하고, API 응답 스키마와 UI 차트 바인딩을 Sprint 2025-10 W2에서 동시 배포한다.
+
 ## QA Follow-up
 
 - [x] QA 체크리스트 빌드 게이트 복구 (`npm run build` TypeScript 오류 10건 해결 및 QA 27개 시나리오 재실행) (증빙: `logs/qa/frontend_build_20250930.log` 재실행 섹션, `tests/e2e/routing-groups.spec.ts` 자동화)
