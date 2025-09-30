@@ -21,6 +21,7 @@ export interface UseMasterDataState {
   search: string;
   setSearch: (value: string) => void;
   filteredTree: MasterDataTreeNode[];
+  treeQuery: string;
   activeItemId: string | null;
   setActiveItemId: (id: string | null) => void;
   tabs: string[];
@@ -76,6 +77,7 @@ export function useMasterData(): UseMasterDataState {
   });
 
   const treeData = treeQuery.data;
+  const activeTreeQuery = debouncedSearch;
 
   useEffect(() => {
     const defaultItem = treeData?.default_item_code;
@@ -220,6 +222,7 @@ export function useMasterData(): UseMasterDataState {
     search,
     setSearch,
     filteredTree,
+    treeQuery: activeTreeQuery,
     activeItemId,
     setActiveItemId: handleSetActiveItemId,
     tabs,
