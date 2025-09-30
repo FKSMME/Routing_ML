@@ -7,14 +7,12 @@ import {
   saveWorkspaceSettings,
 } from "@lib/apiClient";
 import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-interface MappingRow {
-  source: string;
-  mapped: string;
-  type: string;
-  required: boolean;
-}
+import {
+  OutputMappingRow as MappingRow,
+  useWorkspaceStore,
+} from "@store/workspaceStore";
 
 const COLUMN_TYPES: Array<{ value: string; label: string }> = [
   { value: "string", label: "Text" },
@@ -33,13 +31,48 @@ const FORMAT_EXTENSIONS: Record<string, string> = {
   ACCESS: ".accdb",
 };
 
-function toMappingRow(column: OutputProfileColumn): MappingRow {
+const createMappingRowId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `mapping-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
+function createMappingRow(partial?: Partial<Omit<MappingRow, "id">>): MappingRow {
   return {
+    id: createMappingRowId(),
+    source: partial?.source ?? "",
+    mapped: partial?.mapped ?? "",
+    type: partial?.type ?? "string",
+    required: partial?.required ?? false,
+  };
+}
+
+function toMappingRow(column: OutputProfileColumn): MappingRow {
+  return createMappingRow({
     source: column.source ?? "",
     mapped: column.mapped ?? "",
     type: column.type ?? "string",
     required: Boolean(column.required),
-  };
+  });
+}
+
+function rowsEqual(a: MappingRow[], b: MappingRow[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((row, index) => {
+    const other = b[index];
+    if (!other) {
+      return false;
+    }
+    return (
+      row.source === other.source &&
+      row.mapped === other.mapped &&
+      row.type === other.type &&
+      row.required === other.required
+    );
+  });
 }
 
 function buildColumnNames(rows: MappingRow[]): string[] {
@@ -103,7 +136,10 @@ export function DataOutputWorkspace() {
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [format, setFormat] = useState<string>("CSV");
-  const [mappingRows, setMappingRows] = useState<MappingRow[]>([]);
+  const mappingRows = useWorkspaceStore((state) => state.outputMappings);
+  const setOutputMappings = useWorkspaceStore((state) => state.setOutputMappings);
+  const updateOutputMappings = useWorkspaceStore((state) => state.updateOutputMappings);
+  const reorderOutputMappings = useWorkspaceStore((state) => state.reorderOutputMappings);
   const [previewRows, setPreviewRows] = useState<Array<Record<string, unknown>>>([]);
   const [previewColumnsState, setPreviewColumnsState] = useState<string[]>([]);
   const [previewLoading, setPreviewLoading] = useState<boolean>(false);
@@ -139,21 +175,27 @@ export function DataOutputWorkspace() {
 
   const profileDetailQuery = useOutputProfile(selectedProfileId);
 
+  const dragSourceIndex = useRef<number | null>(null);
+
   useEffect(() => {
     if (!selectedProfileId && workflowConfig?.sql.output_columns?.length) {
-      const fallbackRows = workflowConfig.sql.output_columns.map<MappingRow>((column) => ({
-        source: column,
-        mapped: column,
-        type: "string",
-        required: false,
-      }));
-      setMappingRows(fallbackRows);
+      const fallbackRows = workflowConfig.sql.output_columns.map((column) =>
+        createMappingRow({
+          source: column,
+          mapped: column,
+          type: "string",
+          required: false,
+        }),
+      );
+      if (!rowsEqual(mappingRows, fallbackRows)) {
+        setOutputMappings(fallbackRows);
+      }
       setPreviewRows(buildGeneratedPreview(fallbackRows));
       setPreviewColumnsState(buildColumnNames(fallbackRows));
       setPreviewErrorMessage("");
       setPreviewLoading(false);
     }
-  }, [selectedProfileId, workflowConfig?.sql.output_columns]);
+  }, [mappingRows, selectedProfileId, workflowConfig?.sql.output_columns]);
 
   useEffect(() => {
     const detail = profileDetailQuery.data;
@@ -164,7 +206,9 @@ export function DataOutputWorkspace() {
       return;
     }
     const nextRows = detail.mappings?.map(toMappingRow) ?? [];
-    setMappingRows(nextRows);
+    if (!rowsEqual(mappingRows, nextRows)) {
+      setOutputMappings(nextRows);
+    }
     if (!dirty) {
       const previewFromApi = detail.sample && detail.sample.length > 0 ? detail.sample : null;
       const previewRowsFromData = previewFromApi ?? buildGeneratedPreview(nextRows);
@@ -388,7 +432,7 @@ export function DataOutputWorkspace() {
   }, [mappingRows]);
 
   const handleAddRow = () => {
-    setMappingRows((rows) => [...rows, { source: "", mapped: "", type: "string", required: false }]);
+    updateOutputMappings((rows) => [...rows, createMappingRow()]);
     setDirty(true);
     setStatusMessage("");
     setErrorMessage("");
@@ -396,7 +440,7 @@ export function DataOutputWorkspace() {
   };
 
   const handleRemoveRow = (index: number) => {
-    setMappingRows((rows) => rows.filter((_, rowIndex) => rowIndex !== index));
+    updateOutputMappings((rows) => rows.filter((_, rowIndex) => rowIndex !== index));
     setDirty(true);
     setStatusMessage("");
     setErrorMessage("");
@@ -404,7 +448,7 @@ export function DataOutputWorkspace() {
   };
 
   const handleRowChange = (index: number, field: keyof MappingRow, value: string | boolean) => {
-    setMappingRows((rows) => {
+    updateOutputMappings((rows) => {
       const next = [...rows];
       const current = { ...next[index] };
       if (field === "required" && typeof value === "boolean") {
@@ -423,6 +467,35 @@ export function DataOutputWorkspace() {
     setStatusMessage("");
     setErrorMessage("");
     setPreviewErrorMessage("Save to refresh backend preview.");
+  };
+
+  const handleRowDragStart = (index: number) => () => {
+    dragSourceIndex.current = index;
+  };
+
+  const handleRowDragOver = (event: DragEvent<HTMLTableRowElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
+    }
+  };
+
+  const handleRowDrop = (index: number) => (event: DragEvent<HTMLTableRowElement>) => {
+    event.preventDefault();
+    const fromIndex = dragSourceIndex.current;
+    dragSourceIndex.current = null;
+    if (fromIndex === null || fromIndex === index) {
+      return;
+    }
+    reorderOutputMappings(fromIndex, index);
+    setDirty(true);
+    setStatusMessage("");
+    setErrorMessage("");
+    setPreviewErrorMessage("Save to refresh backend preview.");
+  };
+
+  const handleRowDragEnd = () => {
+    dragSourceIndex.current = null;
   };
 
   const handleSaveProfile = async () => {
@@ -474,7 +547,8 @@ export function DataOutputWorkspace() {
           aliasMap[row.mapped] = row.source;
         }
       });
-      const normalizedRows: MappingRow[] = trimmedRows.map((row) => ({
+      const normalizedRows: MappingRow[] = trimmedRows.map((row, index) => ({
+        id: mappingRows[index]?.id ?? createMappingRowId(),
         source: row.source,
         mapped: row.mapped || row.source,
         type: row.type,
@@ -506,7 +580,7 @@ export function DataOutputWorkspace() {
           required_columns: trimmedRows.filter((row) => row.required).map((row) => row.source),
         },
       });
-      setMappingRows(normalizedRows);
+      setOutputMappings(normalizedRows);
       setPreviewColumnsState(buildColumnNames(normalizedRows));
       setPreviewRows(buildGeneratedPreview(normalizedRows));
       setPreviewLoading(true);
@@ -616,7 +690,15 @@ export function DataOutputWorkspace() {
               </thead>
               <tbody>
                 {mappingRows.map((row, index) => (
-                  <tr key={`${row.source}-${index}`}>
+                  <tr
+                    key={row.id}
+                    data-testid="mapping-row"
+                    draggable
+                    onDragStart={handleRowDragStart(index)}
+                    onDragOver={handleRowDragOver}
+                    onDrop={handleRowDrop(index)}
+                    onDragEnd={handleRowDragEnd}
+                  >
                     <td>
                       <select
                         value={row.source}
