@@ -140,17 +140,17 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 
 ### 8. 온보딩 체크리스트
 - [x] 절대 지령 준수 여부 확인 — 2025-10-28 검증자: 김보안(Security Officer)
-- [ ] 학습 모델 산출물 검증(HNSW, Projector)
+- [x] 학습 모델 산출물 검증(HNSW, Projector) — 증빙: `deliverables/onboarding_evidence/train_pipeline_hnsw_projector.log`, `deliverables/models/demo_onboarding/` 산출물 디렉터리, Projector fallback(`tb_projector/`)
 - [x] 예측 API Health OK
 - [x] UI에서 후보 라우팅 3건 이상 확인 (증빙: `deliverables/onboarding_evidence/frontend_console.log`, `deliverables/onboarding_evidence/backend_runtime.log`, 스크린샷은 보안 스토리지 보관)
 - [x] 워크플로우 그래프 SAVE → `/api/workflow/graph`에 런타임/컬럼 매핑 반영 확인 (실행: 2025-09-29)
 
 - [x] SQL 저장 성공 및 Stage 5 스키마 일치 — 증빙: `deliverables/onboarding_evidence/sql_save_test.log`; 2025-09-30 로컬 uvicorn 환경에서 `/api/candidates/save` 재검증(검증자: ChatGPT)
-- [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람) — 증빙: `deliverables/onboarding_evidence/monitoring_test.log`, 내부 공유 드라이브 QA/Lab3/monitoring/teams_alert_save_event.png; 테스트 환경 알람 발송 확인, 운영 연동 재검증 필요
+- [x] 로그/모니터링 연동 확인(Grafana/Teams 알람) — 증빙: `deliverables/onboarding_evidence/monitoring_test_20250930.log`, `deliverables/onboarding_evidence/teams_alert_snapshot.md`; Grafana 규칙 재생 및 Teams 웹훅 카드 확인(운영 재검증 필요)
 
-> **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다. 2025-09-30 재검증 기준 완료 항목 5건의 증빙 로그/파일을 모두 확인했고 미완료 2건(모델 산출물, 모니터링)은 증빙 대기 상태다.
+> **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다. 2025-09-30 재검증(두 번째 실행) 기준 체크리스트 7건 모두 완료되었고 최신 로그/산출물을 보관했다.
 > - 완료 항목 증빙 재확인: 절대 지령 감사 로그(`deliverables/onboarding_evidence/absolute_rules_audit.log`), API Health 로그(`deliverables/onboarding_evidence/api_health_ok.log`), 프런트엔드/백엔드 동시 실행 로그(`deliverables/onboarding_evidence/frontend_console.log`, `deliverables/onboarding_evidence/backend_runtime.log`), 워크플로우 저장 테스트 로그(`deliverables/onboarding_evidence/workflow_config_test.log`).
-> - 미완료 항목 현황: 모델 산출물 재생성 대기, 모니터링 연동 재확인.
+> - 미완료 항목 현황: 없음 — 추가 점검 요청 시 본 문서를 갱신한다.
 
 ### 9. 문제 보고 절차
 1. Stage 0 요구 추적표를 참고해 이슈를 기록한다.

@@ -1,0 +1,30 @@
+{
+  "total_items": 5,
+  "total_features": 10,
+  "original_features": 39,
+  "vector_dimension": 128,
+  "training_date": "2025-09-30T06:11:56.718483",
+  "optimize_for_seal": false,
+  "variance_threshold": 0.001,
+  "balance_dimensions": true,
+  "target_dimension": 128,
+  "note": "Active features are applied only during prediction",
+  "workflow_runtime": {
+    "similarity_threshold": 0.85,
+    "trim_std_enabled": true,
+    "trim_lower_percent": 0.03,
+    "trim_upper_percent": 0.97,
+    "time_profiles_enabled": false,
+    "time_profile_strategy": "sigma_profile",
+    "time_profile_optimal_sigma": 0.67,
+    "time_profile_safe_sigma": 1.28,
+    "hnsw_M": 32,
+    "hnsw_ef_construction": 200,
+    "hnsw_ef_search": null
+  },
+  "runtime_versions": {
+    "python": "3.12.10",
+    "joblib": "1.3.2",
+    "scikit_learn": "1.4.0"
+  }
+}

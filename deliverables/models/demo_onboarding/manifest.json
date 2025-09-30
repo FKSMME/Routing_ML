@@ -1,0 +1,47 @@
+{
+  "schema_version": "routing-ml/manifest@1",
+  "generated_at": "2025-09-30T06:11:56Z",
+  "hash_algorithm": "sha256",
+  "artifacts": {
+    "similarity_engine": {
+      "path": "similarity_engine.joblib",
+      "sha256": "f414ac3339cbcf6f7ab330e74be86143ddcd97134b555bd6a4b99c4fc2638082",
+      "schema_version": "routing-ml/searcher@1"
+    },
+    "encoder": {
+      "path": "encoder.joblib",
+      "sha256": "33f90a508285bc353d088605e3da69dcbbd9706c2b908c5b9dbf484c2059e14d",
+      "schema_version": "routing-ml/encoder@1"
+    },
+    "scaler": {
+      "path": "scaler.joblib",
+      "sha256": "640f56c78d66607266c4dfbf46c0dd880bbfd4c4036982cf2d511351ad5c1e29",
+      "schema_version": "routing-ml/scaler@1"
+    },
+    "feature_columns": {
+      "path": "feature_columns.joblib",
+      "sha256": "5005b5fb382e312eccacfcb890b7a99fe73aa07a2eba884a09a22f1ff7b8c56e",
+      "schema_version": "routing-ml/feature-columns@1"
+    },
+    "training_metadata": {
+      "path": "training_metadata.json",
+      "sha256": "feaf33728c74b089ad31739ca551383fa77b713d5392de3dbb6323d90a474647",
+      "schema_version": "routing-ml/training-metadata@1"
+    },
+    "feature_weights": {
+      "path": "feature_weights.joblib",
+      "sha256": "7508098fc95478822036317b9b8d60753c59034bd3b00774a8318415f4cc7db1",
+      "schema_version": "routing-ml/feature-weights@1"
+    },
+    "feature_weights_state": {
+      "path": "feature_weights.json",
+      "sha256": "d70dd39a555cd82bc223c62deb6b8a7719ad884294c1797df9d89ab0681c3644",
+      "schema_version": "routing-ml/feature-weights@1"
+    },
+    "active_features": {
+      "path": "active_features.json",
+      "sha256": "9b4ac2992e3a3f9c09c56d8af2d01b6c0890b6e3c2de59f8178f2f6946ec8497",
+      "schema_version": "routing-ml/feature-weights@1"
+    }
+  }
+}

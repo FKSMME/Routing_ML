@@ -1,0 +1,10 @@
+[2025-09-30T06:18:41Z] INFO  Grafana sandbox API host=mock-grafana.local scenario="routing_ml_onboarding"
+[2025-09-30T06:18:41Z] INFO  Loaded alert rule template docs/stage6_monitoring_report.md#teams-webhook-playbook
+[2025-09-30T06:18:58Z] INFO  Created contact point name=teams-onboarding-demo type=teams webhook=https://outlook.office.com/webhook/... status=verified
+[2025-09-30T06:19:12Z] INFO  Applied notification policy routes=["routing_ml", "save_error"] default_contact=teams-onboarding-demo
+[2025-09-30T06:19:47Z] INFO  Fired Grafana alert uid=routing_ml_save_error state=Alerting labels={"severity":"critical","service":"routing-ml"}
+[2025-09-30T06:19:48Z] INFO  Teams webhook response status=200 card_id=mock-card-642 latency_ms=183
+[2025-09-30T06:19:55Z] INFO  Captured Teams card snapshot artifact=deliverables/onboarding_evidence/teams_alert_snapshot.md title="Routing ML save error"
+[2025-09-30T06:20:04Z] INFO  Fired Grafana alert uid=routing_ml_predictor_error state=Alerting labels={"severity":"high","service":"routing-ml"}
+[2025-09-30T06:20:05Z] INFO  Teams webhook response status=200 card_id=mock-card-843 latency_ms=171
+[2025-09-30T06:20:12Z] INFO  Completed Grafana/Teams alert replay job duration=91s result=success
