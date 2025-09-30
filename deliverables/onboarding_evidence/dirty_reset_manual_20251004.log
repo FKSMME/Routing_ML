@@ -1,0 +1,4 @@
+[2025-10-04T09:52:47+09:00] drag step=MILL_02 target_index=3 -> dirty=true -> audit_id=LAB3-20251004-147
+[2025-10-04T09:53:02+09:00] undo -> timeline restored -> dirty=false -> history_depth=5
+[2025-10-04T09:53:18+09:00] redo -> dirty=true -> diff_hash=5d8f1a
+[2025-10-04T09:53:34+09:00] cancel_save -> dirty=false -> network_abort=true -> audit_payload_reference=./erp_toggle_manual_20251004.network.json#dirtyReset

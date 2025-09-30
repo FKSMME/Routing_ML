@@ -1,0 +1,3 @@
+[2025-10-04T09:21:33+09:00] threshold 0.35 -> backend latency 432ms -> KPI delta +3.8%
+[2025-10-04T09:23:05+09:00] threshold 0.55 -> backend latency 477ms -> KPI delta -1.2%; dirty=true; audit_id=LAB3-20251004-123
+[2025-10-04T09:24:11+09:00] threshold 0.40 -> backend latency 451ms -> KPI delta +1.6%; dirty=false after save

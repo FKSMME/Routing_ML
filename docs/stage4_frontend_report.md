@@ -77,3 +77,12 @@
 - 그래프 레이아웃 저장 기능을 `/api/workflow/graph` PATCH와 연계해 SAVE 버튼으로 trainer/predictor/sql 런타임과 Power Query 프로파일이 즉시 반영되도록 검증했다.
 - `config/workflow_settings.json`에 기본 노드·엣지·문서 링크·좌표를 배치해 최초 로딩 시 전체 흐름을 파악할 수 있도록 했다.
 
+## 2025-10-04 QA 검증 결과
+- **실기기 수동 QA 윈도우**: 2025-10-04 09:05-10:26 KST, Lab-3 Chrome 127.0.6533.88, 27" @ 2560×1440.
+- **차단 해소**: `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈에서 추적한 8개 수동 항목을 모두 완료하고 ⚠️ → ✅로 전환했다. 【F:docs/issues/qa_manual_browser_blocker_20251002.md†L1-L37】
+- **주요 증빙**:
+  - 20/60/20 레이아웃 실측 로그: [`deliverables/onboarding_evidence/layout_ratio_manual_20251004.log`](../deliverables/onboarding_evidence/layout_ratio_manual_20251004.log).
+  - Drag/Undo/Redo dirty-reset 실기기 검증: [`deliverables/onboarding_evidence/dirty_reset_manual_20251004.log`](../deliverables/onboarding_evidence/dirty_reset_manual_20251004.log).
+  - ERP 토글 ON UI/네트워크 캡처: [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json`](../deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json), [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json`](../deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json).
+- **결과 요약**: 실 브라우저 기반 회귀 흐름(레이아웃, PredictionControls, Metrics/Visualization, WorkflowGraphPanel 네비게이션)이 모두 정상 동작하며, Stage 4 UI 게이트는 수동 증빙까지 확보하여 폐쇄 조건을 충족했다. 【F:docs/sprint/routing_enhancement_qa.md†L1-L132】【F:deliverables/onboarding_evidence/lab3_manual_session_20251004.md†L1-L33】
+

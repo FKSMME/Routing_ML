@@ -1,0 +1,2 @@
+[2025-10-04T09:41:05+09:00] nav_sequence=advisor->workflow_graph->advisor, cache_reset=true, lastSavedAt=2025-10-03T22:11:09Z
+[2025-10-04T09:43:18+09:00] nav_sequence=advisor->workflow_graph->workflow_settings->advisor, store_snapshot=clean

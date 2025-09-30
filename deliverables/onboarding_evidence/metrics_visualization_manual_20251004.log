@@ -1,0 +1,3 @@
+[2025-10-04T09:32:12+09:00] overlay_checksum=7a9de2c1 baseline=7a9de2c1 match=true
+[2025-10-04T09:32:12+09:00] chart_layers: throughput, oee, scrap_rate -> no delta
+[2025-10-04T09:33:40+09:00] screenshot_ref=QA/Lab3/20251004/metrics_overlay.png (secure share)

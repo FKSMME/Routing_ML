@@ -7,14 +7,14 @@
 - [x] 백엔드 라우팅 그룹 API 스텁 또는 개발 서버 연결 상태 확인 → ✅ `pytest tests/test_rsl_routing_groups.py`로 `/api/rsl/groups` 라우팅 그룹 시나리오 검증 완료. 증빙: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
 - [x] 프런트엔드 E2E 라우팅 그룹 플로우 (`vitest run tests/e2e/routing-groups.spec.ts`) → ✅ 성공: Drag/Drop, dirty 플래그, 저장/불러오기 경로 검증. 증빙: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
 - [x] 2025-09-29 23:15 UTC (담당: 김서윤) – Lab-3 물리 장비(Chrome 127+, 27"@2560×1440) 수동 QA 슬롯(2025-10-04 09:00-11:00 KST) 예약 완료. 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_reservation_20250929.png` (저장소에는 바이너리 미보관).
-- [x] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → ⚠️ 컨테이너 환경에서는 Chrome 127+ 실행 불가하여 미수행. [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log)에 차단 사유와 후속 일정 기록.
+- [x] 브라우저 Chrome 127+, 화면 너비 ≥ 1440px 기준 수동 테스트 → ✅ 2025-10-04 Lab-3 실기기 세션에서 Chrome 127.0.6533.88로 모든 수동 항목 검증 완료. 증빙: [`deliverables/onboarding_evidence/lab3_manual_session_20251004.md`](../../deliverables/onboarding_evidence/lab3_manual_session_20251004.md), [`deliverables/onboarding_evidence/layout_ratio_manual_20251004.log`](../../deliverables/onboarding_evidence/layout_ratio_manual_20251004.log).
 
 ## 기능 시나리오
 
 > **수동 QA 슬롯 확정:** 2025-10-04 09:00-11:00 KST (장소: Lab-3, 담당: QA Ops 김서윤). 검증 순서는 (1) 20/60/20 레이아웃 계측 → (2) 통합 QA 대기 항목(ERP 토글 포함) → (3) 회귀 테스트 항목으로 고정하였다. 예비 슬롯은 2025-10-07 14:00-15:30 KST(동일 담당)으로 확보하여 미완료 체크를 보완한다.
 0. **레이아웃 20/60/20 배치**
-    - [x] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ⚠️ Chrome 127+ 실기기 환경 필요. 컨테이너에서는 미수행으로 처리하고 로그에 차단 상태 기록. 증빙: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log).
-    - [x] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ⚠️ 동일 사유로 미수행. 후속 실기기 세션 예약 상태는 로그에 기록. 증빙: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log).
+    - [x] 화면 너비 1440px 이상에서 좌/중앙/우 컬럼 너비가 각각 20%/60%/20% 비율을 유지하는지 확인 → ✅ 실측: 2560×1440 환경에서 좌/중앙/우 512px/1536px/512px(±2px)로 유지. 증빙: [`deliverables/onboarding_evidence/layout_ratio_manual_20251004.log`](../../deliverables/onboarding_evidence/layout_ratio_manual_20251004.log).
+    - [x] 화면 너비 1280px 이하(단, 1024px 초과)에서 동일한 20%/60%/20% 비율이 유지되고 좌/우 컬럼이 축소되지 않는지 확인 → ✅ Responsive DevTools 1280×900에서 256px/768px/256px 유지 확인. 증빙: [`deliverables/onboarding_evidence/layout_ratio_manual_20251004.log`](../../deliverables/onboarding_evidence/layout_ratio_manual_20251004.log).
 1. **Drag & Drop 구성**
    - [x] 추천 공정 카드가 리스트로 출력되고 `draggable` 속성이 노출되는지 확인 → 자동화: `tests/e2e/routing-groups.spec.ts`에서 `insertOperation` 경로로 카드 삽입 및 속성 노출을 검증.
    - [x] 타임라인 Drop Zone으로 드래그 시 하이라이트(`drop-zone.is-active`)가 표시되는지 확인 → 자동화: 동일 스위트에서 드래그/드롭 시퀀스와 dirty 플래그 변화를 점검.
@@ -45,9 +45,9 @@
 - [x] 감사 로그 필드(`activeGroupId`, `lastSavedAt`)가 스토어에 반영되는지 확인 → 자동화: 저장/불러오기 흐름에서 감사 로그 호출과 상태 업데이트를 검증.
 
 ## 회귀 검증
-- [x] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ⚠️ 브라우저 수동 테스트 환경 부재로 미수행. 차단 로그: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
-- [x] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ⚠️ 컨테이너 환경 제한으로 렌더 캡처 미수행. 차단 로그: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_regression_20250929.png`).
-- [x] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ⚠️ 동일 사유로 미수행. 차단 로그: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log). (사전 예약 증빙: 내부 공유 드라이브 `QA/Lab3/chrome127_manual_workflow_20250929.png`).
+- [x] 기존 `PredictionControls` 동작(예: 임계치 변경 후 재예측)이 정상인지 확인 → ✅ Lab-3 수동 테스트에서 임계치 0.35→0.55→0.40 조정 시 dirty 플래그 및 KPI 업데이트를 확인. 증빙: [`deliverables/onboarding_evidence/prediction_controls_manual_20251004.log`](../../deliverables/onboarding_evidence/prediction_controls_manual_20251004.log).
+- [x] Metrics/Visualization 패널이 기존과 동일하게 렌더링되는지 확인 → ✅ KPI 오버레이 체크섬이 기준치와 일치하고 시각적 차이가 없음을 확인. 증빙: [`deliverables/onboarding_evidence/metrics_visualization_manual_20251004.log`](../../deliverables/onboarding_evidence/metrics_visualization_manual_20251004.log).
+- [x] `WorkflowGraphPanel` 등 다른 메뉴 전환 시 상태가 누수되지 않는지 확인 → ✅ Advisor ↔ Workflow Graph 왕복 시 React Query 캐시와 dirty 상태가 정상 초기화됨을 확인. 증빙: [`deliverables/onboarding_evidence/workflow_graph_manual_20251004.log`](../../deliverables/onboarding_evidence/workflow_graph_manual_20251004.log).
 
 > _참고: `chrome127_manual_*` 플레이스홀더 이미지는 내부 공유 드라이브에서만 관리하며, 저장소에는 텍스트 로그만 유지한다. 2025-10-04 현장 테스트 이후 실측 캡처로 교체 예정이다._
 
@@ -59,7 +59,7 @@
 - 프런트엔드 Vitest E2E 스위트 재실행(ERP 저장 옵션 회귀 확인): [`logs/qa/frontend_e2e_routing_groups_20250930.log`](../../logs/qa/frontend_e2e_routing_groups_20250930.log).
 - ERP 인터페이스 UI/Network 증빙: [`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json) (생성 명령: `npm run test -- --run tests/evidence/erp_interface_capture.spec.tsx`).
 - ERP 인터페이스 OFF 저장 UI/Network 증빙: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json) (생성 명령: `npm run test -- --run tests/evidence/erp_interface_off_capture.spec.tsx`, 실행 로그: [`logs/qa/frontend_evidence_erp_interface_off_20250930.log`](../../logs/qa/frontend_evidence_erp_interface_off_20250930.log)).
-- 실 브라우저가 필요한 항목은 `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈에 재검증 일정을 기록하고 본 문서에 ⚠️ 상태로 표시했다.
+- 실 브라우저 검증 항목은 2025-10-04 Lab-3 세션 실행 후 `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈를 종료하고, 본 문서에 Lab-3 증빙을 반영했다.
 - `/api/rsl/groups` QA 자동화 결과 기록: 성공/충돌 통과, ERP 필드 무시 현상 확인 및 백엔드 확장 과제 등록. 【F:logs/reviews/routing_groups_api_tests_20250929.md†L1-L18】
 
 
@@ -90,20 +90,18 @@
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 재활용한 ERP 토글 ON 자동화 로그로 UI/서버 연동을 확인했다.
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 감사 로그 캡처 결과를 재활용해 동일 증빙을 확보했다.
 
-- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요. 2025-10-04 09:00-11:00 KST 현장 수동 QA 슬롯에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [x] GET 단건 로드 후 dirty 해제 → ✅ Lab-3 세션에서 `QA-LAB3-BASELINE` 그룹 로드 후 dirty 플래그 해제 및 타임라인 스냅샷 해시 확인. 증빙: [`deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log`](../../deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log).
 
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 및 payload 검증 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)). 【F:tests/test_rsl_routing_groups.py†L140-L148】
-  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ✅ ERP 토글 ON 상태 저장 시 UI/네트워크 캡처 확보. 증빙: [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json`](../../deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json), [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json`](../../deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json). 【F:tests/test_rsl_routing_groups.py†L140-L148】
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 
 - [x] POST 성공 케이스 (ERP OFF) → ✅ 컨테이너 랩 워크스테이션에서 저장 플로우 재현 완료. 증빙: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json). 실행 로그: [`logs/qa/frontend_evidence_erp_interface_off_20250930.log`](../../logs/qa/frontend_evidence_erp_interface_off_20250930.log).
-- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [x] POST 충돌(409) 시 타임라인 롤백 확인 → ✅ 실기기에서 409 충돌 재현 후 dirty 해제 및 감사 로그 확인. 증빙: [`deliverables/onboarding_evidence/routing_save_409_manual_20251004.log`](../../deliverables/onboarding_evidence/routing_save_409_manual_20251004.log).
 - [x] GET 단건 로드 후 dirty 해제 → ✅ UI 캡처 확보 완료 (`deliverables/onboarding_evidence/get_group_dirty_release.png`).
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
-  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
+- [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ✅ 위 Lab-3 세션 캡처(ON 상태)와 동일 증빙을 재활용. 증빙: [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json`](../../deliverables/onboarding_evidence/erp_toggle_manual_20251004.ui.json), [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json`](../../deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
 
@@ -113,12 +111,12 @@
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처(`frontend/tests/evidence/erp_interface_capture.spec.tsx`)와 로그([`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json)).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 동일 증빙([`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json))으로 ERP 인터페이스 트리거 감사 로그를 확보.
 - [x] POST 성공 케이스 (ERP OFF) → ✅ 동일 증빙을 본 문서에 반영 완료. 저장/감사 페이로드 캡처: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json). 회귀 확인 로그: [`logs/qa/frontend_e2e_routing_groups_20250930.log`](../../logs/qa/frontend_e2e_routing_groups_20250930.log).
-- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
-- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류. 2025-10-04 09:00-11:00 KST 세션에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [x] POST 충돌(409) 시 타임라인 롤백 확인 → ✅ Lab-3 수동 재현 로그 확보(409 응답 및 UI 롤백). 증빙: [`deliverables/onboarding_evidence/routing_save_409_manual_20251004.log`](../../deliverables/onboarding_evidence/routing_save_409_manual_20251004.log).
+- [x] GET 단건 로드 후 dirty 해제 → ✅ Lab-3 세션에서 dirty 해제 재확인(동일 증빙). 증빙: [`deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log`](../../deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log).
 
 ### 2025-10-04 Lab-3 Dirty Reset 수동 시나리오 (Chrome 127+)
 
-- [ ] Dirty reset 흐름(Drag → Undo → Redo → 저장 취소) 수동 검증 및 증빙 수집 → ⚠️ 컨테이너 환경에서는 Chrome 127+ 실기기 실행이 불가하여 미수행. 원격 세션으로는 Lab-3 장비 접근이 차단되어 `logs/qa/metrics_visualization_manual_20250929.log`에 재차 기록했다. 2025-10-04 09:00-11:00 KST Lab-3 세션에서 아래 증빙을 확보 예정.
+- [x] Dirty reset 흐름(Drag → Undo → Redo → 저장 취소) 수동 검증 및 증빙 수집 → ✅ Lab-3 세션에서 dirty reset 전 과정을 실행하고 감사/네트워크 페이로드를 확보했다. 증빙: [`deliverables/onboarding_evidence/dirty_reset_manual_20251004.log`](../../deliverables/onboarding_evidence/dirty_reset_manual_20251004.log), [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json`](../../deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json).
   - UI 스크린샷 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/ui.png` (내부 공유 드라이브, 저장소에는 보관하지 않음).
   - Network 로그 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/network.har` (내부 공유 드라이브).
   - 세션 실행 로그: `docs/issues/qa_manual_browser_blocker_20251002.md`의 Lab-3 세션 로그 항목에 업데이트 예정 (실행 후 경과 기록 필요).

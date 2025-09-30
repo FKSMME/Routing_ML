@@ -85,3 +85,12 @@
 - 0.8 미만 후보가 과도할 경우 → 학습 파이프라인 재학습 큐 가동, Stage 2/3와 협업.
 - CSV 업로드 실패 대비 재시도/알람 구성 Stage 7에서 상세 설계 예정.
 
+## 2025-10-04 QA 검증 결과
+- **세션 타임스탬프**: 2025-10-04 09:45-10:18 KST (Lab-3 실기기에서 SQL 연계 시나리오 확인).
+- **차단 해소**: ERP 토글 ON, 409 충돌 롤백, dirty 해제 재검증을 통해 Stage 5 저장/조회 요구 사항을 충족했다.
+- **연계 증빙**:
+  - ERP 저장 payload 및 감사 로그: [`deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json`](../deliverables/onboarding_evidence/erp_toggle_manual_20251004.network.json).
+  - 409 충돌 시 롤백 로그: [`deliverables/onboarding_evidence/routing_save_409_manual_20251004.log`](../deliverables/onboarding_evidence/routing_save_409_manual_20251004.log).
+  - GET dirty release 로그: [`deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log`](../deliverables/onboarding_evidence/get_group_dirty_release_manual_20251004.log).
+- **결론**: Stage 5 SQL 규격은 수동 QA 캡처를 포함한 End-to-End 저장/롤백/조회 시나리오를 통과했으며, Stage 6 전환 조건(ERP 필드 전달·충돌 롤백·dirty 해제 증빙)을 만족했다. 【F:docs/sprint/routing_enhancement_qa.md†L72-L118】【F:deliverables/onboarding_evidence/lab3_manual_session_20251004.md†L9-L27】
+
