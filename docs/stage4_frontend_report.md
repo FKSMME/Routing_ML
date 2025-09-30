@@ -13,8 +13,9 @@
 
 ### Gate Review Summary
 - 승인 타임스탬프: 2025-09-25T07:00:00Z (Stage 3 산출물 재점검 후 오류 없음 확인)
+- 재승인 타임스탬프: 2025-10-08T02:45:00Z (S3/CloudFront 계획 폐기 후 사내 IIS·Nginx 호스팅 스택 전환 승인)
 - 범위 확인 항목: 3열 레이아웃, 후보 비교 카드, 사용자 안내 패널, TensorBoard Projector 링크, 접근성 요구
-- 승인 전 확인 사항: Stage 3 API 사양(`/predict`, `/candidates/save`)과 응답 스키마 재검토, UI 뷰어 접근 사전 승인
+- 승인 전 확인 사항: Stage 3 API 사양(`/predict`, `/candidates/save`)과 응답 스키마 재검토, UI 뷰어 접근 사전 승인, 사내 호스팅 체계 전환 영향 분석
 
 ### 설계
 - **레이아웃 구조**: 상단 고정 헤더, 3열(후보 탐색, 후보 비교, 설명/이력)로 구성하며 카드 기반 UI 컴포넌트 사용. 각 열은 `Grid` 컨테이너로 배치, 반응형 브레이크포인트는 1440/1280/960/720px 기준으로 설정.
@@ -54,7 +55,8 @@
 
 ### 배포 준비
 - **CI 파이프라인**: 백그라운드 GitHub Actions 워크플로우(`gui-ci.yml`)에서 lint/test/build 실행, main 병합 전 필수.
-- **호스팅 전략**: `routing-ml-frontend` 정적 빌드 산출물 S3 + CloudFront, 내부 환경은 Nginx 리버스 프록시로 서빙.
+- **호스팅 전략**: `routing-ml-frontend` 정적 빌드 산출물은 사내 인트라넷 IIS 농장에 게시하고, DMZ Nginx 노드가 내부 로드밸런서를 통해 정적 번들을 리버스 프록시한다.
+- **번들 동기화**: Stage 4 빌드 산출물은 `\\fileshare\routing_ml\frontend\latest` 경로로 푸시하고, 야간 스케줄러가 IIS 노드 간 `robocopy` 미러링을 수행한다. VPN 미지원 현장의 경우 `build/windows/RoutingMLFrontend_<버전>.zip` 오프라인 패키지를 `docs/deploy/internal_routing_ml_sop.md#4-distribution--integrity-controls` 절차에 따라 배포한다.
 - **문서 업데이트**: README에 UI 사용법 추가, 온보딩 가이드에 스크린샷 삽입 예정. 문서/뷰어 접근 전 승인 절차 명시.
 - **게이트 종료**: Stage 4 완료 보고 후 Stage 5 승인 요청. 선행 단계 오류 미존재 재확인 보고 포함.
 - **설정 파일 관리**: `config/workflow_settings.json`은 Stage 7 운영 정책에 따라 백업/권한을 관리하고, 프런트엔드 SAVE 동작은 해당 파일 갱신 여부를 로그로 기록.
