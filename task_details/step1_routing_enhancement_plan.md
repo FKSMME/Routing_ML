@@ -1,4 +1,4 @@
-> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 0 | Completed 14 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 3 | Completed 8 | Blockers 0
 
 # 절대 지령 준수 안내
 - 기존 절대 지령(단계별 승인, 오류 재확인, 백그라운드 수행, 로그 유지)을 이 단계에도 동일하게 적용한다.
@@ -24,7 +24,8 @@
 - `docs/sprint/group1_contract_alignment_review.md`의 Manifest/Registry 연결 검증 항목을 Step 1 완료 근거로 교차 참조.
 - ERP 연계 옵션 토글과 그룹 저장 감사 로그는 `logs/audit/ui_actions.log`에 `ui.routing.save`/`ui.routing.load` 이벤트로 기록됨.
 
+
 ## 계획 산출물
-- [ ] 라우팅 고도화 기술 설계 초안 (신규 문서)
-- [ ] API 명세 추가안 (`docs/backend_api_overview.md` 갱신 초안)
-- [ ] Tasklist/로그 업데이트 및 승인 요청서 초안
+- [ ] 라우팅 고도화 기술 설계 초안 (신규 문서) — Step 2 기능 범위 확정 대기 중으로 설계 세부안 보류.
+- [ ] API 명세 추가안 (`docs/backend_api_overview.md` 갱신 초안) — 신규 엔드포인트 검증을 2025-10-01 백엔드 리뷰 이후로 연기.
+- [ ] Tasklist/로그 업데이트 및 승인 요청서 초안 — 스폰서 서명 일정(2025-10-02) 확정 후 제출 예정.
