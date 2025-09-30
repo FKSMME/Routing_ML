@@ -4,6 +4,12 @@ import { create } from "zustand";
 import { saveWorkspaceSettings, type WorkspaceSettingsPayload, type WorkspaceSettingsResponse } from "@lib/apiClient";
 
 import { useRoutingStore } from "./routingStore";
+import {
+  DEFAULT_REFERENCE_MATRIX_COLUMNS,
+  registerReferenceMatrixPersistence,
+  type ReferenceMatrixColumnKey,
+  useRoutingStore,
+} from "./routingStore";
 
 export type LayoutMode = "desktop" | "tablet" | "mobile";
 export type NavigationKey =
@@ -69,6 +75,25 @@ interface SaveWorkspaceOptionsArgs {
   version?: number;
   metadata?: WorkspaceSettingsPayload["metadata"];
   columnMappings?: WorkspaceColumnMappingRow[];
+export interface OutputMappingRow {
+  id: string;
+  source: string;
+  mapped: string;
+  type: string;
+  required: boolean;
+}
+
+export interface SerializedOutputMappingRow {
+  source: string;
+  mapped: string;
+  type: string;
+  required: boolean;
+}
+
+interface RoutingSaveState {
+  exportProfile: ExportProfileState;
+  erpInterfaceEnabled: boolean;
+  columnMappings: SerializedOutputMappingRow[];
 }
 
 interface WorkspaceStoreState {
@@ -80,6 +105,8 @@ interface WorkspaceStoreState {
   erpInterfaceEnabled: boolean;
   workspaceOptions: WorkspaceOptionsState;
   setLayout: (layout: LayoutMode) => void;
+  referenceMatrixColumns: ReferenceMatrixColumnKey[];
+ (layout: LayoutMode) => void;
   setActiveMenu: (menu: NavigationKey) => void;
   updateItemCodes: (codes: string[]) => void;
   updateTopK: (value: number) => void;
@@ -105,6 +132,12 @@ interface WorkspaceStoreState {
   ) => void;
   setWorkspaceOptionsDirty: (dirty: boolean) => void;
   saveWorkspaceOptions: (args?: SaveWorkspaceOptionsArgs) => Promise<WorkspaceSettingsResponse>;
+  setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
+  setOutputMappings: (rows: OutputMappingRow[]) => void;
+  updateOutputMappings: (updater: (rows: OutputMappingRow[]) => OutputMappingRow[]) => void;
+  reorderOutputMappings: (fromIndex: number, toIndex: number) => void;
+  clearOutputMappings: () => void;
+  saveRouting: () => RoutingSaveState;
 }
 
 const DEFAULT_PROFILES: FeatureProfileSummary[] = [
@@ -133,8 +166,28 @@ const toProfileSummary = (profiles: FeatureWeightsProfile[] | undefined): Featur
   }));
 };
 
-const nowIsoString = () => new Date().toISOString();
+const normalizeReferenceMatrixColumns = (
+  columns: Array<string | ReferenceMatrixColumnKey>,
+): ReferenceMatrixColumnKey[] => {
+  const normalized: ReferenceMatrixColumnKey[] = [];
+  const validColumns = DEFAULT_REFERENCE_MATRIX_COLUMNS as ReadonlyArray<ReferenceMatrixColumnKey>;
+  columns.forEach((column) => {
+    if (typeof column === "string") {
+      const match = validColumns.find((candidate) => candidate === column);
+      if (match && !normalized.includes(match)) {
+        normalized.push(match);
+      }
+    } else if (validColumns.includes(column) && !normalized.includes(column)) {
+      normalized.push(column);
+    }
+  });
+  if (normalized.length === 0) {
+    return [...DEFAULT_REFERENCE_MATRIX_COLUMNS];
+  }
+  return normalized;
+};
 
+const nowIsoString = () => new Date().toISOString();
 const createDefaultWorkspaceOptions = (): WorkspaceOptionsSnapshot => ({
   standard: ["zscore"],
   similarity: ["cosine", "profile"],
@@ -151,6 +204,12 @@ const createWorkspaceOptionsState = (): WorkspaceOptionsState => ({
   dirty: false,
   lastSyncedAt: undefined,
 });
+const createMappingRowId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `mapping-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+};
 
 export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
   layout: "desktop",
@@ -174,6 +233,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
   },
   erpInterfaceEnabled: useRoutingStore.getState().erpRequired,
   workspaceOptions: createWorkspaceOptionsState(),
+  referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
+  outputMappings: [],
   setLayout: (layout) => set({ layout }),
   setActiveMenu: (menu) => set({ activeMenu: menu }),
   updateItemCodes: (codes) =>
@@ -298,6 +359,73 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         lastSyncAt: nowIsoString(),
       },
     })),
+  setReferenceMatrixColumns: (columns) =>
+    set((state) => {
+      const nextColumns = normalizeReferenceMatrixColumns(columns);
+      const current = state.referenceMatrixColumns;
+      if (
+        nextColumns.length === current.length &&
+        nextColumns.every((column, index) => column === current[index])
+      ) {
+        return state;
+      }
+      useRoutingStore.getState().hydrateReferenceMatrixColumns(nextColumns);
+      return { referenceMatrixColumns: nextColumns };
+    }),
+  setOutputMappings: (rows) =>
+    set({
+      outputMappings: rows.map((row) => ({
+        id: row.id || createMappingRowId(),
+        source: row.source,
+        mapped: row.mapped,
+        type: row.type,
+        required: row.required,
+      })),
+    }),
+  updateOutputMappings: (updater) =>
+    set((state) => ({
+      outputMappings: updater(state.outputMappings).map((row) => ({
+        id: row.id || createMappingRowId(),
+        source: row.source,
+        mapped: row.mapped,
+        type: row.type,
+        required: row.required,
+      })),
+    })),
+  reorderOutputMappings: (fromIndex, toIndex) =>
+    set((state) => {
+      if (fromIndex === toIndex) {
+        return state;
+      }
+      const next = [...state.outputMappings];
+      if (fromIndex < 0 || fromIndex >= next.length) {
+        return state;
+      }
+      const clampedIndex = Math.max(0, Math.min(toIndex, next.length - 1));
+      const [moved] = next.splice(fromIndex, 1);
+      if (!moved) {
+        return state;
+      }
+      next.splice(clampedIndex, 0, moved);
+      return { outputMappings: next };
+    }),
+  clearOutputMappings: () => set({ outputMappings: [] }),
+  saveRouting: () => {
+    const state = get();
+    const columnMappings: SerializedOutputMappingRow[] = state.outputMappings
+      .map((row) => ({
+        source: row.source.trim(),
+        mapped: row.mapped.trim(),
+        type: row.type.trim() || "string",
+        required: Boolean(row.required),
+      }))
+      .filter((row) => row.source !== "");
+    return {
+      exportProfile: state.exportProfile,
+      erpInterfaceEnabled: state.erpInterfaceEnabled,
+      columnMappings,
+    };
+  },
   applyPredictionResponse: (response) => {
     useRoutingStore.getState().loadRecommendations(response);
     const generatedAt = response.metrics.generated_at ?? nowIsoString();
@@ -450,6 +578,20 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     }
   },
 }));
+
+registerReferenceMatrixPersistence((columns) => {
+  useWorkspaceStore.setState((current) => {
+    if (
+      current.referenceMatrixColumns.length === columns.length &&
+      current.referenceMatrixColumns.every((column, index) => column === columns[index])
+    ) {
+      return current;
+    }
+    return { referenceMatrixColumns: columns };
+  });
+});
+
+useRoutingStore.getState().hydrateReferenceMatrixColumns(useWorkspaceStore.getState().referenceMatrixColumns);
 
 useRoutingStore.subscribe(
   (state) => state.erpRequired,

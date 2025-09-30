@@ -2,7 +2,7 @@ import { useRoutingStore } from "@store/routingStore";
 import { BadgeCheck, Clock3, Redo2, Undo2 } from "lucide-react";
 import { useMemo } from "react";
 
-import { RoutingCanvas } from "./routing/RoutingCanvas";
+import { RecommendationsTab } from "./routing/RecommendationsTab";
 
 function useTimelineSelectors() {
   return useRoutingStore((state) => ({
@@ -92,7 +92,7 @@ export function TimelinePanel() {
       ) : productTabs.length === 0 ? (
         <div className="timeline-placeholder">Search items to generate routing.</div>
       ) : (
-        <RoutingCanvas />
+        <RecommendationsTab />
       )}
 
       {activeProductId ? <p className="timeline-footer">Active item: {activeProductId}</p> : null}

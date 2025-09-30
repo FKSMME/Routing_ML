@@ -11,6 +11,7 @@ import {
   postUiAudit,
 } from "@lib/apiClient";
 import { useRoutingStore } from "@store/routingStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
 import { useCallback } from "react";
 
@@ -55,6 +56,7 @@ export function useRoutingGroups() {
   const captureLastSuccess = useRoutingStore((state) => state.captureLastSuccess);
   const rollbackToLastSuccess = useRoutingStore((state) => state.rollbackToLastSuccess);
   const applyGroup = useRoutingStore((state) => state.applyGroup);
+  const getRoutingSaveState = useWorkspaceStore((state) => state.saveRouting);
 
   const collectItemCodes = useCallback((): string[] => {
     const codes = new Set<string>();
@@ -78,16 +80,22 @@ export function useRoutingGroups() {
 
       const steps = buildSteps(timeline);
       const itemCodes = collectItemCodes();
+      const { columnMappings } = getRoutingSaveState();
 
       try {
         setSaving(true);
         clearValidation();
+        const metadataPayload = { ...(metadata ?? { source: "codex-ui" }) } as Record<string, unknown>;
+        if (columnMappings.length > 0) {
+          metadataPayload.output_mappings = columnMappings;
+          metadataPayload.output_mapping_count = columnMappings.length;
+        }
         const response = await createRoutingGroup({
           groupName: trimmed,
           itemCodes,
           steps,
           erpRequired,
-          metadata: metadata ?? { source: "codex-ui" },
+          metadata: metadataPayload,
         });
         setActiveGroup({ id: response.group_id, name: trimmed, version: response.version, updatedAt: response.updated_at });
         setLastSavedAt(response.updated_at);
@@ -124,7 +132,20 @@ export function useRoutingGroups() {
         setSaving(false);
       }
     },
-    [captureLastSuccess, clearValidation, collectItemCodes, erpRequired, rollbackToLastSuccess, setActiveGroup, setDirty, setLastSavedAt, setSaving, setValidationErrors, timeline],
+    [
+      captureLastSuccess,
+      clearValidation,
+      collectItemCodes,
+      erpRequired,
+      getRoutingSaveState,
+      rollbackToLastSuccess,
+      setActiveGroup,
+      setDirty,
+      setLastSavedAt,
+      setSaving,
+      setValidationErrors,
+      timeline,
+    ],
   );
 
   const loadGroup = useCallback(
