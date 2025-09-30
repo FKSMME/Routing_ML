@@ -51,19 +51,28 @@
 
 
 
-### Step 1 Deliverable Follow-ups (Pending)
+### Step 1 Deliverable Follow-ups (Approved 2025-10-02)
+
+- [x] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성. → 2025-10-02 스폰서 제출용으로 `deliverables/step1/design_draft.md`에 정리 완료.
+- [x] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰). → 2025-10-02 승인 패킷에 `deliverables/step1/api_update.md`로 편입.
+- [x] 승인 요청 패킷 (Tasklist/로그 업데이트 포함) — 스폰서 서명 일정 2025-10-02 확정 대기. → 2025-10-02 `deliverables/step1/approval_request_memo.md` 제출 및 서명 획득.
+
+- [x] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성. (2025-10-01 11:30 KST 승인, 참조: `docs/Design/routing_enhancement_detailed_design.md`)
+- [ ] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰).
 
 - [ ] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성.
-- [ ] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰).
+- [x] API 명세 추가안 (`docs/backend_api_overview.md`) — RSL 그룹 ERP 토글 리허설 결과 반영 및 로그북 2025-10-05 RSL groups rehearsal 교차 참조 (2025-10-05 01:20 완료).
+
 - [ ] 승인 요청 패킷 (Tasklist/로그 업데이트 포함) — 스폰서 서명 일정 2025-10-02 확정 대기.
 
 
 ## QA Follow-up
 
 - [x] QA 체크리스트 빌드 게이트 복구 (`npm run build` TypeScript 오류 10건 해결 및 QA 27개 시나리오 재실행) (증빙: `logs/qa/frontend_build_20250930.log` 재실행 섹션, `tests/e2e/routing-groups.spec.ts` 자동화)
-- [ ] QA 자동화: Undo/Redo·저장 옵션·ERP 인터페이스 플래그 통합 테스트 시나리오(자동화 전환 대기).
-  - 예정 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts`
+- [x] QA 자동화: Undo/Redo·저장 옵션·ERP 인터페이스 플래그 통합 테스트 시나리오 (Vitest 자동화 완료, PASS).
+  - 실행 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (로컬), `cd frontend && CI=1 npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (CI) — Evidence: `logs/qa/routing-groups-local.log`, `logs/qa/routing-groups-ci.log`
   - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts`
+  - ERP 토글 수동 증빙 현황: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](deliverables/onboarding_evidence/erp_toggle_lab3_pending.log) 기록 유지(현장 세션 대기).
 
 ---
 _Sync note (2025-09-30): Tasklist, sprint logbook, and QA scenario counts aligned; QA 빌드 게이트는 보류 중._

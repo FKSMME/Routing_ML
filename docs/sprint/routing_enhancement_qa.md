@@ -55,7 +55,9 @@
 - `npm run build` 재실행 결과 성공 로그 확보 완료. 최신 로그: [`logs/qa/frontend_build_20251002.log`](../../logs/qa/frontend_build_20251002.log) (이전 2025-10-01/2025-09-30 로그는 회귀 추적용으로 보존).
 - 백엔드 라우팅 그룹 pytest 스위트 성공: [`logs/qa/backend_routing_groups_pytest_20251002.log`](../../logs/qa/backend_routing_groups_pytest_20251002.log).
 - 프런트엔드 Vitest E2E 스위트 성공: [`logs/qa/frontend_e2e_routing_groups_20251002.log`](../../logs/qa/frontend_e2e_routing_groups_20251002.log).
+- 프런트엔드 Vitest E2E 스위트 재실행(ERP 저장 옵션 회귀 확인): [`logs/qa/frontend_e2e_routing_groups_20250930.log`](../../logs/qa/frontend_e2e_routing_groups_20250930.log).
 - ERP 인터페이스 UI/Network 증빙: [`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json) (생성 명령: `npm run test -- --run tests/evidence/erp_interface_capture.spec.tsx`).
+- ERP 인터페이스 OFF 저장 UI/Network 증빙: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json) (생성 명령: `npm run test -- --run tests/evidence/erp_interface_off_capture.spec.tsx`, 실행 로그: [`logs/qa/frontend_evidence_erp_interface_off_20250930.log`](../../logs/qa/frontend_evidence_erp_interface_off_20250930.log)).
 - 실 브라우저가 필요한 항목은 `docs/issues/qa_manual_browser_blocker_20251002.md` 이슈에 재검증 일정을 기록하고 본 문서에 ⚠️ 상태로 표시했다.
 - `/api/rsl/groups` QA 자동화 결과 기록: 성공/충돌 통과, ERP 필드 무시 현상 확인 및 백엔드 확장 과제 등록. 【F:logs/reviews/routing_groups_api_tests_20250929.md†L1-L18】
 
@@ -90,15 +92,17 @@
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요. 2025-10-04 09:00-11:00 KST 현장 수동 QA 슬롯에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 및 payload 검증 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)). 【F:tests/test_rsl_routing_groups.py†L140-L148】
+  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 
-- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류. 2025-10-04 09:00-11:00 KST Lab-3 세션에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [x] POST 성공 케이스 (ERP OFF) → ✅ 컨테이너 랩 워크스테이션에서 저장 플로우 재현 완료. 증빙: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json). 실행 로그: [`logs/qa/frontend_evidence_erp_interface_off_20250930.log`](../../logs/qa/frontend_evidence_erp_interface_off_20250930.log).
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [x] GET 단건 로드 후 dirty 해제 → ✅ UI 캡처 확보 완료 (`deliverables/onboarding_evidence/get_group_dirty_release.png`).
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
 
@@ -107,9 +111,17 @@
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처(`frontend/tests/evidence/erp_interface_capture.spec.tsx`)와 로그([`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json)).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 동일 증빙([`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json))으로 ERP 인터페이스 트리거 감사 로그를 확보.
-- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류. 2025-10-04 09:00-11:00 KST 현장 세션에서 UI 증빙 확보 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [x] POST 성공 케이스 (ERP OFF) → ✅ 동일 증빙을 본 문서에 반영 완료. 저장/감사 페이로드 캡처: [`deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.ui.json), [`deliverables/onboarding_evidence/erp_interface_off_20250930.network.json`](../../deliverables/onboarding_evidence/erp_interface_off_20250930.network.json). 회귀 확인 로그: [`logs/qa/frontend_e2e_routing_groups_20250930.log`](../../logs/qa/frontend_e2e_routing_groups_20250930.log).
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류. 2025-10-04 09:00-11:00 KST 세션에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+
+### 2025-10-04 Lab-3 Dirty Reset 수동 시나리오 (Chrome 127+)
+
+- [ ] Dirty reset 흐름(Drag → Undo → Redo → 저장 취소) 수동 검증 및 증빙 수집 → ⚠️ 컨테이너 환경에서는 Chrome 127+ 실기기 실행이 불가하여 미수행. 2025-10-04 09:00-11:00 KST Lab-3 세션에서 아래 증빙을 확보 예정.
+  - UI 스크린샷 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/ui.png` (내부 공유 드라이브, 저장소에는 보관하지 않음).
+  - Network 로그 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/network.har` (내부 공유 드라이브).
+  - 세션 실행 로그: `docs/issues/qa_manual_browser_blocker_20251002.md`의 Lab-3 세션 로그 항목에 업데이트 예정 (실행 후 경과 기록 필요).
+  - 차단 사유 로그: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log)에 컨테이너 환경 제한을 추가 기록.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처 및 로그 참조(상동).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Vitest 증빙 로그로 UI/서버 감사 이벤트 확인 완료.
 

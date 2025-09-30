@@ -1,0 +1,40 @@
+{
+  "capturedAt": "2025-09-30T03:11:32.821Z",
+  "requestPayload": {
+    "groupName": "ERP Disabled Group",
+    "itemCodes": [
+      "ITEM-OFF"
+    ],
+    "steps": [
+      {
+        "seq": 1,
+        "process_code": "MILL",
+        "description": "Milling operation",
+        "duration_min": 15,
+        "setup_time": 8,
+        "wait_time": 2
+      }
+    ],
+    "erpRequired": false,
+    "metadata": {
+      "format": "CSV",
+      "destination": "server",
+      "item_codes": [
+        "ITEM-OFF"
+      ],
+      "step_count": 1
+    }
+  },
+  "auditTrail": [
+    {
+      "action": "ui.routing.save",
+      "username": "codex",
+      "payload": {
+        "group_id": "grp-erp-off-001",
+        "version": 5,
+        "step_count": 1,
+        "erp_required": false
+      }
+    }
+  ]
+}

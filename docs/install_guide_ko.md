@@ -31,6 +31,19 @@
 > 3. `/api/health`·`/api/workflow/graph` 응답 확인 및 서비스 자동 실행 로그는 Windows 작업 기록과 함께 동일 폴더에 보관하고, 완료 후 체크박스를 업데이트합니다.
 > 4. 증빙 업로드가 끝나면 `logs/task_execution_*.log`에 수행 시간과 담당자를 기록해 추적성을 유지합니다.
 
+### Windows Defender 포트 8000 인바운드 규칙 확인 (2025-10-05 업데이트)
+> ⚠️ 컨테이너 환경에서는 Windows PowerShell 및 `netsh` 명령을 실행할 수 없으므로, 실제 설치 장비에서 네트워크/보안 담당자가 아래 절차를 수행해야 합니다. 작업 후 증빙 스크린샷 또는 PowerShell 로그는 사내 증빙 저장소에 업로드하고 링크만 기록합니다.
+1. **기존 규칙 조회**: 관리자 권한 PowerShell에서 다음 명령을 실행해 `RoutingML` 또는 포트 8000과 매칭되는 인바운드 규칙을 확인합니다.
+   ```powershell
+   Get-NetFirewallRule -Direction Inbound -Action Allow | Get-NetFirewallPortFilter | Where-Object { $_.Protocol -eq 'TCP' -and $_.LocalPort -eq 8000 }
+   ```
+2. **예외 미존재 시 생성**: 규칙이 없을 경우, 아래 명령으로 포트 8000 허용 규칙을 추가합니다.
+   ```powershell
+   New-NetFirewallRule -DisplayName "RoutingML API Port 8000" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8000
+   ```
+3. **설정 캡처 및 업로드**: `Get-NetFirewallRule -DisplayName "RoutingML API Port 8000" | Format-List *` 출력 또는 Windows Defender 고급 보안 UI 캡처를 확보합니다. 캡처 이미지는 `deliverables/onboarding_evidence/Stage9_Firewall_YYYYMMDD/` 오프라인 디렉터리에 저장하고, 증빙 저장소 링크(예: `\\evidence\routingml\firewall\20251005_port8000.png`)를 본 문서 아래 체크리스트에 기입합니다.
+4. **문서 업데이트**: 위 증빙 링크와 실행 일시는 “증빙 상태” 표에 추가하고, `logs/task_execution_*.log`에도 동일 시각으로 기록합니다. 컨테이너에서는 실제 규칙 생성이 불가했으므로 2025-10-05 기준 링크는 **미확보 상태**입니다. 현장 검증 완료 후 업데이트하세요.
+
 ### Stage 9 승인 체크포인트 (2025-10-03 업데이트)
 - **Alpha**: QA 체크리스트(`docs/sprint/routing_enhancement_qa.md`)와 `pytest tests/test_rsl_routing_groups.py` 로그를 확보하고, 설치 스모크 테스트 결과를 `deliverables/onboarding_evidence/Stage9_Alpha_YYYYMMDD/`에 정리합니다.
 - **Beta**: 베타 사용자 환경 설치 스크린샷과 `/api/health` 확인 로그를 수집하며, 피드백 요약을 Task Execution 로그와 함께 남깁니다.
@@ -48,6 +61,7 @@
   - 없다면 사내 소프트웨어 센터에서 `AccessDatabaseEngine_X64.exe`를 설치하세요.
   - 설치 후 **ODBC 데이터 원본(64비트)**(`C:\Windows\System32\odbcad32.exe`)을 열어 드라이버 목록에 항목이 표시되는지 확인하고, `scripts\verify_odbc.ps1`을 실행해 로그를 남깁니다.
   - 캡처 및 로그는 로컬 `deliverables\onboarding_evidence\step2_access_driver.png`에 저장하되, 리포지토리에는 커밋하지 말고 사내 증빙 저장소(예: SharePoint, NAS)에 업로드한 뒤 위치를 기록합니다.
+  - ❗ 2025-10-05T00:00:00Z 기준: 현재 컨테이너(Linux) 환경에서는 `AccessDatabaseEngine_X64.exe` 설치, `odbcad32.exe` 실행, `scripts/verify_odbc.ps1` 수행이 모두 불가능합니다. Windows QA PC 담당자에게 위 증빙을 요청했으며, 제한 증빙 저장소 경로 `deliverables/onboarding_evidence/step2_access_driver.png` (사내망)로 업로드하도록 안내했습니다. 업로드 확인 전까지 본 체크 항목은 미완료 상태로 유지합니다.
 - [ ] 회사 내부망 또는 VPN이 연결되어 있나요?
 - [ ] Windows 방화벽에서 포트 8000을 허용했나요?
   - 설치 중 자동 설정되지만, 막혀 있으면 IT팀에 예외 등록을 요청하세요.
@@ -96,6 +110,9 @@
 ## 5. 설치 후 바로 해보는 점검
 - [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30 재시도) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30 03:12 UTC에 컨테이너 환경에서 `curl`로 재시도했으나 VPN 미연결 상태로 인해 `Connection refused`가 재현되었다. 최신 시도 로그는 `deliverables/onboarding_evidence/vpn_session_20250930.log`와 `deliverables/onboarding_evidence/api_health_corpnet.log`에 기록했으며, 사내망 접속을 위해 IT 네트워크 팀과의 추가 조율이 필요하다.
 - [ ] (❌ 2025-09-30) `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다. 동일 세션에서 `curl` 호출이 VPN 미연결로 실패했으며, 결과는 `deliverables/onboarding_evidence/vpn_session_20250930.log`에 정리했다.
+
+- [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30에 재시도했으나 컨테이너 환경에서 여전히 연결이 거부되어 503(Service Unavailable) 응답만 확보했으며, 바이너리 업로드 제한으로 스크린샷은 제외하고 텍스트 로그(`deliverables/onboarding_evidence/api_health_corpnet.log`)만 보관했다.
+- [x] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
 - [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
 - [x] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
