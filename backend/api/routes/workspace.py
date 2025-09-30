@@ -126,7 +126,7 @@ async def save_workspace_settings(
     response_class=Response,
 )
 async def record_ui_audit(event: AuditEvent, request: Request) -> Response:
-    persist_ui_audit_events([event], request)
+    persist_ui_audit_events([event], request, source="workspace.stream")
     logger.info("workspace.audit", extra={"action": event.action, "username": event.username})
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -139,7 +139,6 @@ async def test_access_connection(
 ) -> AccessConnectionResponse:
     path = request.path.expanduser()
     path_hash = hex(abs(hash(path.as_posix())))
-    exists = path.exists()
     tables: list[str] = []
     elapsed_ms: Optional[float] = None
     verified_table: Optional[str] = None
@@ -152,57 +151,73 @@ async def test_access_connection(
     except ImportError:
         driver_available = False
 
-    if exists:
+    try:
+        validated_path = master_data_service.validate_access_path(path)
+    except FileNotFoundError:
+        message = f"Access database not found at {path}"
+    except ValueError as exc:
+        message = str(exc)
+    else:
         start = time.perf_counter()
-        tables = master_data_service.list_access_tables(path)
-        elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
-        if not tables:
+        try:
+            tables = master_data_service.read_access_tables(validated_path)
+            ok = True
+            message = f"Connection ok. {len(tables)} tables detected."
+        except RuntimeError as exc:
             message = (
                 "Install Microsoft Access ODBC Driver to enumerate tables."
                 if not driver_available
-                else "Connection succeeded but no user tables were found."
+                else str(exc)
             )
-        else:
-            ok = True
-            message = f"Connection ok. {len(tables)} tables detected."
-            if request.table:
-                table_name = request.table.strip()
-                if table_name in tables:
-                    try:
-                        master_data_service.get_access_metadata(table=table_name, path=str(path))
-                        verified_table = table_name
-                        message = f"Connection ok. Table '{table_name}' verified."
-                    except Exception as exc:  # pragma: no cover - diagnostics only
-                        ok = False
-                        verified_table = None
-                        message = (
-                            f"Table '{table_name}' verification failed."
-                        )
-                        logger.warning(
-                            "workspace.access.table_verification_failed",
-                            extra={
-                                "user": user.username,
-                                "path": str(path),
-                                "table": table_name,
-                                "error": str(exc),
-                            },
-                        )
-                else:
+        except Exception as exc:  # pragma: no cover - diagnostics only
+            message = f"Access connection failed: {exc}"
+            logger.warning(
+                "workspace.access.connection_failed",
+                extra={
+                    "user": user.username,
+                    "path": str(validated_path),
+                    "error": str(exc),
+                },
+            )
+        finally:
+            elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+
+        if ok and request.table:
+            table_name = request.table.strip()
+            if table_name in tables:
+                try:
+                    master_data_service.get_access_metadata(table=table_name, path=str(validated_path))
+                    verified_table = table_name
+                    message = f"Connection ok. Table '{table_name}' verified."
+                except Exception as exc:  # pragma: no cover - diagnostics only
                     ok = False
-                    message = f"Table '{table_name}' not found in database."
-    else:
-        ok = False
+                    verified_table = None
+                    message = f"Table '{table_name}' verification failed."
+                    logger.warning(
+                        "workspace.access.table_verification_failed",
+                        extra={
+                            "user": user.username,
+                            "path": str(validated_path),
+                            "table": table_name,
+                            "error": str(exc),
+                        },
+                    )
+            else:
+                ok = False
+                message = f"Table '{table_name}' not found in database."
 
     logger.info(
         "workspace.access.test",
         extra={
             "user": user.username,
             "path": str(path),
-            "exists": exists,
             "table_count": len(tables),
+            "message": message,
+            "elapsed_ms": elapsed_ms,
             "requested_table": request.table,
             "verified": verified_table,
             "driver_available": driver_available,
+            "ok": ok,
         },
     )
 

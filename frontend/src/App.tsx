@@ -9,6 +9,7 @@ import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
 import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
 import { RoutingGroupControls } from "@components/RoutingGroupControls";
+import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
 import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
@@ -176,6 +177,41 @@ export default function App() {
       renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
       emptyState={renderRoutingWorkspace()}
     />
+    <div className="routing-workspace-grid">
+      <aside className="routing-column routing-column--left">
+        <PredictionControls
+          itemCodes={itemCodes}
+          onChangeItemCodes={updateItemCodes}
+          topK={topK}
+          onChangeTopK={updateTopK}
+          threshold={threshold}
+          onChangeThreshold={updateThreshold}
+          loading={isLoading || isFetching}
+          onSubmit={refetch}
+        />
+        <ReferenceMatrixPanel />
+      </aside>
+
+      <section className="routing-column routing-column--center">
+        <RoutingProductTabs />
+        <TimelinePanel />
+        <VisualizationSummary metrics={data?.metrics} />
+        <FeatureWeightPanel
+          profiles={featureWeights.availableProfiles}
+          selectedProfile={featureWeights.profile}
+          onSelectProfile={setFeatureWeightProfile}
+          manualWeights={featureWeights.manualWeights}
+          onChangeManualWeight={setManualWeight}
+          onReset={resetManualWeights}
+        />
+        <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
+      </section>
+
+      <aside className="routing-column routing-column--right">
+        <CandidatePanel />
+        <SaveInterfacePanel />
+      </aside>
+    </div>
   );
 
   let workspace: JSX.Element;

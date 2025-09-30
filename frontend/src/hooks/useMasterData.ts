@@ -32,6 +32,7 @@ export interface UseMasterDataState {
   logs: MasterDataLogsResponse["logs"];
   connectionStatus: MasterDataConnectionStatus;
   accessMetadata: AccessMetadataResponse | null;
+  inspectAccessSource: (params: { path?: string | null; table?: string | null }) => void;
   isTreeLoading: boolean;
   isMatrixLoading: boolean;
   isMetadataLoading: boolean;
@@ -48,6 +49,7 @@ export function useMasterData(): UseMasterDataState {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeItemId, setActiveItemIdState] = useState<string | null>(MOCK_DEFAULT_ITEM);
   const [tabs, setTabs] = useState<string[]>(MOCK_DEFAULT_ITEM ? [MOCK_DEFAULT_ITEM] : []);
+  const [metadataSelection, setMetadataSelection] = useState<{ table?: string; path?: string }>({});
   const hasLoggedInitialSelection = useRef(false);
 
   useEffect(() => {
@@ -70,9 +72,19 @@ export function useMasterData(): UseMasterDataState {
   });
 
   const metadataQuery = useQuery({
-    queryKey: ["access-metadata"],
-    queryFn: () => fetchAccessMetadata(),
+    queryKey: ["access-metadata", metadataSelection.table ?? null, metadataSelection.path ?? null],
+    queryFn: () => {
+      const params: { table?: string; path?: string } = {};
+      if (metadataSelection.table) {
+        params.table = metadataSelection.table;
+      }
+      if (metadataSelection.path) {
+        params.path = metadataSelection.path;
+      }
+      return fetchAccessMetadata(Object.keys(params).length > 0 ? params : undefined);
+    },
     staleTime: 300_000,
+    keepPreviousData: true,
   });
 
   const treeData = treeQuery.data;
@@ -216,6 +228,22 @@ export function useMasterData(): UseMasterDataState {
 
   const accessMetadata = metadataQuery.data ?? null;
 
+  const inspectAccessSource = useCallback(
+    (params: { path?: string | null; table?: string | null }) => {
+      const tableValue = params.table?.trim() || undefined;
+      const pathValue = params.path?.trim() || undefined;
+      setMetadataSelection({ table: tableValue, path: pathValue });
+      void postUiAudit({
+        action: "master_data.access.inspect",
+        payload: {
+          table: tableValue ?? null,
+          path: pathValue ?? null,
+        },
+      });
+    },
+    [],
+  );
+
   return {
     search,
     setSearch,
@@ -231,6 +259,7 @@ export function useMasterData(): UseMasterDataState {
     logs: logsData.logs ?? [],
     connectionStatus,
     accessMetadata,
+    inspectAccessSource,
     isTreeLoading: treeQuery.isFetching,
     isMatrixLoading: itemQuery.isFetching,
     isMetadataLoading: metadataQuery.isFetching,

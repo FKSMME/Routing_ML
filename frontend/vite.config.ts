@@ -19,6 +19,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     open: true,
+    fs: {
+      allow: ["..", "../tests"],
+    },
   },
   preview: {
     host: "0.0.0.0",
@@ -27,6 +30,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./tests/setup/vitest.setup.ts"],
+    include: [
+      "tests/**/*.{test,spec}.{ts,tsx}",
+      "../tests/frontend/**/*.{test,spec}.{ts,tsx}",
+    ],
     coverage: {
       reporter: ["text", "lcov"],
     },
