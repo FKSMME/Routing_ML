@@ -1,0 +1,4 @@
+2025-09-30T03:12:00Z | Agent: ChatGPT Automation Agent (container) | Session: No VPN (container network only)
+Attempted to reach http://10.204.2.28:8000/api/health via curl. Result: upstream connect error / delayed connect error: Connection refused.
+Attempted to reach http://10.204.2.28:8000/api/workflow/graph via curl. Result: upstream connect error / delayed connect error: Connection refused.
+No corporate VPN credentials are available in this environment. Coordinated escalation required with IT networking team for corpnet access.
