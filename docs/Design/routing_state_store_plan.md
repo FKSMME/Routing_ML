@@ -114,6 +114,32 @@ interface RoutingWorkspaceState {
 - Access 연결·옵션 메뉴와의 상호작용은 `backend/api/routes/master_data.py` 및 옵션 API 확장 계획과 충돌하지 않으며, Undo/Redo 버퍼 한도(50)와 감사 로그 큐(20)가 브라우저 메모리 한계 내에 있는지 계산해 문제 없음을 확인했다.
 - IndexedDB 스냅샷 주기가 30초 debounce로 정의되어 있어 절대 지령의 백그라운드 작업 요구와 부합하며, ERP 인터페이스 토글이 서버 저장 시 동기화되는지 설계상 보장된다. 추가 변경 필요 없음.
 
+## 8. 신규 기능 설계 보강 (Sprint 2025-10 W2)
+
+### 8.1 ef_search 런타임 슬라이더 배포
+- **목표**: 라우팅 실행 시 HNSW `ef_search` 파라미터를 UI 슬라이더로 조정하고, 런타임 구성은 `common/config_store.py`를 통해 저장/불러오기 하도록 한다.
+- **스토어 영향**: `SystemOptionState`에 `hnswEfSearch` 필드를 추가하고, `updateSystemOption` 액션이 `backend/index_hnsw.py`에 정의된 런타임 파라미터를 PATCH 요청(`/api/routing/options/hnsw`)으로 전달하도록 확장한다.
+- **API 변경 범위**:
+  - `backend/index_hnsw.py`: 런타임 슬라이더 값(최소 50, 최대 400, 기본 120)을 적용하도록 `search` 래퍼 함수에 동적 `efSearch` 인자를 추가한다.
+  - `common/config_store.py`: `routing.hnsw.ef_search` 설정을 신규 키로 등록하고, UI에서 선택한 값을 사용자 스코프로 persist 한다.
+  - `backend/api/routes/options.py` (신규 엔드포인트): `PUT /api/routing/options/hnsw` 요청을 받아 설정 저장 및 즉시 인덱스 파라미터 갱신을 수행한다.
+- **UI 변경 범위**:
+  - `frontend/src/components/routing/RoutingOptionsPanel.tsx`: 슬라이더 컴포넌트와 현재 값 미터(배치/베타 배지 포함)를 추가하고, Zustand 셀렉터로 `hnswEfSearch` 값을 구독한다.
+  - `frontend/src/store/workspaceStore.ts`: 초기화 시 Config Store에서 값을 prefetch 하여 옵션 패널에 반영한다.
+- **QA/운영 체크포인트**: 슬라이더 이동 시 요청-응답 round-trip을 로그(`logs/qa/hnsw_slider_runtime_*.log`)로 기록하고, 최소/최대 범위 초과 시 서버에서 400 응답을 반환하는지 검증한다.
+
+### 8.2 Polars 시간 집계 적용
+- **목표**: 라우팅 성능 대시보드의 시간 기반 지표를 Pandas에서 Polars 엔진으로 전환하여 100k 레코드 기준 응답 시간을 40% 이상 단축한다.
+- **스토어 영향**: `LearningStatusState`에 `timeAggregationPreset` 필드를 추가하여 프런트 UI와 서버 필터를 동기화한다.
+- **API 변경 범위**:
+  - `backend/api/services/time_aggregator.py`: Polars LazyFrame 기반 파이프라인으로 재작성하고, 허용되는 윈도우(`"5m"`, `"15m"`, `"1h"`, `"1d"`)를 파라미터로 받아 집계 결과를 캐싱한다.
+  - `/api/analytics/time-series` 응답 스키마에 `engine: "polars"` 메타데이터와 `execution_ms` 필드를 추가한다.
+  - `common/config_store.py`: `analytics.time_bucket_default` 키를 추가하여 기본 윈도우를 설정하고, UI 초기화 시 주입한다.
+- **UI 변경 범위**:
+  - `frontend/src/components/analytics/TimeSeriesPanel.tsx`: 버킷 선택 드롭다운을 슬라이더와 동일한 옵션 스토어를 사용하도록 통합하고, 응답의 `engine`/`execution_ms` 정보를 표시한다.
+  - 로딩 상태에서 Polars 변환 대기 시간을 표시하기 위해 Skeleton/Spinner를 500ms 이상 지연 시 표출한다.
+- **QA/운영 체크포인트**: 10k/100k 샘플 데이터셋을 대상으로 `scripts/perf/run_time_aggregator_bench.py`(신규) 벤치마크를 작성하고, `docs/sprint/logbook.md`에 실행 결과(응답 시간·CPU 사용률)를 기록한다.
+
 ## 7. 2025-10-03 병합 전략 업데이트
 - `frontend/src/store/workspaceStore.ts` 신설: 글로벌 워크스페이스(`layout`, `activeMenu`, `itemSearch`, `featureWeights`, `exportProfile`, `erpInterfaceEnabled`) 상태를 하나의 Zustand 스토어로 묶고, PRD의 `export_formats`, `with_visualization`, `feature_weights` 필드를 직접 추적한다.
 - `frontend/src/store/routingStore.ts`는 `createRoutingStore()` 팩토리로 재구성하여 `useWorkspaceStore`와 동일 인스턴스를 공유한다. `applyPredictionResponse` 액션을 통해 라우팅 추천 응답을 타임라인/탭 상태와 워크스페이스 메타데이터(프로파일, 시각화 토글, 내보내기 이력)에 동시 반영한다.

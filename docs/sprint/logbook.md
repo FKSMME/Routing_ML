@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-06 | Sprint 2025-10 W2 | Runtime tuning & analytics uplift | Sprint 목표로 `ef_search` 슬라이더 베타 배포와 Polars 시간 집계 전환 범위를 정의하고 Tasklist/설계 문서에 반영했다. | milestones_defined=3, feature_pairs=2 | Tasklist.md §신규 우선 과제; docs/Design/routing_state_store_plan.md §8 | planned – 개발 킥오프 대기 | 체크포인트 C1~C3 트래킹 (아래 표) |
 | 2025-10-01 | Step 1 - Routing Refactor | Step 2 detailed design circulation | Confirmed Step 2 feature freeze with scope owner and circulated the detailed design for approval. | sections_documented=4, approval_time_kst=11:30 | docs/Design/routing_enhancement_detailed_design.md; docs/Design/routing_enhancement_plan.md | approved (2025-10-01 11:30 KST) | Tasklist.md; task_details/step1_routing_enhancement_plan.md updated |
 
 | 2025-10-05 | Step 1 - Routing Refactor | RSL groups rehearsal | `/api/rsl/groups` ERP 토글 리허설 재실행 및 API 명세에 요청/응답 스키마·예시 반영 | tests_run=1, schemas_documented=2 | tests/test_rsl_routing_groups.py; docs/backend_api_overview.md; Tasklist.md | ready – 문서 리뷰 대기 | ERP 통합 QA 자동화(`tests/e2e/routing-groups.spec.ts`) 재개 시 스키마 예시 동기화 |
@@ -105,3 +106,11 @@
 
 ---
 _Sync note (2025-09-30): Duplicate rows removed and approvals reconciled with Tasklist/QA status review._
+
+### Sprint 2025-10 W2 체크포인트
+
+| ID | 설명 | 목표일 | 상태 |
+| --- | --- | --- | --- |
+| C1 | `common/config_store.py`에 `routing.hnsw.ef_search`, `analytics.time_bucket_default` 스키마 정의 및 마이그레이션 초안 완료 | 2025-10-08 | Planned |
+| C2 | `backend/index_hnsw.py` 런타임 `ef_search` 패치 엔드포인트 및 `backend/api/services/time_aggregator.py` Polars 파이프라인 구현 | 2025-10-10 | Planned |
+| C3 | 프런트 옵션/분석 패널 UI 통합 및 QA 벤치마크(`scripts/perf/run_time_aggregator_bench.py`) 로그 확보 | 2025-10-11 | Planned |
