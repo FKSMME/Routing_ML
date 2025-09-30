@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -19,6 +20,8 @@ from backend.api.schemas import (
     SQLConfigModel,
     TrainerRuntimeModel,
     VisualizationConfigModel,
+    WorkflowCodeModule,
+    WorkflowCodeSyncResponse,
     WorkflowConfigPatch,
     WorkflowConfigResponse,
     WorkflowGraphEdge,
@@ -40,6 +43,7 @@ from common.config_store import (
     workflow_config_store,
 )
 from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS, ensure_default_aliases
+from common.workflow_codegen import generate_workflow_modules
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/workflow", tags=["workflow-graph"])
@@ -518,6 +522,44 @@ async def patch_workflow_graph(
             audit_details["sql_changes"] = sql_summary
     audit_logger.info("workflow.graph.patch", extra=audit_details)
     return _build_response(final_snapshot)
+
+
+@router.post("/code", response_model=WorkflowCodeSyncResponse)
+async def regenerate_workflow_code(
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> WorkflowCodeSyncResponse:
+    """재생성된 워크플로우 코드 모듈 목록과 TensorBoard 경로를 반환한다."""
+
+    snapshot = workflow_config_store.load()
+    graph_cfg = WorkflowGraphConfig.from_dict(snapshot.get("graph", {}))
+    artifacts = generate_workflow_modules(graph_cfg, settings.workflow_code_dir)
+
+    viz_cfg = VisualizationConfig.from_dict(snapshot.get("visualization", {}))
+    projector_root = Path(viz_cfg.tensorboard_projector_dir)
+    tensorboard_paths = {
+        "projector_dir": str(projector_root),
+        "projector_config": str(projector_root / "projector_config.json"),
+        "vectors": str(projector_root / "vectors.tsv"),
+        "metadata": str(projector_root / "metadata.tsv"),
+    }
+
+    audit_logger.info(
+        "workflow.code.regenerate",
+        extra={"username": current_user.username, "modules": len(artifacts)},
+    )
+
+    return WorkflowCodeSyncResponse(
+        modules=[
+            WorkflowCodeModule(
+                node_id=artifact.node_id,
+                label=artifact.label,
+                path=str(artifact.path),
+            )
+            for artifact in artifacts
+        ],
+        tensorboard_paths=tensorboard_paths,
+        updated_at=datetime.utcnow().isoformat(),
+    )
 
 
 __all__ = ["router"]

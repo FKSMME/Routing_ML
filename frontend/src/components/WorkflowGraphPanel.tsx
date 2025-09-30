@@ -2,11 +2,14 @@ import type {
   PredictorRuntimeModel,
   SQLConfigModel,
   TrainerRuntimeModel,
+  WorkflowCodeSyncResponse,
   WorkflowConfigPatch,
   WorkflowGraphEdge,
   WorkflowGraphNode,
 } from "@app-types/workflow";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
@@ -18,6 +21,7 @@ import ReactFlow, {
   Position,
   ReactFlowProvider,
 } from "reactflow";
+import { regenerateWorkflowCode } from "@lib/apiClient";
 
 const NODE_TYPES = {
   module: ModuleNode,
@@ -93,6 +97,21 @@ interface ColumnAliasRow {
 interface TrainingMappingRow {
   feature: string;
   column: string;
+}
+
+interface TensorBoardLink {
+  label: string;
+  href: string;
+  description?: string;
+}
+
+type ToastKind = "success" | "error";
+
+interface ToastMessage {
+  id: number;
+  kind: ToastKind;
+  title: string;
+  description?: string;
 }
 
 function orderByReference(values: string[], reference: string[]): string[] {
@@ -184,6 +203,7 @@ interface NodeSettingsDialogProps {
   onClose: () => void;
   onSave: () => Promise<void>;
   saving: boolean;
+  tensorboardLinks: TensorBoardLink[];
 }
 
 function NodeSettingsDialog({
@@ -196,6 +216,7 @@ function NodeSettingsDialog({
   onClose,
   onSave,
   saving,
+  tensorboardLinks,
 }: NodeSettingsDialogProps) {
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
 
@@ -392,6 +413,15 @@ function NodeSettingsDialog({
             닫기
           </button>
         </header>
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
+          <div className="flex flex-col gap-6 md:grid md:grid-cols-[minmax(0,1fr)_260px] md:items-start md:gap-6">
+            <div className="space-y-6">
+              <section className="space-y-3">
+                <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-2 text-sm">
+                    <span className="text-slate-300">레이블</span>
+                    <input
         <div className="blueprint-modal__content">
           <section className="space-y-3">
             <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
@@ -422,9 +452,9 @@ function NodeSettingsDialog({
                 onChange={(event) => onChange({ ...form, description: event.target.value })}
                 rows={3}
                 className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-              />
-            </label>
-          </section>
+                />
+              </label>
+            </section>
 
           {node.id === "trainer" ? (
             <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
@@ -821,6 +851,36 @@ function NodeSettingsDialog({
               </div>
             </section>
           ) : null}
+            </div>
+            {tensorboardLinks.length > 0 ? (
+              <aside className="md:sticky md:top-6 md:self-start">
+                <div className="space-y-3 rounded-2xl border border-slate-700/70 bg-slate-950/70 p-4 text-xs text-slate-300">
+                  <h3 className="text-sm font-semibold text-sky-200">TensorBoard 링크</h3>
+                  <p className="text-[11px] text-slate-400">
+                    워크플로우 코드 재생성 시 확인되는 Projector 자산 경로입니다.
+                  </p>
+                  <ul className="space-y-2">
+                    {tensorboardLinks.map((link) => (
+                      <li key={link.href} className="break-words">
+                        <a
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-sky-300 transition hover:text-sky-100"
+                        >
+                          <ExternalLink size={14} />
+                          <span className="truncate text-left">{link.label}</span>
+                        </a>
+                        {link.description ? (
+                          <p className="mt-1 text-[11px] text-slate-500">{link.description}</p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </aside>
+            ) : null}
+          </div>
         </div>
         <footer className="mt-6 flex items-center justify-between">
           <span className="text-xs text-slate-400">
@@ -857,6 +917,7 @@ export function WorkflowGraphPanel() {
   const [formState, setFormState] = useState<NodeFormState>(INITIAL_FORM);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   useEffect(() => {
     if (data?.graph?.nodes) {
@@ -912,8 +973,79 @@ export function WorkflowGraphPanel() {
     return () => window.clearTimeout(timer);
   }, [statusMessage, errorMessage]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 4200);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
   const nodes = useMemo(() => createReactFlowNodes(graphNodes), [graphNodes]);
   const edges = useMemo(() => createReactFlowEdges(graphEdges), [graphEdges]);
+
+  const showToast = useCallback((message: Omit<ToastMessage, "id">) => {
+    setToast({ ...message, id: Date.now() });
+  }, []);
+
+  const tensorboardLinks = useMemo(() => {
+    const projectorDir = data?.visualization?.tensorboard_projector_dir;
+    if (typeof projectorDir !== "string") {
+      return [];
+    }
+    const trimmed = projectorDir.trim();
+    if (trimmed.length === 0) {
+      return [];
+    }
+    const normalized = trimmed.replace(/\\/g, "/");
+    const sanitized = normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
+    const links: TensorBoardLink[] = [];
+
+    if (sanitized.startsWith("http://") || sanitized.startsWith("https://")) {
+      links.push({
+        label: "TensorBoard Projector",
+        href: sanitized,
+        description: "TensorBoard 웹 뷰어",
+      });
+      links.push({
+        label: "Projector Config (JSON)",
+        href: `${sanitized}/data/plugin/projector/projector_config.json`,
+        description: "projector_config.json",
+      });
+      links.push({
+        label: "vectors.tsv",
+        href: `${sanitized}/data/plugin/projector/vectors.tsv`,
+        description: "vectors.tsv",
+      });
+      links.push({
+        label: "metadata.tsv",
+        href: `${sanitized}/data/plugin/projector/metadata.tsv`,
+        description: "metadata.tsv",
+      });
+    } else {
+      links.push({
+        label: "Projector 디렉터리",
+        href: sanitized,
+        description: "tensorboard_projector_dir",
+      });
+      const base = sanitized;
+      links.push({
+        label: "projector_config.json",
+        href: `${base}/projector_config.json`,
+        description: "TensorBoard Projector 구성 파일",
+      });
+      links.push({
+        label: "vectors.tsv",
+        href: `${base}/vectors.tsv`,
+        description: "임베딩 벡터",
+      });
+      links.push({
+        label: "metadata.tsv",
+        href: `${base}/metadata.tsv`,
+        description: "메타데이터 파일",
+      });
+    }
+
+    return links;
+  }, [data?.visualization?.tensorboard_projector_dir]);
 
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -1119,6 +1251,31 @@ export function WorkflowGraphPanel() {
         };
       }
 
+      await saveConfig(payload);
+      let codeResponse: WorkflowCodeSyncResponse | null = null;
+      try {
+        codeResponse = await regenerateWorkflowCode();
+      } catch (codeError) {
+        console.error(codeError);
+        setErrorMessage("워크플로우 코드를 재생성하지 못했습니다. 로그를 확인하세요.");
+        showToast({
+          kind: "error",
+          title: "코드 재생성 실패",
+          description: "워크플로우 코드를 재생성하지 못했습니다. 로그를 확인하세요.",
+        });
+        return;
+      }
+
+      const projectorHint =
+        codeResponse.tensorboard_paths?.projector_config ?? codeResponse.tensorboard_paths?.projector_dir;
+
+      showToast({
+        kind: "success",
+        title: `${formState.label} 설정과 코드가 갱신되었습니다.`,
+        description: projectorHint ? `TensorBoard 자산: ${projectorHint}` : undefined,
+      });
+
+      setStatusMessage(null);
       const response = await saveConfig(payload);
       if (response.graph?.nodes) {
         setGraphNodes(response.graph.nodes);
@@ -1134,7 +1291,7 @@ export function WorkflowGraphPanel() {
       console.error(error);
       setErrorMessage("설정 저장에 실패했습니다. 입력값을 확인하세요.");
     }
-  }, [selectedNode, data, graphNodes, formState, saveConfig]);
+  }, [selectedNode, data, graphNodes, formState, saveConfig, showToast]);
 
   return (
     <section className="mx-auto mt-10 max-w-7xl rounded-3xl border border-slate-800 bg-slate-900/60 p-6 text-slate-100 shadow-2xl">
@@ -1192,9 +1349,32 @@ export function WorkflowGraphPanel() {
             onClose={() => setSelectedNode(null)}
             onSave={handleSaveNode}
             saving={saving}
+            tensorboardLinks={tensorboardLinks}
           />
         ) : null}
       </div>
+      {toast ? (
+        <div className="pointer-events-none fixed bottom-6 right-6 z-50">
+          <div
+            className={`pointer-events-auto w-80 rounded-2xl border px-4 py-3 shadow-xl transition ${
+              toast.kind === "error"
+                ? "border-rose-500/70 bg-rose-500/10 text-rose-100"
+                : "border-emerald-500/70 bg-emerald-500/10 text-emerald-100"
+            }`}
+          >
+            <p className="text-sm font-semibold">{toast.title}</p>
+            {toast.description ? (
+              <p
+                className={`mt-1 text-xs ${
+                  toast.kind === "error" ? "text-rose-100/90" : "text-emerald-100/90"
+                }`}
+              >
+                {toast.description}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

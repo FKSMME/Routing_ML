@@ -9,7 +9,11 @@ import type {
   RoutingGroupStep,
 } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
-import type { WorkflowConfigPatch, WorkflowConfigResponse } from "@app-types/workflow";
+import type {
+  WorkflowCodeSyncResponse,
+  WorkflowConfigPatch,
+  WorkflowConfigResponse,
+} from "@app-types/workflow";
 import axios from "axios";
 
 const fallbackProtocol =
@@ -126,6 +130,11 @@ export async function patchWorkflowConfig(
   payload: WorkflowConfigPatch,
 ): Promise<WorkflowConfigResponse> {
   const response = await api.patch<WorkflowConfigResponse>("/workflow/config", payload);
+  return response.data;
+}
+
+export async function regenerateWorkflowCode(): Promise<WorkflowCodeSyncResponse> {
+  const response = await api.post<WorkflowCodeSyncResponse>("/workflow/code");
   return response.data;
 }
 

@@ -494,6 +494,18 @@ class WorkflowConfigResponse(BaseModel):
     updated_at: str
 
 
+class WorkflowCodeModule(BaseModel):
+    node_id: str
+    label: str
+    path: str
+
+
+class WorkflowCodeSyncResponse(BaseModel):
+    modules: List[WorkflowCodeModule] = Field(default_factory=list)
+    tensorboard_paths: Dict[str, str] = Field(default_factory=dict)
+    updated_at: str
+
+
 class WorkflowGraphPatch(BaseModel):
     nodes: Optional[List[WorkflowGraphNode]] = None
     edges: Optional[List[WorkflowGraphEdge]] = None
