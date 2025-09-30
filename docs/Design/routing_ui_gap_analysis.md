@@ -46,7 +46,7 @@ PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sp
 ## 발견된 인코딩/문서 이슈
 - [x] `frontend/src/App.tsx` 등 한글 문자열 깨짐 재발
   - 네비게이션 텍스트를 UTF-8 한글 문자열로 수정해 이슈 해소.
-- [ ] 기존 문서(예: `docs/Design/routing_enhancement_plan.md`) 인코딩 재정비 필요 (남은 작업: UTF-8 재인코딩 검증 및 툴체인 점검)
+- [x] 기존 문서(예: `docs/Design/routing_enhancement_plan.md`) 인코딩 재정비 필요 (2025-09-30: UTF-8 재인코딩 및 검증 완료, 툴체인 점검 포함)
 - [x] 문서 상단 PRD/Tasklist 지표 확인 및 최신화 (2025-09-30: 본 문서 점검 시 스프린트 지표 갱신)
 
 ## 다음 조치 제안

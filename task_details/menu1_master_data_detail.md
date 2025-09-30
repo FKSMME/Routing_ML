@@ -70,6 +70,6 @@
 - `docs/sprint/routing_enhancement_tasklist.md` Phase 3 해당 체크박스를 본 문서 업데이트와 함께 완료 처리.
 
 ## TODO 체크리스트 업데이트
-- [ ] UI 스토리보드 제작 (Figma 또는 Excalidraw) 후 deliverables/design/menu1_master_data_storyboard.png 업로드.
+- [ ] UI 스토리보드 제작 (Figma 또는 Excalidraw) 후 deliverables/design/menu1_master_data_storyboard.png 업로드 — 업로드 보류: 바이너리 자산 업로드 미지원 환경.
 - [x] API 스펙 문서화 (docs/backend_api_overview.md에 /api/master-data/* 추가). 【F:docs/backend_api_overview.md†L18-L82】
 - [x] React 컴포넌트 구조 정의 (`frontend/src/components/master-data/*`). 【F:frontend/src/components/master-data/MasterDataWorkspace.tsx†L1-L63】【F:frontend/src/components/master-data/MasterDataMatrix.tsx†L1-L120】
