@@ -1,3 +1,18 @@
+[2025-09-30T03:12:44Z] Stage 5 SQL export verification
+- Connectivity: Started local uvicorn backend at http://127.0.0.1:8000 (replacing unreachable 10.204.2.28). Seeded qa_user admin credentials via backend.api.services.auth_service helper script.
+- Command: curl -sS -H "Authorization: Bearer <qa_user token>" -H "Content-Type: application/json" --data @/tmp/candidate_payload.json http://127.0.0.1:8000/api/candidates/save
+- Payload summary: ITEM_TEST_C01 with 3 operations (Access 7.1 column template from common/sql_schema.DEFAULT_SQL_OUTPUT_COLUMNS).
+- Result: PASS
+- Saved file: logs/candidates/ITEM_TEST_ITEM_TEST_C01_20250930031244.json
+- SQL preview: routing_candidates + routing_candidate_operations INSERT statements (3-row preview, 53 columns).
+- Stage 5 schema comparison:
+  * Column list matches Stage 5 spec / common.sql_schema defaults.
+  * generator_version column from docs/stage5_sql_report.md is not persisted.
+  * Row-level defaults (INSIDE_FLAG='사내', PRIORITY, SIMILARITY_TIER, time fields=0) remain NULL when source payload omits them.
+  * INSERT preview lacks the BEGIN/COMMIT transaction wrapper required by Stage 5 export spec.
+- Follow-up: Populate per-operation defaults from summary metadata before export; include generator_version + transaction wrapper in preview to satisfy Stage 5 report requirements.
+
+--- Previous log retained for reference ---
 [2025-09-29T08:35:00Z] Stage 5 SQL export verification
 - Command: curl -sS http://10.204.2.28:8000/api/export/sql -o /tmp/stage5.sql
 - Result: FAIL
