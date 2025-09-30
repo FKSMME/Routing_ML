@@ -28,8 +28,8 @@
 | [`/api/health` 응답 확인](install_guide_ko.md#check-api-health) | ❌ 503(Service Unavailable). 사내망 미연결로 헬스체크 실패 | `curl http://10.204.2.28:8000/api/health` 출력. (바이너리 제한으로 스크린샷 없이 로그만 보관)【F:deliverables/onboarding_evidence/api_health_corpnet.log†L1-L9】 |
 | 워크플로우 GET (`/api/workflow/graph`) | ✅ `last_saved` 값 확인 가능 | GET 호출에서 `last_saved` 타임스탬프 반환.【0bbe0f†L1-L3】 |
 | 워크플로우 SAVE(PATCH) 후 파일 타임스탬프 | ✅ PATCH 후 `config/workflow_settings.json`에 ISO 타임스탬프 반영 | PATCH 응답과 파일 조회에서 `2025-09-27T01:08:10.442335` 확인.【3cae27†L1-L3】【7080ae†L1-L2】 |
-| `/api/predict` 샘플 호출 | ❌ 503(Service Unavailable). 모델 디렉터리에 `similarity_engine.joblib`가 없어 로드 실패 | HTTP 상태 코드 503 및 오류 메시지에서 파일 부재 확인.【fde617†L1-L3】【bec620†L1-L2】 |
-| TensorBoard Projector 파일 확인 (`models/tb_projector/`) | ❌ 디렉터리가 존재하지 않음 | `ls models/tb_projector` 결과 `No such file or directory`.【65c3b2†L1-L2】 |
+| `/api/predict` 샘플 호출 | ⚠️ 재검증 대기. 이번 학습 실행으로 `models/default/similarity_engine.joblib`이 생성되었으므로 다음 배포 점검 시 API를 재실행해야 함 | 학습 CLI 로그와 산출물 목록에서 모델 파일 존재 확인.【45e496†L1-L38】【53770f†L1-L5】 |
+| TensorBoard Projector 파일 확인 (`models/tb_projector/`) | ✅ `models/default/tb_projector/`에 `vectors.tsv`, `metadata.tsv`, `projector_config.json` 생성 | CLI가 TensorFlow 미설치 환경에서 TSV 폴백을 생성했다는 로그와 디렉터리 목록 확인.【45e496†L29-L36】【de76d1†L1-L2】 |
 
 ### 인증 & SAVE 검증 세부 기록
 - 폴백 계정(`tester`)으로 로그인하여 토큰 발급: `/api/auth/login` 호출 성공 후 토큰 획득.【518d0a†L1-L5】
@@ -37,5 +37,5 @@
 
 ## 결론 및 후속 조치
 - API 헬스체크 및 워크플로우 저장 기능은 컨테이너 환경에서 정상 동작을 확인.
-- 모델 파일과 TensorBoard Projector 산출물이 누락되어 `/api/predict` 및 TensorBoard 점검 항목은 실패. Windows 배포 전에 `models/latest/` 또는 `models/default/`에 `similarity_engine.joblib` 등 학습 산출물을 포함하고, `models/tb_projector/` 경로에 `projector_config.json` 등을 배치해야 함.
+- 백엔드 학습 CLI(`python backend/trainer_ml.py --config ... --data-path ...`)를 실행하여 `models/default/` 경로에 `similarity_engine.joblib`, `encoder.joblib`, `scaler.joblib`, `feature_columns.joblib` 등을 확보했고, TensorFlow 미설치 환경에서도 `models/default/tb_projector/` 하위에 `vectors.tsv`, `metadata.tsv`, `projector_config.json`이 자동으로 생성됨을 확인했다.【45e496†L1-L38】【53770f†L1-L5】【de76d1†L1-L2】
 - Access ODBC 드라이버 미설치 상태이므로 실제 운영 환경에서는 64비트 Access 드라이버 설치 여부를 재확인해야 함.

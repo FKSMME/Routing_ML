@@ -1,0 +1,13 @@
+seed: 42
+similarity_threshold: 0.8
+max_neighbors: 15
+export:
+  projector:
+    enabled: true
+    metadata_fields:
+      - ITEM_CD
+      - ITEM_NM
+      - ITEM_GRP1NM
+output:
+  directory: models/default
+  overwrite: true

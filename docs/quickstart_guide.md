@@ -45,7 +45,14 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
    ```powershell
    python .\backend\trainer_ml.py --config .\trainer_config.yaml --data-path D:\routing_data
    ```
-3. 실행 후 `models/` 폴더에 HNSW 인덱스와 `tb_projector/`가 생성되었는지 확인한다.
+3. 실행 후 `models/default/`에 `similarity_engine.joblib`(HNSW 인덱스)와 `encoder.joblib`, `scaler.joblib` 등이 생성되고,
+   `models/default/tb_projector/` 폴더에 `vectors.tsv`, `metadata.tsv`, `projector_config.json`이 준비되었는지 확인한다. TensorFlow가
+   설치되어 있지 않은 환경에서는 트레이너가 자동으로 TSV 기반 폴백 자산을 생성하므로 위 세 파일이 모두 존재하면 Projector
+   검증을 완료한 것이다.
+   ```bash
+   ls models/default
+   ls models/default/tb_projector
+   ```
 
 ### 3. 예측 서비스 준비
 1. Predictor 구성 템플릿을 복사한다.
