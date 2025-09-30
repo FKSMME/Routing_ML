@@ -10,7 +10,7 @@
 
 ### 0.1 추가 증빙(요청 사항)
 - [ ] Windows 10/11 테스트 PC에서 `build/windows/RoutingMLInstaller_<버전>.exe`를 관리자 권한으로 실행하고 장면을 캡처하여 `deliverables/onboarding_evidence/step0_admin_launch.png`에 업로드.
-  - 현 개발 환경에서는 Windows GUI를 사용할 수 없으므로 실제 설치 파일 실행과 화면 캡처를 수행하지 못함.
+  - 2025-09-28: Linux 컨테이너 환경에서는 Windows QA 장비에 원격 접속 권한이 없어 실행/캡처 작업을 수행하지 못함. 증빙 확보를 위해 현장 QA 팀에 재요청함.
   - 캡처와 실행 로그가 확보될 경우, 해당 파일 경로와 상세 절차를 본 섹션에 추가 기록해야 함.
 
 ## 1~2. 사전 요구사항 체크
