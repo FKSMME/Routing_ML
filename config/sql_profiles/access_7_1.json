@@ -1,4 +1,8 @@
 {
+  "schema_version": "routing-ml/sql-profile@1",
+  "compatible_manifest_versions": [
+    "routing-ml/manifest@1"
+  ],
   "name": "Access 7.1 기본",
   "description": "dbo_BI_ROUTING_VIEW 7.1 구조를 기준으로 한 기본 Power Query 매핑",
   "mapping": {

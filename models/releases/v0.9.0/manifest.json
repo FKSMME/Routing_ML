@@ -1,0 +1,34 @@
+{
+  "schema_version": "routing-ml/manifest@1",
+  "generated_at": "2025-10-05T00:00:00Z",
+  "hash_algorithm": "sha256",
+  "artifacts": {
+    "similarity_engine": {
+      "path": "similarity_engine.joblib",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "schema_version": "routing-ml/searcher@1"
+    },
+    "encoder": {
+      "path": "encoder.joblib",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "schema_version": "routing-ml/encoder@1"
+    },
+    "scaler": {
+      "path": "scaler.joblib",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "schema_version": "routing-ml/scaler@1"
+    },
+    "feature_columns": {
+      "path": "feature_columns.joblib",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "schema_version": "routing-ml/feature-columns@1"
+    }
+  },
+  "metadata": {
+    "model_version": "0.9.0",
+    "channel": "alpha",
+    "sql_profile_schema_versions": [
+      "routing-ml/sql-profile@1"
+    ]
+  }
+}

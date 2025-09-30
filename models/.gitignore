@@ -1,3 +1,4 @@
 # Generated model binaries
 *.joblib
 manifest.json
+!releases/**/manifest.json

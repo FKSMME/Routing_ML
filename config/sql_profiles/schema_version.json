@@ -1,0 +1,7 @@
+{
+  "current": "routing-ml/sql-profile@1",
+  "supported_manifest_versions": [
+    "routing-ml/manifest@1"
+  ],
+  "notes": "Access 7.1 기준 SQL 컬럼 매핑 스키마"
+}

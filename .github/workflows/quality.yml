@@ -31,6 +31,9 @@ jobs:
           PYTHONPATH: .
         run: pytest
 
+      - name: Check manifest and SQL profile compatibility
+        run: python scripts/check_schema_compatibility.py
+
       - name: Compile sources
         env:
           PYTHONPATH: .
