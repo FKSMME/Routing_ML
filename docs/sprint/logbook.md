@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Routing groups QA | Confirmed GET /api/routing/groups clears dirty flag and captured UI proof | api_calls=1, dirty_state=cleared | deliverables/onboarding_evidence/get_group_dirty_release.png | pending | Update API QA checklist status |
 
 | 2025-10-01 | Phase 5 - QA & Release Prep | QA checklist build gate | Frontend `npm run build` passes after ReactFlow/Options/DataOutput typing fixes | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20251001.log | approved | Resume QA checklist and browser regression flows |
 | 2025-09-30 | Phase 5 - QA & Release Prep | QA checklist build gate | Captured frontend build failure (`npm run build`) → 2025-10-01 재실행으로 복구 | build_status=passed, ts_errors=0 | logs/qa/frontend_build_20250930.log (재실행 포함) | approved | QA checklist 재개 및 27개 시나리오 로그 정리 진행 |
