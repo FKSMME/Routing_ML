@@ -110,6 +110,14 @@
 - [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류. 2025-10-04 09:00-11:00 KST 현장 세션에서 UI 증빙 확보 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류. 2025-10-04 09:00-11:00 KST 세션에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+
+### 2025-10-04 Lab-3 Dirty Reset 수동 시나리오 (Chrome 127+)
+
+- [ ] Dirty reset 흐름(Drag → Undo → Redo → 저장 취소) 수동 검증 및 증빙 수집 → ⚠️ 컨테이너 환경에서는 Chrome 127+ 실기기 실행이 불가하여 미수행. 2025-10-04 09:00-11:00 KST Lab-3 세션에서 아래 증빙을 확보 예정.
+  - UI 스크린샷 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/ui.png` (내부 공유 드라이브, 저장소에는 보관하지 않음).
+  - Network 로그 예상 저장 위치: `secure-share/QA/Lab3/20251004_dirty_reset/network.har` (내부 공유 드라이브).
+  - 세션 실행 로그: `docs/issues/qa_manual_browser_blocker_20251002.md`의 Lab-3 세션 로그 항목에 업데이트 예정 (실행 후 경과 기록 필요).
+  - 차단 사유 로그: [`logs/qa/metrics_visualization_manual_20250929.log`](../../logs/qa/metrics_visualization_manual_20250929.log)에 컨테이너 환경 제한을 추가 기록.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처 및 로그 참조(상동).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Vitest 증빙 로그로 UI/서버 감사 이벤트 확인 완료.
 
