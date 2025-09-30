@@ -3,7 +3,7 @@ import "reactflow/dist/style.css";
 import type { DraggableOperationPayload, RuleViolation, TimelineStep } from "@store/routingStore";
 import { useRoutingStore } from "@store/routingStore";
 import { Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type UIEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type UIEvent } from "react";
 import type { Edge, Node, NodeProps, ReactFlowInstance, Viewport } from "reactflow";
 import ReactFlow, {
   Background,
@@ -21,6 +21,10 @@ interface TimelineNodeData {
   onRemove: (stepId: string) => void;
 }
 
+interface RoutingCanvasProfileController {
+  moveNode: (nodeId: string, position: { x: number; y: number }) => void;
+}
+
 interface RoutingCanvasProps {
   className?: string;
   /**
@@ -32,9 +36,13 @@ interface RoutingCanvasProps {
    * Padding applied when auto fitting the viewport. Defaults to 0.2.
    */
   fitPadding?: number;
+  /**
+   * Optional callback that exposes internal helpers for profiling scenarios.
+   */
+  onProfileReady?: (controller: RoutingCanvasProfileController) => void;
 }
 
-function TimelineNode({ data }: NodeProps<TimelineNodeData>) {
+function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const { step, onRemove } = data;
   const violations = step.violations ?? [];
 
@@ -74,6 +82,9 @@ function TimelineNode({ data }: NodeProps<TimelineNodeData>) {
   );
 }
 
+const TimelineNode = memo(TimelineNodeComponent);
+TimelineNode.displayName = "TimelineNode";
+
 const nodeTypes = { timeline: TimelineNode } as const;
 
 interface CanvasViewProps extends RoutingCanvasProps {
@@ -91,6 +102,7 @@ function RoutingCanvasView({
   moveStep,
   insertOperation,
   removeStep,
+  onProfileReady,
 }: CanvasViewProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<ReactFlowInstance | null>(null);
@@ -99,6 +111,30 @@ function RoutingCanvasView({
   const [nodes, setNodes, onNodesChange] = useNodesState<TimelineNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isReady, setIsReady] = useState(false);
+  const profileControllerRef = useRef<RoutingCanvasProfileController | null>(null);
+
+  const ensureProfileController = useCallback(() => {
+    if (profileControllerRef.current || !onProfileReady) {
+      return;
+    }
+    const controller: RoutingCanvasProfileController = {
+      moveNode: (nodeId, position) => {
+        setNodes((current) =>
+          current.map((node) =>
+            node.id === nodeId
+              ? {
+                  ...node,
+                  position,
+                  positionAbsolute: position,
+                }
+              : node,
+          ),
+        );
+      },
+    };
+    profileControllerRef.current = controller;
+    onProfileReady(controller);
+  }, [onProfileReady, setNodes]);
 
   const containerClassName = useMemo(
     () => (className ? `timeline-flow ${className}` : "timeline-flow"),
@@ -176,6 +212,7 @@ function RoutingCanvasView({
     (instance: ReactFlowInstance) => {
       instanceRef.current = instance;
       setIsReady(true);
+      ensureProfileController();
       if (autoFit) {
         instance.fitView({ padding: fitPadding, duration: 200 });
         scheduleFrame(() => {
@@ -185,7 +222,7 @@ function RoutingCanvasView({
         });
       }
     },
-    [autoFit, fitPadding, scheduleFrame, syncScrollToViewport],
+    [autoFit, fitPadding, ensureProfileController, scheduleFrame, syncScrollToViewport],
   );
 
   const handleDrop = useCallback(
@@ -257,6 +294,10 @@ function RoutingCanvasView({
   }, [flowNodes, flowEdges, setNodes, setEdges]);
 
   useEffect(() => {
+    ensureProfileController();
+  }, [ensureProfileController]);
+
+  useEffect(() => {
     if (autoFit && isReady && instanceRef.current) {
       instanceRef.current.fitView({ padding: fitPadding, duration: 200 });
       scheduleFrame(() => {
@@ -325,4 +366,4 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
 }
 
 export default RoutingCanvas;
-export type { RoutingCanvasProps };
+export type { RoutingCanvasProps, RoutingCanvasProfileController };

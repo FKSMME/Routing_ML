@@ -20,6 +20,8 @@
 - Tooltip on rule badges describing violation and remediation hints.
 
 ## Testing Checklist
+- [ ] Dragging 100 nodes maintains < 16ms frame budget _(2025-09-30 profiling run logged max 240.518 ms; ReactFlow layout batching follow-up required — see `deliverables/2025-09-29/frontend_reactflow_testcases.csv`)._
+- [ ] Rule violation badge shows for at least one invalid connection.
 - [ ] Dragging 100 nodes maintains < 16ms frame budget.
 - [x] Rule violation badge shows for at least one invalid connection. Evidence: `tests/frontend/routingDragAndDrop.spec.tsx` (DSL-R001 badge assertion) + dev demo `/#rule-badge-demo`.
 - [ ] Autosave persists and reloads after browser refresh.
@@ -29,7 +31,7 @@
 ## Delivery Artifacts
 - Wireframes stored in `deliverables/2025-09-29/frontend_layout_wireframes.pdf`.
 - ReactFlow node palette spec `deliverables/2025-09-29/reactflow_node_palette.json`.
-- QA test script `deliverables/2025-09-29/frontend_reactflow_testcases.xlsx`.
+- QA test script `deliverables/2025-09-29/frontend_reactflow_testcases.csv`.
 
 ## Follow-up
 - Integrate ReactFlow plugin updates into `frontend/package.json` with offline `npm` cache.
