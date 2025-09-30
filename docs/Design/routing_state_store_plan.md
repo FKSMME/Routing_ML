@@ -77,23 +77,11 @@ interface RoutingWorkspaceState {
 
 ## 6. 구현 체크리스트
 
-- [x] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
-- [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
-
-- [ ] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략)
-
-- [x] ReactFlow 도입 및 캔버스 컴포넌트 작성
-
-- [ ] IndexedDB persistence 유틸 (`idb-keyval`)
-
-- [ ] ReactFlow 도입 및 캔버스 컴포넌트 작성
-- [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료)
-
-- [ ] 감사 로그 배치 API 스텁 구현
-- [ ] IndexedDB persistence 유틸 (`idb-keyval`)
-
-- [x] 감사 로그 배치 API 스텁 구현
-- [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트
+- [x] Zustand store 확장 (`useWorkspaceStore` vs `useRoutingStore` 통합 전략) – `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts` 동시 개편으로 단일 워크스페이스 스토어 구성 완료 (2025-10-03 병합 전략 반영).
+- [x] ReactFlow 도입 및 캔버스 컴포넌트 작성 – `frontend/src/components/routing/RoutingCanvas.tsx`에서 타임라인 노드/엣지 변환 및 드래그 액션 연결 구현 완료.
+- [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료).
+- [x] 감사 로그 배치 API 스텁 구현 – `backend/api/routes/audit.py`에 UI 감사 로그 배치 엔드포인트(`POST /api/audit/ui/batch`) 및 파일 기반 저장 스텁 구축.
+- [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 통합 테스트 추가 실시 (Vitest 시나리오 자동화 전환 대기).
 
 
 ## 7. RoutingCanvas 컴포넌트 구조 (2025-10-03)
@@ -112,8 +100,8 @@ interface RoutingWorkspaceState {
 
 > 향후 확장: `onInit` 콜백을 추가하여 외부에서 ReactFlow 인스턴스를 제어하거나, `edgeTypes`/`nodeTypes` 주입으로 가시화 커스터마이징 지원.
 
-- [ ] 감사 로그 배치 API 스텁 구현
-- [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 테스트 (2025-09-29, Vitest `routing-groups.spec.ts` 통합 시나리오 통과, 로그: `logs/qa/workspace_store_manual_20250929.log`)
+- 감사 로그 배치 API 스텁은 `backend/api/routes/audit.py`에서 `record_ui_audit_batch` 핸들러로 구현되어 있으며, ReactFlow 이벤트 감사 큐에서 전송되는 페이로드를 JSON Lines 파일로 적재한다.
+- QA는 2025-09-29 매뉴얼/통합 테스트(`logs/qa/workspace_store_manual_20250929.log`)로 1차 검증했으며, Vitest `routing-groups.spec.ts` 자동화로 전환하는 작업이 남아 있다.
 
 
 ## Codex 리뷰 메모 (2025-09-29)
