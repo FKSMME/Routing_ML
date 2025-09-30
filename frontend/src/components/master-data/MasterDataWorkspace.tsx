@@ -1,6 +1,6 @@
 import { MasterDataInfoPanel } from "@components/master-data/MasterDataInfoPanel";
 import { MasterDataItemInput } from "@components/master-data/MasterDataItemInput";
-import { MasterDataMatrix } from "@components/master-data/MasterDataMatrix";
+import { MasterDataMatrixPanel } from "@components/master-data/MasterDataMatrix";
 import { MasterDataMetadataPanel } from "@components/master-data/MasterDataMetadataPanel";
 import { MasterDataSearchPanel } from "@components/master-data/MasterDataSearchPanel";
 import { MasterDataTabs } from "@components/master-data/MasterDataTabs";
@@ -34,6 +34,9 @@ export function MasterDataWorkspace({ layout }: MasterDataWorkspaceProps) {
     isMetadataLoading,
     refreshLogs,
     downloadLog,
+    searchMetadataChips,
+    searchItem,
+    isSearchLoading,
   } = useMasterData();
 
   const handleCopyRows = useCallback(
@@ -53,7 +56,13 @@ export function MasterDataWorkspace({ layout }: MasterDataWorkspaceProps) {
     <div className="master-data-grid" data-layout={layout}>
       <aside className="master-column master-column-left">
         <MasterDataItemInput onApply={addTabsFromList} />
-        <MasterDataSearchPanel search={search} onSearch={setSearch} />
+        <MasterDataSearchPanel
+          search={search}
+          onSearch={setSearch}
+          onSubmit={searchItem}
+          metadataChips={searchMetadataChips}
+          isSearching={isSearchLoading}
+        />
         {isTreeLoading ? <p className="text-sm text-muted">Loading hierarchy...</p> : null}
         <MasterDataTree nodes={filteredTree} activeId={activeItemId} onSelect={addTab} />
       </aside>
@@ -62,7 +71,7 @@ export function MasterDataWorkspace({ layout }: MasterDataWorkspaceProps) {
         <div className="panel-card">
           <MasterDataTabs tabs={tabs} activeId={activeItemId} onSelect={setActiveItemId} onClose={removeTab} />
         </div>
-        <MasterDataMatrix columns={columns} rows={matrixRows} onCopy={handleCopyRows} />
+        <MasterDataMatrixPanel columns={columns} rows={matrixRows} onCopy={handleCopyRows} />
         {isMatrixLoading ? <p className="text-muted text-sm">Loading matrix...</p> : null}
       </section>
 
