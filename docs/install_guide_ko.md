@@ -108,10 +108,10 @@
    3. 드라이버가 설치되지 않았거나 경로가 잘못되면 오류 메시지가 표시되므로, 설치 스크립트(`verify_odbc.ps1`)와 경로 권한을 재확인하세요.
 
 ## 5. 설치 후 바로 해보는 점검
-- [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30 재시도) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30 03:12 UTC에 컨테이너 환경에서 `curl`로 재시도했으나 VPN 미연결 상태로 인해 `Connection refused`가 재현되었다. 최신 시도 로그는 `deliverables/onboarding_evidence/vpn_session_20250930.log`와 `deliverables/onboarding_evidence/api_health_corpnet.log`에 기록했으며, 사내망 접속을 위해 IT 네트워크 팀과의 추가 조율이 필요하다.
+- [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30 재시도) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30 03:12 UTC에 컨테이너 환경에서 `curl`로 재시도했으나 VPN 미연결 상태로 인해 `Connection refused`가 재현되었고, 관련 로그는 `deliverables/onboarding_evidence/vpn_session_20250930.log`와 최신 헬스체크 로그 `deliverables/onboarding_evidence/api_health_corpnet.log`에 저장했다. 재검증 계획: 2025-10-07 이전에 VPN이 활성화된 사내 QA PC에서 IT 네트워크 팀과 함께 브라우저 및 `curl` 호출을 재수행하고, 동일 로그 파일에 성공 여부와 타임스탬프를 추가 기록한다.
 - [ ] (❌ 2025-09-30) `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다. 동일 세션에서 `curl` 호출이 VPN 미연결로 실패했으며, 결과는 `deliverables/onboarding_evidence/vpn_session_20250930.log`에 정리했다.
 
-- [ ] <a id="check-api-health"></a>(❌ 2025-09-29, 2025-09-30) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 2025-09-30에 재시도했으나 컨테이너 환경에서 여전히 연결이 거부되어 503(Service Unavailable) 응답만 확보했으며, 바이너리 업로드 제한으로 스크린샷은 제외하고 텍스트 로그(`deliverables/onboarding_evidence/api_health_corpnet.log`)만 보관했다.
+> 참고: 2025-09-30 재시도 시 VPN 미연결로 503(Service Unavailable) 응답만 확보했으며, 해당 내용은 `deliverables/onboarding_evidence/api_health_corpnet.log`에 텍스트로 정리되어 있다.
 - [x] `http://10.204.2.28:8000/api/workflow/graph`에 접속해 JSON 구조가 보이는지 확인한다.
 - [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
