@@ -17,6 +17,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2025-10-05 | Governance | Log/task duplication review | docs/logs/codex_activity_log.md 및 docs/sprint/logbook.md 전수 검사 후 중복 로그/체크 항목에 취소선·[x] 표기 적용 | duplicates_flagged=11 | docs/logs/codex_activity_log.md; docs/sprint/logbook.md | pending | 중복 감시 자동화 스크립트 검토 |
 | 2025-09-29 | Phase 5 - QA & Release Prep | Routing groups QA | Confirmed GET /api/routing/groups clears dirty flag and captured UI proof | api_calls=1, dirty_state=cleared | deliverables/onboarding_evidence/get_group_dirty_release.png | pending | Update API QA checklist status |
+| 2025-09-30 | Step 1 - Routing Refactor | Deliverables sync checkpoint | Logged pending Step 1 설계/API/승인 패킷 산출물과 일정 연계 상태 확인 | deliverables_pending=3 | task_details/step1_routing_enhancement_plan.md; Tasklist.md | pending | Step 2 범위 확정(2025-10-01) 및 스폰서 서명(2025-10-02) 후 패킷 제출 |
 
 | 2025-09-29 | Phase 5 - QA & Release Prep | Metrics/Visualization manual review | Container environment feasibility check for Chrome 127+ Metrics/Visualization panel capture | metrics_panel=not_run, console_errors=not_collected | logs/qa/metrics_visualization_manual_20250929.log | blocked | Execute physical Lab-3 Chrome 127+ session on 2025-10-04 |
 

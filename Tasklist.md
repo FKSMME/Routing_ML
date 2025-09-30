@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 28 | Blockers 1
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 3 | Completed 28 | Blockers 1
 
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
@@ -48,6 +48,14 @@
 - [x] (8) 프런트엔드 UI 그룹 – 20/60/20 레이아웃 & ReactFlow 체크리스트 (`docs/sprint/next_stage_checklist.md#group-4-frontend-integration`) (2025-09-29 17:30 KST 완료)
 - [x] (9) QA & 관측 그룹 – 테스트/로그/메트릭 항목 정의 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:00 KST 완료)
 - [x] (10) 설치 & 운영 그룹 – 인스톨러/워크플로우 자동화 점검 (`docs/sprint/next_stage_checklist.md#group-5-qa-and-observability`) (2025-09-29 18:25 KST 완료)
+
+
+
+### Step 1 Deliverable Follow-ups (Pending)
+
+- [ ] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성.
+- [ ] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰).
+- [ ] 승인 요청 패킷 (Tasklist/로그 업데이트 포함) — 스폰서 서명 일정 2025-10-02 확정 대기.
 
 
 ## QA Follow-up
