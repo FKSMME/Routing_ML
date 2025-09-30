@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-09-29 | Phase 5 - QA & Release Prep | Routing groups QA | Confirmed GET /api/routing/groups clears dirty flag and captured UI proof | api_calls=1, dirty_state=cleared | deliverables/onboarding_evidence/get_group_dirty_release.png | pending | Update API QA checklist status |
 
 | 2025-09-29 | Phase 5 - QA & Release Prep | Metrics/Visualization manual review | Container environment feasibility check for Chrome 127+ Metrics/Visualization panel capture | metrics_panel=not_run, console_errors=not_collected | logs/qa/metrics_visualization_manual_20250929.log | blocked | Execute physical Lab-3 Chrome 127+ session on 2025-10-04 |
 
