@@ -25,7 +25,7 @@
 ## 5. 설치 직후 점검 항목
 | 점검 항목 | 결과 | 근거 |
 | --- | --- | --- |
-| [`/api/health` 응답 확인](install_guide_ko.md#check-api-health) | ❌ 503(Service Unavailable). 사내망 미연결로 헬스체크 실패 | `curl http://10.204.2.28:8000/api/health` 출력. (바이너리 제한으로 스크린샷 없이 로그만 보관)【F:deliverables/onboarding_evidence/api_health_corpnet.log†L1-L9】 |
+| [`/api/health` 응답 확인](install_guide_ko.md#check-api-health) | ❌ 503(Service Unavailable). 사내망 미연결로 헬스체크 실패 | `curl http://10.204.2.28:8000/api/health` 출력(2025-09-29, 2025-09-30 재시도 모두 동일). (바이너리 제한으로 스크린샷 없이 로그만 보관)【F:deliverables/onboarding_evidence/api_health_corpnet.log†L1-L18】 |
 | 워크플로우 GET (`/api/workflow/graph`) | ✅ `last_saved` 값 확인 가능 | GET 호출에서 `last_saved` 타임스탬프 반환.【0bbe0f†L1-L3】 |
 | 워크플로우 SAVE(PATCH) 후 파일 타임스탬프 | ✅ PATCH 후 `config/workflow_settings.json`에 ISO 타임스탬프 반영 | PATCH 응답과 파일 조회에서 `2025-09-27T01:08:10.442335` 확인.【3cae27†L1-L3】【7080ae†L1-L2】 |
 | `/api/predict` 샘플 호출 | ❌ 503(Service Unavailable). 모델 디렉터리에 `similarity_engine.joblib`가 없어 로드 실패 | HTTP 상태 코드 503 및 오류 메시지에서 파일 부재 확인.【fde617†L1-L3】【bec620†L1-L2】 |
