@@ -5,6 +5,9 @@ import { shallow } from "zustand/shallow";
 import {
   enqueueAuditEntry,
   readLatestRoutingWorkspaceSnapshot,
+  enableRoutingPersistenceFlush,
+  subscribeToRoutingPersistenceFlush,
+  flushRoutingPersistence,
   writeRoutingWorkspaceSnapshot,
 } from "../lib/persistence";
 
@@ -710,6 +713,28 @@ const initializeRoutingPersistence = (store: StoreApi<RoutingStoreState>) => {
     lastPersistedSelection = nextSelection;
     scheduleSnapshotSave(nextSelection);
   });
+  enableRoutingPersistenceFlush();
+  subscribeToRoutingPersistenceFlush((result) => {
+    if (!result || result.updatedGroups.length === 0) {
+      return;
+    }
+    store.setState((state) => {
+      if (!state.activeGroupId) {
+        return state;
+      }
+      const update = result.updatedGroups.find((item) => item.groupId === state.activeGroupId);
+      if (!update) {
+        return state;
+      }
+      return {
+        ...state,
+        dirty: update.dirty,
+        activeGroupVersion: update.version,
+        lastSavedAt: update.updatedAt ?? state.lastSavedAt,
+      };
+    });
+  });
+  void flushRoutingPersistence("init");
 };
 
 const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {

@@ -15,6 +15,7 @@
 
 | Date | Stage / Menu | Task ID | Description | Metrics | Evidence | Approval | Follow-up |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| 2025-10-06 | Sprint 2025-10 W2 | Routing offline sync flush | IndexedDB 자동 저장본/감사 큐를 온라인 전환 시 백엔드(`/api/routing/groups/snapshots`)로 전송하도록 동기화 루틴을 추가하고 지수 백오프·메타데이터 병합을 구현했다. | snapshots_synced=2, audits_flushed=1 | frontend/src/lib/persistence/indexedDbPersistence.ts; backend/api/routing_groups.py; frontend/tests/e2e/routing-offline-sync.spec.ts; tests/backend/api/test_routing_groups_snapshots.py | completed | QA 체크리스트/문서 업데이트 반영 (아래 항목) |
 | 2025-10-06 | Sprint 2025-10 W2 | Runtime tuning & analytics uplift | Sprint 목표로 `ef_search` 슬라이더 베타 배포와 Polars 시간 집계 전환 범위를 정의하고 Tasklist/설계 문서에 반영했다. | milestones_defined=3, feature_pairs=2 | Tasklist.md §신규 우선 과제; docs/Design/routing_state_store_plan.md §8 | planned – 개발 킥오프 대기 | 체크포인트 C1~C3 트래킹 (아래 표) |
 | 2025-10-01 | Step 1 - Routing Refactor | Step 2 detailed design circulation | Confirmed Step 2 feature freeze with scope owner and circulated the detailed design for approval. | sections_documented=4, approval_time_kst=11:30 | docs/Design/routing_enhancement_detailed_design.md; docs/Design/routing_enhancement_plan.md | approved (2025-10-01 11:30 KST) | Tasklist.md; task_details/step1_routing_enhancement_plan.md updated |
 

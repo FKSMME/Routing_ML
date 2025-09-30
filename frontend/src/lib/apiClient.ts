@@ -370,6 +370,43 @@ export interface UiAuditBatchPayload {
   source?: string;
 }
 
+export interface RoutingSnapshotPayload {
+  id: string;
+  created_at: string;
+  reason?: string;
+  version?: number;
+  state: Record<string, unknown>;
+}
+
+export interface RoutingAuditPayload {
+  id: string;
+  action: string;
+  level: "info" | "error";
+  message?: string;
+  context?: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface RoutingSnapshotBatchPayload {
+  snapshots: RoutingSnapshotPayload[];
+  audits?: RoutingAuditPayload[];
+  source?: string;
+}
+
+export interface RoutingSnapshotGroupUpdate {
+  group_id: string;
+  version: number;
+  dirty: boolean;
+  updated_at?: string;
+  snapshot_id?: string | null;
+}
+
+export interface RoutingSnapshotBatchResponse {
+  accepted_snapshot_ids?: string[];
+  accepted_audit_ids?: string[];
+  updated_groups?: RoutingSnapshotGroupUpdate[];
+}
+
 export interface AccessConnectionRequest {
   path: string;
   table?: string | null;
@@ -403,6 +440,13 @@ export async function postUiAuditBatch(payload: UiAuditBatchPayload): Promise<vo
 
 export async function postUiAudit(event: UiAuditEventPayload): Promise<void> {
   await postUiAuditBatch({ events: [event] });
+}
+
+export async function postRoutingSnapshotsBatch(
+  payload: RoutingSnapshotBatchPayload,
+): Promise<RoutingSnapshotBatchResponse> {
+  const response = await api.post<RoutingSnapshotBatchResponse>("/routing/groups/snapshots", payload);
+  return response.data;
 }
 
 export async function testAccessConnection(payload: AccessConnectionRequest): Promise<AccessConnectionResponse> {
