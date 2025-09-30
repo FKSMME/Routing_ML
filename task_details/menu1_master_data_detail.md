@@ -1,4 +1,4 @@
-> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 0 | Completed 12 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 14 | Blockers 0
 
 # 메뉴 1 상세 계획: 기준정보 확인
 
@@ -71,5 +71,5 @@
 
 ## TODO 체크리스트 업데이트
 - [ ] UI 스토리보드 제작 (Figma 또는 Excalidraw) 후 deliverables/design/menu1_master_data_storyboard.png 업로드.
-- [ ] API 스펙 문서화 (docs/backend_api_overview.md에 /api/master-data/* 추가).
-- [ ] React 컴포넌트 구조 정의 (`frontend/src/components/master-data/*`).
+- [x] API 스펙 문서화 (docs/backend_api_overview.md에 /api/master-data/* 추가). 【F:docs/backend_api_overview.md†L18-L82】
+- [x] React 컴포넌트 구조 정의 (`frontend/src/components/master-data/*`). 【F:frontend/src/components/master-data/MasterDataWorkspace.tsx†L1-L63】【F:frontend/src/components/master-data/MasterDataMatrix.tsx†L1-L120】
