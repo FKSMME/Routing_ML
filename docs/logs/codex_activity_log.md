@@ -35,22 +35,11 @@
 - 2025-09-29 09:05:12: Reviewed docs/Design/routing_enhancement_plan.md against Stage 1 requirements and confirmed UI/QA alignment.
 - 2025-09-29 09:07:03: Cross-checked docs/backend_api_routing_groups_spec.md with manifest/registry strategy to ensure reuse compliance.
 - 2025-09-29 09:09:18: Validated docs/Design/routing_state_store_plan.md persistence/undo design and logged checklist completion.
-
-- [x] ~~2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.~~ *(중복 로그 정리)*
-- 2025-09-29 09:55:00: Re-scanned PRD/Tasklist documents and updated routing refactor execution plan with crosswalk coverage for manifest, RSL, frontend, and deployment tasks.
-
 - 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
-
-
+- 2025-09-29 09:55:00: Re-scanned PRD/Tasklist documents and updated routing refactor execution plan with crosswalk coverage for manifest, RSL, frontend, and deployment tasks.
+- 2025-09-29 19:45:32: Implemented frontend IndexedDB persistence utilities with graceful fallback and logged QA snapshot tests.
 - 2025-10-03 07:55:12: Refactored frontend Zustand stores to introduce global useWorkspaceStore with PRD-aligned export/visualization fields and routingStore factory separation.
 - 2025-10-03 08:02:45: Updated docs/Design/routing_state_store_plan.md with merge strategy summary, checked checklist completion, and synchronized workspace/routing logs.
-
-
 - 2025-10-03 10:18:00: Implemented RoutingCanvas ReactFlow component bound to routing store, documented API props, and synchronized sprint logbook plus execution logs.
-
-
-- 2025-09-29 19:45:32: Implemented frontend IndexedDB persistence utilities with graceful fallback and logged QA snapshot tests.
-
-
 - 2025-10-05 08:55:00: Reviewed Codex activity log and logbook for duplicate entries, annotating redundancies with strikethrough and [x] markers per 절대 지령.
 - 2025-10-05 12:30:00: Recorded DevOps review sign-off for deploy/docker/internal_network_playbook.md covering registry mirroring, air-gap image promotion, and secrets handling procedures.
