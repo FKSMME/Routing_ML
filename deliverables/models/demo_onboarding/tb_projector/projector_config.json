@@ -1,0 +1,13 @@
+{
+  "embeddings": [
+    {
+      "tensorName": "routing_ml_embeddings",
+      "tensorShape": [
+        5,
+        128
+      ],
+      "tensorPath": "vectors.tsv",
+      "metadataPath": "metadata.tsv"
+    }
+  ]
+}

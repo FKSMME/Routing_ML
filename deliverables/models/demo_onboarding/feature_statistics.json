@@ -1,0 +1,102 @@
+{
+  "PART_TYPE": {
+    "variance": 0.16728992760181427,
+    "independence": 0.7840185767340034,
+    "activity_ratio": 1.0,
+    "uniformity": -1.1447610580948173,
+    "non_zero_count": 5,
+    "unique_values": 5,
+    "domain_weight": 1.0,
+    "embedding_dim_index": 0
+  },
+  "ITEM_SPEC": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.4,
+    "embedding_dim_index": 1
+  },
+  "ITEM_GRP1": {
+    "variance": 0.14471152424812317,
+    "independence": 0.2667598185908091,
+    "activity_ratio": 1.0,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 5,
+    "unique_values": 5,
+    "domain_weight": 0.6,
+    "embedding_dim_index": 2
+  },
+  "ITEM_GRP1NM": {
+    "variance": 0.14471152424812317,
+    "independence": 0.2667598185908091,
+    "activity_ratio": 1.0,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 5,
+    "unique_values": 5,
+    "domain_weight": 0.4,
+    "embedding_dim_index": 3
+  },
+  "OUTDIAMETER": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.8,
+    "embedding_dim_index": 4
+  },
+  "INDIAMETER": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.8,
+    "embedding_dim_index": 5
+  },
+  "OUTTHICKNESS": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.8,
+    "embedding_dim_index": 6
+  },
+  "IN_SEALSIZE": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.7,
+    "embedding_dim_index": 7
+  },
+  "MID_SEALSIZE": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.7,
+    "embedding_dim_index": 8
+  },
+  "OUT_SEALSIZE": {
+    "variance": 0.07583858072757721,
+    "independence": 0.15632424017622704,
+    "activity_ratio": 0.8,
+    "uniformity": -0.7320508068760567,
+    "non_zero_count": 4,
+    "unique_values": 5,
+    "domain_weight": 0.7,
+    "embedding_dim_index": 9
+  }
+}

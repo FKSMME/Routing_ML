@@ -1,0 +1,6 @@
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:260] | analyze_feature_importance | MainThread | 피처 중요도 분석 시작...
+2025-09-30 06:11:56 | feature_weights | WARNING  | [feature_weights.py:264] | analyze_feature_importance | MainThread | 임베딩 차원(128) ≠ 피처 컬럼 수(10). 차원 조정 후 분석.
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:321] | analyze_feature_importance | MainThread | 피처 중요도 분석 완료: 10개 / 전체 41개
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:612] | save_weights | MainThread | Feature weights 저장 완료

@@ -1,0 +1,28 @@
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
+<frozen runpy>:128: RuntimeWarning: 'backend.cli.train_model' found in sys.modules after import of package 'backend.cli', but prior to execution of 'backend.cli.train_model'; this may result in unpredictable behaviour
+2025-09-30 06:11:56 | cli.train_model | INFO     | [train_model.py:99] | main | MainThread | Starting training run
+2025-09-30 06:11:56 | trainer_ml | DEBUG    | [trainer_ml.py:843] | train_model_with_ml_improved | MainThread | 학습 잠금 파일 경로: /workspace/Routing_ML/deliverables/models/demo_onboarding/.training.lock
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:1081] | train_model_with_ml_improved | MainThread | 모델 디렉터리 잠금 획득: /workspace/Routing_ML/deliverables/models/demo_onboarding/.training.lock
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:622] | _train_model_with_ml_improved_core | MainThread | 🚀 개선된 ML 모델 학습 시작
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:647] | _train_model_with_ml_improved_core | MainThread | 전체 피처 수: 39개
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:654] | _train_model_with_ml_improved_core | MainThread | 학습 데이터: 5행 × 39열
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:687] | _train_model_with_ml_improved_core | MainThread | Feature weights 적용: min=0.30, max=2.50
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:704] | _train_model_with_ml_improved_core | MainThread | Variance threshold 적용: 29개 피처 제거됨
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:721] | _train_model_with_ml_improved_core | MainThread | 차원 패딩: 10 → 128
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:730] | _train_model_with_ml_improved_core | MainThread | HNSW 인덱스 생성 중... (벡터 차원: 128, M=32, ef_construction=200, ef_search=None)
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:260] | analyze_feature_importance | MainThread | 피처 중요도 분석 시작...
+2025-09-30 06:11:56 | feature_weights | WARNING  | [feature_weights.py:264] | analyze_feature_importance | MainThread | 임베딩 차원(128) ≠ 피처 컬럼 수(10). 차원 조정 후 분석.
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:321] | analyze_feature_importance | MainThread | 피처 중요도 분석 완료: 10개 / 전체 41개
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:751] | _train_model_with_ml_improved_core | MainThread | Feature importance 분석 완료
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:1164] | save_optimized_model | MainThread | 모델 저장 시작, 디렉토리: /workspace/Routing_ML/deliverables/models/demo_onboarding
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:1175] | save_optimized_model | MainThread | 모델 저장 완료 → /workspace/Routing_ML/deliverables/models/demo_onboarding, 소요 시간: 0.01초
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:514] | _save_analysis_results | MainThread | 피처 분석 결과 저장 완료
+2025-09-30 06:11:56 | feature_weights | INFO     | [feature_weights.py:612] | save_weights | MainThread | Feature weights 저장 완료
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:780] | _train_model_with_ml_improved_core | MainThread | 모델 저장 완료: /workspace/Routing_ML/deliverables/models/demo_onboarding
+2025-09-30 06:11:56 | trainer_ml | WARNING  | [trainer_ml.py:799] | _train_model_with_ml_improved_core | MainThread | 고급 Projector 로그 생성 실패: No module named 'tensorflow'
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:152] | _export_projector_fallback | MainThread | TensorBoard Projector fallback assets created at: /workspace/Routing_ML/deliverables/models/demo_onboarding/tb_projector
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:810] | _train_model_with_ml_improved_core | MainThread | 모델 매니페스트 생성 완료: /workspace/Routing_ML/deliverables/models/demo_onboarding/manifest.json
+2025-09-30 06:11:56 | trainer_ml | INFO     | [trainer_ml.py:820] | _train_model_with_ml_improved_core | MainThread | ✅ ML 모델 학습 완료!
+2025-09-30 06:11:56 | cli.train_model | INFO     | [train_model.py:107] | main | MainThread | Training completed
+/workspace/Routing_ML/deliverables/models/demo_onboarding
