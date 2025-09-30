@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+import uuid
+from datetime import date, datetime
 from typing import Any, Sequence
 
 from fastapi import APIRouter, Request, Response, status
@@ -14,6 +15,18 @@ from common.logger import get_logger
 router = APIRouter(prefix="/api/audit", tags=["audit"])
 logger = get_logger("api.audit.ui")
 settings = get_settings()
+
+AUDIT_LOG_FILE_NAME = "ui_actions.log"
+
+
+def _json_default(value: Any) -> Any:
+    """Best-effort JSON serializer for complex objects."""
+
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, set):
+        return sorted(value)
+    return str(value)
 
 
 class AuditEvent(BaseModel):
@@ -45,7 +58,13 @@ class UiAuditBatchRequest(BaseModel):
     )
 
 
-def persist_ui_audit_events(events: Sequence[AuditEvent], request: Request) -> int:
+def persist_ui_audit_events(
+    events: Sequence[AuditEvent],
+    request: Request,
+    *,
+    batch_id: str | None = None,
+    source: str | None = None,
+) -> int:
     """Append UI audit events to the JSON lines log file.
 
     Parameters
@@ -66,23 +85,58 @@ def persist_ui_audit_events(events: Sequence[AuditEvent], request: Request) -> i
 
     audit_dir = settings.audit_log_dir
     audit_dir.mkdir(parents=True, exist_ok=True)
-    log_file = audit_dir / "ui_actions.log"
+    log_file = audit_dir / AUDIT_LOG_FILE_NAME
     fallback_ip = request.client.host if request.client else None
 
     written = 0
-    with log_file.open("a", encoding="utf-8") as fp:
-        for event in events:
-            record = {
-                "timestamp": datetime.utcnow().isoformat(),
-                "action": event.action,
-                "username": event.username,
-                "ip_address": event.ip_address or fallback_ip,
-                "payload": event.payload,
-            }
-            fp.write(json.dumps(record, ensure_ascii=False) + "\n")
-            written += 1
+    batch_identifier = batch_id or uuid.uuid4().hex
+    try:
+        with log_file.open("a", encoding="utf-8") as fp:
+            for event in events:
+                record = {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "batch_id": batch_identifier,
+                    "source": source,
+                    "action": event.action,
+                    "username": event.username,
+                    "ip_address": event.ip_address or fallback_ip,
+                    "payload": event.payload,
+                }
+                fp.write(json.dumps(record, ensure_ascii=False, default=_json_default) + "\n")
+                written += 1
+    except OSError as exc:  # pragma: no cover - surfaced via tests
+        logger.error(
+            "workspace.audit.write_failed",
+            extra={"error": str(exc), "path": str(log_file)},
+        )
+        return 0
 
     return written
+
+
+def read_persisted_ui_audit_events(limit: int | None = None) -> list[dict[str, Any]]:
+    """Read persisted UI audit events from the JSONL log file."""
+
+    log_file = settings.audit_log_dir / AUDIT_LOG_FILE_NAME
+    if not log_file.exists():
+        return []
+
+    events: list[dict[str, Any]] = []
+    with log_file.open("r", encoding="utf-8") as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                logger.warning("workspace.audit.decode_failed", extra={"line": line})
+                continue
+            events.append(record)
+
+    if limit is not None and limit >= 0:
+        return events[-limit:]
+    return events
 
 
 @router.post(
@@ -93,13 +147,19 @@ def persist_ui_audit_events(events: Sequence[AuditEvent], request: Request) -> i
 async def record_ui_audit_batch(payload: UiAuditBatchRequest, request: Request) -> Response:
     """Persist a batch of UI audit events produced by the frontend store."""
 
-    written = persist_ui_audit_events(payload.events, request)
+    batch_identifier = uuid.uuid4().hex
+    written = persist_ui_audit_events(
+        payload.events,
+        request,
+        batch_id=batch_identifier,
+        source=payload.source,
+    )
     if written == 0:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     logger.info(
         "workspace.audit.batch",
-        extra={"count": written, "source": payload.source},
+        extra={"count": written, "source": payload.source, "batch_id": batch_identifier},
     )
     return Response(status_code=status.HTTP_202_ACCEPTED)
 
@@ -108,6 +168,7 @@ __all__ = [
     "AuditEvent",
     "UiAuditBatchRequest",
     "persist_ui_audit_events",
+    "read_persisted_ui_audit_events",
     "record_ui_audit_batch",
     "router",
 ]

@@ -1,6 +1,7 @@
-﻿import { CandidatePanel } from "@components/CandidatePanel";
+import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
+import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { MasterDataWorkspace } from "@components/master-data/MasterDataWorkspace";
@@ -8,7 +9,9 @@ import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
+import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
 import { RoutingGroupControls } from "@components/RoutingGroupControls";
+import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
 import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
@@ -19,6 +22,7 @@ import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWo
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore } from "@store/routingStore";
+import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { BarChart3, Database, FileOutput, Menu, Route, Settings, Workflow } from "lucide-react";
 import { useEffect } from "react";
@@ -61,24 +65,6 @@ const NAVIGATION_ITEMS = [
     icon: <Settings size={18} />,
   },
 ];
-
-const PLACEHOLDER_MESSAGES: Record<string, { title: string; body: string }> = {};
-
-function MenuPlaceholder({ menuId }: { menuId: string }) {
-  const message = PLACEHOLDER_MESSAGES[menuId] ?? {
-    title: "\uc900\ube44\u0020\uc911",
-    body: "\ud574\ub2f9\u0020\uba54\ub274\uc758\u0020\u0055\u0049\u0020\uad6c\uc131\uc740\u0020\uace7\u0020\uc81c\uacf5\ub420\u0020\uc608\uc815\uc785\ub2c8\ub2e4\u002e",
-  };
-
-  return (
-    <section className="menu-placeholder">
-      <div className="panel-card interactive-card">
-        <h2 className="text-heading text-2xl font-semibold mb-3">{message.title}</h2>
-        <p className="text-muted leading-relaxed">{message.body}</p>
-      </div>
-    </section>
-  );
-}
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
@@ -128,7 +114,55 @@ export default function App() {
 
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
+  const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
+    const tabKey = tab?.id ?? "default";
+    return (
+      <RoutingWorkspaceLayout
+        left={
+          <>
+            <PredictionControls
+              itemCodes={itemCodes}
+              onChangeItemCodes={updateItemCodes}
+              topK={topK}
+              onChangeTopK={updateTopK}
+              threshold={threshold}
+              onChangeThreshold={updateThreshold}
+              loading={isLoading || isFetching}
+              onSubmit={refetch}
+            />
+            <ReferenceMatrixPanel key={`reference-${tabKey}`} />
+          </>
+        }
+        center={
+          <>
+            <TimelinePanel key={`timeline-${tabKey}`} />
+            <VisualizationSummary metrics={data?.metrics} />
+            <FeatureWeightPanel
+              profiles={featureWeights.availableProfiles}
+              selectedProfile={featureWeights.profile}
+              onSelectProfile={setFeatureWeightProfile}
+              manualWeights={featureWeights.manualWeights}
+              onChangeManualWeight={setManualWeight}
+              onReset={resetManualWeights}
+            />
+            <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
+          </>
+        }
+        right={
+          <>
+            <CandidatePanel key={`candidates-${tabKey}`} />
+            <RoutingGroupControls />
+          </>
+        }
+      />
+    );
+  };
+
   const routingContent = (
+    <RoutingProductTabs
+      renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
+      emptyState={renderRoutingWorkspace()}
+    />
     <div className="routing-workspace-grid">
       <aside className="routing-column routing-column--left">
         <PredictionControls
@@ -161,7 +195,7 @@ export default function App() {
 
       <aside className="routing-column routing-column--right">
         <CandidatePanel />
-        <RoutingGroupControls />
+        <SaveInterfacePanel />
       </aside>
     </div>
   );
@@ -192,7 +226,7 @@ export default function App() {
       workspace = <OptionsWorkspace />;
       break;
     default:
-      workspace = <MenuPlaceholder menuId={activeMenu} />;
+      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
   }
 
   const drawerId = "responsive-navigation";

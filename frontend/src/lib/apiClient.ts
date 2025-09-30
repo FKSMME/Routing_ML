@@ -118,14 +118,14 @@ export async function fetchMetrics(): Promise<Record<string, unknown>> {
 }
 
 export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
-  const response = await api.get<WorkflowConfigResponse>("/workflow/graph");
+  const response = await api.get<WorkflowConfigResponse>("/workflow/config");
   return response.data;
 }
 
 export async function patchWorkflowConfig(
   payload: WorkflowConfigPatch,
 ): Promise<WorkflowConfigResponse> {
-  const response = await api.patch<WorkflowConfigResponse>("/workflow/graph", payload);
+  const response = await api.patch<WorkflowConfigResponse>("/workflow/config", payload);
   return response.data;
 }
 
@@ -216,7 +216,7 @@ export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
 
 export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
   const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
-    "/trainer/features",
+    "/training/features",
   );
   const payload = response.data;
   return Array.isArray(payload) ? payload : payload.features ?? [];
@@ -233,13 +233,21 @@ export async function fetchTrainingRunHistory(limit = 10): Promise<TrainingRunRe
 export async function patchTrainingFeatures(
   payload: TrainingFeaturePatchRequest,
 ): Promise<TrainingFeaturePatchResponse> {
-  const response = await api.patch<TrainingFeaturePatchResponse>("/trainer/features", payload);
+  const response = await api.patch<TrainingFeaturePatchResponse>("/training/features", payload);
   return response.data;
 }
 
-export async function fetchMasterDataTree(params?: { query?: string }): Promise<MasterDataTreeResponse> {
+export async function fetchMasterDataTree(params?: {
+  query?: string;
+  parentId?: string;
+  parentType?: "group" | "family";
+}): Promise<MasterDataTreeResponse> {
   const response = await api.get<MasterDataTreeResponse>("/master-data/tree", {
-    params: params?.query ? { query: params.query } : undefined,
+    params: {
+      ...(params?.query ? { query: params.query } : {}),
+      ...(params?.parentId ? { parent_id: params.parentId } : {}),
+      ...(params?.parentType ? { parent_type: params.parentType } : {}),
+    },
   });
   return response.data;
 }

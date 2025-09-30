@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -20,6 +20,8 @@ ITEM_MASTER_COLUMNS: List[str] = [
     "ITEM_MATERIAL",
     "ITEM_GRP1",
     "ITEM_GRP1NM",
+    "ITEM_GRP2",
+    "ITEM_GRP2NM",
     "GROUP1",
     "GROUP2",
     "GROUP3",
@@ -61,6 +63,8 @@ TREE_FAMILY_COLUMNS: List[str] = ["GROUP2", "ITEM_GRP2", "ITEM_GRP2NM"]
 
 settings = get_settings()
 
+ACCESS_FILE_SUFFIXES = {".accdb", ".mdb"}
+
 
 class MasterDataService:
     """Access 기준정보 데이터를 조회하는 서비스."""
@@ -90,6 +94,12 @@ class MasterDataService:
         slug = text.replace(" ", "_")
         return f"{prefix}:{slug}"
 
+    def _make_group_id(self, value: Any) -> str:
+        return self._slugify(value, "group")
+
+    def _make_family_id(self, group_id: str, value: Any) -> str:
+        return f"{group_id}::{self._slugify(value, "family")}"
+
     @staticmethod
     def _normalize_value(value: Any) -> str:
         if value is None or (isinstance(value, float) and pd.isna(value)):
@@ -97,6 +107,10 @@ class MasterDataService:
         if isinstance(value, (datetime, pd.Timestamp)):
             return value.strftime("%Y-%m-%d %H:%M:%S")
         return str(value)
+
+    def _display_label(self, value: Any, fallback: str = "미분류") -> str:
+        normalized = self._normalize_value(value)
+        return normalized if normalized else fallback
 
     def _build_item_node(self, row: pd.Series) -> Dict[str, Any]:
         item_code = self._normalize_value(row.get("ITEM_CD"))
@@ -109,6 +123,18 @@ class MasterDataService:
             for key in ITEM_META_COLUMNS
             if key in row.index and pd.notna(row.get(key))
         }
+        meta["item_code"] = item_code
+
+        group_id = self._normalize_value(row.get("__group_id__"))
+        if group_id:
+            meta["group_id"] = group_id
+            meta["group_label"] = self._display_label(row.get("__group_label__"))
+
+        family_id = self._normalize_value(row.get("__family_id__"))
+        if family_id:
+            meta["family_id"] = family_id
+            meta["family_label"] = self._display_label(row.get("__family_label__"))
+
         return {
             "id": item_code,
             "label": label,
@@ -116,52 +142,103 @@ class MasterDataService:
             "meta": meta or None,
         }
 
-    def _build_tree(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
-        if df.empty:
-            return []
-
-        group_col = next((col for col in TREE_GROUP_COLUMNS if col in df.columns), None)
-        family_col = next((col for col in TREE_FAMILY_COLUMNS if col in df.columns), None)
-
+    def _prepare_dataframe(self, df: pd.DataFrame) -> tuple[pd.DataFrame, str, Optional[str]]:
+        working_df = df.copy()
+        group_col = next((col for col in TREE_GROUP_COLUMNS if col in working_df.columns), None)
         if group_col is None:
-            df = df.assign(__group__="전체")
+            working_df = working_df.assign(__group__="전체")
             group_col = "__group__"
 
+        family_col = next((col for col in TREE_FAMILY_COLUMNS if col in working_df.columns), None)
+        return working_df, group_col, family_col
+
+    def _annotate_dataframe(self, df: pd.DataFrame, group_col: str, family_col: Optional[str]) -> pd.DataFrame:
+        annotated = df.copy()
+        annotated["__group_id__"] = annotated[group_col].map(self._make_group_id)
+        annotated["__group_label__"] = annotated[group_col].map(self._display_label)
+
+        if family_col and family_col in annotated.columns:
+            annotated["__family_label__"] = annotated[family_col].map(self._display_label)
+
+            def build_family_id(row: pd.Series) -> str:
+                return self._make_family_id(row.get("__group_id__", ""), row.get(family_col))
+
+            annotated["__family_id__"] = annotated.apply(build_family_id, axis=1)
+        else:
+            annotated["__family_label__"] = ""
+            annotated["__family_id__"] = ""
+
+        return annotated
+
+    def _build_group_nodes(self, df: pd.DataFrame, family_col: Optional[str]) -> List[Dict[str, Any]]:
         tree: List[Dict[str, Any]] = []
-
-        for group_value, group_df in df.groupby(group_col, dropna=False):
-            group_id = self._slugify(group_value, "group")
-            group_label = self._normalize_value(group_value) or "미분류"
-
-            children: List[Dict[str, Any]] = []
-            if family_col and family_col in group_df.columns:
-                for family_value, family_df in group_df.groupby(family_col, dropna=False):
-                    family_id = self._slugify(family_value or group_id, "family")
-                    family_label = self._normalize_value(family_value) or "미분류"
-                    item_nodes = [self._build_item_node(row) for _, row in family_df.iterrows()]
-                    children.append(
-                        {
-                            "id": family_id,
-                            "label": family_label,
-                            "type": "family",
-                            "children": item_nodes,
-                        }
-                    )
-            else:
-                children = [self._build_item_node(row) for _, row in group_df.iterrows()]
+        for group_id, group_df in df.groupby("__group_id__", dropna=False):
+            if group_df.empty:
+                continue
+            normalized_id = self._normalize_value(group_id)
+            group_label = self._display_label(group_df.iloc[0].get("__group_label__"))
+            item_count = len(group_df)
+            family_count = 0
+            if family_col and "__family_id__" in group_df.columns:
+                family_count = int(group_df["__family_id__"].nunique())
+            meta: Dict[str, str] = {
+                "group_id": normalized_id,
+                "group_label": group_label,
+                "item_count": str(item_count),
+                "family_count": str(family_count),
+            }
+            if family_col:
+                meta["family_column"] = family_col
 
             tree.append(
                 {
-                    "id": group_id,
+                    "id": normalized_id,
                     "label": group_label,
                     "type": "group",
-                    "children": children,
+                    "children": [],
+                    "meta": meta,
                 }
             )
 
         return tree
 
-    def get_tree(self, query: Optional[str] = None) -> Dict[str, Any]:
+    def _build_family_nodes(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+        nodes: List[Dict[str, Any]] = []
+        for family_id, family_df in df.groupby("__family_id__", dropna=False):
+            if family_df.empty:
+                continue
+            normalized_id = self._normalize_value(family_id)
+            group_id = self._normalize_value(family_df.iloc[0].get("__group_id__"))
+            group_label = self._display_label(family_df.iloc[0].get("__group_label__"))
+            family_label = self._display_label(family_df.iloc[0].get("__family_label__"))
+            meta: Dict[str, str] = {
+                "group_id": group_id,
+                "group_label": group_label,
+                "family_id": normalized_id,
+                "family_label": family_label,
+                "item_count": str(len(family_df)),
+            }
+            nodes.append(
+                {
+                    "id": normalized_id,
+                    "label": family_label,
+                    "type": "family",
+                    "children": [],
+                    "meta": meta,
+                }
+            )
+        return nodes
+
+    def _build_item_nodes(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+        return [self._build_item_node(row) for _, row in df.iterrows()]
+
+    def get_tree(
+        self,
+        query: Optional[str] = None,
+        *,
+        parent_type: Optional[str] = None,
+        parent_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         df = self._load_item_master()
         total_items = len(df)
 
@@ -174,17 +251,33 @@ class MasterDataService:
                     if col in df.columns:
                         mask |= df[col].astype(str).str.lower().str.contains(keyword, na=False)
                 filtered_df = df.loc[mask]
-                if filtered_df.empty:
+                if filtered_df.empty():
                     filtered_df = df
-        tree = self._build_tree(filtered_df)
+        working_df, group_col, family_col = self._prepare_dataframe(filtered_df)
+        annotated_df = self._annotate_dataframe(working_df, group_col, family_col)
+
+        nodes: List[Dict[str, Any]]
+        if parent_type == "group" and parent_id:
+            subset = annotated_df.loc[annotated_df["__group_id__"] == parent_id]
+            if family_col and not subset.empty and subset["__family_id__"].str.len().any():
+                nodes = self._build_family_nodes(subset)
+            else:
+                nodes = self._build_item_nodes(subset)
+        elif parent_type == "family" and parent_id:
+            subset = annotated_df.loc[annotated_df["__family_id__"] == parent_id]
+            nodes = self._build_item_nodes(subset)
+        else:
+            nodes = self._build_group_nodes(annotated_df, family_col)
+
         default_item = filtered_df["ITEM_CD"].iloc[0] if not filtered_df.empty else None
 
         return {
-            "nodes": tree,
+            "nodes": nodes,
             "total_items": total_items,
             "filtered_items": len(filtered_df),
             "default_item_code": default_item,
         }
+
 
     def get_item_matrix(self, item_code: str) -> Dict[str, Any]:
         df = database.fetch_single_item(item_code)
@@ -300,6 +393,19 @@ class MasterDataService:
             return candidate
         return None
 
+    def validate_access_path(self, candidate: Union[str, Path]) -> Path:
+        """Ensure the provided path points to an Access database file."""
+
+        path = Path(candidate).expanduser()
+        suffix = path.suffix.lower()
+        if suffix not in ACCESS_FILE_SUFFIXES:
+            raise ValueError("Access 파일은 .accdb 또는 .mdb 형식이어야 합니다.")
+        if not path.exists():
+            raise FileNotFoundError(f"Access 파일을 찾을 수 없습니다: {path}")
+        if not path.is_file():
+            raise ValueError(f"Access 경로가 파일이 아닙니다: {path}")
+        return path
+
     @staticmethod
     def _list_access_tables(path: Path) -> List[str]:
         try:
@@ -323,6 +429,16 @@ class MasterDataService:
                 return sorted(dict.fromkeys(tables))
         except Exception:
             return []
+
+    def read_access_tables(self, candidate: Union[str, Path]) -> List[str]:
+        """Return sorted Access table names for the validated path."""
+
+        path = self.validate_access_path(candidate)
+        tables = self._list_access_tables(path)
+        unique_tables = sorted(dict.fromkeys(tables))
+        if not unique_tables:
+            raise RuntimeError(f"Access 파일에서 테이블 목록을 찾을 수 없습니다: {path}")
+        return unique_tables
 
     @staticmethod
     def _introspect_access_columns(path: Path, table: str) -> List[Dict[str, Any]]:
@@ -364,7 +480,10 @@ class MasterDataService:
         return columns
 
     def list_access_tables(self, path: Path) -> List[str]:
-        return self._list_access_tables(path)
+        try:
+            return self.read_access_tables(path)
+        except Exception:
+            return []
 
     def get_access_metadata(self, table: Optional[str] = None, path: Optional[str] = None) -> Dict[str, Any]:
         """Inspect Access metadata using the provided path/table or fallbacks."""

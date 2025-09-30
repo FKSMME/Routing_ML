@@ -11,6 +11,29 @@ import {
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;
 
+export const DEFAULT_REFERENCE_MATRIX_COLUMNS = ["seq", "code", "desc", "setup", "run", "wait"] as const;
+
+export type ReferenceMatrixColumnKey = (typeof DEFAULT_REFERENCE_MATRIX_COLUMNS)[number];
+
+type ReferenceMatrixSubscriber = (columns: ReferenceMatrixColumnKey[]) => void;
+
+const referenceMatrixSubscribers = new Set<ReferenceMatrixSubscriber>();
+
+export const registerReferenceMatrixPersistence = (subscriber: ReferenceMatrixSubscriber): (() => void) => {
+  referenceMatrixSubscribers.add(subscriber);
+  return () => referenceMatrixSubscribers.delete(subscriber);
+};
+
+const notifyReferenceMatrixSubscribers = (columns: ReferenceMatrixColumnKey[]) => {
+  referenceMatrixSubscribers.forEach((subscriber) => {
+    try {
+      subscriber(columns);
+    } catch (error) {
+      console.error("Failed to notify reference matrix subscriber", error);
+    }
+  });
+};
+
 type MergeStrategy = "replace" | "append";
 
 type SnapshotReason = "insert-operation" | "reorder-step" | "remove-step" | "undo" | "redo";
@@ -89,6 +112,67 @@ const cloneSuccessMap = (source: LastSuccessMap): LastSuccessMap =>
 
 const normalizeSequence = (steps: TimelineStep[]): TimelineStep[] =>
   steps.map((step, index) => ({ ...step, seq: index + 1, positionX: index * NODE_GAP }));
+
+const isReferenceMatrixColumnKey = (value: string): value is ReferenceMatrixColumnKey =>
+  (DEFAULT_REFERENCE_MATRIX_COLUMNS as ReadonlyArray<string>).includes(value);
+
+const coerceReferenceMatrixColumns = (
+  columns: Array<string | ReferenceMatrixColumnKey>,
+): ReferenceMatrixColumnKey[] => {
+  const normalized: ReferenceMatrixColumnKey[] = [];
+  columns.forEach((column) => {
+    if (typeof column === "string" && isReferenceMatrixColumnKey(column) && !normalized.includes(column)) {
+      normalized.push(column);
+    } else if (isReferenceMatrixColumnKey(column) && !normalized.includes(column)) {
+      normalized.push(column);
+    }
+  });
+  if (normalized.length === 0) {
+    return [...DEFAULT_REFERENCE_MATRIX_COLUMNS];
+  }
+  return normalized;
+};
+
+const mergeReferenceMatrixColumns = (
+  selected: Array<string | ReferenceMatrixColumnKey>,
+  previous: ReferenceMatrixColumnKey[],
+): ReferenceMatrixColumnKey[] => {
+  const sanitized = coerceReferenceMatrixColumns(selected);
+  const retained = previous.filter((column) => sanitized.includes(column));
+  const missing = sanitized.filter((column) => !retained.includes(column));
+  return [...retained, ...missing];
+};
+
+const computeReorderedReferenceMatrixColumns = (
+  columns: ReferenceMatrixColumnKey[],
+  source: ReferenceMatrixColumnKey,
+  target: ReferenceMatrixColumnKey,
+): ReferenceMatrixColumnKey[] => {
+  const fromIndex = columns.indexOf(source);
+  const toIndex = columns.indexOf(target);
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return columns;
+  }
+  const next = [...columns];
+  next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, source);
+  return next;
+};
+
+const referenceMatrixColumnsEqual = (
+  a: ReferenceMatrixColumnKey[],
+  b: ReferenceMatrixColumnKey[],
+): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    if (a[index] !== b[index]) {
+      return false;
+    }
+  }
+  return true;
+};
 
 const timelinesEqual = (a: TimelineStep[], b: TimelineStep[]): boolean => {
   if (a.length !== b.length) {
@@ -206,6 +290,7 @@ export interface RoutingStoreState {
   productTabs: RoutingProductTab[];
   recommendations: RecommendationBucket[];
   timeline: TimelineStep[];
+  referenceMatrixColumns: ReferenceMatrixColumnKey[];
   history: HistoryState;
   lastSuccessfulTimeline: LastSuccessMap;
   validationErrors: string[];
@@ -215,6 +300,9 @@ export interface RoutingStoreState {
   setERPRequired: (enabled: boolean) => void;
   loadRecommendations: (response: PredictionResponse) => void;
   setActiveProduct: (tabId: string) => void;
+  setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
+  reorderReferenceMatrixColumns: (source: ReferenceMatrixColumnKey, target: ReferenceMatrixColumnKey) => void;
+  hydrateReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
@@ -245,6 +333,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   productTabs: [],
   recommendations: [],
   timeline: [],
+  referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
   history: { past: [], future: [] },
   lastSuccessfulTimeline: {},
   validationErrors: [],
@@ -252,6 +341,32 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   setLoading: (loading) => set({ loading }),
   setSaving: (saving) => set({ saving }),
   setERPRequired: (enabled) => set({ erpRequired: enabled, dirty: true }),
+  setReferenceMatrixColumns: (columns) =>
+    set((state) => {
+      const normalized = mergeReferenceMatrixColumns(columns, state.referenceMatrixColumns);
+      if (referenceMatrixColumnsEqual(normalized, state.referenceMatrixColumns)) {
+        return state;
+      }
+      notifyReferenceMatrixSubscribers(normalized);
+      return { referenceMatrixColumns: normalized };
+    }),
+  reorderReferenceMatrixColumns: (source, target) =>
+    set((state) => {
+      const reordered = computeReorderedReferenceMatrixColumns(state.referenceMatrixColumns, source, target);
+      if (referenceMatrixColumnsEqual(reordered, state.referenceMatrixColumns)) {
+        return state;
+      }
+      notifyReferenceMatrixSubscribers(reordered);
+      return { referenceMatrixColumns: reordered };
+    }),
+  hydrateReferenceMatrixColumns: (columns) =>
+    set((state) => {
+      const normalized = coerceReferenceMatrixColumns(columns);
+      if (referenceMatrixColumnsEqual(normalized, state.referenceMatrixColumns)) {
+        return state;
+      }
+      return { referenceMatrixColumns: normalized };
+    }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({
       itemCode: item.ITEM_CD,

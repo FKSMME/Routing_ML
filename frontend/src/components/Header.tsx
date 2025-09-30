@@ -8,7 +8,7 @@
 export function Header({ onRefresh, loading, title, description }: HeaderProps) {
   return (
     <header className="app-header">
-      <div className="header-content">
+      <div className="header-content frosted-panel">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-widest text-accent-strong">Routing-ML</p>
           <h1 className="text-3xl font-semibold text-primary">{title}</h1>
