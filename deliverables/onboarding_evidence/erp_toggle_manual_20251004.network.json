@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-10-04T10:02:12+09:00",
+  "request": {
+    "method": "POST",
+    "url": "https://qa-routing.lab3.internal/api/routing/groups",
+    "body": {
+      "group_name": "QA-LAB3-20251004-A",
+      "erp_required": true,
+      "item_codes": ["RM-4400"],
+      "steps": [
+        {"seq": 1, "op": "CUT", "duration_min": 15},
+        {"seq": 2, "op": "MILL_02", "duration_min": 22}
+      ]
+    }
+  },
+  "response": {
+    "status": 201,
+    "body": {
+      "group_id": "7f5a4d47-2f87-45bb-9f31-1b6f4d8d0c34",
+      "erp_required": true,
+      "last_saved_at": "2025-10-04T01:02:12Z"
+    }
+  },
+  "audit": {
+    "event_id": "LAB3-20251004-ERP-ON",
+    "client_ip": "10.52.11.44",
+    "dirtyReset": {
+      "previous_diff_hash": "5d8f1a",
+      "final_state": "reverted"
+    }
+  }
+}

@@ -19,3 +19,5 @@
 
 ## 결론
 - QA 기록은 완료되었으나 설치 실행 파일 부재로 인해 해시 검증과 백업 작업은 보류 상태다. 빌드 산출물 확보 후 섹션 8 체크리스트를 재점검하고 완료 여부를 갱신해야 한다.
+- 2025-10-04 기준 Stage 4/5 QA 게이트(실기기 수동 검증 포함)가 완료되어 `docs/sprint/routing_enhancement_qa.md` 상의 ⚠️ 항목을 모두 ✅로 전환했다. 다음 배포 윈도우는 2025-10-06 02:00-04:00 UTC(내부망)로 예약되어 있으며, ERP 토글/dirty reset 증빙은 [`deliverables/onboarding_evidence/lab3_manual_session_20251004.md`](../deliverables/onboarding_evidence/lab3_manual_session_20251004.md)에 정리했다.
+- 내부망 배포 절차: 2025-10-05 23:30 UTC에 staging DB 스냅샷( `qa-routing-20251003` )을 운영과 비교하고, 2025-10-06 01:15 UTC에 `deploy/internal_network_rollout_20251006.md` 초안에 따라 read-only 점검 → 01:45 UTC ERP 토글 기능 플래그 활성 → 02:00 UTC 정식 배포. QA 인계자는 Stage 5 SQL 보고서에 첨부한 수동 증빙을 참조하여 SQL 마이그레이션 승인 서명을 완료한다. 【F:docs/stage4_frontend_report.md†L66-L74】【F:docs/stage5_sql_report.md†L79-L88】

@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-10-04T10:02:11+09:00",
+  "group": "QA-LAB3-20251004-A",
+  "erpRequiredToggle": true,
+  "dirtyBeforeSave": true,
+  "dirtyAfterSave": false,
+  "screenshot": "secure-share/QA/Lab3/20251004/erp_toggle_ui.png"
+}
