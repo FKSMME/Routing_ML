@@ -48,6 +48,7 @@
   - 없다면 사내 소프트웨어 센터에서 `AccessDatabaseEngine_X64.exe`를 설치하세요.
   - 설치 후 **ODBC 데이터 원본(64비트)**(`C:\Windows\System32\odbcad32.exe`)을 열어 드라이버 목록에 항목이 표시되는지 확인하고, `scripts\verify_odbc.ps1`을 실행해 로그를 남깁니다.
   - 캡처 및 로그는 로컬 `deliverables\onboarding_evidence\step2_access_driver.png`에 저장하되, 리포지토리에는 커밋하지 말고 사내 증빙 저장소(예: SharePoint, NAS)에 업로드한 뒤 위치를 기록합니다.
+  - ❗ 2025-10-05T00:00:00Z 기준: 현재 컨테이너(Linux) 환경에서는 `AccessDatabaseEngine_X64.exe` 설치, `odbcad32.exe` 실행, `scripts/verify_odbc.ps1` 수행이 모두 불가능합니다. Windows QA PC 담당자에게 위 증빙을 요청했으며, 제한 증빙 저장소 경로 `deliverables/onboarding_evidence/step2_access_driver.png` (사내망)로 업로드하도록 안내했습니다. 업로드 확인 전까지 본 체크 항목은 미완료 상태로 유지합니다.
 - [ ] 회사 내부망 또는 VPN이 연결되어 있나요?
 - [ ] Windows 방화벽에서 포트 8000을 허용했나요?
   - 설치 중 자동 설정되지만, 막혀 있으면 IT팀에 예외 등록을 요청하세요.

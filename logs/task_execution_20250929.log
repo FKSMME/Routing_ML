@@ -33,3 +33,5 @@
 
 2025-09-29T23:49:45Z | codex | QA | Container review for Chrome 127+ Metrics/Visualization panel blocked by missing browser binary; logged outcome in logs/qa/metrics_visualization_manual_20250929.log and updated docs/sprint/routing_enhancement_qa.md checkboxes with blocked status note. Follow-up: complete capture during 2025-10-04 Lab-3 session.
 
+2025-10-05T00:00:00Z | codex | QA onboarding | Access ODBC driver verification blocked in container; requested Windows QA PC to install AccessDatabaseEngine_X64.exe, confirm via odbcad32.exe, run scripts/verify_odbc.ps1, and upload capture to restricted store deliverables/onboarding_evidence/step2_access_driver.png. install_guide_ko.md checklist annotated with limitation and evidence path reference.
+
