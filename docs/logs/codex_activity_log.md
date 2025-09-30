@@ -44,3 +44,4 @@
 - 2025-10-05 08:55:00: Reviewed Codex activity log and logbook for duplicate entries, annotating redundancies with strikethrough and [x] markers per 절대 지령.
 - 2025-10-05 12:30:00: Recorded DevOps review sign-off for deploy/docker/internal_network_playbook.md covering registry mirroring, air-gap image promotion, and secrets handling procedures.
 - 2025-10-05 13:05:00: Updated task_details/menu1_master_data_detail.md checklist counts and marked API/component TODOs complete after cross-checking backend docs and master-data components.
+- 2025-10-05 14:20:00: 조정 지시 반영으로 docs/install_verification_20250927.md 헤더 체크리스트 수치를 업데이트하고 중복된 기타 항목 안내를 요약 정리한 후 로그를 기록함.
