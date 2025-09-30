@@ -76,7 +76,7 @@
 ### 배포 준비
 - 운영 반영 전 승인 단계: 개발 → QA → 운영 순, 각 단계에서 승인 로그 남김. Access 명칭 변경 여부 확인 체크리스트 추가.
 - 백업 전략: 마이그레이션 전 `pg_dump --schema-only` + Access 원본 백업. 실패 시 롤백.
-- 버전 관리: 스키마 변경 시 `schema_version` 테이블 업데이트, `schema_mappings.yaml` 버전 증가, UI/문서에 버전 호환성 명시.
+- 버전 관리: `scripts/check_schema_compatibility.py` 자동 검증 결과(`logs/quality/sql_schema_compatibility_report.json`)를 Stage 5 승인 로그에 첨부한다. 자동 검증이 실패한 경우에만 예외로 수동 절차( `schema_version` 테이블 업데이트, `schema_mappings.yaml` 버전 증가, UI/문서 버전 표기 재확인)를 실행한다.
 - 게이트 종료: Stage 5 완료 보고 후 Stage 6 승인 요청, 절대 조건(0.8 임계, 다중 라우팅) 충족 여부 로그 첨부.
 
 ### 위험 및 후속 조치
