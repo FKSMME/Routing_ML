@@ -16,6 +16,8 @@ import ReactECharts from "echarts-for-react";
 import { Activity, Clock, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useTrainingFeatureStore } from "@store/trainingStore";
+
 const POLL_INTERVAL_MS = 15_000;
 
 type ToastKind = "success" | "error" | "info";
@@ -114,9 +116,14 @@ export function TrainingStatusWorkspace() {
     staleTime: POLL_INTERVAL_MS,
   });
 
-  const [selectedFeatures, setSelectedFeatures] = useState<Record<string, boolean>>({});
   const [isSavingFeature, setIsSavingFeature] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const featureToggles = useTrainingFeatureStore((state) => state.toggles);
+  const syncFeatureToggles = useTrainingFeatureStore((state) => state.syncFromFeatures);
+  const setFeatureToggle = useTrainingFeatureStore((state) => state.setToggle);
+  const setFeatureToggles = useTrainingFeatureStore((state) => state.setMany);
+  const markFeatureSynced = useTrainingFeatureStore((state) => state.markSynced);
 
   const isInitialLoading =
     isStatusLoading || isMetricsLoading || isFeaturesLoading || isRunHistoryLoading;
@@ -127,14 +134,8 @@ export function TrainingStatusWorkspace() {
     if (featureWeights.length === 0) {
       return;
     }
-    setSelectedFeatures(() => {
-      const next: Record<string, boolean> = {};
-      for (const feature of featureWeights) {
-        next[feature.id] = feature.enabled;
-      }
-      return next;
-    });
-  }, [featureWeights]);
+    syncFeatureToggles(featureWeights);
+  }, [featureWeights, syncFeatureToggles]);
 
   const showToast = useCallback((message: Omit<ToastMessage, "id">) => {
     setToast({ ...message, id: Date.now() });
@@ -350,14 +351,15 @@ export function TrainingStatusWorkspace() {
 
   const handleToggle = useCallback(
     async (featureId: string, nextValue: boolean) => {
-      const previousSelection = { ...selectedFeatures };
+      const previousSelection = { ...featureToggles };
       const nextSelection = { ...previousSelection, [featureId]: nextValue };
 
-      setSelectedFeatures(nextSelection);
+      setFeatureToggle(featureId, nextValue);
       setIsSavingFeature(true);
 
       try {
         const response = await patchTrainingFeatures({ features: nextSelection });
+        markFeatureSynced(response.timestamp);
         showToast({
           type: "success",
           title: "피처 구성이 저장되었습니다",
@@ -378,7 +380,7 @@ export function TrainingStatusWorkspace() {
         void refetchFeatures();
       } catch (error) {
         const message = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
-        setSelectedFeatures(previousSelection);
+        setFeatureToggles(previousSelection);
         showToast({
           type: "error",
           title: "피처 구성을 저장하지 못했습니다",
@@ -398,7 +400,7 @@ export function TrainingStatusWorkspace() {
         setIsSavingFeature(false);
       }
     },
-    [selectedFeatures, showToast, refetchFeatures],
+    [featureToggles, markFeatureSynced, setFeatureToggle, setFeatureToggles, showToast, refetchFeatures],
   );
 
   return (
@@ -448,9 +450,31 @@ export function TrainingStatusWorkspace() {
           </header>
           <div className="training-link">
             {tensorboardUrl ? (
-              <a href={tensorboardUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={16} /> {tensorboardUrl}
-              </a>
+              <>
+                <a href={tensorboardUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} /> {tensorboardUrl}
+                </a>
+                <div
+                  className="tensorboard-embed"
+                  role="region"
+                  aria-label="TensorBoard 실시간 대시보드"
+                >
+                  <iframe
+                    title="TensorBoard dashboard"
+                    src={tensorboardUrl}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    allowFullScreen
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                    style={{
+                      width: "100%",
+                      minHeight: 260,
+                      border: "1px solid var(--border-subtle, #e0e7ff)",
+                      borderRadius: 8,
+                    }}
+                  />
+                </div>
+              </>
             ) : (
               <p className="training-empty">TensorBoard URL is not configured.</p>
             )}
@@ -482,7 +506,7 @@ export function TrainingStatusWorkspace() {
           ) : (
             <ul className="feature-weight-list" role="list">
               {featureWeights.map((feature) => {
-                const checked = selectedFeatures[feature.id] ?? feature.enabled;
+                const checked = featureToggles[feature.id] ?? feature.enabled;
                 return (
                   <li key={feature.id} role="listitem">
                     <label className="feature-weight">

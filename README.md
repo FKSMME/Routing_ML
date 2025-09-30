@@ -8,7 +8,7 @@
 사내 Access DB(`routing_data/ROUTING AUTO TEST.accdb`) 기반으로 품목 임베딩을 생성하고, 코사인 유사도 0.8 이상을 만족하는 품목을 기준으로 3~4개의 라우팅 후보를 추천하는 ML 시스템입니다. TensorBoard Projector 연동, SQL 결과 저장, 사내망 전용 배포를 지원합니다.
 
 ## 시스템 구성
-- **Trainer**: `backend/trainer_ml.py` — ITEM_INFO_VIEW 전 컬럼을 임베딩하고 HNSW 인덱스를 구축합니다. 5% 상·하위 트림 표준편차로 SETUP_TIME/MACH_WORKED_HOURS를 보정합니다.
+- **Trainer**: `backend/trainer_ml.py` — ITEM_INFO_VIEW 전 컬럼을 임베딩하고 HNSW 인덱스를 구축합니다. 5% 상·하위 트림 표준편차로 SETUP_TIME/MACH_WORKED_HOURS를 보정합니다. CLI 진입점은 `backend/cli/train_model.py`이며, 학습 결과물은 기본적으로 `deliverables/models/` 아래에 버전별 디렉터리로 저장됩니다.
 
 - **Predictor**: `backend/run_api.py` — FastAPI 기반으로 `/api/predict`, `/api/candidates/save`, `/api/health`, `/api/metrics`, `/api/workflow/graph`를 제공합니다. SAVE 버튼으로 trainer/predictor 런타임과 SQL 컬럼 매핑(`config/workflow_settings.json`)을 즉시 갱신합니다.
 - **Frontend**: `frontend/` — React + Vite UI, 유사도 슬라이더/Top-K 선택, 후보 라우팅 테이블, TensorBoard Projector 안내 패널, 블루스크린형 워크플로우 그래프 뷰(`main/1.jpg`~`main/4.jpg` 레퍼런스)를 제공합니다.
@@ -29,11 +29,11 @@
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python backend/trainer_ml.py --config trainer_config.yaml --data-path /mnt/data/routing_data
+python -m backend.cli.train_model data/training_dataset.csv --name dev-local
 ACCESS_CONNECTION_STRING="..." uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
 ```
 
-> **참고:** `backend/trainer_ml.py`는 직접 실행(`python backend/trainer_ml.py`) 시에도 동작하도록 프로젝트 루트를 자동으로 `sys.path`에 추가합니다. IDE나 PowerShell에서 모듈 경로 오류가 발생해도 동일한 명령을 사용하면 됩니다.
+> **참고:** `backend/cli/train_model.py`는 `python -m backend.cli.train_model` 명령으로 실행하며, 기본 출력 경로는 `deliverables/models/`입니다. IDE나 PowerShell에서 모듈 경로 오류가 발생해도 동일한 명령을 사용하면 됩니다.
 
 ### Windows PowerShell 예시
 
@@ -45,7 +45,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination trainer_config.yaml -Force
-python backend/trainer_ml.py --config .\trainer_config.yaml --data-path D:\routing_data
+python -m backend.cli.train_model .\data\training_dataset.csv --name windows-dev
 $env:ACCESS_CONNECTION_STRING = "Driver={Microsoft Access Driver (*.mdb, *.accdb)};Dbq=D:\routing_data\ROUTING AUTO TEST.accdb"
 uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
 ```

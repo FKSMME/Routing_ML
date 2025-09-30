@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -60,6 +60,8 @@ TREE_GROUP_COLUMNS: List[str] = ["ITEM_GRP1NM", "GROUP1", "ITEM_GRP1"]
 TREE_FAMILY_COLUMNS: List[str] = ["GROUP2", "ITEM_GRP2", "ITEM_GRP2NM"]
 
 settings = get_settings()
+
+ACCESS_FILE_SUFFIXES = {".accdb", ".mdb"}
 
 
 class MasterDataService:
@@ -300,6 +302,19 @@ class MasterDataService:
             return candidate
         return None
 
+    def validate_access_path(self, candidate: Union[str, Path]) -> Path:
+        """Ensure the provided path points to an Access database file."""
+
+        path = Path(candidate).expanduser()
+        suffix = path.suffix.lower()
+        if suffix not in ACCESS_FILE_SUFFIXES:
+            raise ValueError("Access 파일은 .accdb 또는 .mdb 형식이어야 합니다.")
+        if not path.exists():
+            raise FileNotFoundError(f"Access 파일을 찾을 수 없습니다: {path}")
+        if not path.is_file():
+            raise ValueError(f"Access 경로가 파일이 아닙니다: {path}")
+        return path
+
     @staticmethod
     def _list_access_tables(path: Path) -> List[str]:
         try:
@@ -323,6 +338,16 @@ class MasterDataService:
                 return sorted(dict.fromkeys(tables))
         except Exception:
             return []
+
+    def read_access_tables(self, candidate: Union[str, Path]) -> List[str]:
+        """Return sorted Access table names for the validated path."""
+
+        path = self.validate_access_path(candidate)
+        tables = self._list_access_tables(path)
+        unique_tables = sorted(dict.fromkeys(tables))
+        if not unique_tables:
+            raise RuntimeError(f"Access 파일에서 테이블 목록을 찾을 수 없습니다: {path}")
+        return unique_tables
 
     @staticmethod
     def _introspect_access_columns(path: Path, table: str) -> List[Dict[str, Any]]:
@@ -364,7 +389,10 @@ class MasterDataService:
         return columns
 
     def list_access_tables(self, path: Path) -> List[str]:
-        return self._list_access_tables(path)
+        try:
+            return self.read_access_tables(path)
+        except Exception:
+            return []
 
     def get_access_metadata(self, table: Optional[str] = None, path: Optional[str] = None) -> Dict[str, Any]:
         """Inspect Access metadata using the provided path/table or fallbacks."""
