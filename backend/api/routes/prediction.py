@@ -1,7 +1,9 @@
 """FastAPI 라우터 정의."""
 from __future__ import annotations
 
-from typing import List
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -13,6 +15,9 @@ from backend.api.schemas import (
     HealthResponse,
     PredictionRequest,
     PredictionResponse,
+    RoutingInterfaceRequest,
+    RoutingInterfaceResponse,
+    RoutingSummary,
     GroupRecommendationRequest,
     GroupRecommendationResponse,
     RuleValidationRequest,
@@ -21,15 +26,65 @@ from backend.api.schemas import (
     SimilaritySearchResponse,
     TimeSummaryRequest,
     TimeSummaryResponse,
+    OperationStep,
 )
 from backend.api.services.prediction_service import prediction_service
 from backend.api.security import require_auth
+from backend.models.routing_groups import RoutingGroup, session_scope
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api", tags=["routing-ml"])
 logger = get_logger("api.routes")
 settings = get_settings()
 audit_logger = get_logger("api.audit", log_dir=settings.audit_log_dir, use_json=True)
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    """Convert arbitrary numeric input to float if possible."""
+
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+        try:
+            return float(text)
+        except ValueError:
+            return None
+    return None
+
+
+def _build_operation_steps(raw_steps: List[Dict[str, Any]]) -> List[OperationStep]:
+    """Transform stored routing group steps into OperationStep payloads."""
+
+    operations: List[OperationStep] = []
+    for raw in sorted(raw_steps, key=lambda step: step.get("seq", 0) or 0):
+        seq_value = raw.get("seq") or raw.get("proc_seq")
+        try:
+            proc_seq = int(seq_value)
+        except (TypeError, ValueError):
+            continue
+
+        process_code = raw.get("process_code") or raw.get("PROC_CD") or raw.get("job_cd")
+        description = raw.get("description")
+        metadata = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+        if not description and isinstance(metadata, dict):
+            description = metadata.get("description")
+
+        operations.append(
+            OperationStep(
+                proc_seq=proc_seq,
+                job_cd=str(process_code).strip() if process_code else None,
+                job_nm=str(description).strip() if description else None,
+                mach_worked_hours=_safe_float(raw.get("duration_min")),
+                setup_time=_safe_float(raw.get("setup_time")),
+                wait_time=_safe_float(raw.get("wait_time")),
+            )
+        )
+    return operations
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -147,6 +202,116 @@ async def group_recommendations(
     except Exception as exc:  # pragma: no cover
         logger.exception("그룹 추천 실패")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+
+@router.post(
+    "/routing/interface",
+    response_model=RoutingInterfaceResponse,
+    summary="라우팅 그룹 ERP 내보내기",
+)
+async def trigger_routing_interface(
+    payload: RoutingInterfaceRequest,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> RoutingInterfaceResponse:
+    """Trigger ERP export payload creation for a saved routing group."""
+
+    with session_scope() as session:
+        group: Optional[RoutingGroup] = session.get(RoutingGroup, payload.group_id)
+        if group is None or group.deleted_at is not None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="요청한 라우팅 그룹을 찾을 수 없습니다",
+            )
+        if group.owner != current_user.username and not current_user.is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="그룹에 접근할 권한이 없습니다",
+            )
+        snapshot = {
+            "id": str(group.id),
+            "group_name": group.group_name,
+            "version": group.version,
+            "item_codes": list(group.item_codes or []),
+            "steps": [dict(step) for step in group.steps or []],
+            "erp_required": bool(group.erp_required),
+        }
+
+    if not snapshot["erp_required"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="ERP 인터페이스 옵션이 비활성화된 그룹입니다",
+        )
+    if not snapshot["item_codes"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="라우팅 그룹에 품목 코드가 없습니다",
+        )
+
+    operations = _build_operation_steps(snapshot["steps"])
+    if not operations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="ERP 내보내기에 사용할 공정 단계가 없습니다",
+        )
+
+    routings: List[RoutingSummary] = []
+    for item_code in snapshot["item_codes"]:
+        cloned_ops = [OperationStep(**operation.dict()) for operation in operations]
+        summary = RoutingSummary(
+            item_code=item_code,
+            candidate_id=snapshot["id"],
+            routing_signature=f"group:{snapshot['id']}:v{snapshot['version']}",
+            priority="routing-group",
+            similarity_tier="manual",
+            operations=cloned_ops,
+        )
+        summary.generated_at = datetime.utcnow().isoformat()
+        routings.append(summary)
+
+    formats = [fmt for fmt in (payload.export_formats or []) if isinstance(fmt, str) and fmt.strip()]
+    if "erp" not in {fmt.lower() for fmt in formats}:
+        formats.append("erp")
+
+    try:
+        exported_files = prediction_service.export_predictions(routings, [], formats)
+    except FileNotFoundError as exc:
+        logger.error("ERP 내보내기 경로 오류: %s", exc)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - 방어
+        logger.exception("ERP 내보내기 실패")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+    erp_path = next(
+        (path for path in exported_files if Path(path).name.startswith("routing_erp_")),
+        None,
+    )
+    if erp_path is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ERP 인터페이스가 비활성화되어 있거나 파일 생성에 실패했습니다",
+        )
+
+    reason = (payload.reason or "save").strip() or "save"
+    audit_logger.info(
+        "routing.interface",
+        extra={
+            "username": current_user.username,
+            "group_id": snapshot["id"],
+            "group_name": snapshot["group_name"],
+            "item_codes": snapshot["item_codes"],
+            "exported_files": exported_files,
+            "erp_path": erp_path,
+            "reason": reason,
+        },
+    )
+
+    message = f"ERP 내보내기 완료: {erp_path}"
+    return RoutingInterfaceResponse(
+        group_id=snapshot["id"],
+        exported_files=exported_files,
+        erp_path=erp_path,
+        message=message,
+    )
 
 
 @router.post(

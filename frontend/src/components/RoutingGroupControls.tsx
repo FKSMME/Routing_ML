@@ -1,10 +1,11 @@
 import type { RoutingGroupSummary } from "@app-types/routing";
 import { useRoutingGroups } from "@hooks/useRoutingGroups";
-import { fetchWorkspaceSettings, postUiAudit } from "@lib/apiClient";
+import { fetchWorkspaceSettings, postUiAudit, triggerRoutingInterface } from "@lib/apiClient";
 import { useRoutingStore } from "@store/routingStore";
 import { Download, Play, Save, Settings, Upload } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import axios from "axios";
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -372,9 +373,17 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     [],
   );
 
-  const handleServerSave = useCallback(
-    async (overrides?: { groupName?: string; metadata?: Record<string, unknown> }) => {
-      const targetName = (overrides?.groupName ?? groupName).trim();
+  const executeServerSave = useCallback(
+    async ({
+      groupNameOverride,
+      metadata,
+      reason,
+    }: {
+      groupNameOverride?: string;
+      metadata?: Record<string, unknown>;
+      reason?: string;
+    }): Promise<boolean> => {
+      const targetName = (groupNameOverride ?? groupName).trim();
       if (!targetName) {
         setStatus({ variant: "error", text: "그룹 이름을 입력해 주세요." });
         return false;
@@ -383,23 +392,91 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         setStatus({ variant: "error", text: "타임라인에 단계를 추가해 주세요." });
         return false;
       }
+
       const dataset = buildExportDataset();
       const metadataPayload = {
         format,
-        destination: "server",
+        destination: "server" as const,
         item_codes: dataset.itemCodes,
         step_count: dataset.steps.length,
-        ...overrides?.metadata,
+        ...metadata,
       };
+
+      setStatus(null);
       const result = await saveGroup({ groupName: targetName, metadata: metadataPayload });
-      setStatus({ variant: result.ok ? "success" : "error", text: result.message });
-      if (result.ok) {
-        setGroupName(targetName);
-        void refreshGroups();
+      if (!result.ok) {
+        setStatus({ variant: "error", text: result.message });
+        return false;
       }
-      return result.ok;
+
+      setGroupName(targetName);
+      void refreshGroups();
+
+      if (!erpRequired || !result.response) {
+        setStatus({ variant: "success", text: result.message });
+        return true;
+      }
+
+      try {
+        const interfaceResponse = await triggerRoutingInterface({
+          groupId: result.response.group_id,
+          reason: reason ?? "save",
+        });
+        const parts: string[] = [];
+        if (interfaceResponse.message) {
+          parts.push(interfaceResponse.message);
+        }
+        if (interfaceResponse.erp_path) {
+          parts.push(`ERP 파일: ${interfaceResponse.erp_path}`);
+        }
+        const interfaceStatus = parts.length > 0 ? parts.join(" · ") : "ERP 인터페이스가 완료되었습니다.";
+        setStatus({ variant: "success", text: `${result.message} ${interfaceStatus}`.trim() });
+        return true;
+      } catch (error) {
+        let message = "ERP 인터페이스 요청에 실패했습니다.";
+        if (axios.isAxiosError(error)) {
+          const detail = error.response?.data?.detail;
+          if (typeof detail === "string") {
+            message = `ERP 인터페이스 요청에 실패했습니다: ${detail}`;
+          } else if (detail) {
+            message = `ERP 인터페이스 요청에 실패했습니다: ${JSON.stringify(detail)}`;
+          } else if (error.message) {
+            message = `ERP 인터페이스 요청에 실패했습니다: ${error.message}`;
+          }
+        } else if (error instanceof Error) {
+          message = `ERP 인터페이스 요청에 실패했습니다: ${error.message}`;
+        }
+        setStatus({ variant: "error", text: message });
+        return false;
+      }
     },
-    [buildExportDataset, format, groupName, refreshGroups, saveGroup, timelineLength],
+    [
+      buildExportDataset,
+      format,
+      groupName,
+      refreshGroups,
+      saveGroup,
+      timelineLength,
+      erpRequired,
+      setGroupName,
+      setStatus,
+      triggerRoutingInterface,
+    ],
+  );
+
+  const handleServerSave = useCallback(
+    async (overrides?: { groupName?: string; metadata?: Record<string, unknown> }) => {
+      const triggerReason =
+        overrides?.metadata && typeof overrides.metadata.trigger === "string"
+          ? String(overrides.metadata.trigger)
+          : "save";
+      return executeServerSave({
+        groupNameOverride: overrides?.groupName,
+        metadata: overrides?.metadata ?? undefined,
+        reason: triggerReason,
+      });
+    },
+    [executeServerSave],
   );
 
   const performInterface = useCallback(async () => {
@@ -407,7 +484,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       setStatus({ variant: "info", text: "옵션 메뉴에서 ERP 인터페이스를 활성화해 주세요." });
       return false;
     }
-    const ok = await handleServerSave({ metadata: { trigger: "interface" } });
+    const ok = await executeServerSave({ metadata: { trigger: "interface" }, reason: "interface" });
     if (ok) {
       postUiAudit({
         action: "ui.routing.interface",
@@ -419,7 +496,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       }).catch(() => undefined);
     }
     return ok;
-  }, [erpRequired, format, handleServerSave, timelineLength]);
+  }, [erpRequired, executeServerSave, format, timelineLength]);
 
   const capability = FORMAT_CAPABILITIES[format];
   const localSupported = capability.local;

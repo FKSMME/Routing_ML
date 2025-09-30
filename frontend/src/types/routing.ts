@@ -62,6 +62,19 @@ export interface PredictionResponse {
   metrics: PredictionMetrics;
 }
 
+export interface RoutingInterfaceRequestPayload {
+  groupId: string;
+  reason?: string;
+  exportFormats?: string[];
+}
+
+export interface RoutingInterfaceResponse {
+  group_id: string;
+  exported_files: string[];
+  erp_path?: string | null;
+  message: string;
+}
+
 export interface RoutingGroupStep {
   seq: number;
   process_code: string;

@@ -36,6 +36,7 @@
 4. **ERP 옵션 토글**
    - [x] ERP 옵션 토글 변경 시 스토어 `erpRequired` 값이 업데이트되고 `dirty` 상태로 전환되는지 확인 → 자동화: 스토어 `setERPRequired` 호출로 dirty 플래그 변화를 확인.
 - [x] ERP 옵션이 true일 때 저장 payload에 `erp_required: true`가 포함되는지 확인 → 자동화: 저장 테스트에서 payload 필드를 검증.
+- [x] ERP 옵션 ON 상태에서 서버 저장 시 ERP 파일이 생성되는지 확인 → 자동화: `tests/backend/api/test_routing_interface.py`, `tests/frontend/routingErpInterface.spec.ts`에서 내보내기 경로와 UI 메시지를 검증.
 
 5. **모바일 터치 시나리오**
    - [x] 터치 드래그/Undo/Redo 플로우가 모바일 뷰포트에서 동작하는지 확인 → 자동화: `tests/e2e/mobile/routing.mobile.spec.ts`의 "supports drag, undo, and redo interactions" 케이스로 검증.
