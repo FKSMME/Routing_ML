@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../playwrightTest";
 
 test.describe("Routing workspace layout", () => {
   test("aligns to the themed 20/60/20 columns", async ({ page }) => {

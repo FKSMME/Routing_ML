@@ -47,6 +47,14 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run routing group e2e tests
+      - name: Run Vitest e2e suite
         working-directory: frontend
         run: npm run test:e2e -- --run
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests (desktop + mobile)
+        working-directory: frontend
+        run: npx playwright test --config=../playwright.config.ts --project=chromium --project=mobile-chrome --project=mobile-safari
