@@ -1,4 +1,6 @@
-> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 8 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 4 | Completed 28 | Blockers 0
+
+> Routing state store checklist (doc scope): Pending 1 | Completed 8 — mirrors Tasklist QA follow-up status for automation.
 
 # Routing Drag-Drop 상태/스토어 설계 개편
 
