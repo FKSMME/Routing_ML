@@ -118,14 +118,14 @@ export async function fetchMetrics(): Promise<Record<string, unknown>> {
 }
 
 export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
-  const response = await api.get<WorkflowConfigResponse>("/workflow/graph");
+  const response = await api.get<WorkflowConfigResponse>("/workflow/config");
   return response.data;
 }
 
 export async function patchWorkflowConfig(
   payload: WorkflowConfigPatch,
 ): Promise<WorkflowConfigResponse> {
-  const response = await api.patch<WorkflowConfigResponse>("/workflow/graph", payload);
+  const response = await api.patch<WorkflowConfigResponse>("/workflow/config", payload);
   return response.data;
 }
 
