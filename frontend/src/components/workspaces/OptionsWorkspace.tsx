@@ -5,12 +5,10 @@ import {
   fetchWorkflowConfig,
   fetchWorkspaceSettings,
   postUiAudit,
-  saveWorkspaceSettings,
   testAccessConnection,
-  type WorkspaceSettingsPayload,
   type WorkspaceSettingsResponse,
 } from "@lib/apiClient";
-import { useRoutingStore } from "@store/routingStore";
+import { useWorkspaceStore, type WorkspaceColumnMappingRow } from "@store/workspaceStore";
 import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -43,32 +41,28 @@ interface ErrorWithDetail {
   };
 }
 
-interface ColumnMappingRow {
-  id: string;
-  scope: string;
-  source: string;
-  target: string;
-}
-
 const randomId = (): string =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `map-${Math.random().toString(36).slice(2)}`;
 
-const makeRow = (row?: Partial<ColumnMappingRow>): ColumnMappingRow => ({
+const makeRow = (row?: Partial<WorkspaceColumnMappingRow>): WorkspaceColumnMappingRow => ({
   id: row?.id ?? randomId(),
   scope: row?.scope ?? "",
   source: row?.source ?? "",
   target: row?.target ?? "",
 });
 
-const normalizeMappingCandidate = (value: unknown, fallbackScope?: string): ColumnMappingRow[] => {
+const normalizeMappingCandidate = (
+  value: unknown,
+  fallbackScope?: string,
+): WorkspaceColumnMappingRow[] => {
   if (!value) {
     return [];
   }
-  const rows: ColumnMappingRow[] = [];
+  const rows: WorkspaceColumnMappingRow[] = [];
 
-  const pushRow = (candidate: Partial<ColumnMappingRow>) => {
+  const pushRow = (candidate: Partial<WorkspaceColumnMappingRow>) => {
     const scope = `${candidate.scope ?? fallbackScope ?? ""}`.trim();
     const source = `${candidate.source ?? ""}`.trim();
     const target = `${candidate.target ?? ""}`.trim();
@@ -144,8 +138,8 @@ const normalizeMappingCandidate = (value: unknown, fallbackScope?: string): Colu
   return rows;
 };
 
-const dedupeMappings = (rows: ColumnMappingRow[]): ColumnMappingRow[] => {
-  const map = new Map<string, ColumnMappingRow>();
+const dedupeMappings = (rows: WorkspaceColumnMappingRow[]): WorkspaceColumnMappingRow[] => {
+  const map = new Map<string, WorkspaceColumnMappingRow>();
   rows.forEach((row) => {
     const key = `${row.scope.toLowerCase()}::${row.source.toLowerCase()}`;
     if (!map.has(key)) {
@@ -155,7 +149,7 @@ const dedupeMappings = (rows: ColumnMappingRow[]): ColumnMappingRow[] => {
   return Array.from(map.values());
 };
 
-const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undefined): ColumnMappingRow[] => {
+const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undefined): WorkspaceColumnMappingRow[] => {
   if (!workflow) {
     return [];
   }
@@ -199,46 +193,45 @@ const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undef
 };
 
 export function OptionsWorkspace() {
-  const setERPRequired = useRoutingStore((state) => state.setERPRequired);
+  const workspaceOptions = useWorkspaceStore((state) => state.workspaceOptions);
+  const setWorkspaceOptionsLoading = useWorkspaceStore((state) => state.setWorkspaceOptionsLoading);
+  const setWorkspaceOptionsSnapshot = useWorkspaceStore((state) => state.setWorkspaceOptionsSnapshot);
+  const updateWorkspaceOptions = useWorkspaceStore((state) => state.updateWorkspaceOptions);
+  const updateWorkspaceColumnMappings = useWorkspaceStore((state) => state.updateWorkspaceColumnMappings);
+  const saveWorkspaceOptions = useWorkspaceStore((state) => state.saveWorkspaceOptions);
+  const setErpInterfaceEnabled = useWorkspaceStore((state) => state.setErpInterfaceEnabled);
 
-  const [standardOptions, setStandardOptions] = useState<string[]>(DEFAULT_OPTIONS.standard);
-  const [similarityOptions, setSimilarityOptions] = useState<string[]>(DEFAULT_OPTIONS.similarity);
-  const [accessPath, setAccessPath] = useState<string>(DEFAULT_OPTIONS.accessPath);
-  const [accessTable, setAccessTable] = useState<string>("");
+  const standardOptions = workspaceOptions.data.standard;
+  const similarityOptions = workspaceOptions.data.similarity;
+  const accessPath = workspaceOptions.data.accessPath;
+  const accessTable = workspaceOptions.data.accessTable;
+  const erpInterface = workspaceOptions.data.erpInterface;
+  const columnMappings = workspaceOptions.data.columnMappings;
   const [availableTables, setAvailableTables] = useState<string[]>([]);
   const [testedPath, setTestedPath] = useState<string>("");
   const [metadataPreview, setMetadataPreview] = useState<AccessMetadataResponse | null>(null);
   const [metadataLoading, setMetadataLoading] = useState<boolean>(false);
   const [metadataError, setMetadataError] = useState<string>("");
-  const [erpInterface, setErpInterface] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
   const [testing, setTesting] = useState<boolean>(false);
-  const [dirty, setDirty] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [testMessage, setTestMessage] = useState<string>("");
-  const [columnMappings, setColumnMappings] = useState<ColumnMappingRow[]>([]);
   const [columnMappingSource, setColumnMappingSource] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
     async function loadSettings() {
       try {
-        setLoading(true);
+        setWorkspaceOptionsLoading(true);
         const data: WorkspaceSettingsResponse = await fetchWorkspaceSettings();
         if (cancelled) return;
         const options = data.options ?? {};
-        setStandardOptions(Array.isArray(options.standard) ? (options.standard as string[]) : DEFAULT_OPTIONS.standard);
-        setSimilarityOptions(Array.isArray(options.similarity) ? (options.similarity as string[]) : DEFAULT_OPTIONS.similarity);
+        const standard = Array.isArray(options.standard) ? (options.standard as string[]) : DEFAULT_OPTIONS.standard;
+        const similarity = Array.isArray(options.similarity) ? (options.similarity as string[]) : DEFAULT_OPTIONS.similarity;
         const initialPath = (options.access_path as string | undefined) ?? (data.access?.path as string | undefined) ?? DEFAULT_OPTIONS.accessPath;
-        setAccessPath(initialPath);
         const savedTable = (options.access_table as string | undefined) ?? (data.access?.table as string | undefined) ?? "";
-        setAccessTable(savedTable);
         setAvailableTables([]);
         setTestedPath("");
         const erpEnabled = Boolean((options.erp_interface as boolean | undefined) ?? (data.export?.erp_interface_enabled as boolean | undefined));
-        setErpInterface(erpEnabled);
-        setERPRequired(erpEnabled);
 
         let mappingRows = dedupeMappings(normalizeMappingCandidate((options.column_mappings as unknown) ?? null));
         let mappingSource = "workspace";
@@ -259,16 +252,36 @@ export function OptionsWorkspace() {
           mappingRows = [makeRow({ scope: "Routing Generation" })];
           mappingSource = "fallback";
         }
-        setColumnMappings(mappingRows);
+        setWorkspaceOptionsSnapshot(
+          {
+            standard,
+            similarity,
+            accessPath: initialPath,
+            accessTable: savedTable,
+            erpInterface: erpEnabled,
+            columnMappings: mappingRows,
+          },
+          { dirty: false, lastSyncedAt: data.updated_at },
+        );
         setColumnMappingSource(mappingSource);
-        setDirty(false);
       } catch {
         if (!cancelled) {
           setStatusMessage("Failed to load saved options. Using defaults.");
+          setWorkspaceOptionsSnapshot(
+            {
+              standard: DEFAULT_OPTIONS.standard,
+              similarity: DEFAULT_OPTIONS.similarity,
+              accessPath: DEFAULT_OPTIONS.accessPath,
+              accessTable: "",
+              erpInterface: false,
+              columnMappings: [makeRow({ scope: "Routing Generation" })],
+            },
+            { dirty: false },
+          );
         }
       } finally {
         if (!cancelled) {
-          setLoading(false);
+          setWorkspaceOptionsLoading(false);
         }
       }
     }
@@ -276,7 +289,7 @@ export function OptionsWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [setERPRequired]);
+  }, [setWorkspaceOptionsLoading, setWorkspaceOptionsSnapshot]);
 
   const standardConflicts = useMemo(() => {
     const warnings: string[] = [];
@@ -333,25 +346,23 @@ export function OptionsWorkspace() {
   }, [columnMappings]);
 
   const toggleStandard = (id: string) => {
-    setStandardOptions((prev) => {
-      const next = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
-      setDirty(true);
-      return next;
-    });
+    updateWorkspaceOptions((prev) => ({
+      ...prev,
+      standard: prev.standard.includes(id) ? prev.standard.filter((item) => item !== id) : [...prev.standard, id],
+    }));
   };
 
   const toggleSimilarity = (id: string) => {
-    setSimilarityOptions((prev) => {
-      const next = prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id];
-      setDirty(true);
-      return next;
-    });
+    updateWorkspaceOptions((prev) => ({
+      ...prev,
+      similarity: prev.similarity.includes(id)
+        ? prev.similarity.filter((item) => item !== id)
+        : [...prev.similarity, id],
+    }));
   };
 
   const handleToggleErp = (next: boolean) => {
-    setErpInterface(next);
-    setERPRequired(next);
-    setDirty(true);
+    setErpInterfaceEnabled(next);
     postUiAudit({
       action: "ui.options.erp_toggle",
       username: "codex",
@@ -360,45 +371,35 @@ export function OptionsWorkspace() {
   };
 
   const handleAddMappingRow = () => {
-    setColumnMappings((prev) => [...prev, makeRow({ scope: prev[prev.length - 1]?.scope ?? "" })]);
-    setDirty(true);
+    updateWorkspaceColumnMappings((prev) => [...prev, makeRow({ scope: prev[prev.length - 1]?.scope ?? "" })]);
     setColumnMappingSource("workspace");
   };
 
-  const handleUpdateMappingRow = (id: string, patch: Partial<Omit<ColumnMappingRow, "id">>) => {
+  const handleUpdateMappingRow = (id: string, patch: Partial<Omit<WorkspaceColumnMappingRow, "id">>) => {
     let changed = false;
-    setColumnMappings((prev) =>
-      prev.map((row) => {
-        if (row.id !== id) {
-          return row;
-        }
-        const nextRow = { ...row, ...patch };
-        if (nextRow.scope !== row.scope || nextRow.source !== row.source || nextRow.target !== row.target) {
-          changed = true;
-        }
-        return nextRow;
-      }),
-    );
+    const nextRows = columnMappings.map((row) => {
+      if (row.id !== id) {
+        return row;
+      }
+      const nextRow = { ...row, ...patch };
+      if (nextRow.scope !== row.scope || nextRow.source !== row.source || nextRow.target !== row.target) {
+        changed = true;
+      }
+      return nextRow;
+    });
     if (changed) {
-      setDirty(true);
+      updateWorkspaceColumnMappings(() => nextRows);
       setColumnMappingSource("workspace");
     }
   };
 
   const handleRemoveMappingRow = (id: string) => {
-    let removed = false;
-    setColumnMappings((prev) => {
-      if (prev.length <= 1) {
-        return prev;
-      }
-      const next = prev.filter((row) => row.id !== id);
-      if (next.length !== prev.length) {
-        removed = true;
-      }
-      return next.length > 0 ? next : [makeRow()];
-    });
-    if (removed) {
-      setDirty(true);
+    if (columnMappings.length <= 1) {
+      return;
+    }
+    const next = columnMappings.filter((row) => row.id !== id);
+    if (next.length !== columnMappings.length) {
+      updateWorkspaceColumnMappings(() => (next.length > 0 ? next : [makeRow()]));
       setColumnMappingSource("workspace");
     }
   };
@@ -417,7 +418,6 @@ export function OptionsWorkspace() {
       return;
     }
     try {
-      setSaving(true);
       setStatusMessage("");
       const previousSource = columnMappingSource;
       const normalizedRows = columnMappings.map((row) =>
@@ -444,24 +444,7 @@ export function OptionsWorkspace() {
             inspected_at: metadataPreview.updated_at,
           }
         : undefined;
-      const payload: WorkspaceSettingsPayload = {
-        version: Date.now(),
-        options: {
-          standard: standardOptions,
-          similarity: similarityOptions,
-          access_path: accessPath,
-          access_table: accessTable || null,
-          erp_interface: erpInterface,
-          column_mappings: payloadMappings,
-        },
-        access: {
-          path: accessPath || null,
-          table: accessTable || null,
-        },
-        metadata: metadataPayload,
-      };
-      await saveWorkspaceSettings(payload);
-      setColumnMappings(normalizedRows);
+      await saveWorkspaceOptions({ metadata: metadataPayload, version: Date.now(), columnMappings: normalizedRows });
       setColumnMappingSource("workspace");
       await postUiAudit({
         action: "ui.options.save",
@@ -484,7 +467,6 @@ export function OptionsWorkspace() {
           ? `Options saved successfully. ${payloadMappings.length} column mappings stored.`
           : "Options saved successfully.",
       );
-      setDirty(false);
     } catch (error: unknown) {
       setStatusMessage("Failed to save options.");
       const detail = error instanceof Error ? error.message : undefined;
@@ -499,8 +481,6 @@ export function OptionsWorkspace() {
           mapping_rows: columnMappings.length,
         },
       }).catch(() => undefined);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -520,18 +500,17 @@ export function OptionsWorkspace() {
       const tables = response.table_profiles ?? [];
       setAvailableTables(tables);
       if (response.verified_table) {
-        setAccessTable(response.verified_table);
+        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: response.verified_table ?? prev.accessTable }));
       } else if (accessTable && tables.length > 0 && !tables.includes(accessTable)) {
-        setAccessTable(tables[0]);
+        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: tables[0] }));
       } else if (!accessTable && tables.length > 0) {
-        setAccessTable(tables[0]);
+        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: tables[0] }));
       }
       const parts: string[] = [response.message ?? "Connection checked."];
       if (typeof response.elapsed_ms === "number") {
         parts.push(`(${response.elapsed_ms.toFixed(1)} ms)`);
       }
       setTestMessage(parts.join(" "));
-      setDirty(true);
       await postUiAudit({
         action: "ui.access.connection",
         username: "codex",
@@ -586,6 +565,18 @@ export function OptionsWorkspace() {
     };
   }, [accessTable, accessPath, testedPath]);
 
+  const loading = workspaceOptions.loading;
+  const saving = workspaceOptions.saving;
+  const dirty = workspaceOptions.dirty;
+
+  const standardValid = standardOptions.length > 0;
+  const similarityValid = similarityOptions.length > 0;
+  const trimmedAccessPath = accessPath.trim();
+  const accessPathValid = Boolean(trimmedAccessPath);
+  const accessPathVerified = accessPathValid && testedPath === trimmedAccessPath;
+  const accessTableValid = !accessPathValid || Boolean(accessTable.trim());
+  const mappingHasErrors = mappingDiagnostics.rowErrors.size > 0;
+
   return (
     <div className="options-workspace" role="region" aria-label="System Options">
       <section className="panel-card options-card">
@@ -603,6 +594,27 @@ export function OptionsWorkspace() {
               <span className="option-tile__desc">{option.description}</span>
             </label>
           ))}
+        </div>
+        <div
+          className={`option-hint${standardValid && standardConflicts.length === 0 ? " is-success" : standardValid ? "" : " is-warning"}`}
+          role="status"
+          aria-live="polite"
+        >
+          {standardValid ? (
+            standardConflicts.length > 0 ? (
+              <span>
+                <AlertTriangle size={14} /> Avoid conflicting combination: {standardConflicts.join(", ")}
+              </span>
+            ) : (
+              <span>
+                <Check size={14} /> {standardOptions.length} normalization option{standardOptions.length > 1 ? "s" : ""} selected.
+              </span>
+            )
+          ) : (
+            <span>
+              <AlertTriangle size={14} /> Select at least one normalization option.
+            </span>
+          )}
         </div>
         {standardConflicts.length > 0 ? (
           <div className="option-conflict">
@@ -626,6 +638,17 @@ export function OptionsWorkspace() {
               <span className="option-tile__desc">{option.description}</span>
             </label>
           ))}
+        </div>
+        <div className={`option-hint${similarityValid ? " is-success" : " is-warning"}`} role="status" aria-live="polite">
+          {similarityValid ? (
+            <span>
+              <Check size={14} /> {similarityOptions.length} similarity algorithm{similarityOptions.length > 1 ? "s" : ""} enabled.
+            </span>
+          ) : (
+            <span>
+              <AlertTriangle size={14} /> Choose at least one similarity algorithm.
+            </span>
+          )}
         </div>
       </section>
 
@@ -707,6 +730,17 @@ export function OptionsWorkspace() {
             })}
           </tbody>
         </table>
+        <div className={`option-hint${mappingHasErrors ? " is-warning" : " is-success"}`} role="status" aria-live="polite">
+          {mappingHasErrors ? (
+            <span>
+              <AlertTriangle size={14} /> Complete all column mapping fields before saving.
+            </span>
+          ) : (
+            <span>
+              <Check size={14} /> {columnMappings.length} mapping row{columnMappings.length === 1 ? "" : "s"} configured.
+            </span>
+          )}
+        </div>
         {mappingDiagnostics.conflictSummary.length > 0 ? (
           <div className="option-conflict">
             <AlertTriangle size={16} /> Resolve mapping conflicts: {mappingDiagnostics.conflictSummary.join(", ")}
@@ -742,8 +776,7 @@ export function OptionsWorkspace() {
                 value={accessPath}
                 onChange={(event) => {
                   const value = event.target.value;
-                  setAccessPath(value);
-                  setDirty(true);
+                  updateWorkspaceOptions((prev) => ({ ...prev, accessPath: value }));
                   setTestedPath("");
                   setMetadataPreview(null);
                   setMetadataError("");
@@ -759,8 +792,7 @@ export function OptionsWorkspace() {
                 value={accessTable}
                 onChange={(event) => {
                   const value = event.target.value;
-                  setAccessTable(value);
-                  setDirty(true);
+                  updateWorkspaceOptions((prev) => ({ ...prev, accessTable: value }));
                   setTestedPath("");
                   setMetadataPreview(null);
                   setMetadataError("");
@@ -815,6 +847,29 @@ export function OptionsWorkspace() {
                 </ul>
               </div>
             ) : null}
+            <div className={`option-hint${accessPathValid && accessPathVerified && accessTableValid ? " is-success" : " is-warning"}`} role="status" aria-live="polite">
+              {accessPathValid ? (
+                accessPathVerified ? (
+                  accessTableValid ? (
+                    <span>
+                      <Check size={14} /> Access path verified{accessTable ? ` with table ${accessTable}` : ""}.
+                    </span>
+                  ) : (
+                    <span>
+                      <AlertTriangle size={14} /> Provide a table name for the verified path.
+                    </span>
+                  )
+                ) : (
+                  <span>
+                    <AlertTriangle size={14} /> Test the connection to verify this path.
+                  </span>
+                )
+              ) : (
+                <span>
+                  <AlertTriangle size={14} /> Enter an Access database path to enable validation.
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -824,7 +879,7 @@ export function OptionsWorkspace() {
           type="button"
           className="primary-button"
           onClick={handleSave}
-          disabled={saving || loading || !dirty || mappingDiagnostics.rowErrors.size > 0}
+          disabled={saving || loading || !dirty || mappingHasErrors}
         >
           {saving ? "Saving..." : dirty ? "Save changes" : "Saved"}
         </button>

@@ -10,6 +10,7 @@ import type {
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -35,48 +36,55 @@ interface ModuleNodeData {
   docRefs: string[];
 }
 
-function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
+export function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
   const metricEntries = useMemo(() => {
     if (!data.metrics) return [] as [string, unknown][];
     return Object.entries(data.metrics).slice(0, 2);
   }, [data.metrics]);
 
   return (
-    <div className="w-60 rounded-2xl border border-sky-400/70 bg-slate-950/80 px-4 py-3 text-slate-100 shadow-lg shadow-sky-900/40">
-      <span className="text-xs uppercase tracking-wide text-sky-300/80">
-        {data.category ?? "module"}
-      </span>
-      <h3 className="mt-1 text-lg font-semibold text-sky-100">{data.label}</h3>
-      {data.status ? (
-        <p className="mt-1 text-xs font-medium text-sky-400">상태: {data.status}</p>
-      ) : null}
-      {data.description ? (
-        <p className="mt-2 text-xs leading-relaxed text-slate-300">{data.description}</p>
-      ) : null}
-      {metricEntries.length > 0 ? (
-        <dl className="mt-3 space-y-1 text-[11px] text-slate-400">
-          {metricEntries.map(([key, value]) => (
-            <div key={key} className="flex justify-between gap-2">
-              <dt className="font-semibold text-slate-300">{key}</dt>
-              <dd className="truncate text-right text-slate-200">
-                {typeof value === "number" ? value.toString() : String(value ?? "-")}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      ) : null}
-      {data.docRefs.length > 0 ? (
-        <div className="mt-3 space-y-1 text-[11px] text-slate-400">
-          <p className="font-semibold text-slate-200">문서</p>
-          <ul className="list-disc space-y-1 pl-4">
-            {data.docRefs.slice(0, 2).map((ref) => (
-              <li key={ref} className="truncate" title={ref}>
-                {ref}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+    <div
+      className="blueprint-node"
+      data-blueprint-status={data.status ?? "idle"}
+      data-has-docs={data.docRefs.length > 0}
+      data-testid={`blueprint-node-${data.label}`}
+    >
+      <div className="blueprint-node__badges" data-testid={`blueprint-node-badges-${data.label}`}>
+        {data.status ? (
+          <span className="blueprint-node__badge" data-kind="status">
+            {data.status}
+          </span>
+        ) : null}
+        {data.docRefs.length > 0 ? (
+          <span className="blueprint-node__badge" data-kind="docs">
+            Docs {data.docRefs.length}
+          </span>
+        ) : null}
+        {metricEntries.map(([key, value]) => (
+          <span key={key} className="blueprint-node__badge" data-kind="metric">
+            {key}: {typeof value === "number" ? value.toFixed(2) : String(value ?? "-")}
+          </span>
+        ))}
+      </div>
+      <div className="blueprint-node__body">
+        <span className="blueprint-node__category">{data.category ?? "module"}</span>
+        <h3 className="blueprint-node__title">{data.label}</h3>
+        {data.description ? (
+          <p className="blueprint-node__description">{data.description}</p>
+        ) : null}
+        {data.docRefs.length > 0 ? (
+          <Fragment>
+            <h4 className="blueprint-node__subtitle">Design references</h4>
+            <ul className="blueprint-node__links" aria-label={`${data.label} design references`}>
+              {data.docRefs.slice(0, 2).map((ref) => (
+                <li key={ref}>
+                  <span title={ref}>{ref}</span>
+                </li>
+              ))}
+            </ul>
+          </Fragment>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -383,21 +391,25 @@ function NodeSettingsDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
-        <header className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-sky-300/80">{node.category ?? "module"}</p>
-            <h2 className="text-2xl font-semibold text-sky-100">{node.label} 설정</h2>
-            <p className="mt-1 text-sm text-slate-300">
+    <div className="blueprint-modal__backdrop">
+      <div
+        className="blueprint-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`workflow-node-${node.id}-title`}
+        data-testid="workflow-node-dialog"
+      >
+        <header className="blueprint-modal__header">
+          <div className="blueprint-modal__title-group">
+            <p className="blueprint-modal__eyebrow">{node.category ?? "module"}</p>
+            <h2 className="blueprint-modal__title" id={`workflow-node-${node.id}-title`}>
+              {node.label} 설정
+            </h2>
+            <p className="blueprint-modal__subtitle">
               더블클릭한 도형의 속성을 편집하고 즉시 SAVE 할 수 있습니다.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-slate-600 px-3 py-1 text-sm text-slate-300 transition hover:border-slate-400 hover:text-slate-100"
-          >
+          <button type="button" onClick={onClose} className="blueprint-modal__close">
             닫기
           </button>
         </header>
@@ -410,6 +422,13 @@ function NodeSettingsDialog({
                   <label className="space-y-2 text-sm">
                     <span className="text-slate-300">레이블</span>
                     <input
+        <div className="blueprint-modal__content">
+          <section className="space-y-3">
+            <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm">
+                <span className="text-slate-300">레이블</span>
+                <input
                   type="text"
                   value={form.label}
                   onChange={(event) => onChange({ ...form, label: event.target.value })}
@@ -1047,12 +1066,18 @@ export function WorkflowGraphPanel() {
   const handleSaveLayout = useCallback(async () => {
     try {
       setErrorMessage(null);
-      await saveConfig({
+      const response = await saveConfig({
         graph: {
           nodes: graphNodes,
           edges: graphEdges,
         },
       });
+      if (response.graph?.nodes) {
+        setGraphNodes(response.graph.nodes);
+      }
+      if (response.graph?.edges) {
+        setGraphEdges(response.graph.edges);
+      }
       setStatusMessage("그래프 레이아웃이 저장되었습니다.");
     } catch (error) {
       console.error(error);
@@ -1251,6 +1276,16 @@ export function WorkflowGraphPanel() {
       });
 
       setStatusMessage(null);
+      const response = await saveConfig(payload);
+      if (response.graph?.nodes) {
+        setGraphNodes(response.graph.nodes);
+      } else {
+        setGraphNodes(updatedNodes);
+      }
+      if (response.graph?.edges) {
+        setGraphEdges(response.graph.edges);
+      }
+      setStatusMessage(`${formState.label} 설정을 저장했습니다.`);
       setSelectedNode(null);
     } catch (error) {
       console.error(error);
@@ -1296,6 +1331,7 @@ export function WorkflowGraphPanel() {
             onNodeDragStop={handleNodeDragStop}
             fitView
             proOptions={{ hideAttribution: true }}
+            className="blueprint-flow"
           >
             <MiniMap pannable zoomable className="!bg-slate-950/80" nodeColor={() => "#38bdf8"} maskColor="rgba(15,23,42,0.7)" />
             <Controls className="bg-slate-900/80 text-slate-100" showInteractive={false} />

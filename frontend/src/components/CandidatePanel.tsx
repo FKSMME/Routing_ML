@@ -1,6 +1,6 @@
 ﻿import type { OperationStep } from "@app-types/routing";
 import { useRoutingStore } from "@store/routingStore";
-import { Search } from "lucide-react";
+import { Activity, Database, Search, ToggleLeft, ToggleRight } from "lucide-react";
 import type { DragEvent } from "react";
 import { useMemo, useState } from "react";
 
@@ -15,6 +15,12 @@ export function CandidatePanel() {
   const recommendations = useRoutingStore((state) => state.recommendations);
   const insertOperation = useRoutingStore((state) => state.insertOperation);
   const loading = useRoutingStore((state) => state.loading);
+  const productTabs = useRoutingStore((state) => state.productTabs);
+  const timelineLength = useRoutingStore((state) => state.timeline.length);
+  const dirty = useRoutingStore((state) => state.dirty);
+  const lastSavedAt = useRoutingStore((state) => state.lastSavedAt);
+  const erpRequired = useRoutingStore((state) => state.erpRequired);
+  const setERPRequired = useRoutingStore((state) => state.setERPRequired);
 
   const [filter, setFilter] = useState("");
 
@@ -24,6 +30,13 @@ export function CandidatePanel() {
     }
     return recommendations.find((item) => item.itemCode === activeProductId) ?? null;
   }, [activeProductId, recommendations]);
+
+  const activeTab = useMemo(() => {
+    if (!activeProductId) {
+      return null;
+    }
+    return productTabs.find((tab) => tab.id === activeProductId) ?? null;
+  }, [activeProductId, productTabs]);
 
   const filteredOperations = useMemo(() => {
     if (!bucket) {
@@ -60,10 +73,48 @@ export function CandidatePanel() {
       <header className="panel-header">
         <div>
           <h2 className="panel-title">후보 공정 블록</h2>
-          <p className="panel-subtitle">드래그하여 라우팅 타임라인에 배치하세요.</p>
+          <p className="panel-subtitle">추천 공정, 타임라인 상태, ERP 토글을 한 화면에서 확인하세요.</p>
         </div>
-        <span className="text-sm text-accent-strong">{bucket?.operations.length ?? 0}</span>
+        <div className="candidate-summary__meta">
+          <span className="candidate-summary__meta-item" aria-label="추천 공정 수">
+            <Activity size={14} /> {bucket?.operations.length ?? 0}
+          </span>
+          <span className="candidate-summary__meta-item" aria-label="타임라인 단계">
+            <Database size={14} /> {timelineLength}
+          </span>
+        </div>
       </header>
+
+      <div className="candidate-summary">
+        <div className="candidate-summary__item">
+          <span className="candidate-summary__label">활성 품목</span>
+          <span className="candidate-summary__value">{activeTab?.productName ?? "선택되지 않음"}</span>
+          {activeTab?.candidateId ? (
+            <span className="candidate-summary__hint">Candidate #{activeTab.candidateId}</span>
+          ) : null}
+        </div>
+        <div className="candidate-summary__item">
+          <span className="candidate-summary__label">타임라인</span>
+          <span className="candidate-summary__value">{timelineLength}</span>
+          <span className={`candidate-summary__status${dirty ? " is-dirty" : ""}`}>
+            {dirty ? "변경됨" : lastSavedAt ? `저장됨 (${new Date(lastSavedAt).toLocaleTimeString()})` : "저장 전"}
+          </span>
+        </div>
+        <div className="candidate-summary__item candidate-summary__item--toggle">
+          <span className="candidate-summary__label">ERP 인터페이스</span>
+          <button
+            type="button"
+            className={`candidate-erp-toggle${erpRequired ? " is-active" : ""}`}
+            onClick={() => setERPRequired(!erpRequired)}
+            aria-pressed={erpRequired}
+            aria-label="ERP 인터페이스 필요 여부 토글"
+          >
+            {erpRequired ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+            <span>{erpRequired ? "ON" : "OFF"}</span>
+          </button>
+          <p className="candidate-summary__hint">INTERFACE 저장과 Access 연동은 ERP ON 시에만 가능합니다.</p>
+        </div>
+      </div>
 
       <div className="candidate-filter">
         <Search size={14} className="candidate-filter__icon" />
