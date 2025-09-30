@@ -1,7 +1,12 @@
 import type { FeatureWeightsProfile, PredictionResponse } from "@app-types/routing";
 import { create } from "zustand";
 
-import { useRoutingStore } from "./routingStore";
+import {
+  DEFAULT_REFERENCE_MATRIX_COLUMNS,
+  registerReferenceMatrixPersistence,
+  type ReferenceMatrixColumnKey,
+  useRoutingStore,
+} from "./routingStore";
 
 export type LayoutMode = "desktop" | "tablet" | "mobile";
 export type NavigationKey =
@@ -67,8 +72,8 @@ interface WorkspaceStoreState {
   featureWeights: FeatureWeightState;
   exportProfile: ExportProfileState;
   erpInterfaceEnabled: boolean;
-  outputMappings: OutputMappingRow[];
-  setLayout: (layout: LayoutMode) => void;
+  referenceMatrixColumns: ReferenceMatrixColumnKey[];
+ (layout: LayoutMode) => void;
   setActiveMenu: (menu: NavigationKey) => void;
   updateItemCodes: (codes: string[]) => void;
   updateTopK: (value: number) => void;
@@ -84,11 +89,13 @@ interface WorkspaceStoreState {
   setErpInterfaceEnabled: (enabled: boolean) => void;
   markExportSynced: () => void;
   applyPredictionResponse: (response: PredictionResponse) => void;
+  setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
   setOutputMappings: (rows: OutputMappingRow[]) => void;
   updateOutputMappings: (updater: (rows: OutputMappingRow[]) => OutputMappingRow[]) => void;
   reorderOutputMappings: (fromIndex: number, toIndex: number) => void;
   clearOutputMappings: () => void;
   saveRouting: () => RoutingSaveState;
+
 }
 
 const DEFAULT_PROFILES: FeatureProfileSummary[] = [
@@ -115,6 +122,27 @@ const toProfileSummary = (profiles: FeatureWeightsProfile[] | undefined): Featur
     name: profile.name,
     description: profile.description ?? undefined,
   }));
+};
+
+const normalizeReferenceMatrixColumns = (
+  columns: Array<string | ReferenceMatrixColumnKey>,
+): ReferenceMatrixColumnKey[] => {
+  const normalized: ReferenceMatrixColumnKey[] = [];
+  const validColumns = DEFAULT_REFERENCE_MATRIX_COLUMNS as ReadonlyArray<ReferenceMatrixColumnKey>;
+  columns.forEach((column) => {
+    if (typeof column === "string") {
+      const match = validColumns.find((candidate) => candidate === column);
+      if (match && !normalized.includes(match)) {
+        normalized.push(match);
+      }
+    } else if (validColumns.includes(column) && !normalized.includes(column)) {
+      normalized.push(column);
+    }
+  });
+  if (normalized.length === 0) {
+    return [...DEFAULT_REFERENCE_MATRIX_COLUMNS];
+  }
+  return normalized;
 };
 
 const nowIsoString = () => new Date().toISOString();
@@ -147,6 +175,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     lastSyncAt: undefined,
   },
   erpInterfaceEnabled: useRoutingStore.getState().erpRequired,
+  referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
   outputMappings: [],
   setLayout: (layout) => set({ layout }),
   setActiveMenu: (menu) => set({ activeMenu: menu }),
@@ -261,6 +290,19 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         lastSyncAt: nowIsoString(),
       },
     })),
+  setReferenceMatrixColumns: (columns) =>
+    set((state) => {
+      const nextColumns = normalizeReferenceMatrixColumns(columns);
+      const current = state.referenceMatrixColumns;
+      if (
+        nextColumns.length === current.length &&
+        nextColumns.every((column, index) => column === current[index])
+      ) {
+        return state;
+      }
+      useRoutingStore.getState().hydrateReferenceMatrixColumns(nextColumns);
+      return { referenceMatrixColumns: nextColumns };
+    }),
   setOutputMappings: (rows) =>
     set({
       outputMappings: rows.map((row) => ({
@@ -342,6 +384,20 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     }));
   },
 }));
+
+registerReferenceMatrixPersistence((columns) => {
+  useWorkspaceStore.setState((current) => {
+    if (
+      current.referenceMatrixColumns.length === columns.length &&
+      current.referenceMatrixColumns.every((column, index) => column === columns[index])
+    ) {
+      return current;
+    }
+    return { referenceMatrixColumns: columns };
+  });
+});
+
+useRoutingStore.getState().hydrateReferenceMatrixColumns(useWorkspaceStore.getState().referenceMatrixColumns);
 
 useRoutingStore.subscribe(
   (state) => state.erpRequired,
