@@ -1,5 +1,5 @@
-import { test, expect } from "@playwright/test";
-import type { Route } from "@playwright/test";
+import { test, expect } from "../playwrightTest";
+import type { Route } from "../playwrightTest";
 import type { PredictionResponse } from "../../frontend/src/types/routing";
 import type { WorkflowConfigResponse } from "../../frontend/src/types/workflow";
 
