@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 35 | Completed 4 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 3 | Completed 4 | Blockers 0
 
 # 절대 지령
 1. 각 단계는 승인 후에만 진행한다.
@@ -147,7 +147,7 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 - [ ] SQL 저장 성공 및 Stage 5 스키마 일치 — 증빙: `deliverables/onboarding_evidence/sql_save_test.log`; 2025-09-29 재검증 시 Stage 5 SQL export endpoint 연결 거부(검증자: ChatGPT)
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람) — 증빙: `deliverables/onboarding_evidence/monitoring_test.log`, 내부 공유 드라이브 QA/Lab3/monitoring/teams_alert_save_event.png; 테스트 환경 알람 발송 확인, 운영 연동 재검증 필요
 
-> **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다.
+> **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다. 2025-10-29 재검증 결과, 완료 항목 4건의 증빙 로그/파일을 모두 확인했고 미완료 3건은 증빙 대기 상태다.
 
 ### 9. 문제 보고 절차
 1. Stage 0 요구 추적표를 참고해 이슈를 기록한다.
