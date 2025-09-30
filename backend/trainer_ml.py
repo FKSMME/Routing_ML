@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 # ── 표준 라이브러리
+import argparse
 import gc
+import random
 import threading
 import warnings
 from pathlib import Path
@@ -17,15 +19,15 @@ import json
 from importlib import metadata as importlib_metadata
 
 # 패키지 루트 경로를 sys.path에 추가하여 `python backend/trainer_ml.py` 직접 실행을 지원
-if __package__ in (None, ""):
-    project_root = Path(__file__).resolve().parents[1]
-    if str(project_root) not in sys.path:
-        sys.path.insert(0, str(project_root))
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 # ── 서드-파티
 import numpy as np
 import pandas as pd
 import psutil
+import yaml
 from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, StandardScaler, normalize
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import VarianceThreshold
@@ -51,7 +53,7 @@ warnings.filterwarnings(
 )
 
 # 런타임 설정 기본값 (워크플로우 그래프 SAVE 즉시 반영용)
-TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool] = {
+TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool | int | None] = {
     "similarity_threshold": 0.8,
     "trim_std_enabled": True,
     "trim_lower_percent": 0.05,
@@ -60,6 +62,9 @@ TRAINER_RUNTIME_SETTINGS: Dict[str, float | bool] = {
     "time_profile_strategy": "sigma_profile",
     "time_profile_optimal_sigma": 0.67,
     "time_profile_safe_sigma": 1.28,
+    "hnsw_M": 32,
+    "hnsw_ef_construction": 200,
+    "hnsw_ef_search": None,
 }
 
 
@@ -77,6 +82,74 @@ def _collect_training_runtime_versions() -> Dict[str, Optional[str]]:
         versions["scikit_learn"] = None
 
     return versions
+
+
+def _get_hnsw_params() -> Dict[str, Optional[int]]:
+    """Return HNSW parameter overrides from the runtime settings."""
+
+    def _coerce_int(value: Any) -> Optional[int]:
+        if value in (None, "", "null"):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "M": _coerce_int(TRAINER_RUNTIME_SETTINGS.get("hnsw_M", 32)) or 32,
+        "ef_construction": _coerce_int(TRAINER_RUNTIME_SETTINGS.get("hnsw_ef_construction", 200))
+        or 200,
+        "ef_search": _coerce_int(TRAINER_RUNTIME_SETTINGS.get("hnsw_ef_search")),
+    }
+
+
+def _export_projector_fallback(
+    tb_dir: Path,
+    *,
+    vectors: np.ndarray,
+    item_codes: List[str],
+    metadata_df: pd.DataFrame,
+    metadata_cols: Optional[List[str]],
+) -> None:
+    """Create minimal TensorBoard projector assets without TensorFlow."""
+
+    tb_dir.mkdir(parents=True, exist_ok=True)
+
+    vectors_path = tb_dir / "vectors.tsv"
+    metadata_path = tb_dir / "metadata.tsv"
+    config_path = tb_dir / "projector_config.json"
+
+    np.savetxt(vectors_path, vectors.astype(np.float32, copy=False), delimiter="\t", fmt="%.6f")
+
+    columns: List[str] = ["ITEM_CD"]
+    if metadata_cols:
+        for col in metadata_cols:
+            if col not in columns:
+                columns.append(col)
+
+    metadata = metadata_df.loc[:, [c for c in metadata_df.columns if c in columns]].copy()
+    for col in columns:
+        if col not in metadata.columns:
+            metadata[col] = ""
+
+    metadata = metadata.reindex(columns=columns)
+    # Reorder rows to match the embedding order using ITEM_CD values
+    metadata = metadata.set_index("ITEM_CD").reindex(item_codes).reset_index()
+    metadata.to_csv(metadata_path, sep="\t", index=False)
+
+    projector_config = {
+        "embeddings": [
+            {
+                "tensorName": "routing_ml_embeddings",
+                "tensorShape": [len(item_codes), int(vectors.shape[1])],
+                "tensorPath": vectors_path.name,
+                "metadataPath": metadata_path.name,
+            }
+        ]
+    }
+    config_path.write_text(json.dumps(projector_config, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    logger.info("TensorBoard Projector fallback assets created at: %s", tb_dir)
 
 
 def apply_trainer_runtime_config(config: TrainerRuntimeConfig) -> None:
@@ -653,8 +726,21 @@ def _train_model_with_ml_improved_core(
         return None
 
     # 14) HNSW 인덱스
-    logger.info(f"HNSW 인덱스 생성 중... (벡터 차원: {vectors.shape[1]})")
-    searcher = HNSWSearch(vectors, df_subset["ITEM_CD"].tolist(), M=32, ef_construction=200, ef_search=None)
+    hnsw_params = _get_hnsw_params()
+    logger.info(
+        "HNSW 인덱스 생성 중... (벡터 차원: %d, M=%d, ef_construction=%d, ef_search=%s)",
+        vectors.shape[1],
+        hnsw_params["M"],
+        hnsw_params["ef_construction"],
+        str(hnsw_params["ef_search"]),
+    )
+    searcher = HNSWSearch(
+        vectors,
+        df_subset["ITEM_CD"].tolist(),
+        M=hnsw_params["M"],
+        ef_construction=hnsw_params["ef_construction"],
+        ef_search=hnsw_params["ef_search"],
+    )
     if not update_progress(90):
         return None
 
@@ -695,19 +781,29 @@ def _train_model_with_ml_improved_core(
 
             # ← 추가: TensorBoard Projector 내보내기
             if export_tb_projector:
+                tb_dir = model_dir / "tb_projector"
+                item_codes = df_subset["ITEM_CD"].tolist()
+                metadata_columns = projector_metadata_cols or ["ITEM_NM"]
                 try:
                     from models.export_tb_projector import export_for_tensorboard_projector
-                    tb_dir = model_dir / "tb_projector"
+
                     export_for_tensorboard_projector(
                         vectors=vectors,
-                        item_codes=df_subset["ITEM_CD"].tolist(),
+                        item_codes=item_codes,
                         log_dir=str(tb_dir),
                         metadata_df=df,
-                        metadata_cols=projector_metadata_cols or ["ITEM_NM"]
+                        metadata_cols=metadata_columns,
                     )
-                    logger.info(f"TensorBoard Projector logs created at: {tb_dir}")
-                except Exception as e:
-                    logger.warning(f"Projector 로그 생성 실패: {e}")
+                    logger.info("TensorBoard Projector logs created at: %s", tb_dir)
+                except Exception as exc:
+                    logger.warning("고급 Projector 로그 생성 실패: %s", exc)
+                    _export_projector_fallback(
+                        tb_dir,
+                        vectors=vectors,
+                        item_codes=item_codes,
+                        metadata_df=df,
+                        metadata_cols=metadata_columns,
+                    )
 
             try:
                 write_manifest(model_dir, strict=True)
@@ -898,13 +994,20 @@ def train_model_with_ml_improved(
         if not update_progress(70):
             return None
 
-        logger.info("HNSW 인덱스 생성 중... (벡터 차원: %d)", vectors.shape[1])
+        hnsw_params = _get_hnsw_params()
+        logger.info(
+            "HNSW 인덱스 생성 중... (벡터 차원: %d, M=%d, ef_construction=%d, ef_search=%s)",
+            vectors.shape[1],
+            hnsw_params["M"],
+            hnsw_params["ef_construction"],
+            str(hnsw_params["ef_search"]),
+        )
         searcher = HNSWSearch(
             vectors,
             df_subset["ITEM_CD"].tolist(),
-            M=32,
-            ef_construction=200,
-            ef_search=None,
+            M=hnsw_params["M"],
+            ef_construction=hnsw_params["ef_construction"],
+            ef_search=hnsw_params["ef_search"],
         )
 
         if not update_progress(90):
@@ -1089,3 +1192,170 @@ def load_optimized_model(
     elapsed_time = time.time() - start_time
     logger.info("모델 로드: %s, 소요 시간: %.2f초", p, elapsed_time)
     return searcher, encoder, scaler, feature_columns
+
+
+def _load_training_dataset(data_path: Path) -> pd.DataFrame:
+    """Load a training dataset supporting CSV and Parquet formats."""
+
+    resolved = data_path.expanduser().resolve()
+    if not resolved.exists():
+        raise FileNotFoundError(f"Dataset not found: {resolved}")
+
+    suffix = resolved.suffix.lower()
+    if suffix == ".csv":
+        return pd.read_csv(resolved)
+    if suffix in {".parquet", ".pq"}:
+        return pd.read_parquet(resolved)
+    raise ValueError(f"Unsupported dataset format: {resolved.suffix}")
+
+
+def _load_trainer_config(config_path: Path) -> Dict[str, Any]:
+    resolved = config_path.expanduser().resolve()
+    if not resolved.exists():
+        raise FileNotFoundError(f"Trainer config not found: {resolved}")
+
+    with open(resolved, "r", encoding="utf-8") as handle:
+        data = yaml.safe_load(handle) or {}
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Trainer config must be a mapping, got: {type(data)!r}")
+
+    return data
+
+
+def _apply_cli_config_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
+    """Apply config overrides to runtime settings and return CLI options."""
+
+    seed = config.get("seed")
+    if seed is not None:
+        try:
+            seed_value = int(seed)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid seed value: {seed!r}") from exc
+        random.seed(seed_value)
+        np.random.seed(seed_value)
+        logger.info("난수 시드 설정: %d", seed_value)
+
+    if "similarity_threshold" in config:
+        try:
+            TRAINER_RUNTIME_SETTINGS["similarity_threshold"] = float(config["similarity_threshold"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("similarity_threshold must be numeric") from exc
+
+    hnsw_config = config.get("hnsw", {})
+    if "max_neighbors" in config:
+        hnsw_config = dict(hnsw_config)
+        hnsw_config.setdefault("M", config["max_neighbors"])
+
+    if isinstance(hnsw_config, dict):
+        for key, setting_key in (
+            ("M", "hnsw_M"),
+            ("ef_construction", "hnsw_ef_construction"),
+            ("ef_search", "hnsw_ef_search"),
+        ):
+            if key in hnsw_config:
+                TRAINER_RUNTIME_SETTINGS[setting_key] = hnsw_config[key]
+
+    export_cfg = ((config.get("export") or {}).get("projector") or {})
+    export_enabled = bool(export_cfg.get("enabled"))
+    projector_metadata = export_cfg.get("metadata_fields")
+    if projector_metadata is not None and not isinstance(projector_metadata, list):
+        raise ValueError("metadata_fields must be a list when provided")
+
+    output_cfg = config.get("output") or {}
+    output_dir = output_cfg.get("directory")
+    overwrite = bool(output_cfg.get("overwrite", False))
+
+    return {
+        "export_tb_projector": export_enabled,
+        "projector_metadata_cols": projector_metadata,
+        "output_dir": Path(output_dir) if output_dir else None,
+        "overwrite": overwrite,
+    }
+
+
+def _build_cli_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Routing ML trainer command line interface")
+    parser.add_argument("--config", type=Path, required=True, help="Path to the trainer YAML config")
+    parser.add_argument("--data-path", type=Path, required=True, help="Path to the training dataset")
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Optional override for the artifact output directory",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Overwrite the output directory if it already exists",
+    )
+    parser.add_argument(
+        "--projector-metadata",
+        nargs="*",
+        default=None,
+        help="Optional metadata fields to include in the projector export",
+    )
+    parser.add_argument(
+        "--disable-projector",
+        action="store_true",
+        help="Disable projector export even if enabled in the config",
+    )
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Entry point for running the trainer from the command line."""
+
+    args = _build_cli_parser().parse_args(argv)
+    config_data = _load_trainer_config(args.config)
+    cli_options = _apply_cli_config_overrides(config_data)
+
+    dataset = _load_training_dataset(args.data_path)
+
+    output_dir = args.output_dir or cli_options["output_dir"] or Path("models")
+    output_dir = output_dir.expanduser().resolve()
+
+    overwrite = args.overwrite or cli_options["overwrite"]
+    if output_dir.exists() and overwrite:
+        logger.info("기존 출력 디렉터리 삭제: %s", output_dir)
+        for child in output_dir.iterdir():
+            if child.is_file() or child.is_symlink():
+                child.unlink()
+            elif child.is_dir():
+                import shutil
+
+                shutil.rmtree(child)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    export_tb_projector = cli_options["export_tb_projector"] and not args.disable_projector
+    projector_metadata = (
+        args.projector_metadata
+        if args.projector_metadata is not None
+        else cli_options["projector_metadata_cols"]
+    )
+
+    logger.info(
+        "트레이너 CLI 실행",
+        extra={
+            "dataset": str(args.data_path),
+            "output_dir": str(output_dir),
+            "export_tb_projector": export_tb_projector,
+            "projector_metadata": projector_metadata,
+        },
+    )
+
+    train_model_with_ml_improved(
+        dataset,
+        save_dir=output_dir,
+        export_tb_projector=export_tb_projector,
+        projector_metadata_cols=projector_metadata,
+    )
+
+    logger.info("트레이너 CLI 완료: %s", output_dir)
+    print(str(output_dir))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
