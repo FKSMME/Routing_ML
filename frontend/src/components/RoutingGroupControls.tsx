@@ -3,7 +3,134 @@ import { useRoutingGroups } from "@hooks/useRoutingGroups";
 import { fetchWorkspaceSettings, postUiAudit } from "@lib/apiClient";
 import { useRoutingStore } from "@store/routingStore";
 import { Download, Play, Save, Settings, Upload } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
+
+interface ConfirmationModalProps {
+  open: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const modalOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "var(--surface-overlay)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  backdropFilter: "blur(6px)",
+  zIndex: 1000,
+};
+
+const modalCardStyle: CSSProperties = {
+  width: "min(420px, 90vw)",
+  borderRadius: "var(--layout-radius)",
+  background: "var(--surface-card)",
+  boxShadow: "var(--shadow-focus)",
+  border: "1px solid var(--border-strong)",
+  padding: "1.5rem",
+  color: "var(--text-primary)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "1rem",
+};
+
+const modalHeadingStyle: CSSProperties = {
+  fontFamily: "var(--font-family)",
+  color: "var(--text-heading)",
+  fontSize: "1.1rem",
+  fontWeight: 600,
+  margin: 0,
+};
+
+const modalBodyStyle: CSSProperties = {
+  color: "var(--text-muted)",
+  fontSize: "0.95rem",
+  lineHeight: 1.5,
+};
+
+const modalActionsStyle: CSSProperties = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "0.75rem",
+};
+
+function ConfirmationModal({
+  open,
+  title,
+  description,
+  confirmLabel,
+  cancelLabel = "취소",
+  busy = false,
+  onConfirm,
+  onCancel,
+}: ConfirmationModalProps) {
+  const headingId = useId();
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onCancel]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div style={modalOverlayStyle} role="presentation" onClick={() => onCancel()}>
+      <div
+        style={modalCardStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        aria-live="assertive"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h3 id={headingId} style={modalHeadingStyle}>
+          {title}
+        </h3>
+        <p style={modalBodyStyle}>{description}</p>
+        <div style={modalActionsStyle}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onCancel}
+            disabled={busy}
+          >
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {busy ? "처리 중..." : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const FILE_FORMATS = ["CSV", "XML", "JSON", "Excel", "ACCESS"] as const;
 type FileFormat = (typeof FILE_FORMATS)[number];
@@ -72,6 +199,8 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const [destination, setDestination] = useState<Destination>("server");
   const [loadId, setLoadId] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | "server" | "interface">(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
 
   const saving = useRoutingStore((state) => state.saving);
   const timeline = useRoutingStore((state) => state.timeline);
@@ -273,12 +402,73 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     [buildExportDataset, format, groupName, refreshGroups, saveGroup, timelineLength],
   );
 
+  const performInterface = useCallback(async () => {
+    if (!erpRequired) {
+      setStatus({ variant: "info", text: "옵션 메뉴에서 ERP 인터페이스를 활성화해 주세요." });
+      return false;
+    }
+    const ok = await handleServerSave({ metadata: { trigger: "interface" } });
+    if (ok) {
+      postUiAudit({
+        action: "ui.routing.interface",
+        username: "codex",
+        payload: {
+          format,
+          step_count: timelineLength,
+        },
+      }).catch(() => undefined);
+    }
+    return ok;
+  }, [erpRequired, format, handleServerSave, timelineLength]);
+
   const capability = FORMAT_CAPABILITIES[format];
   const localSupported = capability.local;
   const clipboardSupported = capability.clipboard;
   const disabledSave = saving || exporting || timelineLength === 0;
 
   const formatLabel = useMemo(() => `${format} × ${destination.toUpperCase()}`, [format, destination]);
+
+  const confirmationContent = useMemo(() => {
+    if (pendingAction === "server") {
+      return {
+        title: "ERP 저장을 진행할까요?",
+        description: `선택한 설정(${formatLabel})으로 서버에 저장하면 ERP 인터페이스용 데이터가 갱신됩니다. 계속 진행하시겠습니까?`,
+        confirmLabel: "ERP로 저장",
+      } as const;
+    }
+    if (pendingAction === "interface") {
+      return {
+        title: "ERP 인터페이스 전송",
+        description: "ERP 인터페이스로 즉시 전송합니다. 최근 저장 내용을 기준으로 라우팅이 배포됩니다.",
+        confirmLabel: "인터페이스 실행",
+      } as const;
+    }
+    return null;
+  }, [formatLabel, pendingAction]);
+
+  const dismissConfirmation = useCallback(() => {
+    if (confirmBusy) {
+      return;
+    }
+    setPendingAction(null);
+  }, [confirmBusy]);
+
+  const confirmPendingAction = useCallback(async () => {
+    if (!pendingAction) {
+      return;
+    }
+    setConfirmBusy(true);
+    try {
+      if (pendingAction === "server") {
+        await handleServerSave();
+      } else {
+        await performInterface();
+      }
+    } finally {
+      setConfirmBusy(false);
+      setPendingAction(null);
+    }
+  }, [handleServerSave, pendingAction, performInterface]);
 
   const handleLoad = async (groupId: string) => {
     const result = await loadGroup(groupId);
@@ -423,25 +613,19 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       setStatus({ variant: "info", text: "ACCESS 저장은 ERP 인터페이스 옵션을 ON 해야 합니다." });
       return;
     }
+    if (destination === "server" && (erpRequired || format === "ACCESS")) {
+      setPendingAction("server");
+      return;
+    }
     await handleServerSave();
   };
 
-  const handleInterface = async () => {
+  const handleInterface = () => {
     if (!erpRequired) {
       setStatus({ variant: "info", text: "옵션 메뉴에서 ERP 인터페이스를 활성화해 주세요." });
       return;
     }
-    const ok = await handleServerSave({ metadata: { trigger: "interface" } });
-    if (ok) {
-      postUiAudit({
-        action: "ui.routing.interface",
-        username: "codex",
-        payload: {
-          format,
-          step_count: timelineLength,
-        },
-      }).catch(() => undefined);
-    }
+    setPendingAction("interface");
   };
 
   const content = (
@@ -456,6 +640,21 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           placeholder="예: PRECISION-LINE-A"
         />
       </div>
+
+      <button type="button" className="primary-button" onClick={handleSave} disabled={disabledSave}>
+        <Save size={16} />
+        {saving || exporting ? "처리 중..." : "저장"}
+      </button>
+
+      <p
+        style={{
+          marginTop: "0.25rem",
+          fontSize: "0.85rem",
+          color: "var(--text-muted)",
+        }}
+      >
+        선택한 형식·위치: {formatLabel}
+      </p>
 
       <div className="form-field">
         <label>저장 형식</label>
@@ -495,7 +694,6 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           ))}
         </div>
       </div>
-
       <button
         id={ROUTING_SAVE_CONTROL_IDS.primary}
         type="button"
@@ -508,6 +706,16 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       </button>
 
       <div className="save-shortcuts">
+        <span
+          style={{
+            display: "block",
+            marginBottom: "0.4rem",
+            fontSize: "0.85rem",
+            color: "var(--text-muted)",
+          }}
+        >
+          빠른 다운로드 / 업로드
+        </span>
         <button
           id={ROUTING_SAVE_CONTROL_IDS.localShortcut}
           type="button"
@@ -591,6 +799,17 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         <Play size={14} /> ERP 인터페이스는 옵션 메뉴에서 활성화한 후 사용할 수 있습니다.
       </footer>
     </div>
+
+      <ConfirmationModal
+        open={Boolean(confirmationContent)}
+        title={confirmationContent?.title ?? ""}
+        description={confirmationContent?.description ?? ""}
+        confirmLabel={confirmationContent?.confirmLabel ?? "확인"}
+        busy={confirmBusy}
+        onCancel={dismissConfirmation}
+        onConfirm={() => void confirmPendingAction()}
+      />
+    </section>
   );
 
   if (variant === "panel") {
