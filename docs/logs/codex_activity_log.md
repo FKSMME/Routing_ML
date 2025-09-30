@@ -44,3 +44,4 @@
 - 2025-10-05 08:55:00: Reviewed Codex activity log and logbook for duplicate entries, annotating redundancies with strikethrough and [x] markers per 절대 지령.
 - 2025-10-05 12:30:00: Recorded DevOps review sign-off for deploy/docker/internal_network_playbook.md covering registry mirroring, air-gap image promotion, and secrets handling procedures.
 - 2025-10-05 13:05:00: Updated task_details/menu1_master_data_detail.md checklist counts and marked API/component TODOs complete after cross-checking backend docs and master-data components.
+- 2025-10-06 09:20:00: Logged QA 자동화 보류 항목 세부 계획(Undo/Redo·저장 옵션·ERP 플래그 통합 테스트)과 예정 Vitest 명령/대상 파일을 docs/Design/routing_state_store_plan.md 및 Tasklist.md에 동기화.
