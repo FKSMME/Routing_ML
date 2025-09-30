@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 0 | Blockers 0
 
 # Routing ML 설치 검증 보고서 (2025-09-27)
 
@@ -17,10 +17,10 @@
 - **Access ODBC 드라이버**: `pyodbc.drivers()` 호출 결과 빈 배열이 반환되어 Microsoft Access ODBC 드라이버가 설치되어 있지 않음을 확인함.【e6bdbb†L1-L5】
 
 - **관리자 권한**: 컨테이너 세션에서 `id` 명령을 실행해 `uid=0(root) gid=0(root) groups=0(root)`로 확인했으며, 관리자 권한에 상응하는 루트 계정임을 텍스트 증빙(`deliverables/onboarding_evidence/step2_admin_account.txt`)으로 보관함.
-- **기타 항목**(VPN, 방화벽 등)은 컨테이너 환경 특성상 확인 불가하므로 후속 Windows 배포 시 별도 검증 필요.
 
 - **Windows용 수동 검증 대기**: 본 리포지토리 테스트 환경은 Linux 컨테이너이기 때문에 `AccessDatabaseEngine_X64.exe` 실행, `odbcad32.exe`(64bit) 확인, `verify_odbc.ps1` 로그 수집을 직접 수행할 수 없다. 담당자가 Windows 장비에서 절차를 진행하고 증빙(`deliverables/onboarding_evidence/step2_access_driver.png`)을 로컬에 생성한 뒤, Git 리포지토리에 커밋하지 않고 사내 증빙 저장소에 업로드하도록 요청하였다. 현재 저장소에는 정책상 바이너리 증빙 파일이 포함되어 있지 않다.
-- **기타 항목**(관리자 권한, VPN, 방화벽 등)은 컨테이너 환경 특성상 확인 불가하므로 후속 Windows 배포 시 별도 검증 필요.
+
+- **기타 항목**(VPN, 방화벽 등): 컨테이너 환경 특성상 확인 불가하므로 Windows 장비에서 후속 검증이 필요하다.
 
 ## 5. 설치 직후 점검 항목
 | 점검 항목 | 결과 | 근거 |

@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 27 | Completed 1 | Blockers 1
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 8 | Completed 53 | Blockers 1
 
 # Routing Enhancement QA 시나리오 (Codex 자가 테스트)
 
@@ -87,18 +87,18 @@
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → 재활용한 ERP 토글 ON 자동화 로그로 UI/서버 연동을 확인했다.
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 감사 로그 캡처 결과를 재활용해 동일 증빙을 확보했다.
 
-- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요, Issue에 일정 기록.
+- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요. 2025-10-04 09:00-11:00 KST 현장 수동 QA 슬롯에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 【F:tests/test_rsl_routing_groups.py†L140-L148】
+- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 및 payload 검증 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)). 【F:tests/test_rsl_routing_groups.py†L140-L148】
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 
-- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
-- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
+- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류. 2025-10-04 09:00-11:00 KST Lab-3 세션에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [x] GET 단건 로드 후 dirty 해제 → ✅ UI 캡처 확보 완료 (`deliverables/onboarding_evidence/get_group_dirty_release.png`).
-- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류.
+- [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
 
@@ -107,9 +107,9 @@
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Evidence: `deliverables/onboarding_evidence/audit_log_sample_ui.log`, `deliverables/onboarding_evidence/audit_log_sample_server.log`.
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처(`frontend/tests/evidence/erp_interface_capture.spec.tsx`)와 로그([`deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.ui.json), [`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json)).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → 동일 증빙([`deliverables/onboarding_evidence/erp_interface_on_20250929.network.json`](../../deliverables/onboarding_evidence/erp_interface_on_20250929.network.json))으로 ERP 인터페이스 트리거 감사 로그를 확보.
-- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류, Issue 참고.
-- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류.
-- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류.
+- [ ] POST 성공 케이스 (ERP OFF) → ⚠️ UI 연동 캡처 보류. 2025-10-04 09:00-11:00 KST 현장 세션에서 UI 증빙 확보 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+- [ ] GET 단건 로드 후 dirty 해제 → ⚠️ 동일 사유로 보류. 2025-10-04 09:00-11:00 KST 세션에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [x] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → Vitest 증빙 캡처 및 로그 참조(상동).
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → Vitest 증빙 로그로 UI/서버 감사 이벤트 확인 완료.
 
