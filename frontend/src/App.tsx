@@ -7,6 +7,7 @@ import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
+import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
 import { RoutingGroupControls } from "@components/RoutingGroupControls";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
@@ -16,7 +17,7 @@ import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace"
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
-import { useRoutingStore } from "@store/routingStore";
+import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useResponsiveLayout } from "@styles/responsive";
 import { BarChart3, Database, FileOutput, Route, Settings, Workflow } from "lucide-react";
@@ -126,42 +127,55 @@ export default function App() {
 
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
+  const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
+    const tabKey = tab?.id ?? "default";
+    return (
+      <RoutingWorkspaceLayout
+        left={
+          <>
+            <PredictionControls
+              itemCodes={itemCodes}
+              onChangeItemCodes={updateItemCodes}
+              topK={topK}
+              onChangeTopK={updateTopK}
+              threshold={threshold}
+              onChangeThreshold={updateThreshold}
+              loading={isLoading || isFetching}
+              onSubmit={refetch}
+            />
+            <ReferenceMatrixPanel key={`reference-${tabKey}`} />
+          </>
+        }
+        center={
+          <>
+            <TimelinePanel key={`timeline-${tabKey}`} />
+            <VisualizationSummary metrics={data?.metrics} />
+            <FeatureWeightPanel
+              profiles={featureWeights.availableProfiles}
+              selectedProfile={featureWeights.profile}
+              onSelectProfile={setFeatureWeightProfile}
+              manualWeights={featureWeights.manualWeights}
+              onChangeManualWeight={setManualWeight}
+              onReset={resetManualWeights}
+            />
+            <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
+          </>
+        }
+        right={
+          <>
+            <CandidatePanel key={`candidates-${tabKey}`} />
+            <RoutingGroupControls />
+          </>
+        }
+      />
+    );
+  };
+
   const routingContent = (
-    <div className="routing-workspace-grid">
-      <aside className="routing-column routing-column--left">
-        <PredictionControls
-          itemCodes={itemCodes}
-          onChangeItemCodes={updateItemCodes}
-          topK={topK}
-          onChangeTopK={updateTopK}
-          threshold={threshold}
-          onChangeThreshold={updateThreshold}
-          loading={isLoading || isFetching}
-          onSubmit={refetch}
-        />
-        <ReferenceMatrixPanel />
-      </aside>
-
-      <section className="routing-column routing-column--center">
-        <RoutingProductTabs />
-        <TimelinePanel />
-        <VisualizationSummary metrics={data?.metrics} />
-        <FeatureWeightPanel
-          profiles={featureWeights.availableProfiles}
-          selectedProfile={featureWeights.profile}
-          onSelectProfile={setFeatureWeightProfile}
-          manualWeights={featureWeights.manualWeights}
-          onChangeManualWeight={setManualWeight}
-          onReset={resetManualWeights}
-        />
-        <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-      </section>
-
-      <aside className="routing-column routing-column--right">
-        <CandidatePanel />
-        <RoutingGroupControls />
-      </aside>
-    </div>
+    <RoutingProductTabs
+      renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
+      emptyState={renderRoutingWorkspace()}
+    />
   );
 
   let workspace: JSX.Element;
