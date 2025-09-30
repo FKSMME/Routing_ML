@@ -1,0 +1,66 @@
+.shell {
+  position: relative;
+  display: block;
+  border-radius: calc(var(--layout-radius) * 1.35);
+  padding: 1px;
+  background: var(--border-gradient);
+  transition: var(--transition-lift), var(--transition-glow);
+  isolation: isolate;
+}
+
+.surface {
+  position: relative;
+  border-radius: inherit;
+  background: color-mix(in hsl, var(--surface-card) 96%, transparent);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-resting);
+  transition: inherit;
+  height: 100%;
+}
+
+.paddingNone {
+  padding: 0;
+}
+
+.paddingSm {
+  padding: 1rem;
+}
+
+.paddingMd {
+  padding: 1.5rem;
+}
+
+.paddingLg {
+  padding: 2rem;
+}
+
+.toneSoft {
+  background: color-mix(in hsl, var(--surface) 95%, transparent);
+}
+
+.toneOverlay {
+  background: color-mix(in hsl, var(--surface-overlay) 90%, transparent);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.75));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.75));
+}
+
+.toneInverted {
+  background: color-mix(in hsl, var(--surface-card) 98%, transparent);
+  color: var(--text-heading);
+}
+
+.toneDialog {
+  background: color-mix(in hsl, var(--surface-card) 98%, transparent);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.6));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.6));
+  box-shadow: var(--shadow-elegant);
+}
+
+.interactive:hover .surface {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.interactive:focus-within .surface {
+  box-shadow: var(--shadow-glow);
+}

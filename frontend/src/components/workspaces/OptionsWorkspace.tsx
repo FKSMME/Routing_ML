@@ -1,4 +1,5 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
+import { CardShell } from "@components/common/CardShell";
 import {
   type AccessMetadataResponse,
   fetchAccessMetadata,
@@ -579,7 +580,7 @@ export function OptionsWorkspace() {
 
   return (
     <div className="options-workspace" role="region" aria-label="System Options">
-      <section className="panel-card options-card">
+      <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
             <h2 className="panel-title">Standard Deviation Options</h2>
@@ -621,9 +622,9 @@ export function OptionsWorkspace() {
             <AlertTriangle size={16} /> Conflicting combination: {standardConflicts.join(", ")}
           </div>
         ) : null}
-      </section>
+      </CardShell>
 
-      <section className="panel-card options-card">
+      <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
             <h2 className="panel-title">Similarity Search</h2>
@@ -650,9 +651,9 @@ export function OptionsWorkspace() {
             </span>
           )}
         </div>
-      </section>
+      </CardShell>
 
-      <section className="panel-card options-card">
+      <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
             <h2 className="panel-title">Column Mapping</h2>
@@ -746,9 +747,9 @@ export function OptionsWorkspace() {
             <AlertTriangle size={16} /> Resolve mapping conflicts: {mappingDiagnostics.conflictSummary.join(", ")}
           </div>
         ) : null}
-      </section>
+      </CardShell>
 
-      <section className="panel-card options-card">
+      <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
             <h2 className="panel-title">Access Connection & ERP Interface</h2>
@@ -872,7 +873,7 @@ export function OptionsWorkspace() {
             </div>
           </div>
         </div>
-      </section>
+      </CardShell>
 
       <footer className="options-footer">
         <button

@@ -3511,3 +3511,225 @@
   display: grid;
   gap: 0.6rem;
 }
+
+/* Shared surface utilities */
+.surface-card {
+  background: color-mix(in hsl, var(--surface-card) 96%, transparent);
+  color: var(--text-primary);
+}
+
+.surface-card-soft {
+  background: color-mix(in hsl, var(--surface) 95%, transparent);
+}
+
+.surface-card-overlay {
+  background: color-mix(in hsl, var(--surface-overlay) 90%, transparent);
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.75));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.75));
+}
+
+.surface-card-muted {
+  background: color-mix(in hsl, var(--surface) 92%, transparent);
+}
+
+.surface-card-strong {
+  background: color-mix(in hsl, var(--surface-card) 98%, transparent);
+}
+
+.border-soft {
+  border-color: color-mix(in hsl, var(--border) 92%, transparent);
+}
+
+.border-strong {
+  border-color: color-mix(in hsl, var(--border-strong) 96%, transparent);
+}
+
+.shadow-elevated {
+  box-shadow: var(--shadow-raised);
+}
+
+/* Form helpers */
+.form-section {
+  border-radius: calc(var(--layout-radius) * 1.05);
+  border: 1px solid color-mix(in hsl, var(--border) 84%, transparent);
+  background: color-mix(in hsl, var(--surface-overlay) 88%, transparent);
+  padding: 1rem;
+  box-shadow: var(--shadow-resting);
+}
+
+.form-section--dense {
+  padding: 0.75rem 1rem;
+}
+
+.form-control {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in hsl, var(--border) 88%, transparent);
+  background: color-mix(in hsl, var(--surface-overlay) 92%, transparent);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: var(--transition-emphasis), var(--transition-lift);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+  box-shadow: var(--shadow-focus);
+}
+
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in hsl, var(--border) 82%, transparent);
+  background: color-mix(in hsl, var(--surface) 94%, transparent);
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  transition: var(--transition-emphasis);
+}
+
+.form-toggle:hover {
+  border-color: var(--accent-soft);
+  color: var(--text-heading);
+}
+
+.form-checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.45rem;
+  border: 1px solid color-mix(in hsl, var(--border) 82%, transparent);
+  background: color-mix(in hsl, var(--surface) 96%, transparent);
+  accent-color: var(--accent);
+}
+
+.scroll-panel {
+  border-radius: calc(var(--layout-radius) * 1.05);
+  border: 1px solid color-mix(in hsl, var(--border) 80%, transparent);
+  background: color-mix(in hsl, var(--surface-overlay) 88%, transparent);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-resting);
+}
+
+.table-frame {
+  border-radius: calc(var(--layout-radius) * 1.05);
+  border: 1px solid color-mix(in hsl, var(--border) 80%, transparent);
+  background: color-mix(in hsl, var(--surface-overlay) 90%, transparent);
+}
+
+.table-frame table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-primary);
+}
+
+.table-frame thead {
+  background: color-mix(in hsl, var(--surface-card) 96%, transparent);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.table-frame tbody tr {
+  border-bottom: 1px solid color-mix(in hsl, var(--border) 70%, transparent);
+}
+
+.chip-button {
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in hsl, var(--border) 82%, transparent);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  transition: var(--transition-emphasis);
+}
+
+.chip-button:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+}
+
+.dialog-backdrop {
+  background: color-mix(in hsl, var(--foreground) 12%, var(--surface) 35%);
+}
+.form-checkbox:focus-visible {
+  outline: 2px solid color-mix(in hsl, var(--accent) 65%, transparent);
+  outline-offset: 2px;
+}
+.canvas-panel {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in hsl, var(--surface) 24%, transparent) 0%,
+    color-mix(in hsl, var(--accent-strong) 22%, transparent) 55%,
+    color-mix(in hsl, var(--surface-card) 32%, transparent) 100%
+  );
+  opacity: 0.95;
+}
+.chip-button--danger {
+  border-color: color-mix(in hsl, var(--danger-strong) 65%, transparent);
+  color: var(--danger-strong);
+}
+
+.chip-button--danger:hover {
+  border-color: color-mix(in hsl, var(--danger-strong) 80%, transparent);
+  color: var(--danger-strong);
+  background: color-mix(in hsl, var(--danger-soft) 65%, transparent);
+}
+.selection-chip {
+  border-radius: 0.9rem;
+  border: 1px solid color-mix(in hsl, var(--border) 82%, transparent);
+  background: color-mix(in hsl, var(--surface) 96%, transparent);
+  color: var(--text-primary);
+  transition: var(--transition-emphasis);
+}
+
+.selection-chip:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.selection-chip[data-state="active"] {
+  border-color: var(--accent);
+  background: color-mix(in hsl, var(--accent) 24%, transparent);
+  color: var(--accent-strong);
+}
+
+.selection-chip[data-state="conflict"] {
+  border-color: var(--danger-strong);
+  color: var(--danger-strong);
+}
+
+.key-chip {
+  border-radius: 9999px;
+  border: 1px solid color-mix(in hsl, var(--border) 82%, transparent);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  transition: var(--transition-emphasis);
+}
+
+.key-chip:hover {
+  border-color: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.key-chip[data-state="active"] {
+  border-color: var(--accent);
+  background: color-mix(in hsl, var(--accent) 22%, transparent);
+  color: var(--accent-strong);
+}
+.chip-button--accent {
+  border-color: color-mix(in hsl, var(--accent) 55%, transparent);
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.chip-button--accent:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in hsl, var(--accent) 18%, transparent);
+}

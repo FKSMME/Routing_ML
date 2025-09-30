@@ -7,7 +7,10 @@ import type {
   WorkflowGraphEdge,
   WorkflowGraphNode,
 } from "@app-types/workflow";
+import { CardShell } from "@components/common/CardShell";
+import { DialogContainer } from "@components/common/DialogContainer";
 import { fetchWorkflowConfig, patchWorkflowConfig, postUiAudit } from "@lib/apiClient";
+import { cn } from "@lib/classNames";
 import { useWorkflowGraphHistory } from "@store/workflowGraphStore";
 import {
   useCallback,
@@ -94,23 +97,23 @@ function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
   }, [data.metrics]);
 
   return (
-    <div className="w-60 rounded-2xl border border-sky-400/70 bg-slate-950/80 px-4 py-3 text-slate-100 shadow-lg shadow-sky-900/40">
-      <span className="text-xs uppercase tracking-wide text-sky-300/80">
+    <CardShell className="w-60" padding="sm" tone="overlay" innerClassName="px-4 py-3" interactive={false}>
+      <span className="text-xs uppercase tracking-wide text-accent-soft/90">
         {data.category ?? "module"}
       </span>
-      <h3 className="mt-1 text-lg font-semibold text-sky-100">{data.label}</h3>
+      <h3 className="mt-1 text-lg font-semibold text-accent-strong">{data.label}</h3>
       {data.status ? (
-        <p className="mt-1 text-xs font-medium text-sky-400">상태: {data.status}</p>
+        <p className="mt-1 text-xs font-medium text-accent">상태: {data.status}</p>
       ) : null}
       {data.description ? (
-        <p className="mt-2 text-xs leading-relaxed text-slate-300">{data.description}</p>
+        <p className="mt-2 text-xs leading-relaxed text-muted">{data.description}</p>
       ) : null}
       {metricEntries.length > 0 ? (
-        <dl className="mt-3 space-y-1 text-[11px] text-slate-400">
+        <dl className="mt-3 space-y-1 text-[11px] text-muted">
           {metricEntries.map(([key, value]) => (
             <div key={key} className="flex justify-between gap-2">
-              <dt className="font-semibold text-slate-300">{key}</dt>
-              <dd className="truncate text-right text-slate-200">
+              <dt className="font-semibold text-accent-soft">{key}</dt>
+              <dd className="truncate text-right text-foreground">
                 {typeof value === "number" ? value.toString() : String(value ?? "-")}
               </dd>
             </div>
@@ -118,18 +121,18 @@ function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
         </dl>
       ) : null}
       {data.docRefs.length > 0 ? (
-        <div className="mt-3 space-y-1 text-[11px] text-slate-400">
-          <p className="font-semibold text-slate-200">문서</p>
+        <div className="mt-3 space-y-1 text-[11px] text-muted">
+          <p className="font-semibold text-accent-soft">문서</p>
           <ul className="list-disc space-y-1 pl-4">
             {data.docRefs.slice(0, 2).map((ref) => (
-              <li key={ref} className="truncate" title={ref}>
+              <li key={ref} className="truncate text-foreground/80" title={ref}>
                 {ref}
               </li>
             ))}
           </ul>
         </div>
       ) : null}
-    </div>
+    </CardShell>
   );
 }
 
@@ -257,201 +260,197 @@ function NodeSettingsDialog({
   onSave,
   saving,
 }: NodeSettingsDialogProps) {
+  const titleId = `node-settings-${node.id}`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 p-6 text-slate-100 shadow-2xl">
-        <header className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-sky-300/80">
-              {node.category ?? "module"}
-            </p>
-            <h2 className="text-2xl font-semibold text-sky-100">{node.label} 설정</h2>
-            <p className="mt-1 text-sm text-slate-300">
-              더블클릭한 도형의 속성을 편집하고 SAVE 하면 즉시 반영됩니다.
-            </p>
+    <DialogContainer
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      className="z-50"
+      surfaceClassName="flex max-h-[70vh] flex-col gap-6"
+      maxWidth={720}
+    >
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-accent-soft/80">
+            {node.category ?? "module"}
+          </p>
+          <h2 id={titleId} className="text-2xl font-semibold text-accent-strong">
+            {node.label} 설정
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            더블클릭한 도형의 속성을 편집하고 SAVE 하면 즉시 반영됩니다.
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="btn-secondary">
+          닫기
+        </button>
+      </header>
+      <div className="flex-1 space-y-6 overflow-y-auto pr-2">
+        <section className="space-y-3">
+          <h3 className="text-lg font-semibold text-accent-strong">기본 정보</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-muted-strong">레이블</span>
+              <input
+                type="text"
+                value={form.label}
+                onChange={(event) => onChange({ ...form, label: event.target.value })}
+                className="form-control"
+              />
+            </label>
+            <label className="space-y-2 text-sm">
+              <span className="text-muted-strong">상태</span>
+              <input
+                type="text"
+                value={form.status}
+                onChange={(event) => onChange({ ...form, status: event.target.value })}
+                className="form-control"
+              />
+            </label>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-slate-600 px-3 py-1 text-sm text-slate-300 transition hover:border-slate-400 hover:text-slate-100"
-          >
-            닫기
-          </button>
-        </header>
-        <div className="max-h-[60vh] space-y-6 overflow-y-auto pr-2">
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
+          <label className="block space-y-2 text-sm">
+            <span className="text-muted-strong">설명</span>
+            <textarea
+              value={form.description}
+              onChange={(event) => onChange({ ...form, description: event.target.value })}
+              rows={3}
+              className="form-control"
+            />
+          </label>
+        </section>
+
+        {node.id === "trainer" ? (
+          <section className={cn("form-section form-section--dense space-y-3")}> 
+            <h3 className="text-lg font-semibold text-accent-strong">트레이너 런타임</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
-                <span className="text-slate-300">레이블</span>
+                <span className="text-muted-strong">유사도 임계값</span>
                 <input
-                  type="text"
-                  value={form.label}
-                  onChange={(event) => onChange({ ...form, label: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={form.similarityThreshold}
+                  onChange={(event) => onChange({ ...form, similarityThreshold: event.target.value })}
+                  className="form-control"
+                />
+              </label>
+              <label className="form-toggle text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.trimStdEnabled}
+                  onChange={(event) => onChange({ ...form, trimStdEnabled: event.target.checked })}
+                  className="form-checkbox"
+                />
+                <span>상/하위 Trim 표준편차 적용</span>
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="space-y-2 text-sm">
+                <span className="text-muted-strong">하위 Trim 비율 (0~1)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={0.5}
+                  step={0.01}
+                  value={form.trimLowerPercent}
+                  onChange={(event) => onChange({ ...form, trimLowerPercent: event.target.value })}
+                  className="form-control"
                 />
               </label>
               <label className="space-y-2 text-sm">
-                <span className="text-slate-300">상태</span>
+                <span className="text-muted-strong">상위 Trim 비율 (0~1)</span>
                 <input
-                  type="text"
-                  value={form.status}
-                  onChange={(event) => onChange({ ...form, status: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                  type="number"
+                  min={0.5}
+                  max={1}
+                  step={0.01}
+                  value={form.trimUpperPercent}
+                  onChange={(event) => onChange({ ...form, trimUpperPercent: event.target.value })}
+                  className="form-control"
                 />
               </label>
             </div>
-            <label className="block space-y-2 text-sm">
-              <span className="text-slate-300">설명</span>
-              <textarea
-                value={form.description}
-                onChange={(event) => onChange({ ...form, description: event.target.value })}
-                rows={3}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-              />
-            </label>
+            <p className="text-xs text-muted">
+              현재 임계값: {trainer.similarity_threshold} · Trim: {trainer.trim_lower_percent}~
+              {trainer.trim_upper_percent}
+            </p>
           </section>
+        ) : null}
 
-          {node.id === "trainer" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">트레이너 런타임</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">유사도 임계값</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={form.similarityThreshold}
-                    onChange={(event) => onChange({ ...form, similarityThreshold: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-                <label className="flex items-center gap-3 rounded-lg border border-slate-700/80 bg-slate-950 px-3 py-2 text-sm text-slate-200">
-                  <input
-                    type="checkbox"
-                    checked={form.trimStdEnabled}
-                    onChange={(event) => onChange({ ...form, trimStdEnabled: event.target.checked })}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
-                  />
-                  <span>상/하위 Trim 표준편차 적용</span>
-                </label>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">하위 Trim 비율 (0~1)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={0.5}
-                    step={0.01}
-                    value={form.trimLowerPercent}
-                    onChange={(event) => onChange({ ...form, trimLowerPercent: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">상위 Trim 비율 (0~1)</span>
-                  <input
-                    type="number"
-                    min={0.5}
-                    max={1}
-                    step={0.01}
-                    value={form.trimUpperPercent}
-                    onChange={(event) => onChange({ ...form, trimUpperPercent: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-slate-400">
-                현재 임계값: {trainer.similarity_threshold} · Trim: {trainer.trim_lower_percent}~
-                {trainer.trim_upper_percent}
-              </p>
-            </section>
-          ) : null}
-
-          {node.id === "predictor" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">예측기 파라미터</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">상위 유사도 임계값</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={form.predictorSimilarity}
-                    onChange={(event) => onChange({ ...form, predictorSimilarity: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">최대 라우팅 조합 수</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={form.maxRoutingVariants}
-                    onChange={(event) => onChange({ ...form, maxRoutingVariants: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-slate-400">
-                현재 설정: Top {predictor.max_routing_variants}, 임계 {predictor.similarity_high_threshold}
-              </p>
-            </section>
-          ) : null}
-
-          {node.id === "sql-mapper" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">SQL 프로파일</h3>
+        {node.id === "predictor" ? (
+          <section className={cn("form-section form-section--dense space-y-3")}>
+            <h3 className="text-lg font-semibold text-accent-strong">예측기 파라미터</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
-                <span className="text-slate-300">활성 프로파일</span>
-                <select
-                  value={form.sqlProfile}
-                  onChange={(event) => onChange({ ...form, sqlProfile: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
-                >
-                  {sql.profiles.map((profile) => (
-                    <option key={profile.name} value={profile.name}>
-                      {profile.name}
-                    </option>
-                  ))}
-                </select>
+                <span className="text-muted-strong">상위 유사도 임계값</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={form.predictorSimilarity}
+                  onChange={(event) => onChange({ ...form, predictorSimilarity: event.target.value })}
+                  className="form-control"
+                />
               </label>
-              <p className="text-xs text-slate-400">
-                7.1 구조와 매핑된 컬럼 수: {sql.output_columns.length}
-              </p>
-            </section>
-          ) : null}
-        </div>
-        <footer className="mt-6 flex items-center justify-between">
-          <span className="text-xs text-slate-400">
-            변경 사항은 SAVE 시 백엔드 Workflow JSON과 동기화됩니다.
-          </span>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-400 hover:text-slate-100"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={saving}
-              className="rounded-lg bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-800 disabled:text-slate-400"
-            >
-              {saving ? "저장 중..." : "SAVE"}
-            </button>
-          </div>
-        </footer>
+              <label className="space-y-2 text-sm">
+                <span className="text-muted-strong">최대 라우팅 조합 수</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={form.maxRoutingVariants}
+                  onChange={(event) => onChange({ ...form, maxRoutingVariants: event.target.value })}
+                  className="form-control"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-muted">
+              현재 설정: Top {predictor.max_routing_variants}, 임계 {predictor.similarity_high_threshold}
+            </p>
+          </section>
+        ) : null}
+
+        {node.id === "sql-mapper" ? (
+          <section className={cn("form-section form-section--dense space-y-3")}>
+            <h3 className="text-lg font-semibold text-accent-strong">SQL 프로파일</h3>
+            <label className="space-y-2 text-sm">
+              <span className="text-muted-strong">활성 프로파일</span>
+              <select
+                value={form.sqlProfile}
+                onChange={(event) => onChange({ ...form, sqlProfile: event.target.value })}
+                className="form-control"
+              >
+                {sql.profiles.map((profile) => (
+                  <option key={profile.name} value={profile.name}>
+                    {profile.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="text-xs text-muted">
+              7.1 구조와 매핑된 컬럼 수: {sql.output_columns.length}
+            </p>
+          </section>
+        ) : null}
       </div>
-    </div>
+      <footer className="flex items-center justify-between">
+        <span className="text-xs text-muted">
+          변경 사항은 SAVE 시 백엔드 Workflow JSON과 동기화됩니다.
+        </span>
+        <div className="flex gap-3">
+          <button type="button" onClick={onClose} className="btn-secondary">
+            취소
+          </button>
+          <button type="button" onClick={onSave} disabled={saving} className="btn-primary">
+            {saving ? "저장 중..." : "SAVE"}
+          </button>
+        </div>
+      </footer>
+    </DialogContainer>
   );
 }
 
@@ -907,8 +906,8 @@ export function AlgorithmWorkspace() {
     <div className="flex h-full flex-col gap-6" role="region" aria-label="알고리즘 편집 워크스페이스">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-sky-100">워크플로우 알고리즘 편집기</h1>
-          <p className="text-sm text-slate-300">
+          <h1 className="text-2xl font-semibold text-accent-strong">워크플로우 알고리즘 편집기</h1>
+          <p className="text-sm text-muted">
             ReactFlow 캔버스에서 노드를 구성하고, 더블클릭으로 런타임 파라미터를 동기화합니다.
           </p>
         </div>
@@ -919,7 +918,7 @@ export function AlgorithmWorkspace() {
             type="button"
             onClick={handleUndo}
             disabled={!canUndo}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-400 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500"
+            className="btn-secondary text-sm disabled:cursor-not-allowed"
           >
             Undo
           </button>
@@ -927,7 +926,7 @@ export function AlgorithmWorkspace() {
             type="button"
             onClick={handleRedo}
             disabled={!canRedo}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-sky-400 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500"
+            className="btn-secondary text-sm disabled:cursor-not-allowed"
           >
             Redo
           </button>
@@ -935,7 +934,7 @@ export function AlgorithmWorkspace() {
             type="button"
             onClick={handleSaveGraph}
             disabled={saving || loading}
-            className="rounded-lg border border-sky-500/60 px-4 py-2 text-sm font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-600 disabled:text-slate-500"
+            className="btn-primary text-sm disabled:cursor-not-allowed"
           >
             {saving ? "저장 중..." : "레이아웃 SAVE"}
           </button>
@@ -943,10 +942,16 @@ export function AlgorithmWorkspace() {
       </div>
 
       <div className="grid flex-1 grid-cols-[280px_1fr] gap-6 lg:grid-cols-[280px_1fr_320px]">
-        <aside className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-          <header className="mb-4 space-y-1">
-            <h2 className="text-lg font-semibold text-sky-100">노드 라이브러리</h2>
-            <p className="text-sm text-slate-400">Trainer · Predictor · Utility</p>
+        <CardShell
+          as="aside"
+          tone="soft"
+          padding="md"
+          innerClassName="flex h-full flex-col gap-4"
+          interactive={false}
+        >
+          <header className="space-y-1">
+            <h2 className="text-lg font-semibold text-accent-strong">노드 라이브러리</h2>
+            <p className="text-sm text-muted">Trainer · Predictor · Utility</p>
           </header>
           <ul className="space-y-3">
             {NODE_LIBRARY.map((item) => (
@@ -955,20 +960,21 @@ export function AlgorithmWorkspace() {
                   type="button"
                   draggable
                   onDragStart={(event) => handleDragStart(event, item)}
-                  className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-4 py-3 text-left transition hover:border-sky-400 hover:text-sky-200"
+                  className="w-full rounded-2xl border border-soft surface-card px-4 py-3 text-left transition hover:border-accent-soft hover:text-accent"
                 >
-                  <h3 className="text-sm font-semibold text-slate-100">{item.label}</h3>
-                  <p className="text-xs text-slate-400">{item.description}</p>
+                  <h3 className="text-sm font-semibold text-foreground">{item.label}</h3>
+                  <p className="text-xs text-muted">{item.description}</p>
                 </button>
               </li>
             ))}
           </ul>
-        </aside>
+        </CardShell>
 
         <section
-          className="relative rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-blue-950/70 to-slate-900"
+          className="relative overflow-hidden rounded-3xl border border-soft surface-card-overlay shadow-elevated"
           ref={wrapperRef}
         >
+          <div className="canvas-panel" aria-hidden="true" />
           {loading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
@@ -1000,19 +1006,26 @@ export function AlgorithmWorkspace() {
         </section>
 
         {selectedNode && workflowConfig ? (
-          <aside className="hidden rounded-3xl border border-slate-800 bg-slate-900/70 p-4 lg:block">
+          <CardShell
+            as="aside"
+            tone="soft"
+            padding="md"
+            className="hidden lg:block"
+            innerClassName="flex h-full flex-col"
+            interactive={false}
+          >
             <header className="mb-4 space-y-1">
-              <p className="text-xs uppercase tracking-wide text-slate-400">Inspector</p>
-              <h2 className="text-lg font-semibold text-sky-100">{selectedNode.label}</h2>
+              <p className="text-xs uppercase tracking-wide text-muted">Inspector</p>
+              <h2 className="text-lg font-semibold text-accent-strong">{selectedNode.label}</h2>
             </header>
-            <dl className="space-y-2 text-sm text-slate-300">
+            <dl className="space-y-2 text-sm text-muted-strong">
               <div>
-                <dt className="font-semibold text-slate-200">상태</dt>
+                <dt className="font-semibold text-foreground">상태</dt>
                 <dd>{selectedNode.status ?? "-"}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-slate-200">설명</dt>
-                <dd className="whitespace-pre-wrap text-xs text-slate-400">
+                <dt className="font-semibold text-foreground">설명</dt>
+                <dd className="whitespace-pre-wrap text-xs text-muted">
                   {typeof selectedNode.settings?.description === "string"
                     ? (selectedNode.settings.description as string)
                     : "-"}
@@ -1020,23 +1033,19 @@ export function AlgorithmWorkspace() {
               </div>
             </dl>
             <div className="mt-6 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDialogOpen(true)}
-                className="flex-1 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 transition hover:border-sky-400 hover:text-sky-200"
-              >
+              <button type="button" onClick={() => setDialogOpen(true)} className="btn-secondary flex-1 text-xs">
                 설정 다이얼로그
               </button>
               <button
                 type="button"
                 onClick={handleSaveGraph}
                 disabled={saving || loading}
-                className="flex-1 rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-800 disabled:text-slate-400"
+                className="btn-primary flex-1 text-xs disabled:cursor-not-allowed"
               >
                 {saving ? "저장 중" : "SAVE"}
               </button>
             </div>
-          </aside>
+          </CardShell>
         ) : null}
       </div>
 
