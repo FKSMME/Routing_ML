@@ -118,23 +118,16 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
    ```
 
 ### 7. 설치형 패키지 준비(Windows) — Stage 9 연계
-- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)과 `deploy/installer/build_windows_installer.py`를 사용해 생성한다.
+- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)과 `deploy/installer/build_windows_installer.py`를 사용해 생성한다. 사내 테스트 빌드는 `dist/RoutingMLInstaller.exe`(PyInstaller + Inno Setup 기반)로 배포한다.
 - 빌드 절차 요약
-  1. Windows 빌드 노드에서 **Python 3.12.x**로 `pip install -r requirements.txt`를 실행한다. PyInstaller가 없으면 빌드 스크립트가 자동으로 설치하므로, 오프라인 환경이라면 `pip install pyinstaller`를 선행한다. 이어서 `npm install --prefix frontend`를 실행한다.
-  2. `python deploy/installer/build_windows_installer.py --clean` → `build/windows/installer` 페이로드와 `build/windows/RoutingMLInstaller.iss` 생성.
-  3. Inno Setup Compiler로 `RoutingMLInstaller.iss` 빌드 → `RoutingMLInstaller_<버전>.exe` 획득.
+  1. Windows 빌드 노드에서 **Python 3.12.x**로 `pip install -r requirements.txt`를 실행한다. 오프라인 환경이라면 `pip install pyinstaller`로 선행 설치하고, `npm install --prefix frontend`로 프런트엔드 의존성을 준비한다.
+  2. `python deploy/installer/build_windows_installer.py --clean`을 실행하면 `build/windows/installer` 페이로드와 `build/windows/RoutingMLInstaller.iss`가 생성된다.
+  3. Inno Setup Compiler로 `RoutingMLInstaller.iss`를 빌드해 `RoutingMLInstaller_<버전>.exe` 또는 사내 테스트용 `dist/RoutingMLInstaller.exe`를 획득한다.
 - 설치 검증 포인트
-  1. 설치 완료 후 PowerShell 스크립트가 `RoutingMLPredictor` 서비스를 자동 등록/기동하는지 확인 (`install_service.ps1`).
-  2. `%APPDATA%\RoutingML\config\workflow_settings.json`이 템플릿을 기준으로 생성되고, Trimmed-STD/SQL 프로파일이 UI SAVE 즉시 반영되는지 확인.
-  3. `scripts/post_install_test.ps1` 실행 결과 `/api/health` 200 응답 및 TensorBoard Projector 경로 확인.
+  1. 설치 완료 후 PowerShell 스크립트가 `RoutingMLPredictor` 서비스를 자동 등록·기동하는지 확인한다(`install_service.ps1`).
+  2. `%APPDATA%\RoutingML\config\workflow_settings.json`이 템플릿을 기준으로 생성되고, 설치 마법사에서 선택한 Trimmed-STD 파라미터와 SQL 컬럼 매핑이 UI SAVE 즉시 반영되는지 확인한다.
+  3. `scripts/post_install_test.ps1` 실행 결과 `/api/health` 200 응답과 TensorBoard Projector 경로 확인 등 스모크 테스트가 성공하는지 검증한다.
 - 정식 배포 전 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료한다.
-
-- 파이썬/Node 미설치 Windows PC용 설치 파일은 Stage 9 패키징 플랜(`docs/stage9_packaging_plan.md`)에 따라 개발된다.
-- 사내 테스트 빌드는 `dist/RoutingMLInstaller.exe`(PyInstaller + Inno Setup 기반)로 제공되며, 설치 시 다음 항목을 확인한다.
-  1. 설치 경로 및 서비스 계정 지정 후 FastAPI 서비스가 Windows 서비스로 등록되는지 확인.
-  2. 설치 마법사에서 SQL 컬럼 매핑 프로파일과 Trimmed-STD 파라미터를 선택 적용할 수 있는지 확인.
-  3. 설치 완료 직후 `scripts/post_install_test.ps1` 스모크 테스트가 성공하는지 검증.
-- 정식 배포 전에는 Stage 9 QA 체크리스트(설치/업데이트/제거 시나리오)와 사내 Change Management 승인 절차를 완료해야 한다.
 
 
 ### 8. 온보딩 체크리스트
