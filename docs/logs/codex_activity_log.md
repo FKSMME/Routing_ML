@@ -52,3 +52,5 @@
 
 - 2025-10-05 14:20:00: 조정 지시 반영으로 docs/install_verification_20250927.md 헤더 체크리스트 수치를 업데이트하고 중복된 기타 항목 안내를 요약 정리한 후 로그를 기록함.
 
+
+- 2025-10-29 14:45:00: Sprint header pending count corrected to 4 with completed total 28, and step1/state-store documents cross-checked to mirror Tasklist summaries (QA automation pending noted).
