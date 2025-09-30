@@ -18,6 +18,7 @@ export function MasterDataWorkspace({ layout }: MasterDataWorkspaceProps) {
     search,
     setSearch,
     filteredTree,
+    treeQuery,
     activeItemId,
     setActiveItemId,
     tabs,
@@ -158,7 +159,12 @@ export function MasterDataWorkspace({ layout }: MasterDataWorkspaceProps) {
           isSearching={isSearchLoading}
         />
         {isTreeLoading ? <p className="text-sm text-muted">Loading hierarchy...</p> : null}
-        <MasterDataTree nodes={filteredTree} activeId={activeItemId} onSelect={addTab} />
+        <MasterDataTree
+          nodes={filteredTree}
+          query={treeQuery}
+          activeId={activeItemId}
+          onSelect={addTab}
+        />
       </aside>
 
       <section className="master-column master-column-center">

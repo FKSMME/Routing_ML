@@ -237,9 +237,17 @@ export async function patchTrainingFeatures(
   return response.data;
 }
 
-export async function fetchMasterDataTree(params?: { query?: string }): Promise<MasterDataTreeResponse> {
+export async function fetchMasterDataTree(params?: {
+  query?: string;
+  parentId?: string;
+  parentType?: "group" | "family";
+}): Promise<MasterDataTreeResponse> {
   const response = await api.get<MasterDataTreeResponse>("/master-data/tree", {
-    params: params?.query ? { query: params.query } : undefined,
+    params: {
+      ...(params?.query ? { query: params.query } : {}),
+      ...(params?.parentId ? { parent_id: params.parentId } : {}),
+      ...(params?.parentType ? { parent_type: params.parentType } : {}),
+    },
   });
   return response.data;
 }

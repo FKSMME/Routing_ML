@@ -1,6 +1,8 @@
 ﻿"""Master data 관련 API 라우터."""
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import FileResponse
 
@@ -24,12 +26,14 @@ logger = get_logger("api.master_data")
 @router.get("/tree", response_model=MasterDataTreeResponse)
 async def get_master_data_tree(
     query: str | None = Query(None, description="품목 검색어"),
+    parent_type: Literal["group", "family"] | None = Query(None, description="상위 노드 유형"),
+    parent_id: str | None = Query(None, description="상위 노드 식별자"),
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> MasterDataTreeResponse:
     """Access 기준정보 트리 구조를 반환한다."""
 
     try:
-        data = master_data_service.get_tree(query=query)
+        data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
         audit_logger.info(
             "master_data.tree",
             extra={
