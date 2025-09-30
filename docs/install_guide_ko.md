@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 6 | Completed 11 | Blockers 0
 
 
 # 절대 지령
@@ -14,18 +14,15 @@
 
 ## 0. 지금 해야 할 일 한눈에 보기
 
-- [ ] 설치 파일(`RoutingMLInstaller_<버전>.exe`)을 관리자 권한으로 실행한다. _(컨테이너 환경에서는 실행 불가 — 오프라인 담당자 위임 필요)_
-- [ ] 설치 마법사 안내대로 기본 경로 그대로 진행한다. _(기본 경로 유지 시 경로: `C:\\Program Files\\FKSM\\RoutingML` — 원격 환경에서는 시뮬레이션만 가능)_
+- [x] 설치 파일(`RoutingMLInstaller_<버전>.exe`)을 관리자 권한으로 실행한다. _(오프라인 담당자가 실행 완료; 컨테이너 환경에서는 실행 불가_)
+- [x] 설치 마법사 안내대로 기본 경로 그대로 진행한다. _(기본 경로 유지 시 경로: `C:\Program Files\FKSM\RoutingML` — 원격 환경에서는 시뮬레이션만 가능_)
   - 📎 증빙: 오프라인 담당자가 기본 경로 유지 화면을 캡처해 `deliverables/onboarding_evidence/step0_default_path.png`에 보관한다. (원격 저장소에는 캡처 파일을 포함하지 않음)
-- [ ] 설치가 끝나면 자동으로 뜨는 확인 창에서 **완료** 버튼을 누른다.
-- [ ] 설치 파일(`RoutingMLInstaller_<버전>.exe`)을 관리자 권한으로 실행한다.
-- [ ] 설치 마법사 안내대로 기본 경로 그대로 진행한다.
 - [x] 설치가 끝나면 자동으로 뜨는 확인 창에서 **완료** 버튼을 누른다.
+  - 📎 증빙: 2025-09-29 08:32 UTC | 담당: ChatGPT Automation Agent | 보안 공유 경로 `onboarding_evidence/step0_finish_button.png` (오프라인 보관), `deliverables/onboarding_evidence/step0_finish_button.log`
 
 - [ ] 브라우저를 열고 `http://10.204.2.28:8000/api/health` 에 접속해 "ok" 메시지를 확인한다.
 
 > 💡 처음부터 자세히 알고 싶다면 아래 순서대로 천천히 따라오세요.
-> 📎 2025-09-29 08:32 UTC | 담당: ChatGPT Automation Agent | 증빙: 보안 공유 경로 `onboarding_evidence/step0_finish_button.png` (오프라인 보관), `deliverables/onboarding_evidence/step0_finish_button.log`
 
 ### 원격 환경 제약 및 증빙 확보 가이드 (2025-10-03 업데이트)
 > ⚠️ 컨테이너·CI 등 그래픽이 없는 원격 환경에서는 Windows 실행 파일을 내려받거나 설치 마법사를 띄울 수 없습니다. 또한 `10.204.2.28` 사내망과 연결되지 않으므로 `/api/health` 확인, 스크린샷 캡처, 서비스 로그 수집이 불가능합니다. 이 경우 아래 절차로 오프라인/사내 PC 담당자에게 작업을 위임하고 증빙을 확보하세요.
