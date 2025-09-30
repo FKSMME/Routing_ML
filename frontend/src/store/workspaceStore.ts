@@ -75,6 +75,8 @@ interface SaveWorkspaceOptionsArgs {
   version?: number;
   metadata?: WorkspaceSettingsPayload["metadata"];
   columnMappings?: WorkspaceColumnMappingRow[];
+}
+
 export interface OutputMappingRow {
   id: string;
   source: string;
@@ -106,7 +108,6 @@ interface WorkspaceStoreState {
   workspaceOptions: WorkspaceOptionsState;
   setLayout: (layout: LayoutMode) => void;
   referenceMatrixColumns: ReferenceMatrixColumnKey[];
- (layout: LayoutMode) => void;
   setActiveMenu: (menu: NavigationKey) => void;
   updateItemCodes: (codes: string[]) => void;
   updateTopK: (value: number) => void;

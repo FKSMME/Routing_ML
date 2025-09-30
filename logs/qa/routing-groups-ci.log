@@ -1,0 +1,16 @@
+
+> routing-ml-frontend@0.1.0 test:e2e
+> vitest run tests/e2e --run tests/e2e/routing-groups.spec.ts
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/workspace/Routing_ML/frontend[39m
+
+ [32m✓[39m tests/e2e/routing-groups.spec.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 166[2mms[22m[39m
+ [32m✓[39m tests/e2e/routingDragAndDrop.spec.ts [2m ([22m[2m1 test[22m[2m)[22m[33m 517[2mms[22m[39m
+ [32m✓[39m tests/e2e/trainingStatusWorkspace.spec.tsx [2m ([22m[2m2 tests[22m[2m)[22m[33m 945[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m15 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 03:08:58
+[2m   Duration [22m 5.14s[2m (transform 1.59s, setup 697ms, collect 3.99s, tests 1.63s, environment 3.09s, prepare 698ms)[22m
+
