@@ -2,6 +2,7 @@
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
 import { MainNavigation } from "@components/MainNavigation";
+import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { MasterDataWorkspace } from "@components/master-data/MasterDataWorkspace";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
@@ -16,10 +17,10 @@ import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace"
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
+import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
-import { useResponsiveLayout } from "@styles/responsive";
-import { BarChart3, Database, FileOutput, Route, Settings, Workflow } from "lucide-react";
+import { BarChart3, Database, FileOutput, Menu, Route, Settings, Workflow } from "lucide-react";
 import { useEffect } from "react";
 
 const NAVIGATION_ITEMS = [
@@ -80,7 +81,7 @@ function MenuPlaceholder({ menuId }: { menuId: string }) {
 }
 
 export default function App() {
-  const layout = useResponsiveLayout();
+  const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
@@ -99,7 +100,8 @@ export default function App() {
   const setWorkspaceLayout = useWorkspaceStore((state) => state.setLayout);
 
   useEffect(() => {
-    setWorkspaceLayout(layout);
+    const normalizedLayout = layout === "mobile" ? "mobile" : layout === "tablet" ? "tablet" : "desktop";
+    setWorkspaceLayout(normalizedLayout);
   }, [layout, setWorkspaceLayout]);
 
   const { data, isLoading, isFetching, refetch } = usePredictRoutings({
@@ -193,9 +195,36 @@ export default function App() {
       workspace = <MenuPlaceholder menuId={activeMenu} />;
   }
 
+  const drawerId = "responsive-navigation";
+
   return (
-    <div className="app-shell">
-      <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={setActiveMenu} />
+    <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
+      {isPersistent ? (
+        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={setActiveMenu} />
+      ) : (
+        <ResponsiveNavigationDrawer
+          items={NAVIGATION_ITEMS}
+          activeId={activeMenu}
+          onSelect={setActiveMenu}
+          open={isNavOpen}
+          onClose={close}
+          drawerId={drawerId}
+        />
+      )}
+      {isDrawerMode ? (
+        <div className="responsive-nav-toggle">
+          <button
+            type="button"
+            className="responsive-nav-toggle__button"
+            aria-controls={drawerId}
+            aria-expanded={isNavOpen}
+            onClick={toggle}
+          >
+            <Menu size={18} aria-hidden="true" />
+            <span>메뉴</span>
+          </button>
+        </div>
+      ) : null}
       <Header
         onRefresh={activeMenu === "routing" ? refetch : () => undefined}
         loading={activeMenu === "routing" ? isLoading || isFetching : false}
