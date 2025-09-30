@@ -1,4 +1,4 @@
-PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 3 | Completed 20 | Blockers 0
+PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 22 | Blockers 0
 
 # Routing UI Gap Analysis (샘플 vs 현재 구현)
 
@@ -38,15 +38,15 @@ PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sp
 ## 공통 요구
 - [x] 설정값 Persist (로컬/서버) + 감사 로그(IP/시간/작업) (구현: `frontend/src/store/workspaceStore.ts`, `frontend/src/components/RoutingGroupControls.tsx`, `frontend/src/components/workspaces/OptionsWorkspace.tsx`)
 - [x] Access DB 파일/테이블 연결 기능 (구현: `frontend/src/components/master-data/MasterDataWorkspace.tsx`, `frontend/src/components/workspaces/OptionsWorkspace.tsx`)
-- [ ] Docker/내부망 배포 전략 문서화 (프런트엔드 코드 경로에서는 확인 불가 — 별도 배포 문서 최신화 필요)
-- [ ] 모델 학습 콘솔 분리, 사전 학습 데이터 활용 경로 확보 (학습 현황 워크스페이스는 존재하나 전용 콘솔·사전 데이터 경로 명시가 추가로 요구됨)
+- [x] Docker/내부망 배포 전략 문서화 (`deploy/docker/internal_network_playbook.md` 최신 플레이북으로 범위 충족)
+- [x] 모델 학습 콘솔 분리, 사전 학습 데이터 활용 경로 확보 (`backend/cli/train_model.py`, `backend/cli/README.md` 기반 전용 콘솔/데이터 경로 문서화)
 - [x] main\4.jpg 스타일 메인화면 반영, pastel gradient/hover 강조 일관 적용 (구현: `frontend/src/components/HeroBanner.tsx`, `frontend/src/index.css`)
 - [x] Workflow Graph 편집 → 코드 연동, Tensorboard 링크 연결 (구현: `frontend/src/components/WorkflowGraphPanel.tsx`)
 
 ## 발견된 인코딩/문서 이슈
 - [x] `frontend/src/App.tsx` 등 한글 문자열 깨짐 재발
   - 네비게이션 텍스트를 UTF-8 한글 문자열로 수정해 이슈 해소.
-- [ ] 기존 문서(예: `docs/Design/routing_enhancement_plan.md`) 인코딩 재정비 필요
+- [ ] 기존 문서(예: `docs/Design/routing_enhancement_plan.md`) 인코딩 재정비 필요 (남은 작업: UTF-8 재인코딩 검증 및 툴체인 점검)
 - [x] 문서 상단 PRD/Tasklist 지표 확인 및 최신화 (2025-09-30: 본 문서 점검 시 스프린트 지표 갱신)
 
 ## 다음 조치 제안
