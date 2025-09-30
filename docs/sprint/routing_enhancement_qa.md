@@ -36,6 +36,7 @@
 ## QA & Observability 커버리지 증빙
 
 - [x] 로깅 커버리지 매핑 → `docs/Design/qa_observability_coverage_plan.md`의 "Logging Strategy" 섹션과 본 QA 체크리스트 로그 수집 항목을 대조해 ERP 토글·타임라인 저장 이벤트가 `postUiAudit` 호출로 기록됨을 확인. 【F:docs/Design/qa_observability_coverage_plan.md†L12-L23】【F:docs/sprint/routing_enhancement_qa.md†L41-L64】
+- [x] 알고리즘 워크스페이스 감사 흐름 → `frontend/tests/frontend/workspaces/AlgorithmWorkspace.audit.test.tsx`에서 워크플로우 불러오기(`ui.algorithm.read`), 그래프 저장(`ui.algorithm.graph.save`), 노드 설정 저장 실패(`ui.algorithm.node.save.error`) 감사 페이로드를 검증해 백엔드 감사 스키마와 일치함을 확인. 【F:frontend/tests/frontend/workspaces/AlgorithmWorkspace.audit.test.tsx†L1-L261】
 - [x] 메트릭/대시보드 연계 → 동일 계획 문서 "Metrics & Dashboards" 표 기준으로 Drag/Drop, ERP 토글 자동화 로그에서 수집 가능한 세션 KPI(`dirty` 전환율, ERP 사용률)를 매핑해 QA 통과 시 업데이트하도록 스프린트 로그에 명시. 【F:docs/Design/qa_observability_coverage_plan.md†L25-L36】【F:docs/sprint/logbook.md†L17-L24】
 - [x] `/health` 프로브 점검 → `/health` 모니터링은 백엔드 pytest 및 Vitest 자동화 성공 시 스모크 체크로 간주하고, 장애 시 Task Execution 로그에 경보를 남기도록 재확인. 【F:docs/Design/qa_observability_coverage_plan.md†L38-L42】【F:logs/task_execution_20251003.log†L1-L11】
 

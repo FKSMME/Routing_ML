@@ -7,7 +7,7 @@ import type {
   WorkflowGraphEdge,
   WorkflowGraphNode,
 } from "@app-types/workflow";
-import { fetchWorkflowConfig, patchWorkflowConfig } from "@lib/apiClient";
+import { fetchWorkflowConfig, patchWorkflowConfig, postUiAudit } from "@lib/apiClient";
 import { useWorkflowGraphHistory } from "@store/workflowGraphStore";
 import {
   useCallback,
@@ -504,10 +504,26 @@ export function AlgorithmWorkspace() {
         setGraphEdges(edges);
         reset();
         setStatusMessage("워크플로우 구성을 불러왔습니다.");
+        const correlationId = (response as { correlation_id?: string | null }).correlation_id ?? undefined;
+        void postUiAudit({
+          action: "ui.algorithm.read",
+          payload: {
+            node_count: nodes.length,
+            edge_count: edges.length,
+            correlation_id: correlationId,
+          },
+        });
       } catch (error) {
         console.error(error);
         if (!cancelled) {
           setErrorMessage("워크플로우 설정을 불러오지 못했습니다.");
+          const message = error instanceof Error ? error.message : String(error);
+          void postUiAudit({
+            action: "ui.algorithm.read.error",
+            payload: {
+              message,
+            },
+          });
         }
       } finally {
         if (!cancelled) {
@@ -568,8 +584,15 @@ export function AlgorithmWorkspace() {
   }, [selectedNode, workflowConfig, hydrateFormFromNode]);
 
   const persistWorkflow = useCallback(
-    async (payload: WorkflowConfigPatch, successMessage?: string) => {
+    async (
+      payload: WorkflowConfigPatch,
+      successMessage?: string,
+    ): Promise<{ ok: true; response: WorkflowConfigResponse } | { ok: false; error: unknown }> => {
       setSaving(true);
+      let result: { ok: true; response: WorkflowConfigResponse } | { ok: false; error: unknown } = {
+        ok: false,
+        error: null,
+      };
       try {
         const response = await patchWorkflowConfig(payload);
         setWorkflowConfig(response);
@@ -580,18 +603,41 @@ export function AlgorithmWorkspace() {
         reset();
         setStatusMessage(successMessage ?? "워크플로우 구성을 저장했습니다.");
         setErrorMessage(null);
+        const correlationId = (response as { correlation_id?: string | null }).correlation_id ?? undefined;
+        void postUiAudit({
+          action: "ui.algorithm.save",
+          payload: {
+            node_count: nodes.length,
+            edge_count: edges.length,
+            correlation_id: correlationId,
+          },
+        });
+        result = { ok: true, response };
       } catch (error) {
         console.error(error);
         setErrorMessage("워크플로우 저장에 실패했습니다. 입력값을 확인하세요.");
+        const message = error instanceof Error ? error.message : String(error);
+        const correlationId = (error as { correlation_id?: string | null } | undefined)?.correlation_id ?? undefined;
+        void postUiAudit({
+          action: "ui.algorithm.save.error",
+          payload: {
+            message,
+            node_count: nodesRef.current.length,
+            edge_count: edgesRef.current.length,
+            correlation_id: correlationId,
+          },
+        });
+        result = { ok: false, error };
       } finally {
         setSaving(false);
       }
+      return result;
     },
     [reset],
   );
 
   const handleSaveGraph = useCallback(async () => {
-    await persistWorkflow(
+    const result = await persistWorkflow(
       {
         graph: {
           nodes: nodesRef.current,
@@ -600,6 +646,27 @@ export function AlgorithmWorkspace() {
       },
       "그래프 레이아웃을 저장했습니다.",
     );
+    const basePayload = {
+      node_count: nodesRef.current.length,
+      edge_count: edgesRef.current.length,
+      correlation_id: result.ok
+        ? ((result.response as { correlation_id?: string | null }).correlation_id ?? undefined)
+        : undefined,
+    };
+    if (result.ok) {
+      void postUiAudit({
+        action: "ui.algorithm.graph.save",
+        payload: basePayload,
+      });
+    } else {
+      void postUiAudit({
+        action: "ui.algorithm.graph.save.error",
+        payload: {
+          ...basePayload,
+          message: result.error instanceof Error ? result.error.message : String(result.error),
+        },
+      });
+    }
   }, [persistWorkflow]);
 
   const handleDialogSave = useCallback(async () => {
@@ -659,7 +726,30 @@ export function AlgorithmWorkspace() {
       };
     }
 
-    await persistWorkflow(payload, `${formState.label} 설정을 저장했습니다.`);
+    const result = await persistWorkflow(payload, `${formState.label} 설정을 저장했습니다.`);
+    const correlationId = result.ok
+      ? ((result.response as { correlation_id?: string | null }).correlation_id ?? undefined)
+      : undefined;
+    const auditPayload = {
+      node_id: selectedNode.id,
+      node_label: formState.label,
+      node_category: selectedNode.category,
+      correlation_id: correlationId,
+    };
+    if (result.ok) {
+      void postUiAudit({
+        action: "ui.algorithm.node.save",
+        payload: auditPayload,
+      });
+    } else {
+      void postUiAudit({
+        action: "ui.algorithm.node.save.error",
+        payload: {
+          ...auditPayload,
+          message: result.error instanceof Error ? result.error.message : String(result.error),
+        },
+      });
+    }
     setDialogOpen(false);
   }, [formState, persistWorkflow, selectedNode, workflowConfig]);
 
