@@ -15,6 +15,7 @@ import {
 } from "@lib/apiClient";
 import { MASTER_DATA_MOCK } from "@lib/masterDataMock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface UseMasterDataState {
@@ -32,12 +33,42 @@ export interface UseMasterDataState {
   logs: MasterDataLogsResponse["logs"];
   connectionStatus: MasterDataConnectionStatus;
   accessMetadata: AccessMetadataResponse | null;
+  searchMetadataChips: MasterDataSearchMetadataChip[];
+  searchItem: (itemCode: string) => Promise<MasterDataItemResponse | null>;
+  isSearchLoading: boolean;
   inspectAccessSource: (params: { path?: string | null; table?: string | null }) => void;
   isTreeLoading: boolean;
   isMatrixLoading: boolean;
   isMetadataLoading: boolean;
   refreshLogs: () => void;
   downloadLog: () => Promise<void>;
+}
+
+export interface MasterDataSearchMetadataChip {
+  key: string;
+  label: string;
+  value: string;
+}
+
+function buildMetadataChips(response: MasterDataItemResponse): MasterDataSearchMetadataChip[] {
+  const firstRow = response.rows[0];
+  if (!firstRow) {
+    return [];
+  }
+  return response.columns
+    .map((column) => {
+      const value = firstRow.values[column.key];
+      if (!value) {
+        return null;
+      }
+      return {
+        key: column.key,
+        label: column.label,
+        value,
+      } satisfies MasterDataSearchMetadataChip;
+    })
+    .filter((chip): chip is MasterDataSearchMetadataChip => chip !== null)
+    .slice(0, 10);
 }
 
 const MOCK_TREE = MASTER_DATA_MOCK.tree as unknown as MasterDataTreeNode[];
@@ -49,8 +80,11 @@ export function useMasterData(): UseMasterDataState {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeItemId, setActiveItemIdState] = useState<string | null>(MOCK_DEFAULT_ITEM);
   const [tabs, setTabs] = useState<string[]>(MOCK_DEFAULT_ITEM ? [MOCK_DEFAULT_ITEM] : []);
+  const [searchMetadataChips, setSearchMetadataChips] = useState<MasterDataSearchMetadataChip[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [metadataSelection, setMetadataSelection] = useState<{ table?: string; path?: string }>({});
   const hasLoggedInitialSelection = useRef(false);
+  const lastSearchedItemRef = useRef<string | null>(null);
 
   useEffect(() => {
     const handler = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -188,6 +222,49 @@ export function useMasterData(): UseMasterDataState {
     staleTime: 30_000,
   });
 
+  const searchItem = useCallback(
+    async (itemCode: string) => {
+      const trimmed = itemCode.trim();
+      if (!trimmed) {
+        setSearchMetadataChips([]);
+        lastSearchedItemRef.current = null;
+        return null;
+      }
+      setIsSearchLoading(true);
+      try {
+        const response = await fetchMasterDataItem(trimmed);
+        queryClient.setQueryData(["master-data-item", response.item_code], response);
+        setTabs((prev) => {
+          if (prev.includes(response.item_code)) {
+            return prev;
+          }
+          return [...prev, response.item_code];
+        });
+        handleSetActiveItemId(response.item_code);
+        setSearchMetadataChips(buildMetadataChips(response));
+        lastSearchedItemRef.current = response.item_code;
+        void postUiAudit({
+          action: "master_data.search.item",
+          payload: { item_code: response.item_code },
+        });
+        return response;
+      } catch (error) {
+        setSearchMetadataChips([]);
+        lastSearchedItemRef.current = null;
+        if (isAxiosError(error) && error.response?.status === 404) {
+          throw new Error(`Item ${trimmed} was not found in Access master data.`);
+        }
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error("Failed to search Access master data.");
+      } finally {
+        setIsSearchLoading(false);
+      }
+    },
+    [handleSetActiveItemId, queryClient],
+  );
+
   const logsQuery = useQuery({
     queryKey: ["master-data-logs"],
     queryFn: () => fetchMasterDataLogs(5),
@@ -210,6 +287,19 @@ export function useMasterData(): UseMasterDataState {
 
   const matrixColumns = itemQuery.data?.columns ?? MASTER_DATA_MOCK.columns;
   const matrixRows = itemQuery.data?.rows ?? (activeItemId ? MASTER_DATA_MOCK.matrices[activeItemId] ?? [] : []);
+
+  useEffect(() => {
+    const trimmed = search.trim();
+    if (!trimmed) {
+      setSearchMetadataChips([]);
+      lastSearchedItemRef.current = null;
+    } else if (
+      lastSearchedItemRef.current &&
+      trimmed.toLowerCase() !== lastSearchedItemRef.current.toLowerCase()
+    ) {
+      setSearchMetadataChips([]);
+    }
+  }, [search]);
 
   const logsData = logsQuery.data ?? {
     logs: MASTER_DATA_MOCK.logs,
@@ -259,6 +349,9 @@ export function useMasterData(): UseMasterDataState {
     logs: logsData.logs ?? [],
     connectionStatus,
     accessMetadata,
+    searchMetadataChips,
+    searchItem,
+    isSearchLoading,
     inspectAccessSource,
     isTreeLoading: treeQuery.isFetching,
     isMatrixLoading: itemQuery.isFetching,
