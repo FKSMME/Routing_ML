@@ -1,0 +1,14 @@
+
+> routing-ml-frontend@0.1.0 test
+> vitest --run tests/evidence/erp_interface_off_capture.spec.tsx
+
+
+ RUN  v1.6.1 /workspace/Routing_ML/frontend
+
+ ✓ tests/evidence/erp_interface_off_capture.spec.tsx  (1 test) 204ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  03:11:30
+   Duration  1.99s (transform 229ms, setup 106ms, collect 448ms, tests 204ms, environment 503ms, prepare 107ms)
+

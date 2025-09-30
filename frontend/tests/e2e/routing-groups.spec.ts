@@ -17,6 +17,13 @@ const createRoutingGroupMock = vi.hoisted(() => vi.fn());
 const fetchRoutingGroupMock = vi.hoisted(() => vi.fn());
 const listRoutingGroupsMock = vi.hoisted(() => vi.fn());
 const postUiAuditMock = vi.hoisted(() => vi.fn());
+const saveRoutingSelectorMock = vi.hoisted(() =>
+  vi.fn(() => ({
+    exportProfile: { formats: ["csv"], destination: "server", withVisualization: false },
+    erpInterfaceEnabled: false,
+    columnMappings: [],
+  })),
+);
 
 vi.mock("@lib/apiClient", () => ({
   __esModule: true,
@@ -25,6 +32,23 @@ vi.mock("@lib/apiClient", () => ({
   listRoutingGroups: listRoutingGroupsMock,
   postUiAudit: postUiAuditMock,
 }));
+
+vi.mock("@store/workspaceStore", () => {
+  const store = { saveRouting: saveRoutingSelectorMock };
+  const useWorkspaceStore: any = (selector?: unknown) => {
+    if (typeof selector === "function") {
+      return (selector as (state: typeof store) => unknown)(store);
+    }
+    return store;
+  };
+
+  useWorkspaceStore.getState = () => store;
+  useWorkspaceStore.setState = () => undefined;
+
+  return {
+    useWorkspaceStore,
+  };
+});
 
 const writeSnapshotMock = vi.hoisted(() =>
   vi.fn(async <TState>(state: TState) => ({
@@ -213,6 +237,11 @@ describe("Routing group end-to-end flows", () => {
   beforeEach(() => {
     resetStore();
     vi.clearAllMocks();
+    saveRoutingSelectorMock.mockReturnValue({
+      exportProfile: { formats: ["csv"], destination: "server", withVisualization: false },
+      erpInterfaceEnabled: false,
+      columnMappings: [],
+    });
     createRoutingGroupMock.mockResolvedValue(seedCreateResponse);
     fetchRoutingGroupMock.mockResolvedValue(seedGroupDetail);
     listRoutingGroupsMock.mockResolvedValue(seedListResponse);

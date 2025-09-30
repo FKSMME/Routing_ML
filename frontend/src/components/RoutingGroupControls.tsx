@@ -799,17 +799,18 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         <Play size={14} /> ERP 인터페이스는 옵션 메뉴에서 활성화한 후 사용할 수 있습니다.
       </footer>
     </div>
+  );
 
-      <ConfirmationModal
-        open={Boolean(confirmationContent)}
-        title={confirmationContent?.title ?? ""}
-        description={confirmationContent?.description ?? ""}
-        confirmLabel={confirmationContent?.confirmLabel ?? "확인"}
-        busy={confirmBusy}
-        onCancel={dismissConfirmation}
-        onConfirm={() => void confirmPendingAction()}
-      />
-    </section>
+  const confirmationModal = (
+    <ConfirmationModal
+      open={Boolean(confirmationContent)}
+      title={confirmationContent?.title ?? ""}
+      description={confirmationContent?.description ?? ""}
+      confirmLabel={confirmationContent?.confirmLabel ?? "확인"}
+      busy={confirmBusy}
+      onCancel={dismissConfirmation}
+      onConfirm={() => void confirmPendingAction()}
+    />
   );
 
   if (variant === "panel") {
@@ -822,9 +823,15 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           </div>
         </header>
         {content}
+        {confirmationModal}
       </section>
     );
   }
 
-  return <div className="routing-save-panel routing-save-panel--embedded">{content}</div>;
+  return (
+    <div className="routing-save-panel routing-save-panel--embedded">
+      {content}
+      {confirmationModal}
+    </div>
+  );
 }

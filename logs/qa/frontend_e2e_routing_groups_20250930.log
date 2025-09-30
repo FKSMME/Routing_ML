@@ -1,0 +1,14 @@
+
+> routing-ml-frontend@0.1.0 test
+> vitest --run tests/e2e/routing-groups.spec.ts
+
+
+ RUN  v1.6.1 /workspace/Routing_ML/frontend
+
+ ✓ tests/e2e/routing-groups.spec.ts  (7 tests) 49ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  03:12:09
+   Duration  1.82s (transform 204ms, setup 131ms, collect 314ms, tests 49ms, environment 528ms, prepare 133ms)
+
