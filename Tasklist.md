@@ -61,6 +61,9 @@
 ## QA Follow-up
 
 - [x] QA 체크리스트 빌드 게이트 복구 (`npm run build` TypeScript 오류 10건 해결 및 QA 27개 시나리오 재실행) (증빙: `logs/qa/frontend_build_20250930.log` 재실행 섹션, `tests/e2e/routing-groups.spec.ts` 자동화)
+- [ ] QA 자동화: Undo/Redo·저장 옵션·ERP 인터페이스 플래그 통합 테스트 시나리오(자동화 전환 대기).
+  - 예정 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts`
+  - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts`
 
 ---
 _Sync note (2025-09-30): Tasklist, sprint logbook, and QA scenario counts aligned; QA 빌드 게이트는 보류 중._
