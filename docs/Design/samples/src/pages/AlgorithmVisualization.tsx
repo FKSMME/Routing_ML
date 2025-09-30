@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { supabase } from '@/integrations/supabase/client';
+import { SAMPLE_WORKFLOWS } from '@/data/sampleData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Play, 
@@ -51,29 +51,15 @@ export const AlgorithmVisualization: React.FC = () => {
     loadAlgorithmSettings();
   }, []);
 
-  const loadAlgorithmSettings = async () => {
+  const loadAlgorithmSettings = () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('algorithm_settings_2025_09_28_04_25')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setWorkflows(data || []);
-      if (data && data.length > 0) {
-        setSelectedWorkflow(data[0].workflow_graph);
+    setTimeout(() => {
+      setWorkflows(SAMPLE_WORKFLOWS);
+      if (SAMPLE_WORKFLOWS.length > 0) {
+        setSelectedWorkflow(SAMPLE_WORKFLOWS[0].workflow_graph);
       }
-    } catch (error: any) {
-      toast({
-        title: "알고리즘 로드 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+    }, 200);
   };
 
   const runWorkflow = async () => {
@@ -104,23 +90,20 @@ export const AlgorithmVisualization: React.FC = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('algorithm_settings_2025_09_28_04_25')
-        .insert({
-          name: `워크플로우 ${Date.now()}`,
-          algorithm_type: 'Custom',
-          parameters: {},
-          workflow_graph: selectedWorkflow
-        });
+      const newWorkflow = {
+        id: `workflow-${Date.now()}`,
+        name: `워크플로우 ${new Date().toLocaleString()}`,
+        created_at: new Date().toISOString(),
+        algorithm_type: 'Custom',
+        parameters: {},
+        workflow_graph: selectedWorkflow,
+      };
 
-      if (error) throw error;
-
+      setWorkflows(prev => [newWorkflow, ...prev]);
       toast({
         title: "워크플로우 저장 완료",
         description: "워크플로우가 성공적으로 저장되었습니다.",
       });
-
-      loadAlgorithmSettings();
     } catch (error: any) {
       toast({
         title: "워크플로우 저장 실패",

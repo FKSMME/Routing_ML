@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { supabase } from '@/integrations/supabase/client';
+import { SAMPLE_MODELS } from '@/data/sampleData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   TrendingUp, 
@@ -42,30 +42,20 @@ export const LearningDataStatus: React.FC = () => {
     loadModelData();
   }, []);
 
-  const loadModelData = async () => {
+  const loadModelData = () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('ml_model_data_2025_09_28_04_25')
-        .select('*')
-        .order('training_date', { ascending: false });
-
-      if (error) throw error;
-
-      setModels(data || []);
-      if (data && data.length > 0) {
-        setSelectedModel(data[0]);
-        setSelectedFeatures(Object.keys(data[0].feature_weights || {}));
+    setTimeout(() => {
+      setModels(SAMPLE_MODELS);
+      if (SAMPLE_MODELS.length > 0) {
+        setSelectedModel(SAMPLE_MODELS[0]);
+        setSelectedFeatures(Object.keys(SAMPLE_MODELS[0].feature_weights));
       }
-    } catch (error: any) {
-      toast({
-        title: "모델 데이터 로드 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
-    }
+      toast({
+        title: '모델 데이터 갱신',
+        description: '로컬 샘플 모델 정보가 업데이트되었습니다.',
+      });
+    }, 200);
   };
 
   const saveFeatureSelection = async () => {

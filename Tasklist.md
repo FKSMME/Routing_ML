@@ -70,6 +70,10 @@
   - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts`
   - ERP 토글 수동 증빙 현황: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](deliverables/onboarding_evidence/erp_toggle_lab3_pending.log) 기록 유지(현장 세션 대기).
 
+## Policy Updates
+
+- [x] 2025-10-05 docs/Design/samples 경로에서 Stripe·Supabase 연동 샘플 제거 및 README에 "정책상 포함되지 않음" 안내 추가 (외부 서비스 예제는 별도 교육용 레포지터리로 관리).
+
 ---
 _Sync note (2025-09-30): Tasklist, sprint logbook, and QA scenario counts aligned; QA 빌드 게이트는 보류 중._
 

@@ -1,16 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName?: string;
+  username?: string;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signUp: (email: string, password: string, userData?: { username?: string; full_name?: string }) => Promise<{ data: any; error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data: AuthUser | null; error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    userData?: { username?: string; full_name?: string }
+  ) => Promise<{ data: AuthUser | null; error: Error | null }>;
   signOut: () => Promise<void>;
 }
+
+const STORAGE_KEY = 'ml-routing-sample-user';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -23,51 +33,53 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    try {
+      if (typeof window !== 'undefined') {
+        const storedUser = window.localStorage.getItem(STORAGE_KEY);
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
       }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    } catch (error) {
+      console.warn('Failed to load stored user', error);
+    } finally {
       setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      if (!email || !password) {
+        throw new Error('이메일과 비밀번호를 모두 입력해주세요.');
+      }
 
-      if (error) throw error;
+      const mockUser: AuthUser = {
+        id: 'demo-user',
+        email,
+        fullName: 'Demo Operator',
+      };
+
+      setUser(mockUser);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      }
 
       toast({
-        title: "로그인 성공",
-        description: "머신러닝 라우팅 시스템에 오신 것을 환영합니다.",
+        title: '로그인 성공',
+        description: '머신러닝 라우팅 시스템에 오신 것을 환영합니다.',
       });
 
-      return { data, error: null };
+      return { data: mockUser, error: null };
     } catch (error: any) {
       toast({
-        title: "로그인 실패",
+        title: '로그인 실패',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
       return { data: null, error };
     }
@@ -75,28 +87,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, userData?: { username?: string; full_name?: string }) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: userData
-        }
-      });
+      if (!email || !password) {
+        throw new Error('이메일과 비밀번호를 모두 입력해주세요.');
+      }
 
-      if (error) throw error;
+      const mockUser: AuthUser = {
+        id: 'demo-user',
+        email,
+        fullName: userData?.full_name,
+        username: userData?.username,
+      };
+
+      setUser(mockUser);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+      }
 
       toast({
-        title: "회원가입 성공",
-        description: "이메일을 확인하고 인증 링크를 클릭해주세요.",
+        title: '회원가입 성공',
+        description: '데모 계정이 생성되었습니다. 바로 로그인되었습니다.',
       });
 
-      return { data, error: null };
+      return { data: mockUser, error: null };
     } catch (error: any) {
       toast({
-        title: "회원가입 실패",
+        title: '회원가입 실패',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
       return { data: null, error };
     }
@@ -104,25 +121,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
 
       toast({
-        title: "로그아웃 완료",
-        description: "안전하게 로그아웃되었습니다.",
+        title: '로그아웃 완료',
+        description: '안전하게 로그아웃되었습니다.',
       });
     } catch (error: any) {
       toast({
-        title: "로그아웃 실패",
+        title: '로그아웃 실패',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     }
   };
 
   const value = {
     user,
-    session,
     loading,
     signIn,
     signUp,

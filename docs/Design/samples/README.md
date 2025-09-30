@@ -58,3 +58,7 @@ src/
 ├── lib/           # Utility Library
 └── main.tsx       # Application Entry Point
 ```
+
+## External Services
+
+본 샘플 프로젝트는 정책상 Stripe, Supabase 등 외부 서비스 연동 예제를 포함하지 않습니다. 필요한 경우 내부 네트워크 또는 자체 호스팅 환경에 맞춰 별도 레포지터리에서 통합하십시오.

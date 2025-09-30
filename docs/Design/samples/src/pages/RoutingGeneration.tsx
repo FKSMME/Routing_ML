@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { supabase } from '@/integrations/supabase/client';
+import { SAMPLE_PRODUCTS, SAMPLE_ROUTING_OPERATIONS } from '@/data/sampleData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Plus, 
@@ -55,27 +55,8 @@ export const RoutingGeneration: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadAvailableOperations();
+    setAvailableOperations(SAMPLE_ROUTING_OPERATIONS);
   }, []);
-
-  const loadAvailableOperations = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('system_options_2025_09_28_04_25')
-        .select('option_value')
-        .eq('option_category', 'routing_elements')
-        .eq('option_name', 'available_operations')
-        .single();
-
-      if (error) throw error;
-      
-      if (data?.option_value) {
-        setAvailableOperations(data.option_value);
-      }
-    } catch (error) {
-      console.error('Error loading operations:', error);
-    }
-  };
 
   const searchProducts = async () => {
     if (!productItems.trim()) return;
@@ -83,33 +64,30 @@ export const RoutingGeneration: React.FC = () => {
     setLoading(true);
     try {
       const productCodes = productItems.split('\n').map(item => item.trim()).filter(Boolean);
-      
-      const { data, error } = await supabase
-        .from('product_reference_data_2025_09_28_04_25')
-        .select('*')
-        .in('product_code', productCodes);
 
-      if (error) throw error;
+      const matchedProducts = SAMPLE_PRODUCTS.filter(product =>
+        productCodes.includes(product.product_code)
+      );
 
-      setSearchResults(data || []);
-      
+      setSearchResults(matchedProducts);
+
       // Create routing tabs for found products
-      const newTabs = (data || []).map(product => ({
+      const newTabs = matchedProducts.map(product => ({
         id: product.id,
         productCode: product.product_code,
         productName: product.product_name,
         steps: []
       }));
-      
+
       setRoutingTabs(newTabs);
       if (newTabs.length > 0) {
         setActiveTab(newTabs[0].id);
-        setSelectedProduct(data?.[0] || null);
+        setSelectedProduct(matchedProducts[0] || null);
       }
 
       toast({
         title: "검색 완료",
-        description: `${data?.length || 0}개의 제품을 찾았습니다.`,
+        description: `${matchedProducts.length}개의 제품을 찾았습니다.`,
       });
     } catch (error: any) {
       toast({
@@ -198,17 +176,6 @@ export const RoutingGeneration: React.FC = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('routing_configurations_2025_09_28_04_25')
-        .insert({
-          name: `${currentTab.productName} 라우팅`,
-          product_items: [currentTab.productCode],
-          routing_sequence: { sequence: currentTab.steps },
-          settings: { auto_save: true, format: 'CSV' }
-        });
-
-      if (error) throw error;
-
       toast({
         title: "저장 완료",
         description: "라우팅이 성공적으로 저장되었습니다.",
