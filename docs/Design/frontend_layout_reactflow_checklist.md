@@ -20,13 +20,19 @@
 - Tooltip on rule badges describing violation and remediation hints.
 
 ## Testing Checklist
-- [ ] Dragging 100 nodes maintains < 16ms frame budget _(2025-09-30 profiling run logged max 240.518 ms; ReactFlow layout batching follow-up required — see `deliverables/2025-09-29/frontend_reactflow_testcases.csv`)._
-- [ ] Rule violation badge shows for at least one invalid connection.
-- [ ] Dragging 100 nodes maintains < 16ms frame budget.
-- [x] Rule violation badge shows for at least one invalid connection. Evidence: `tests/frontend/routingDragAndDrop.spec.tsx` (DSL-R001 badge assertion) + dev demo `/#rule-badge-demo`.
-- [ ] Autosave persists and reloads after browser refresh.
+- [ ] Dragging 100 nodes maintains < 16ms frame budget. _2025-09-30 profiling run captured in `deliverables/2025-09-29/routing_canvas_profile.json` logged max 572.258 ms with 3 frames over budget; follow-up required._
+- [x] Rule violation badge shows for at least one invalid connection.
+  - Procedure: run `npx vitest run ../tests/frontend/routingDragAndDrop.spec.tsx --reporter verbose` from `frontend/` to simulate palette drop and enforce DSL rules.
+  - Evidence: `logs/qa/frontend_rule_badge_20251005.log`.
+- [x] Autosave persists and reloads after browser refresh.
+  - Procedure: edit timeline nodes, trigger autosave, reload browser session, and confirm IndexedDB snapshot replay via routing store inspector.
+  - Evidence: `logs/qa/indexeddb_autosave_restore_20250930.md`.
 - [ ] Responsive layout holds 20/60/20 ratio above 1280px; stacks gracefully below 1024px.
+  - Procedure: Execute Playwright viewport sweep (1280 px and 1024 px) capturing column widths via bounding boxes; verify side panels ≈20% and responsive stacking thresholds.
+  - Evidence: `deliverables/onboarding_evidence/layout_ratio_1280.log` (center column overflow; requires adjustment).
 - [ ] Screen reader announces node selection and validation status.
+  - Procedure: With NVDA (Windows) or VoiceOver (macOS), tab through `RoutingCanvas`, confirm node focus announcements and ARIA live updates for rule badges; capture transcript or `.sr` log.
+  - Evidence: _Pending dedicated assistive technology pass; capture log once completed._
 
 ## Delivery Artifacts
 - Wireframes stored in `deliverables/2025-09-29/frontend_layout_wireframes.pdf`.
