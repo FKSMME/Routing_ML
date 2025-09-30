@@ -45,6 +45,12 @@ const createId = () => {
   return `step-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
+export interface RuleViolation {
+  ruleId: string;
+  message: string;
+  severity?: "info" | "warning" | "error";
+}
+
 export interface TimelineStep {
   id: string;
   seq: number;
@@ -56,6 +62,7 @@ export interface TimelineStep {
   itemCode?: string | null;
   candidateId?: string | null;
   positionX?: number;
+  violations?: RuleViolation[];
 }
 
 export interface DraggableOperationPayload {
@@ -105,7 +112,11 @@ interface RoutingWorkspacePersistedState {
 
 type PersistedSelectionState = RoutingWorkspacePersistedState;
 
-const cloneTimeline = (steps: TimelineStep[]): TimelineStep[] => steps.map((step) => ({ ...step }));
+const cloneTimeline = (steps: TimelineStep[]): TimelineStep[] =>
+  steps.map((step) => ({
+    ...step,
+    violations: step.violations?.map((violation) => ({ ...violation })),
+  }));
 
 const cloneSuccessMap = (source: LastSuccessMap): LastSuccessMap =>
   Object.fromEntries(Object.entries(source).map(([key, steps]) => [key, cloneTimeline(steps)]));
@@ -241,6 +252,7 @@ const toTimelineStep = (
   waitTime: operation.WAIT_TIME ?? null,
   itemCode: context.itemCode ?? null,
   candidateId: context.candidateId ?? null,
+  violations: [],
 });
 
 const updateTabTimeline = (

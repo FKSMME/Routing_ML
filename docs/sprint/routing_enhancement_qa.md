@@ -19,6 +19,7 @@
    - [x] 추천 공정 카드가 리스트로 출력되고 `draggable` 속성이 노출되는지 확인 → 자동화: `tests/e2e/routing-groups.spec.ts`에서 `insertOperation` 경로로 카드 삽입 및 속성 노출을 검증.
    - [x] 타임라인 Drop Zone으로 드래그 시 하이라이트(`drop-zone.is-active`)가 표시되는지 확인 → 자동화: 동일 스위트에서 드래그/드롭 시퀀스와 dirty 플래그 변화를 점검.
    - [x] 더블 클릭 시 타임라인에 공정이 삽입되는지 확인 → 자동화: 더블 클릭과 동일한 삽입 흐름을 Vitest 상에서 시뮬레이션.
+   - [x] DSL 규칙 위반 시 타임라인 노드에 Rule ID + 메시지 배지가 노출되는지 확인 → 자동화: `vitest tests/frontend/routingDragAndDrop.spec.tsx` 내 "renders DSL violation badges" 케이스에서 `DSL-R001` 텍스트 및 `title` 속성 검증 (Dev 데모 `/#rule-badge-demo` 수동 캡처 슬롯 확보).
 2. **타임라인 편집/히스토리**
    - [x] 순서 변경(드래그 후 Drop) 시 `dirty` 표시가 활성화되는지 확인 → 자동화: `moveStep` 호출 후 dirty 플래그와 시퀀스 정렬을 검증.
    - [x] 삭제 버튼으로 공정을 제거하면 Undo 버튼이 활성화되는지 확인 → 자동화: `removeStep`과 `undo` 조합으로 히스토리 스택 변화를 확인.

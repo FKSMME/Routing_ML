@@ -1,6 +1,6 @@
 import "reactflow/dist/style.css";
 
-import type { DraggableOperationPayload, TimelineStep } from "@store/routingStore";
+import type { DraggableOperationPayload, RuleViolation, TimelineStep } from "@store/routingStore";
 import { useRoutingStore } from "@store/routingStore";
 import { Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type UIEvent } from "react";
@@ -36,6 +36,7 @@ interface RoutingCanvasProps {
 
 function TimelineNode({ data }: NodeProps<TimelineNodeData>) {
   const { step, onRemove } = data;
+  const violations = step.violations ?? [];
 
   return (
     <div className="timeline-node">
@@ -47,6 +48,22 @@ function TimelineNode({ data }: NodeProps<TimelineNodeData>) {
           <Trash2 size={14} />
         </button>
       </header>
+      {violations.length > 0 ? (
+        <div className="timeline-node__violations" data-testid={`timeline-node-violations-${step.id}`}>
+          {violations.map((violation: RuleViolation) => (
+            <span
+              key={`${step.id}-${violation.ruleId}-${violation.message}`}
+              className="timeline-node__badge"
+              data-severity={violation.severity ?? "error"}
+              data-testid={`rule-badge-${violation.ruleId}`}
+              title={`${violation.ruleId}: ${violation.message}`}
+            >
+              <span className="timeline-node__badge-code">{violation.ruleId}</span>
+              <span className="timeline-node__badge-message">{violation.message}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
       {step.description ? <p className="timeline-node__desc">{step.description}</p> : null}
       <div className="timeline-node__meta">
         <span>Setup {step.setupTime ?? "-"}</span>

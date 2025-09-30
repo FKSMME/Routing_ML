@@ -7,20 +7,28 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import App from "./App";
-
-
-const queryClient = new QueryClient();
-
 applyTheme();
 registerResponsiveLayout();
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </React.StrictMode>
-);
+const rootElement = document.getElementById("root") as HTMLElement;
+
+const render = (node: React.ReactNode) => {
+  ReactDOM.createRoot(rootElement).render(<React.StrictMode>{node}</React.StrictMode>);
+};
+
+if (import.meta.env.DEV && window.location.hash === "#rule-badge-demo") {
+  import("./devpages/RuleBadgeDemo").then(({ RuleBadgeDemo }) => {
+    render(<RuleBadgeDemo />);
+  });
+} else {
+  const queryClient = new QueryClient();
+  import("./App").then(({ default: App }) => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>,
+    );
+  });
+}
 
 
