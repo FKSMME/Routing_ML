@@ -7,8 +7,9 @@ import type {
   WorkflowGraphEdge,
   WorkflowGraphNode,
 } from "@app-types/workflow";
+import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { cn } from "@lib/classNames";
 import { ExternalLink } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
@@ -417,51 +418,51 @@ function NodeSettingsDialog({
           <div className="flex flex-col gap-6 md:grid md:grid-cols-[minmax(0,1fr)_260px] md:items-start md:gap-6">
             <div className="space-y-6">
               <section className="space-y-3">
-                <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
+                <h3 className="text-lg font-semibold text-accent-strong">기본 정보</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="space-y-2 text-sm">
-                    <span className="text-slate-300">레이블</span>
+                    <span className="text-muted-strong">레이블</span>
                     <input
         <div className="blueprint-modal__content">
           <section className="space-y-3">
-            <h3 className="text-lg font-semibold text-sky-200">기본 정보</h3>
+            <h3 className="text-lg font-semibold text-accent-strong">기본 정보</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="space-y-2 text-sm">
-                <span className="text-slate-300">레이블</span>
+                <span className="text-muted-strong">레이블</span>
                 <input
                   type="text"
                   value={form.label}
                   onChange={(event) => onChange({ ...form, label: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                  className="form-control"
                 />
               </label>
               <label className="space-y-2 text-sm">
-                <span className="text-slate-300">상태</span>
+                <span className="text-muted-strong">상태</span>
                 <input
                   type="text"
                   value={form.status}
                   onChange={(event) => onChange({ ...form, status: event.target.value })}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                  className="form-control"
                 />
               </label>
             </div>
             <label className="block space-y-2 text-sm">
-              <span className="text-slate-300">설명</span>
+              <span className="text-muted-strong">설명</span>
               <textarea
                 value={form.description}
                 onChange={(event) => onChange({ ...form, description: event.target.value })}
                 rows={3}
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                className="form-control"
                 />
               </label>
             </section>
 
           {node.id === "trainer" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">트레이너 런타임</h3>
+            <section className="form-section form-section--dense space-y-3">
+              <h3 className="text-lg font-semibold text-accent-strong">트레이너 런타임</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">유사도 임계값</span>
+                  <span className="text-muted-strong">유사도 임계값</span>
                   <input
                     type="number"
                     min={0}
@@ -469,22 +470,22 @@ function NodeSettingsDialog({
                     step={0.01}
                     value={form.similarityThreshold}
                     onChange={(event) => onChange({ ...form, similarityThreshold: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   />
                 </label>
-                <label className="flex items-center gap-3 rounded-lg border border-slate-700/80 bg-slate-950 px-3 py-2 text-sm text-slate-200">
+                <label className="form-toggle text-sm">
                   <input
                     type="checkbox"
                     checked={form.trimStdEnabled}
                     onChange={(event) => onChange({ ...form, trimStdEnabled: event.target.checked })}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
+                    className="form-checkbox"
                   />
                   <span>상/하위 5% Trim 표준편차 적용</span>
                 </label>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">하위 Trim 비율 (0~1)</span>
+                  <span className="text-muted-strong">하위 Trim 비율 (0~1)</span>
                   <input
                     type="number"
                     min={0}
@@ -492,11 +493,11 @@ function NodeSettingsDialog({
                     step={0.01}
                     value={form.trimLowerPercent}
                     onChange={(event) => onChange({ ...form, trimLowerPercent: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   />
                 </label>
                 <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">상위 Trim 비율 (0~1)</span>
+                  <span className="text-muted-strong">상위 Trim 비율 (0~1)</span>
                   <input
                     type="number"
                     min={0.5}
@@ -504,22 +505,22 @@ function NodeSettingsDialog({
                     step={0.01}
                     value={form.trimUpperPercent}
                     onChange={(event) => onChange({ ...form, trimUpperPercent: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   />
                 </label>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted">
                 현재 임계값: {trainer.similarity_threshold} · Trim: {trainer.trim_lower_percent}~{trainer.trim_upper_percent}
               </p>
             </section>
           ) : null}
 
           {node.id === "predictor" ? (
-            <section className="space-y-3 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
-              <h3 className="text-lg font-semibold text-sky-200">예측기 파라미터</h3>
+            <section className="form-section form-section--dense space-y-3">
+              <h3 className="text-lg font-semibold text-accent-strong">예측기 파라미터</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">상위 유사도 임계값</span>
+                  <span className="text-muted-strong">상위 유사도 임계값</span>
                   <input
                     type="number"
                     min={0}
@@ -527,42 +528,42 @@ function NodeSettingsDialog({
                     step={0.01}
                     value={form.predictorSimilarity}
                     onChange={(event) => onChange({ ...form, predictorSimilarity: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   />
                 </label>
                 <label className="space-y-2 text-sm">
-                  <span className="text-slate-300">최대 라우팅 조합 수</span>
+                  <span className="text-muted-strong">최대 라우팅 조합 수</span>
                   <input
                     type="number"
                     min={1}
                     max={10}
                     value={form.maxRoutingVariants}
                     onChange={(event) => onChange({ ...form, maxRoutingVariants: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   />
                 </label>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted">
                 현재 설정: Top {predictor.max_routing_variants}, 임계 {predictor.similarity_high_threshold}
               </p>
             </section>
           ) : null}
 
           {node.id === "sql-mapper" ? (
-            <section className="space-y-4 rounded-2xl border border-slate-700/60 bg-slate-950/60 p-4">
+            <section className="form-section form-section--dense space-y-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-sky-200">SQL 프로파일 및 컬럼 구성</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-lg font-semibold text-accent-strong">SQL 프로파일 및 컬럼 구성</h3>
+                  <p className="text-xs text-muted">
                     허용된 컬럼 집합({sql.available_columns.length})과 상호 배타 규칙을 기준으로 매핑을 관리합니다.
                   </p>
                 </div>
                 <label className="space-y-1 text-sm md:w-64">
-                  <span className="text-slate-300">활성 프로파일</span>
+                  <span className="text-muted-strong">활성 프로파일</span>
                   <select
                     value={form.sqlProfile}
                     onChange={(event) => onChange({ ...form, sqlProfile: event.target.value })}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 focus:border-sky-400 focus:outline-none"
+                    className="form-control"
                   >
                     {sql.profiles.map((profile) => (
                       <option key={profile.name} value={profile.name}>
@@ -589,48 +590,45 @@ function NodeSettingsDialog({
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-slate-200">
+                  <h4 className="text-sm font-semibold text-foreground">
                     출력 컬럼 선택 ({form.sqlOutputColumns.length})
                   </h4>
-                  <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl border border-slate-800/80 bg-slate-950/60 p-3 pr-4 text-xs sm:text-sm">
+                  <div className="max-h-48 space-y-2 overflow-y-auto scroll-panel pr-4 text-xs sm:text-sm">
                     {sql.available_columns.map((column) => {
                       const selected = selectedOutputSet.has(column);
                       const hasConflict = conflictColumns.has(column);
                       return (
                         <label
                           key={column}
-                          className={`flex items-center gap-3 rounded-lg border px-3 py-2 transition ${
-                            selected
-                              ? "border-sky-500 bg-sky-500/10 text-sky-100"
-                              : "border-slate-700/80 text-slate-200 hover:border-sky-400/80 hover:text-sky-100"
-                          } ${hasConflict ? "border-rose-500/80 text-rose-200" : ""}`}
+                          className={cn("flex items-center gap-3 selection-chip")}
+                          data-state={hasConflict ? "conflict" : selected ? "active" : undefined}
                         >
                           <input
                             type="checkbox"
                             checked={selected}
                             onChange={() => toggleOutputColumn(column)}
-                            className="h-4 w-4 rounded border-slate-600 bg-slate-900 text-sky-400 focus:ring-sky-500"
+                            className="form-checkbox"
                           />
                           <span className="font-mono">{column}</span>
                         </label>
                       );
                     })}
                   </div>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted">
                     선택된 컬럼 수: {form.sqlOutputColumns.length} / 허용 {sql.available_columns.length}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-sm font-semibold text-slate-200">
+                  <h4 className="text-sm font-semibold text-foreground">
                     키 컬럼 지정 ({form.sqlKeyColumns.length})
                   </h4>
                   {form.sqlOutputColumns.length === 0 ? (
-                    <p className="rounded-lg border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+                    <p className="rounded-lg border border-soft surface-card-muted p-3 text-xs text-muted">
                       먼저 출력 컬럼을 선택한 후 키 컬럼을 지정하세요.
                     </p>
                   ) : (
-                    <div className="flex flex-wrap gap-2 rounded-xl border border-slate-800/80 bg-slate-950/60 p-3">
+                    <div className="flex flex-wrap gap-2 rounded-xl border border-soft surface-card-muted p-3">
                       {form.sqlOutputColumns.map((column) => {
                         const isKey = form.sqlKeyColumns.includes(column);
                         return (
@@ -638,11 +636,8 @@ function NodeSettingsDialog({
                             key={column}
                             type="button"
                             onClick={() => toggleKeyColumn(column)}
-                            className={`rounded-full px-3 py-1 text-xs sm:text-sm transition ${
-                              isKey
-                                ? "border border-sky-400 bg-sky-500/20 text-sky-100"
-                                : "border border-slate-600 text-slate-300 hover:border-sky-400 hover:text-sky-100"
-                            }`}
+                            className="key-chip text-xs sm:text-sm"
+                            data-state={isKey ? "active" : undefined}
                           >
                             {column}
                           </button>
@@ -651,11 +646,11 @@ function NodeSettingsDialog({
                     </div>
                   )}
                   {sql.exclusive_column_groups.length > 0 ? (
-                    <div className="rounded-lg border border-slate-800/80 bg-slate-950/60 p-3 text-xs text-slate-300">
-                      <p className="mb-2 font-semibold text-slate-200">상호 배타 그룹</p>
+                    <div className="rounded-lg border border-soft surface-card-muted p-3 text-xs text-muted">
+                      <p className="mb-2 font-semibold text-foreground">상호 배타 그룹</p>
                       <ul className="list-disc space-y-1 pl-4">
                         {sql.exclusive_column_groups.map((group, index) => (
-                          <li key={group.join("-") || index} className="font-mono text-[11px] text-slate-300">
+                          <li key={group.join("-") || index} className="font-mono text-[11px] text-muted-strong">
                             {group.join(" · ")}
                           </li>
                         ))}
@@ -667,25 +662,25 @@ function NodeSettingsDialog({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-200">컬럼 별칭 매핑</h4>
+                  <h4 className="text-sm font-semibold text-foreground">컬럼 별칭 매핑</h4>
                   <button
                     type="button"
                     onClick={handleAddAlias}
-                    className="rounded-lg border border-sky-500/70 px-3 py-1 text-xs font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-50"
+                    className="chip-button chip-button--accent text-xs"
                   >
                     행 추가
                   </button>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-slate-800/80">
-                  <table className="min-w-full divide-y divide-slate-800 text-left text-sm text-slate-200">
-                    <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                <div className="overflow-x-auto table-frame">
+                  <table className="min-w-full text-left text-sm text-foreground">
+                    <thead className="text-xs uppercase tracking-wide text-muted">
                       <tr>
                         <th className="px-4 py-2">별칭</th>
                         <th className="px-4 py-2">대상 컬럼</th>
                         <th className="px-4 py-2 text-right">작업</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900">
+                    <tbody>
                       {form.sqlColumnAliases.map((row, index) => {
                         const aliasValue = row.alias;
                         const aliasTrimmed = aliasValue.trim();
@@ -693,15 +688,14 @@ function NodeSettingsDialog({
                         const columnInvalid = row.column !== "" && !availableSet.has(row.column);
                         const showAliasError = aliasDuplicate || (!aliasTrimmed && row.column);
                         return (
-                          <tr key={`alias-${index}`} className="bg-slate-950/40">
+                          <tr key={`alias-${index}`} className="surface-card-muted">
                             <td className="px-4 py-2 align-middle">
                               <input
                                 type="text"
                                 value={row.alias}
                                 onChange={(event) => handleAliasChange(index, "alias", event.target.value)}
-                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
-                                  showAliasError ? "border-rose-500/70" : "border-slate-700"
-                                }`}
+                                className={cn("form-control text-sm")}
+                                style={showAliasError ? { borderColor: "var(--danger-strong)" } : undefined}
                                 placeholder="JOB_CD"
                               />
                             </td>
@@ -709,9 +703,8 @@ function NodeSettingsDialog({
                               <select
                                 value={row.column}
                                 onChange={(event) => handleAliasChange(index, "column", event.target.value)}
-                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
-                                  columnInvalid ? "border-rose-500/70" : "border-slate-700"
-                                }`}
+                                className={cn("form-control text-sm")}
+                                style={columnInvalid ? { borderColor: "var(--danger-strong)" } : undefined}
                               >
                                 <option value="">컬럼 선택</option>
                                 {sql.available_columns.map((column) => (
@@ -725,7 +718,7 @@ function NodeSettingsDialog({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveAlias(index)}
-                                className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-400 hover:text-rose-200"
+                                className="chip-button chip-button--danger text-xs"
                               >
                                 삭제
                               </button>
@@ -735,7 +728,7 @@ function NodeSettingsDialog({
                       })}
                       {form.sqlColumnAliases.length === 0 ? (
                         <tr>
-                          <td className="px-4 py-3 text-center text-xs text-slate-500" colSpan={3}>
+                          <td className="px-4 py-3 text-center text-xs text-muted" colSpan={3}>
                             등록된 별칭이 없습니다. 행 추가 버튼을 눌러주세요.
                           </td>
                         </tr>
@@ -743,7 +736,7 @@ function NodeSettingsDialog({
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   Access VIEW 별칭과 내부 컬럼명을 매핑합니다. 공백 또는 중복된 별칭은 저장 전에 수정해야 합니다.
                 </p>
                 {aliasDuplicateSet.size > 0 ? (
@@ -758,25 +751,25 @@ function NodeSettingsDialog({
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-slate-200">학습-출력 매핑</h4>
+                  <h4 className="text-sm font-semibold text-foreground">학습-출력 매핑</h4>
                   <button
                     type="button"
                     onClick={handleAddTrainingMapping}
-                    className="rounded-lg border border-sky-500/70 px-3 py-1 text-xs font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-50"
+                    className="chip-button chip-button--accent text-xs"
                   >
                     행 추가
                   </button>
                 </div>
-                <div className="overflow-x-auto rounded-xl border border-slate-800/80">
-                  <table className="min-w-full divide-y divide-slate-800 text-left text-sm text-slate-200">
-                    <thead className="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                <div className="overflow-x-auto table-frame">
+                  <table className="min-w-full text-left text-sm text-foreground">
+                    <thead className="text-xs uppercase tracking-wide text-muted">
                       <tr>
                         <th className="px-4 py-2">피처 키</th>
                         <th className="px-4 py-2">출력 컬럼</th>
                         <th className="px-4 py-2 text-right">작업</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-900">
+                    <tbody>
                       {form.sqlTrainingMappings.map((row, index) => {
                         const featureTrimmed = row.feature.trim();
                         const featureDuplicate = featureTrimmed !== "" && trainingFeatureDuplicateSet.has(featureTrimmed);
@@ -784,15 +777,14 @@ function NodeSettingsDialog({
                           row.column !== "" && (!availableSet.has(row.column) || !selectedOutputSet.has(row.column));
                         const incomplete = (featureTrimmed === "" && row.column) || (featureTrimmed && !row.column);
                         return (
-                          <tr key={`mapping-${index}`} className="bg-slate-950/40">
+                          <tr key={`mapping-${index}`} className="surface-card-muted">
                             <td className="px-4 py-2 align-middle">
                               <input
                                 type="text"
                                 value={row.feature}
                                 onChange={(event) => handleTrainingMappingChange(index, "feature", event.target.value)}
-                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
-                                  featureDuplicate || incomplete ? "border-rose-500/70" : "border-slate-700"
-                                }`}
+                                className={cn("form-control text-sm")}
+                                style={featureDuplicate || incomplete ? { borderColor: "var(--danger-strong)" } : undefined}
                                 placeholder="item_code"
                               />
                             </td>
@@ -800,9 +792,8 @@ function NodeSettingsDialog({
                               <select
                                 value={row.column}
                                 onChange={(event) => handleTrainingMappingChange(index, "column", event.target.value)}
-                                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm focus:border-sky-400 focus:outline-none ${
-                                  columnInvalid || incomplete ? "border-rose-500/70" : "border-slate-700"
-                                }`}
+                                className={cn("form-control text-sm")}
+                                style={columnInvalid || incomplete ? { borderColor: "var(--danger-strong)" } : undefined}
                                 disabled={form.sqlOutputColumns.length === 0}
                               >
                                 <option value="">컬럼 선택</option>
@@ -817,7 +808,7 @@ function NodeSettingsDialog({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveTrainingMapping(index)}
-                                className="rounded-lg border border-slate-700 px-3 py-1 text-xs text-slate-300 transition hover:border-rose-400 hover:text-rose-200"
+                                className="chip-button chip-button--danger text-xs"
                               >
                                 삭제
                               </button>
@@ -827,7 +818,7 @@ function NodeSettingsDialog({
                       })}
                       {form.sqlTrainingMappings.length === 0 ? (
                         <tr>
-                          <td className="px-4 py-3 text-center text-xs text-slate-500" colSpan={3}>
+                          <td className="px-4 py-3 text-center text-xs text-muted" colSpan={3}>
                             매핑이 비어 있습니다. 학습 피처와 출력 컬럼을 연결하세요.
                           </td>
                         </tr>
@@ -835,7 +826,7 @@ function NodeSettingsDialog({
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted">
                   학습 파이프라인 피처와 최종 출력 컬럼 간의 관계를 정의합니다. 중복된 키 또는 허용되지 않은 컬럼은 저장할 수 없습니다.
                 </p>
                 {trainingFeatureDuplicateSet.size > 0 ? (
@@ -854,9 +845,9 @@ function NodeSettingsDialog({
             </div>
             {tensorboardLinks.length > 0 ? (
               <aside className="md:sticky md:top-6 md:self-start">
-                <div className="space-y-3 rounded-2xl border border-slate-700/70 bg-slate-950/70 p-4 text-xs text-slate-300">
-                  <h3 className="text-sm font-semibold text-sky-200">TensorBoard 링크</h3>
-                  <p className="text-[11px] text-slate-400">
+                <div className="form-section form-section--dense space-y-3 text-xs text-muted">
+                  <h3 className="text-sm font-semibold text-accent-strong">TensorBoard 링크</h3>
+                  <p className="text-[11px] text-muted">
                     워크플로우 코드 재생성 시 확인되는 Projector 자산 경로입니다.
                   </p>
                   <ul className="space-y-2">
@@ -866,13 +857,13 @@ function NodeSettingsDialog({
                           href={link.href}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 text-sky-300 transition hover:text-sky-100"
+                          className="inline-flex items-center gap-2 text-accent transition hover:text-accent-strong"
                         >
                           <ExternalLink size={14} />
                           <span className="truncate text-left">{link.label}</span>
                         </a>
                         {link.description ? (
-                          <p className="mt-1 text-[11px] text-slate-500">{link.description}</p>
+                          <p className="mt-1 text-[11px] text-muted">{link.description}</p>
                         ) : null}
                       </li>
                     ))}
@@ -883,23 +874,14 @@ function NodeSettingsDialog({
           </div>
         </div>
         <footer className="mt-6 flex items-center justify-between">
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-muted">
             변경 사항은 SAVE 시 `config/workflow_settings.json`과 런타임에 즉시 반영됩니다.
           </span>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-400 hover:text-slate-100"
-            >
+            <button type="button" onClick={onClose} className="btn-secondary text-sm">
               취소
             </button>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={saving}
-              className="rounded-lg bg-sky-500 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-sky-800 disabled:text-slate-400"
-            >
+            <button type="button" onClick={onSave} disabled={saving} className="btn-primary text-sm disabled:cursor-not-allowed">
               {saving ? "저장 중..." : "SAVE"}
             </button>
           </div>
@@ -1294,12 +1276,18 @@ export function WorkflowGraphPanel() {
   }, [selectedNode, data, graphNodes, formState, saveConfig, showToast]);
 
   return (
-    <section className="mx-auto mt-10 max-w-7xl rounded-3xl border border-slate-800 bg-slate-900/60 p-6 text-slate-100 shadow-2xl">
+    <CardShell
+      as="section"
+      className="mx-auto mt-10 max-w-7xl"
+      innerClassName="p-6 text-foreground"
+      tone="soft"
+      interactive={false}
+    >
       <header className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wide text-sky-400/80">Workflow Graph</p>
-          <h2 className="text-2xl font-semibold text-sky-100">블루스크린 워크플로우 디자이너</h2>
-          <p className="mt-1 text-sm text-slate-300">
+          <p className="text-xs uppercase tracking-wide text-accent-soft/80">Workflow Graph</p>
+          <h2 className="text-2xl font-semibold text-accent-strong">블루스크린 워크플로우 디자이너</h2>
+          <p className="mt-1 text-sm text-muted-strong">
             노드 더블클릭으로 설정을 수정하고 SAVE 버튼으로 트레이너/예측기/SQL 매핑을 즉시 반영합니다.
           </p>
         </div>
@@ -1310,16 +1298,20 @@ export function WorkflowGraphPanel() {
             type="button"
             onClick={handleSaveLayout}
             disabled={saving || isLoading || isFetching}
-            className="rounded-lg border border-sky-500/60 px-4 py-2 text-sm font-semibold text-sky-100 transition hover:border-sky-300 hover:text-sky-200 disabled:cursor-not-allowed disabled:border-slate-600 disabled:text-slate-500"
+            className="btn-primary text-sm disabled:cursor-not-allowed"
           >
             {saving ? "저장 중..." : "레이아웃 SAVE"}
           </button>
         </div>
       </header>
-      <div className="relative h-[520px] overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-950 via-blue-950/70 to-slate-900">
+      <div className="relative h-[520px] overflow-hidden rounded-3xl border border-soft surface-card-overlay shadow-elevated">
+        <div className="canvas-panel" aria-hidden="true" />
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+            <div
+              className="h-12 w-12 animate-spin rounded-full border-2 border-t-transparent"
+              style={{ borderColor: "var(--accent)" }}
+            />
           </div>
         ) : null}
         <ReactFlowProvider>
@@ -1333,8 +1325,8 @@ export function WorkflowGraphPanel() {
             proOptions={{ hideAttribution: true }}
             className="blueprint-flow"
           >
-            <MiniMap pannable zoomable className="!bg-slate-950/80" nodeColor={() => "#38bdf8"} maskColor="rgba(15,23,42,0.7)" />
-            <Controls className="bg-slate-900/80 text-slate-100" showInteractive={false} />
+            <MiniMap pannable zoomable className="!bg-transparent" nodeColor={() => "#38bdf8"} maskColor="rgba(15,23,42,0.7)" />
+            <Controls className="surface-card-overlay text-foreground" showInteractive={false} />
             <Background color="rgba(56,189,248,0.25)" gap={28} />
           </ReactFlow>
         </ReactFlowProvider>
@@ -1356,25 +1348,20 @@ export function WorkflowGraphPanel() {
       {toast ? (
         <div className="pointer-events-none fixed bottom-6 right-6 z-50">
           <div
-            className={`pointer-events-auto w-80 rounded-2xl border px-4 py-3 shadow-xl transition ${
+            className={cn(
+              "pointer-events-auto w-80 rounded-2xl border px-4 py-3 shadow-xl transition",
               toast.kind === "error"
-                ? "border-rose-500/70 bg-rose-500/10 text-rose-100"
-                : "border-emerald-500/70 bg-emerald-500/10 text-emerald-100"
-            }`}
+                ? "border border-soft bg-rose-900/35 text-rose-100"
+                : "border border-soft bg-emerald-900/35 text-emerald-100",
+            )}
           >
             <p className="text-sm font-semibold">{toast.title}</p>
             {toast.description ? (
-              <p
-                className={`mt-1 text-xs ${
-                  toast.kind === "error" ? "text-rose-100/90" : "text-emerald-100/90"
-                }`}
-              >
-                {toast.description}
-              </p>
+              <p className="mt-1 text-xs opacity-90">{toast.description}</p>
             ) : null}
           </div>
         </div>
       ) : null}
-    </section>
+    </CardShell>
   );
 }

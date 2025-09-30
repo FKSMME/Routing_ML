@@ -35,7 +35,68 @@ vi.mock("@lib/apiClient", () => ({
 }));
 
 vi.mock("@store/workspaceStore", () => {
-  const store = { saveRouting: saveRoutingSelectorMock };
+  const store: any = {
+    saveRouting: () => {
+      const snapshot = {
+        exportProfile: { ...store.exportProfile },
+        erpInterfaceEnabled: store.erpInterfaceEnabled,
+        columnMappings: store.outputMappings.map((row: any) => ({
+          source: row.source,
+          mapped: row.mapped,
+          type: row.type,
+          required: row.required,
+        })),
+      };
+      saveRoutingSelectorMock(snapshot);
+      return snapshot;
+    },
+    itemSearch: { itemCodes: ["ITEM-001"], topK: 10, threshold: 0.3, lastRequestedAt: undefined },
+    featureWeights: { profile: "default", manualWeights: {}, availableProfiles: [] },
+    exportProfile: {
+      formats: ["csv"],
+      destination: "local",
+      withVisualization: false,
+      lastSyncAt: undefined,
+    },
+    erpInterfaceEnabled: false,
+    workspaceOptions: {
+      data: {
+        standard: ["zscore"],
+        similarity: ["cosine"],
+        accessPath: "",
+        accessTable: "",
+        columnMappings: [],
+        erpInterface: false,
+      },
+      loading: false,
+      saving: false,
+      dirty: false,
+      lastSyncedAt: undefined,
+    },
+    referenceMatrixColumns: [],
+    outputMappings: [],
+    setOutputMappings: vi.fn((rows) => {
+      store.outputMappings = rows.map((row: any) => ({
+        id: row.id,
+        source: row.source,
+        mapped: row.mapped,
+        type: row.type,
+        required: row.required,
+      }));
+    }),
+    setErpInterfaceEnabled: vi.fn((enabled) => {
+      useRoutingStore.getState().setERPRequired(enabled);
+      const previous = store.workspaceOptions;
+      const changed = previous.data.erpInterface !== enabled;
+      store.erpInterfaceEnabled = enabled;
+      store.workspaceOptions = {
+        ...previous,
+        data: { ...previous.data, erpInterface: enabled },
+        dirty: previous.dirty || changed,
+      };
+    }),
+  };
+
   const useWorkspaceStore: any = (selector?: unknown) => {
     if (typeof selector === "function") {
       return (selector as (state: typeof store) => unknown)(store);
@@ -44,7 +105,20 @@ vi.mock("@store/workspaceStore", () => {
   };
 
   useWorkspaceStore.getState = () => store;
-  useWorkspaceStore.setState = () => undefined;
+  useWorkspaceStore.setState = (partial: any, replace?: boolean) => {
+    const nextState = typeof partial === "function" ? partial(store) : partial;
+    if (!nextState) {
+      return;
+    }
+    if (replace) {
+      Object.keys(store).forEach((key) => {
+        if (!(key in nextState)) {
+          delete store[key];
+        }
+      });
+    }
+    Object.assign(store, nextState);
+  };
 
   return {
     useWorkspaceStore,
