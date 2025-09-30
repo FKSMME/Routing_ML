@@ -32,7 +32,7 @@
 ### 구현 계획
 - **시퀀스 매칭 의사코드**: `align_sequences(pred_steps, actual_steps)` 함수에서 동적 계획법 사용, 삽입/삭제 비용 1, 교체 비용 2.
 - **시간 지표 계산**: `mae_duration`, `mape_duration` 함수로 구현, 시간 단위는 분.
-- **대시보드 파이프라인**: 평가 결과를 `metrics_timeseries` 뷰에 적재, Grafana 대시보드와 연동.
+- **대시보드 파이프라인**: 평가 결과를 `metrics_timeseries` 뷰에 적재, 온프레미스 운영 관제 대시보드(Operations Control Center)와 연동.
 - **리포트 자동화**: Python `report_builder.py`에서 KPI 요약, 상위/하위 라우팅 사례, 경고 목록을 PDF/HTML로 생성.
 
 ### 테스트 전략
@@ -43,7 +43,7 @@
 
 ### 배포 준비
 - 스케줄링: Airflow DAG `routing_evaluation_dag` 작성, 백그라운드 실행(큐 워커).
-- 모니터링: CloudWatch 지표 + Slack 알림, 임계값 초과 시 PagerDuty 트리거.
+- 모니터링: Windows Event Forwarding 기반 지표 수집 + 내부 관제 대시보드 경보, 임계값 초과 시 사내 SMS/이메일 게이트웨이 알림 발송.
 - 접근 권한: 대시보드 뷰어 역할 분리(운영/분석/경영). 승인 로그 보관.
 - 게이트 종료: Stage 6 완료 보고 후 Stage 7 승인 요청, 선행 단계 오류 미존재 증빙 포함.
 

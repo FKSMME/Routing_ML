@@ -24,6 +24,7 @@
 - [x] Master Data API 연동 및 감사 로그 다운로드 구현 (`backend/api/routes/master_data.py`, `backend/api/services/master_data_service.py`) (2025-09-28 18:20 완료)
 - [x] 기준정보 UI → 실 API 연계 및 로그 다운로드 버튼 연결 (`frontend/src/hooks/useMasterData.ts`, `frontend/src/components/master-data/*`) (2025-09-28 18:25 완료)
 - [x] 라우팅/알고리즘/데이터 출력/학습 현황/옵션 메뉴 기본 워크스페이스 배치 (`frontend/src/components/workspaces/*`) (2025-09-28 18:30 완료)
+- [x] Stage 6 모니터링 스택 온프레미스 전환(Windows Event Forwarding + 사내 SMS/이메일 게이트웨이) 운영팀 승인 확보 (Ops 승인 메모 #OPS-2025-137, 2025-10-06 09:20 KST)
 
 ## Step 1 - 라우팅 생성 고도화 (분석)
 
