@@ -188,6 +188,8 @@
 
 .app-shell[data-nav-mode="drawer"] .main-nav {
   display: none;
+}
+
 .hero-banner {
   position: relative;
   margin: 2rem auto 1.5rem;
@@ -2345,6 +2347,50 @@
   margin-bottom: 0.4rem;
 }
 
+.timeline-node__violations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.timeline-node__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: color-mix(in oklch, var(--danger-soft) 35%, transparent);
+  color: var(--danger-strong);
+  box-shadow: 0 4px 12px -8px rgba(180, 50, 50, 0.4);
+}
+
+.timeline-node__badge[data-severity="warning"] {
+  background: color-mix(in oklch, var(--accent-soft) 35%, transparent);
+  color: var(--accent-strong);
+  box-shadow: 0 4px 12px -8px rgba(45, 102, 176, 0.35);
+}
+
+.timeline-node__badge[data-severity="info"] {
+  background: color-mix(in oklch, var(--surface-overlay) 55%, transparent);
+  color: var(--text-emphasis);
+  box-shadow: 0 4px 12px -8px rgba(40, 80, 160, 0.25);
+}
+
+.timeline-node__badge-code {
+  font-family: "JetBrains Mono", "Fira Code", "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.68rem;
+}
+
+.timeline-node__badge-message {
+  font-weight: 500;
+}
+
 .timeline-node__title {
   font-weight: 600;
   color: var(--text-heading);
@@ -2383,6 +2429,38 @@
   margin-top: 0.75rem;
   font-size: 0.75rem;
   color: var(--text-muted);
+}
+
+/* Demo shell (dev only) */
+.demo-shell {
+  min-height: 100vh;
+  padding: 2.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: radial-gradient(circle at top left, rgba(91, 118, 216, 0.08), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(238, 108, 126, 0.08), transparent 45%), var(--surface-base, #f5faff);
+}
+
+.demo-shell__header h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+  color: var(--text-heading);
+}
+
+.demo-shell__header p {
+  margin: 0;
+  color: var(--text-muted);
+  max-width: 48ch;
+}
+
+.demo-shell__canvas {
+  flex: 1;
+  min-height: 420px;
+  background: color-mix(in oklch, var(--surface-card) 94%, transparent);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-raised);
 }
 
 /* Save panel */
