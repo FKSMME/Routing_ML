@@ -36,7 +36,7 @@
 - 2025-09-29 09:07:03: Cross-checked docs/backend_api_routing_groups_spec.md with manifest/registry strategy to ensure reuse compliance.
 - 2025-09-29 09:09:18: Validated docs/Design/routing_state_store_plan.md persistence/undo design and logged checklist completion.
 
-- 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
+- [x] ~~2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.~~ *(중복 로그 정리)*
 - 2025-09-29 09:55:00: Re-scanned PRD/Tasklist documents and updated routing refactor execution plan with crosswalk coverage for manifest, RSL, frontend, and deployment tasks.
 
 - 2025-09-29 09:12:40: Marked Tasklist Step 1 design review items complete to mirror documented reviews.
@@ -52,3 +52,4 @@
 - 2025-09-29 19:45:32: Implemented frontend IndexedDB persistence utilities with graceful fallback and logged QA snapshot tests.
 
 
+- 2025-10-05 08:55:00: Reviewed Codex activity log and logbook for duplicate entries, annotating redundancies with strikethrough and [x] markers per 절대 지령.
