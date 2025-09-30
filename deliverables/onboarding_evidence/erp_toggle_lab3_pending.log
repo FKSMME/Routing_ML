@@ -1,0 +1,1 @@
+[2025-09-30T03:05:00Z] ERP toggle manual QA not executed. Reason: Lab-3 physical workstation with Chrome 127+ is inaccessible from container environment. Evidence capture (UI screenshot, HAR payload, audit log) remains pending until on-site session.
