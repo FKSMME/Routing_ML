@@ -51,7 +51,11 @@
 
 
 
-### Step 1 Deliverable Follow-ups (Pending)
+### Step 1 Deliverable Follow-ups (Approved 2025-10-02)
+
+- [x] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성. → 2025-10-02 스폰서 제출용으로 `deliverables/step1/design_draft.md`에 정리 완료.
+- [x] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰). → 2025-10-02 승인 패킷에 `deliverables/step1/api_update.md`로 편입.
+- [x] 승인 요청 패킷 (Tasklist/로그 업데이트 포함) — 스폰서 서명 일정 2025-10-02 확정 대기. → 2025-10-02 `deliverables/step1/approval_request_memo.md` 제출 및 서명 획득.
 
 - [x] 라우팅 고도화 기술 설계 초안 — Step 2 기능 범위 확정 후(2025-10-01 예정) 세부 설계 작성. (2025-10-01 11:30 KST 승인, 참조: `docs/Design/routing_enhancement_detailed_design.md`)
 - [ ] API 명세 추가안 (`docs/backend_api_overview.md`) — 신규 엔드포인트 리허설과 QA 완료 후 반영 (목표: 2025-10-01 PM 리뷰).
