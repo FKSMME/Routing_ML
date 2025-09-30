@@ -5,6 +5,7 @@ interface MasterDataInfoPanelProps {
   logs: MasterDataLogEntry[];
   onDownloadLog: () => void;
   onRefresh?: () => void;
+  onOpenConnection?: () => void;
 }
 
 const STATUS_LABEL: Record<MasterDataConnectionStatus["status"], string> = {
@@ -12,7 +13,7 @@ const STATUS_LABEL: Record<MasterDataConnectionStatus["status"], string> = {
   disconnected: "Disconnected",
 };
 
-export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh }: MasterDataInfoPanelProps) {
+export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh, onOpenConnection }: MasterDataInfoPanelProps) {
   const statusClass = ["status-dot", `status-${connection.status}`].join(" ");
   const statusLabel = STATUS_LABEL[connection.status];
 
@@ -42,15 +43,22 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
             <dd>{connection.last_sync ?? "-"}</dd>
           </div>
         </dl>
-        <div className="flex gap-2 mt-3">
-          {onRefresh ? (
-            <button type="button" className="btn-secondary flex-1" onClick={onRefresh}>
-              Refresh
+        <div className="flex flex-col gap-2 mt-3">
+          {onOpenConnection ? (
+            <button type="button" className="btn-primary w-full" onClick={onOpenConnection}>
+              Connect source
             </button>
           ) : null}
-          <button type="button" className="btn-secondary flex-1" onClick={onDownloadLog}>
-            Download log
-          </button>
+          <div className="flex gap-2">
+            {onRefresh ? (
+              <button type="button" className="btn-secondary flex-1" onClick={onRefresh}>
+                Refresh
+              </button>
+            ) : null}
+            <button type="button" className="btn-secondary flex-1" onClick={onDownloadLog}>
+              Download log
+            </button>
+          </div>
         </div>
       </section>
 

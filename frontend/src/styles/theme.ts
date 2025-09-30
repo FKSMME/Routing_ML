@@ -48,6 +48,7 @@ interface LayoutTokens {
   maxWidth: string;
   radius: string;
   columnGap: string;
+  workspaceColumns: string;
 }
 
 export interface RoutingMLTheme {
@@ -101,6 +102,7 @@ export const pastelSkyTheme: RoutingMLTheme = {
     maxWidth: "1200px",
     radius: "1.25rem",
     columnGap: "1.5rem",
+    workspaceColumns: "20% 60% 20%",
   },
 };
 
@@ -131,6 +133,7 @@ const baseVariableMap: Record<string, string> = {
   "--layout-max-width": pastelSkyTheme.layout.maxWidth,
   "--layout-column-gap": pastelSkyTheme.layout.columnGap,
   "--layout-radius": pastelSkyTheme.layout.radius,
+  "--layout-workspace-columns": pastelSkyTheme.layout.workspaceColumns,
 };
 
 export function applyTheme(root?: HTMLElement | null, theme: RoutingMLTheme = pastelSkyTheme): void {
@@ -167,6 +170,7 @@ export function applyTheme(root?: HTMLElement | null, theme: RoutingMLTheme = pa
     "--layout-max-width": theme.layout.maxWidth,
     "--layout-column-gap": theme.layout.columnGap,
     "--layout-radius": theme.layout.radius,
+    "--layout-workspace-columns": theme.layout.workspaceColumns,
   };
 
   Object.entries(variableMap).forEach(([prop, value]) => {

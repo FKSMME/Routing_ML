@@ -3,8 +3,8 @@ import "reactflow/dist/style.css";
 import type { DraggableOperationPayload, TimelineStep } from "@store/routingStore";
 import { useRoutingStore } from "@store/routingStore";
 import { Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
-import type { Edge, Node, NodeProps, ReactFlowInstance } from "reactflow";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type UIEvent } from "react";
+import type { Edge, Node, NodeProps, ReactFlowInstance, Viewport } from "reactflow";
 import ReactFlow, {
   Background,
   Controls,
@@ -77,6 +77,8 @@ function RoutingCanvasView({
 }: CanvasViewProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<ReactFlowInstance | null>(null);
+  const viewportRef = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
+  const syncingScrollRef = useRef(false);
   const [nodes, setNodes, onNodesChange] = useNodesState<TimelineNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isReady, setIsReady] = useState(false);
@@ -85,6 +87,14 @@ function RoutingCanvasView({
     () => (className ? `timeline-flow ${className}` : "timeline-flow"),
     [className],
   );
+
+  const scheduleFrame = useCallback((callback: () => void) => {
+    if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(callback);
+    } else {
+      callback();
+    }
+  }, []);
 
   const flowNodes = useMemo<Node<TimelineNodeData>[]>(
     () =>
@@ -108,15 +118,57 @@ function RoutingCanvasView({
     [timeline],
   );
 
+  const canvasDimensions = useMemo(() => {
+    if (flowNodes.length === 0) {
+      return { width: 1024, height: 320 };
+    }
+
+    const maxX = flowNodes.reduce((acc, node) => Math.max(acc, node.position.x), 0);
+    const maxY = flowNodes.reduce((acc, node) => Math.max(acc, node.position.y), 0);
+
+    return {
+      width: Math.max(1024, maxX + NODE_GAP * 2),
+      height: Math.max(320, maxY + NODE_GAP * 1.5),
+    };
+  }, [flowNodes]);
+
+  const syncScrollToViewport = useCallback(
+    (viewport?: Viewport) => {
+      const element = wrapperRef.current;
+      if (!element) {
+        return;
+      }
+      const current = viewport ?? viewportRef.current;
+      viewportRef.current = current;
+      const targetLeft = -current.x;
+      const targetTop = -current.y;
+      if (Math.abs(element.scrollLeft - targetLeft) < 0.5 && Math.abs(element.scrollTop - targetTop) < 0.5) {
+        return;
+      }
+      syncingScrollRef.current = true;
+      element.scrollLeft = targetLeft;
+      element.scrollTop = targetTop;
+      scheduleFrame(() => {
+        syncingScrollRef.current = false;
+      });
+    },
+    [scheduleFrame],
+  );
+
   const handleInit = useCallback(
     (instance: ReactFlowInstance) => {
       instanceRef.current = instance;
       setIsReady(true);
       if (autoFit) {
         instance.fitView({ padding: fitPadding, duration: 200 });
+        scheduleFrame(() => {
+          const viewport = instance.getViewport();
+          viewportRef.current = viewport;
+          syncScrollToViewport(viewport);
+        });
       }
     },
-    [autoFit, fitPadding],
+    [autoFit, fitPadding, scheduleFrame, syncScrollToViewport],
   );
 
   const handleDrop = useCallback(
@@ -161,6 +213,27 @@ function RoutingCanvasView({
     [moveStep],
   );
 
+  const handleMove = useCallback(
+    (_event: unknown, viewport: Viewport) => {
+      viewportRef.current = viewport;
+      syncScrollToViewport(viewport);
+    },
+    [syncScrollToViewport],
+  );
+
+  const handleScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      if (!instanceRef.current || syncingScrollRef.current) {
+        return;
+      }
+      const { scrollLeft, scrollTop } = event.currentTarget;
+      const currentViewport = viewportRef.current;
+      const zoom = currentViewport.zoom ?? instanceRef.current.getZoom();
+      instanceRef.current.setViewport({ x: -scrollLeft, y: -scrollTop, zoom }, { duration: 0 });
+    },
+    [],
+  );
+
   useEffect(() => {
     setNodes(flowNodes);
     setEdges(flowEdges);
@@ -169,29 +242,48 @@ function RoutingCanvasView({
   useEffect(() => {
     if (autoFit && isReady && instanceRef.current) {
       instanceRef.current.fitView({ padding: fitPadding, duration: 200 });
+      scheduleFrame(() => {
+        const viewport = instanceRef.current?.getViewport();
+        if (viewport) {
+          viewportRef.current = viewport;
+          syncScrollToViewport(viewport);
+        }
+      });
     }
-  }, [autoFit, fitPadding, timeline.length, isReady]);
+  }, [autoFit, fitPadding, timeline.length, isReady, scheduleFrame, syncScrollToViewport]);
 
   return (
-    <div className={containerClassName} ref={wrapperRef} onDrop={handleDrop} onDragOver={handleDragOver}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onInit={handleInit}
-        onNodeDragStop={handleNodeDragStop}
-        nodesDraggable
-        nodesConnectable={false}
-        elementsSelectable
-        proOptions={{ hideAttribution: true }}
-        fitView
-      >
-        <MiniMap pannable zoomable nodeColor={() => "#5b76d8"} />
-        <Controls showZoom={false} showInteractive={false} />
-        <Background gap={32} size={1} />
-      </ReactFlow>
+    <div
+      className={containerClassName}
+      ref={wrapperRef}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onScroll={handleScroll}
+      data-testid="routing-canvas-scroll"
+    >
+      <div className="timeline-flow__canvas" style={{ width: canvasDimensions.width, height: canvasDimensions.height }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onInit={handleInit}
+          onMove={handleMove}
+          onNodeDragStop={handleNodeDragStop}
+          nodesDraggable
+          nodesConnectable={false}
+          elementsSelectable
+          proOptions={{ hideAttribution: true }}
+          fitView
+          className="timeline-flow__reactflow"
+          style={{ width: "100%", height: "100%" }}
+        >
+          <MiniMap pannable zoomable nodeColor={() => "#5b76d8"} />
+          <Controls showZoom={false} showInteractive={false} />
+          <Background gap={32} size={1} />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
@@ -216,3 +308,4 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
 }
 
 export default RoutingCanvas;
+export type { RoutingCanvasProps };

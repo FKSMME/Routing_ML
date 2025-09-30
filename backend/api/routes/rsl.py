@@ -89,6 +89,32 @@ async def create_group(
     return result
 
 
+@router.get("/groups/export")
+async def export_groups(
+    format: Literal["json", "csv"] = Query("json"),
+    include_archived: bool = Query(False),
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> Response:
+    try:
+        bundle = rsl_service.export_groups(
+            format=format,
+            owner=current_user.username,
+            include_archived=include_archived,
+        )
+    except Exception as exc:  # noqa: BLE001
+        _handle_error(exc)
+    media_type = "application/json" if bundle.format == "json" else "text/csv"
+    audit_logger.info(
+        "rsl.group.export",
+        extra={
+            "username": current_user.username,
+            "format": bundle.format,
+            "include_archived": include_archived,
+        },
+    )
+    return Response(content=bundle.payload, media_type=media_type)
+
+
 @router.get("/groups/{group_id}", response_model=RslGroupModel)
 async def fetch_group(
     group_id: int,
@@ -286,32 +312,6 @@ async def retract_group(
         extra={"username": current_user.username, "group_id": group_id},
     )
     return result
-
-
-@router.get("/groups/export")
-async def export_groups(
-    format: Literal["json", "csv"] = Query("json"),
-    include_archived: bool = Query(False),
-    current_user: AuthenticatedUser = Depends(require_auth),
-) -> Response:
-    try:
-        bundle = rsl_service.export_groups(
-            format=format,
-            owner=current_user.username,
-            include_archived=include_archived,
-        )
-    except Exception as exc:  # noqa: BLE001
-        _handle_error(exc)
-    media_type = "application/json" if bundle.format == "json" else "text/csv"
-    audit_logger.info(
-        "rsl.group.export",
-        extra={
-            "username": current_user.username,
-            "format": bundle.format,
-            "include_archived": include_archived,
-        },
-    )
-    return Response(content=bundle.payload, media_type=media_type)
 
 
 @router.post("/groups/import", response_model=RslImportResult)
