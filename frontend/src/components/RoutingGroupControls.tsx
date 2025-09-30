@@ -9,6 +9,17 @@ const FILE_FORMATS = ["CSV", "XML", "JSON", "Excel", "ACCESS"] as const;
 type FileFormat = (typeof FILE_FORMATS)[number];
 type Destination = "local" | "clipboard" | "server";
 
+export const ROUTING_SAVE_CONTROL_IDS = {
+  primary: "routing-save-primary",
+  localShortcut: "routing-save-local",
+  clipboardShortcut: "routing-save-clipboard",
+  interface: "routing-trigger-interface",
+} as const;
+
+interface RoutingGroupControlsProps {
+  variant?: "panel" | "embedded";
+}
+
 const DESTINATION_OPTIONS: Array<{ value: Destination; label: string }> = [
   { value: "server", label: "Server" },
   { value: "local", label: "Local" },
@@ -52,7 +63,7 @@ const xmlEscape = (value: unknown) => {
     .replace(/'/g, "&apos;");
 };
 
-export function RoutingGroupControls() {
+export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControlsProps = {}) {
   const [groupName, setGroupName] = useState("");
   const [groups, setGroups] = useState<RoutingGroupSummary[]>([]);
   const [listing, setListing] = useState(false);
@@ -433,15 +444,8 @@ export function RoutingGroupControls() {
     }
   };
 
-  return (
-    <section className="panel-card interactive-card routing-save-panel">
-      <header className="panel-header">
-        <div>
-          <h2 className="panel-title">그룹 저장 및 인터페이스</h2>
-          <p className="panel-subtitle">Recommended routing을 그룹으로 저장하고 ERP 인터페이스 옵션을 관리합니다.</p>
-        </div>
-      </header>
-
+  const content = (
+    <div className="routing-save-panel__content">
       <div className="form-field">
         <label htmlFor="routing-group-name">그룹 이름</label>
         <input
@@ -492,13 +496,20 @@ export function RoutingGroupControls() {
         </div>
       </div>
 
-      <button type="button" className="primary-button" onClick={handleSave} disabled={disabledSave}>
+      <button
+        id={ROUTING_SAVE_CONTROL_IDS.primary}
+        type="button"
+        className="primary-button"
+        onClick={handleSave}
+        disabled={disabledSave}
+      >
         <Save size={16} />
         {saving || exporting ? "처리 중..." : `저장 (${formatLabel})`}
       </button>
 
       <div className="save-shortcuts">
         <button
+          id={ROUTING_SAVE_CONTROL_IDS.localShortcut}
           type="button"
           className="save-shortcuts__btn"
           onClick={() => void handleLocalExport()}
@@ -507,6 +518,7 @@ export function RoutingGroupControls() {
           <Download size={14} /> 로컬 저장
         </button>
         <button
+          id={ROUTING_SAVE_CONTROL_IDS.clipboardShortcut}
           type="button"
           className="save-shortcuts__btn"
           onClick={() => void handleClipboardExport()}
@@ -516,7 +528,13 @@ export function RoutingGroupControls() {
         </button>
       </div>
 
-      <button type="button" className="interface-button" onClick={() => void handleInterface()} disabled={!erpRequired || disabledSave}>
+      <button
+        id={ROUTING_SAVE_CONTROL_IDS.interface}
+        type="button"
+        className="interface-button"
+        onClick={() => void handleInterface()}
+        disabled={!erpRequired || disabledSave}
+      >
         <Settings size={16} /> INTERFACE
         {!erpRequired ? <span className="interface-button__badge">옵션 OFF</span> : null}
       </button>
@@ -572,6 +590,22 @@ export function RoutingGroupControls() {
       <footer className="routing-save-panel__footnote">
         <Play size={14} /> ERP 인터페이스는 옵션 메뉴에서 활성화한 후 사용할 수 있습니다.
       </footer>
-    </section>
+    </div>
   );
+
+  if (variant === "panel") {
+    return (
+      <section className="panel-card interactive-card routing-save-panel">
+        <header className="panel-header">
+          <div>
+            <h2 className="panel-title">그룹 저장 및 인터페이스</h2>
+            <p className="panel-subtitle">Recommended routing을 그룹으로 저장하고 ERP 인터페이스 옵션을 관리합니다.</p>
+          </div>
+        </header>
+        {content}
+      </section>
+    );
+  }
+
+  return <div className="routing-save-panel routing-save-panel--embedded">{content}</div>;
 }

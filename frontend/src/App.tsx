@@ -7,7 +7,7 @@ import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
-import { RoutingGroupControls } from "@components/RoutingGroupControls";
+import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
 import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
@@ -159,7 +159,7 @@ export default function App() {
 
       <aside className="routing-column routing-column--right">
         <CandidatePanel />
-        <RoutingGroupControls />
+        <SaveInterfacePanel />
       </aside>
     </div>
   );
