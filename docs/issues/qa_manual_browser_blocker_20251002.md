@@ -9,7 +9,7 @@ Manual verification steps in `docs/sprint/routing_enhancement_qa.md` that requir
 - API integration confirmation that requires UI-driven captures (dirty reset, ERP toggle payload captures, audit log sampling).
 
 ## Current Status
-Automated build (`npm run build`), backend pytest suite, and frontend Vitest e2e scenarios all pass. Without a GUI-capable browser session, the remaining eight manual validations remain pending and are scheduled for the 2025-10-04 09:00-11:00 KST Lab-3 slot.
+Automated build (`npm run build`), backend pytest suite, and frontend Vitest e2e scenarios all pass. Without a GUI-capable browser session, the remaining eight manual validations remain pending and are scheduled for the 2025-10-04 09:00-11:00 KST Lab-3 slot. ERP 토글 페이로드/감사 로그 수집은 증빙 경로 [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log)에 미수행 사유를 기록한 상태다.
 
 ## Proposed Follow-up
 1. Schedule a QA slot on a workstation with Chrome 127+ and 1440px+ resolution.

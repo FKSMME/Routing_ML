@@ -72,6 +72,7 @@
 - [x] QA 자동화: Undo/Redo·저장 옵션·ERP 인터페이스 플래그 통합 테스트 시나리오 (Vitest 자동화 완료, PASS).
   - 실행 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (로컬), `cd frontend && CI=1 npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (CI) — Evidence: `logs/qa/routing-groups-local.log`, `logs/qa/routing-groups-ci.log`
   - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts`
+  - ERP 토글 수동 증빙 현황: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](deliverables/onboarding_evidence/erp_toggle_lab3_pending.log) 기록 유지(현장 세션 대기).
 
 ---
 _Sync note (2025-09-30): Tasklist, sprint logbook, and QA scenario counts aligned; QA 빌드 게이트는 보류 중._

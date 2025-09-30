@@ -90,6 +90,7 @@
 - [ ] GET 단건 로드 후 dirty 해제 → ⚠️ UI 캡처 필요. 2025-10-04 09:00-11:00 KST 현장 수동 QA 슬롯에서 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 및 payload 검증 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)). 【F:tests/test_rsl_routing_groups.py†L140-L148】
+  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ `logs/audit/routing_installation_task10_20251003.log`에서 중복 레코드 정리 후 샘플 확보.
 
@@ -99,6 +100,7 @@
 - [ ] POST 충돌(409) 시 타임라인 롤백 확인 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 실패 흐름 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
 - [x] GET 단건 로드 후 dirty 해제 → ✅ UI 캡처 확보 완료 (`deliverables/onboarding_evidence/get_group_dirty_release.png`).
 - [ ] ERP 옵션 ON → INTERFACE 버튼 활성 및 payload 검증 → ⚠️ 동일 사유로 보류. 동일 세션(2025-10-04 09:00-11:00 KST)에서 UI 캡처 예정([이슈](../issues/qa_manual_browser_blocker_20251002.md)).
+  - 현장 세션 전까지 수동 증빙 부재 로그: [`deliverables/onboarding_evidence/erp_toggle_lab3_pending.log`](../../deliverables/onboarding_evidence/erp_toggle_lab3_pending.log).
 
 - [x] 감사 로그(UI/서버) 샘플 수집 및 IP/시간 확인 → ✅ 동일 로그로 두 번째 체크박스까지 병합 완료.
 
