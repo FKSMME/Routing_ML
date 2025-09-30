@@ -7,6 +7,8 @@ import type {
   RoutingGroupDetail,
   RoutingGroupListResponse,
   RoutingGroupStep,
+  RoutingInterfaceRequestPayload,
+  RoutingInterfaceResponse,
 } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
 import type {
@@ -310,6 +312,17 @@ export async function createRoutingGroup(payload: RoutingGroupCreatePayload): Pr
     steps: payload.steps.map((step) => mapGroupStepToApi(step)),
     erp_required: payload.erpRequired,
     metadata: payload.metadata ?? undefined,
+  });
+  return response.data;
+}
+
+export async function triggerRoutingInterface(
+  payload: RoutingInterfaceRequestPayload,
+): Promise<RoutingInterfaceResponse> {
+  const response = await api.post<RoutingInterfaceResponse>("/routing/interface", {
+    group_id: payload.groupId,
+    reason: payload.reason ?? undefined,
+    export_formats: payload.exportFormats ?? undefined,
   });
   return response.data;
 }

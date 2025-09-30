@@ -32,6 +32,7 @@
 - 센터 하단: 라우팅 요약(총 시간, 공정 수) + 감사 로그 뷰어.
 - 우상단: 후보 공정 카드(검색/필터 포함) Drag → 센터 삽입. 우하단: SAVE(포맷 선택, 로컬/클립보드) + INTERFACE(ERP 옵션 ON 시 활성).
 - 그룹 관리: 저장 시 로컬(IndexedDB)/서버(`/api/routing/groups`) 이중 저장, 버전/Dirty 표시.
+- ERP 인터페이스: 서버 저장이 성공하면 `/api/routing/interface`를 호출해 ERP JSON 페이로드를 생성하고, 성공/오류 상태는 SAVE 패널 메시지로 즉시 피드백한다.
 
 ## 5. 알고리즘 (Algorithm)
 - Unreal Blueprint 스타일 그래프: 노드(Trainer/Predictor 함수) + Edge.

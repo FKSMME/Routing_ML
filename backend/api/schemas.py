@@ -213,6 +213,36 @@ class PredictionResponse(BaseModel):
     metrics: Dict[str, Any] = Field(default_factory=dict)
 
 
+class RoutingInterfaceRequest(BaseModel):
+    """ERP 인터페이스 트리거 요청 페이로드."""
+
+    group_id: str = Field(..., min_length=1, description="ERP 내보내기를 수행할 라우팅 그룹 ID")
+    export_formats: Optional[List[str]] = Field(
+        default=None,
+        description="추가로 요청할 내보내기 포맷 목록 (기본값: ERP 전용)",
+    )
+    reason: Optional[str] = Field(
+        default=None,
+        description="감사 로깅용 트리거 사유(예: save, interface)",
+    )
+
+
+class RoutingInterfaceResponse(BaseModel):
+    """ERP 인터페이스 트리거 결과."""
+
+    group_id: str = Field(..., description="ERP 내보내기를 수행한 라우팅 그룹 ID")
+    exported_files: List[str] = Field(
+        default_factory=list, description="생성된 모든 내보내기 파일 경로"
+    )
+    erp_path: Optional[str] = Field(
+        default=None, description="생성된 ERP 페이로드 파일 경로"
+    )
+    message: str = Field(
+        default="ERP 내보내기가 완료되었습니다.",
+        description="사용자에게 표시할 상태 메시지",
+    )
+
+
 class SimilarItem(BaseModel):
     item_code: str = Field(..., description="유사 품목 코드")
     similarity_score: float = Field(..., ge=0.0, le=1.0, description="유사도 점수")
@@ -743,6 +773,8 @@ __all__ = [
     "AuthenticatedUser",
     "PredictionRequest",
     "PredictionResponse",
+    "RoutingInterfaceRequest",
+    "RoutingInterfaceResponse",
     "SimilarItem",
     "SimilaritySearchResult",
     "SimilaritySearchRequest",

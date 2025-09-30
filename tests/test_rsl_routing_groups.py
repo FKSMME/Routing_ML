@@ -23,6 +23,8 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
 
     db_path = tmp_path / "rsl_test.db"
     monkeypatch.setenv("ROUTING_ML_RSL_DATABASE_URL", f"sqlite:///{db_path}")
+    routing_db_path = tmp_path / "routing_groups.db"
+    monkeypatch.setenv("ROUTING_ML_ROUTING_GROUPS_DATABASE_URL", f"sqlite:///{routing_db_path}")
 
     # Ensure settings and dependent singletons pick up the temp database.
     get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -36,6 +38,11 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
     import backend.api.session_manager as session_manager
 
     session_manager._jwt_manager = None  # type: ignore[attr-defined]
+
+    import backend.models.routing_groups as routing_groups_models
+
+    routing_groups_models._ENGINE = None  # type: ignore[attr-defined]
+    routing_groups_models._SESSION_FACTORY = None  # type: ignore[attr-defined]
 
     from backend.api.services.auth_service import AuthService
 
