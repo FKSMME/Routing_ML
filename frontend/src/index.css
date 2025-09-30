@@ -2851,6 +2851,83 @@
   color: var(--text-muted);
 }
 
+.master-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: color-mix(in oklch, var(--surface-overlay) 88%, rgba(15, 23, 42, 0.75));
+  backdrop-filter: blur(12px);
+}
+
+.master-dialog {
+  width: min(540px, 100%);
+  background: var(--surface-card);
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-hover);
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.5rem;
+}
+
+.master-dialog__header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.master-dialog__body {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.master-dialog__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.master-dialog__input,
+.master-dialog__select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  padding: 0.6rem 0.85rem;
+  background: color-mix(in oklch, var(--surface) 98%, transparent);
+  color: var(--text-primary);
+}
+
+.master-dialog__input:focus,
+.master-dialog__select:focus {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-color: var(--accent);
+}
+
+.master-dialog__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.master-dialog__status {
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+
+.master-dialog__error {
+  font-size: 0.8rem;
+  color: var(--danger-strong);
+}
+
+.master-dialog__footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
 .master-search {
   display: grid;
   gap: 0.6rem;
