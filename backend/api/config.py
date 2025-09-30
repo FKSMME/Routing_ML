@@ -25,6 +25,10 @@ class Settings(BaseSettings):
 
     enable_candidate_persistence: bool = Field(default=True)
     candidate_store_dir: Path = Field(default=Path("logs/candidates"))
+    workflow_code_dir: Path = Field(
+        default=Path("scripts/generated_workflow"),
+        description="워크플로우 노드 코드 자동 생성 출력 경로",
+    )
     allowed_origins: List[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",
@@ -78,13 +82,20 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-    @validator("model_directory", "candidate_store_dir", "audit_log_dir", "model_registry_path", pre=True)
+    @validator(
+        "model_directory",
+        "candidate_store_dir",
+        "audit_log_dir",
+        "model_registry_path",
+        "workflow_code_dir",
+        pre=True,
+    )
     def _expand_path(cls, value: Optional[Path | str]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return Path(value).expanduser().resolve()
 
-    @validator("candidate_store_dir", "audit_log_dir")
+    @validator("candidate_store_dir", "audit_log_dir", "workflow_code_dir")
     def _ensure_dir(cls, value: Path) -> Path:  # noqa: N805
         value.mkdir(parents=True, exist_ok=True)
         return value

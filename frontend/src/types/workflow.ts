@@ -201,3 +201,15 @@ export interface WorkflowConfigPatch {
   export?: ExportConfigPatch;
   visualization?: VisualizationConfigPatch;
 }
+
+export interface WorkflowCodeModule {
+  node_id: string;
+  label: string;
+  path: string;
+}
+
+export interface WorkflowCodeSyncResponse {
+  modules: WorkflowCodeModule[];
+  tensorboard_paths?: Record<string, string>;
+  updated_at: string;
+}
