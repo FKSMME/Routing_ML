@@ -91,6 +91,10 @@
    - 최종 경로 예시: `%APPDATA%\RoutingML\routing_data\ROUTING AUTO TEST.accdb`
 3. 서비스 실행 중 경로를 바꾸어야 한다면 워크플로우 UI 설정 화면에서 `access_path` 값을 사내 공유 폴더 경로로 갱신합니다.
    - 예: `access_path = \\fileserver\routing\ROUTING AUTO TEST.accdb`
+4. 브라우저에서 **Master Data** 메뉴를 열고 우측 상단의 **Connect source** 버튼을 눌러 Access 연결을 확인합니다.
+   1. "Access 소스 연결" 대화상자에서 UNC 경로 또는 절대 경로를 입력한 뒤 **연결 테스트**를 누릅니다.
+   2. 연결이 성공하면 테이블 목록이 자동으로 채워지며, 원하는 테이블을 선택한 후 **적용**을 누르면 메타데이터 패널이 새로 고쳐집니다.
+   3. 드라이버가 설치되지 않았거나 경로가 잘못되면 오류 메시지가 표시되므로, 설치 스크립트(`verify_odbc.ps1`)와 경로 권한을 재확인하세요.
 
 ## 5. 설치 후 바로 해보는 점검
 - [ ] (❌ 2025-09-29) 인터넷 브라우저에서 `http://10.204.2.28:8000/api/health`에 접속해 상태가 `ok`인지 확인한다. 현재 컨테이너 환경에서 연결이 거부되었으며, 바이너리 업로드 제한으로 스크린샷은 제외하고 텍스트 로그(`deliverables/onboarding_evidence/api_health_corpnet.log`)만 보관했다.
