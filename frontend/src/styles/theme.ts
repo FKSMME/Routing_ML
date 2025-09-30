@@ -1,4 +1,4 @@
-﻿import type { CSSProperties } from "react";
+import type { CSSProperties } from "react";
 
 export type LayoutTier = "desktop" | "laptop" | "tablet" | "mobile";
 
@@ -6,6 +6,14 @@ interface GradientTokens {
   start: string;
   end: string;
   mid: string;
+}
+
+interface BrandTokens {
+  primary: string;
+  primaryGlow: string;
+  primaryForeground: string;
+  secondary: string;
+  secondaryForeground: string;
 }
 
 interface AccentTokens {
@@ -17,11 +25,19 @@ interface AccentTokens {
 
 interface SurfaceTokens {
   base: string;
+  raised: string;
+  background: string;
+  foreground: string;
   card: string;
+  cardForeground: string;
+  popover: string;
+  popoverForeground: string;
   menu: string;
   overlay: string;
   border: string;
   borderStrong: string;
+  input: string;
+  ring: string;
 }
 
 interface TypographyTokens {
@@ -32,16 +48,46 @@ interface TypographyTokens {
   emphasisColor: string;
 }
 
+interface NavigationTokens {
+  default: string;
+  hover: string;
+  active: string;
+}
+
+interface StatusTokens {
+  destructive: string;
+  destructiveForeground: string;
+}
+
+interface ChartTokens {
+  primary: string;
+  secondary: string;
+  tertiary: string;
+  quaternary: string;
+  quinary: string;
+}
+
+interface MotionTokens {
+  durationXS: string;
+  durationSM: string;
+  durationLG: string;
+  easeOut: string;
+}
+
 interface ShadowTokens {
   resting: string;
   hover: string;
   focus: string;
+  glow: string;
+  elegant: string;
+  raised: string;
 }
 
 interface TransitionTokens {
   emphasis: string;
   lift: string;
   glow: string;
+  smooth: string;
 }
 
 interface LayoutTokens {
@@ -53,59 +99,112 @@ interface LayoutTokens {
 
 export interface RoutingMLTheme {
   gradient: GradientTokens;
+  brand: BrandTokens;
   accent: AccentTokens;
   surface: SurfaceTokens;
   typography: TypographyTokens;
+  navigation: NavigationTokens;
+  statuses: StatusTokens;
+  charts: ChartTokens;
+  motion: MotionTokens;
   shadows: ShadowTokens;
   transitions: TransitionTokens;
   layout: LayoutTokens;
 }
 
+const hsl = (value: string) => `hsl(${value})`;
+const withAlpha = (value: string, alpha: number) => `hsl(${value} / ${alpha})`;
+
 export const pastelSkyTheme: RoutingMLTheme = {
   gradient: {
-    start: "oklch(0.98 0.028 220)",
-    mid: "oklch(0.92 0.04 232)",
-    end: "oklch(0.86 0.06 242)",
+    start: "195 85% 72%",
+    mid: "140 65% 75%",
+    end: "195 45% 92%",
+  },
+  brand: {
+    primary: "195 100% 33%",
+    primaryGlow: "195 100% 45%",
+    primaryForeground: "0 0% 100%",
+    secondary: "188 82% 47%",
+    secondaryForeground: "0 0% 100%",
   },
   accent: {
-    base: "oklch(0.72 0.12 245)",
-    hover: "oklch(0.68 0.14 245)",
-    strong: "oklch(0.62 0.16 245)",
-    subtle: "oklch(0.80 0.07 240)",
+    base: "188 82% 47%",
+    hover: "195 100% 45%",
+    strong: "195 100% 33%",
+    subtle: "195 85% 72%",
   },
   surface: {
-    base: "oklch(0.96 0.02 228)",
-    card: "oklch(0.94 0.03 228 / 0.92)",
-    menu: "oklch(0.97 0.01 228 / 0.88)",
-    overlay: "oklch(0.90 0.04 228 / 0.75)",
-    border: "oklch(0.78 0.03 228 / 0.55)",
-    borderStrong: "oklch(0.68 0.04 228 / 0.66)",
+    base: "195 45% 98%",
+    raised: "0 0% 100%",
+    background: "195 45% 98%",
+    foreground: "210 45% 20%",
+    card: "0 0% 100%",
+    cardForeground: "210 45% 20%",
+    popover: "0 0% 100%",
+    popoverForeground: "210 45% 20%",
+    menu: "195 45% 96%",
+    overlay: "195 45% 92%",
+    border: "195 30% 85%",
+    borderStrong: "195 30% 78%",
+    input: "195 30% 95%",
+    ring: "188 82% 47%",
   },
   typography: {
     family: "'Inter', 'Pretendard', 'Segoe UI', sans-serif",
-    headingColor: "oklch(0.22 0.02 235)",
-    bodyColor: "oklch(0.26 0.015 235)",
-    mutedColor: "oklch(0.46 0.015 235)",
-    emphasisColor: "oklch(0.18 0.025 235)",
+    headingColor: "210 45% 18%",
+    bodyColor: "210 45% 22%",
+    mutedColor: "210 25% 45%",
+    emphasisColor: "210 60% 15%",
+  },
+  navigation: {
+    default: "210 40% 25%",
+    hover: "210 60% 15%",
+    active: "195 100% 18%",
+  },
+  statuses: {
+    destructive: "0 84.2% 60.2%",
+    destructiveForeground: "0 0% 98%",
+  },
+  charts: {
+    primary: "195 100% 33%",
+    secondary: "188 82% 47%",
+    tertiary: "140 65% 45%",
+    quaternary: "195 85% 72%",
+    quinary: "210 45% 35%",
+  },
+  motion: {
+    durationXS: "120ms",
+    durationSM: "180ms",
+    durationLG: "320ms",
+    easeOut: "cubic-bezier(0.22, 0.61, 0.36, 1)",
   },
   shadows: {
-    resting: "0 22px 48px -26px rgba(32, 70, 140, 0.22)",
-    hover: "0 26px 55px -24px rgba(28, 66, 150, 0.32)",
-    focus: "0 0 0 2px rgba(112, 168, 255, 0.18), 0 22px 48px -26px rgba(32, 70, 140, 0.28)",
+    resting: `0 8px 20px ${withAlpha("195 100% 33%", 0.12)}`,
+    hover: `0 12px 32px ${withAlpha("195 100% 33%", 0.18)}`,
+    focus: `0 0 0 3px ${withAlpha("188 82% 47%", 0.35)}`,
+    glow: `0 0 40px ${withAlpha("195 100% 45%", 0.35)}`,
+    elegant: `0 10px 30px ${withAlpha("195 100% 33%", 0.3)}`,
+    raised: `0 12px 28px ${withAlpha("195 100% 33%", 0.16)}`,
   },
   transitions: {
     emphasis: "background-color 0.18s ease, color 0.18s ease",
     lift: "transform 0.18s ease, box-shadow 0.2s ease",
     glow: "box-shadow 0.25s ease",
+    smooth: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   },
   layout: {
     maxWidth: "1200px",
-    radius: "1.25rem",
+    radius: "0.75rem",
     columnGap: "1.5rem",
     workspaceColumns: "20% 60% 20%",
   },
 };
 
+function createVariableMap(theme: RoutingMLTheme): Record<string, string> {
+  const borderGradient = `linear-gradient(135deg, ${hsl(theme.brand.primary)} 0%, ${hsl(
+    theme.brand.primaryGlow
+  )} 45%, ${hsl(theme.brand.secondary)} 100%)`;
 const baseVariableMap: Record<string, string> = {
   "--gradient-start": pastelSkyTheme.gradient.start,
   "--gradient-mid": pastelSkyTheme.gradient.mid,
@@ -136,40 +235,87 @@ const baseVariableMap: Record<string, string> = {
   "--layout-workspace-columns": pastelSkyTheme.layout.workspaceColumns,
 };
 
-export function applyTheme(root?: HTMLElement | null, theme: RoutingMLTheme = pastelSkyTheme): void {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const target = root ?? document.documentElement;
-  const variableMap: Record<string, string> = {
-    ...baseVariableMap,
-    "--gradient-start": theme.gradient.start,
-    "--gradient-mid": theme.gradient.mid,
-    "--gradient-end": theme.gradient.end,
-    "--surface": theme.surface.base,
-    "--surface-card": theme.surface.card,
-    "--surface-menu": theme.surface.menu,
-    "--surface-overlay": theme.surface.overlay,
-    "--border": theme.surface.border,
-    "--border-strong": theme.surface.borderStrong,
-    "--accent": theme.accent.base,
-    "--accent-hover": theme.accent.hover,
-    "--accent-strong": theme.accent.strong,
-    "--accent-soft": theme.accent.subtle,
-    "--text-primary": theme.typography.bodyColor,
-    "--text-heading": theme.typography.headingColor,
-    "--text-muted": theme.typography.mutedColor,
-    "--text-emphasis": theme.typography.emphasisColor,
+  return {
+    "--primary": hsl(theme.brand.primary),
+    "--primary-glow": hsl(theme.brand.primaryGlow),
+    "--primary-foreground": hsl(theme.brand.primaryForeground),
+    "--secondary": hsl(theme.brand.secondary),
+    "--secondary-foreground": hsl(theme.brand.secondaryForeground),
+    "--gradient-sky-start": theme.gradient.start,
+    "--gradient-sky-mid": theme.gradient.mid,
+    "--gradient-sky-end": theme.gradient.end,
+    "--gradient-start": hsl(theme.gradient.start),
+    "--gradient-mid": hsl(theme.gradient.mid),
+    "--gradient-end": hsl(theme.gradient.end),
+    "--surface-base": theme.surface.base,
+    "--surface-raised": theme.surface.raised,
+    "--surface": hsl(theme.surface.base),
+    "--surface-card": hsl(theme.surface.card),
+    "--card": hsl(theme.surface.card),
+    "--card-foreground": hsl(theme.surface.cardForeground),
+    "--popover": hsl(theme.surface.popover),
+    "--popover-foreground": hsl(theme.surface.popoverForeground),
+    "--surface-menu": hsl(theme.surface.menu),
+    "--surface-overlay": hsl(theme.surface.overlay),
+    "--background": hsl(theme.surface.background),
+    "--foreground": hsl(theme.surface.foreground),
+    "--border": hsl(theme.surface.border),
+    "--border-strong": hsl(theme.surface.borderStrong),
+    "--accent": hsl(theme.accent.base),
+    "--accent-hover": hsl(theme.accent.hover),
+    "--accent-strong": hsl(theme.accent.strong),
+    "--accent-soft": hsl(theme.accent.subtle),
+    "--text-primary": hsl(theme.typography.bodyColor),
+    "--text-heading": hsl(theme.typography.headingColor),
+    "--text-muted": hsl(theme.typography.mutedColor),
+    "--text-muted-strong": hsl(theme.typography.mutedColor),
+    "--text-emphasis": hsl(theme.typography.emphasisColor),
+    "--nav-default": hsl(theme.navigation.default),
+    "--nav-hover": hsl(theme.navigation.hover),
+    "--nav-active": hsl(theme.navigation.active),
+    "--input": hsl(theme.surface.input),
+    "--ring": hsl(theme.surface.ring),
+    "--destructive": hsl(theme.statuses.destructive),
+    "--destructive-foreground": hsl(theme.statuses.destructiveForeground),
+    "--chart-1": hsl(theme.charts.primary),
+    "--chart-2": hsl(theme.charts.secondary),
+    "--chart-3": hsl(theme.charts.tertiary),
+    "--chart-4": hsl(theme.charts.quaternary),
+    "--chart-5": hsl(theme.charts.quinary),
+    "--motion-duration-xs": theme.motion.durationXS,
+    "--motion-duration-sm": theme.motion.durationSM,
+    "--motion-duration-lg": theme.motion.durationLG,
+    "--motion-ease-out": theme.motion.easeOut,
+    "--shadow-elegant": theme.shadows.elegant,
+    "--shadow-glow": theme.shadows.glow,
+    "--shadow-raised": theme.shadows.raised,
     "--shadow-resting": theme.shadows.resting,
     "--shadow-hover": theme.shadows.hover,
     "--shadow-focus": theme.shadows.focus,
     "--transition-emphasis": theme.transitions.emphasis,
     "--transition-lift": theme.transitions.lift,
     "--transition-glow": theme.transitions.glow,
+    "--transition-smooth": theme.transitions.smooth,
     "--layout-max-width": theme.layout.maxWidth,
     "--layout-column-gap": theme.layout.columnGap,
     "--layout-radius": theme.layout.radius,
+    "--radius": theme.layout.radius,
+    "--glass-blur": "18px",
+    "--border-gradient": borderGradient,
+  };
+}
+
+const baseVariableMap = createVariableMap(pastelSkyTheme);
+
+export function applyTheme(root?: HTMLElement | null, theme: RoutingMLTheme = pastelSkyTheme): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const target = root ?? document.documentElement;
+  const variableMap = {
+    ...baseVariableMap,
+    ...createVariableMap(theme),
     "--layout-workspace-columns": theme.layout.workspaceColumns,
   };
 
