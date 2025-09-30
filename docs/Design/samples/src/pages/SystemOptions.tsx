@@ -7,7 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  SAMPLE_ROUTING_COLUMNS,
+  SAMPLE_SIMILARITY_METHOD,
+  SAMPLE_STANDARD_DEVIATION,
+} from '@/data/sampleData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Save, 
@@ -40,71 +44,44 @@ export const SystemOptions: React.FC = () => {
     loadSystemOptions();
   }, []);
 
-  const loadSystemOptions = async () => {
+  const loadSystemOptions = () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('system_options_2025_09_28_04_25')
-        .select('*');
+    setTimeout(() => {
+      const mockOptions: SystemOption[] = [
+        {
+          id: 'option-standard-deviation',
+          option_category: 'standard_deviation',
+          option_name: 'selected_z_score',
+          option_value: { value: SAMPLE_STANDARD_DEVIATION },
+        },
+        {
+          id: 'option-similarity-method',
+          option_category: 'similarity_search',
+          option_name: 'selected_method',
+          option_value: { method: SAMPLE_SIMILARITY_METHOD },
+        },
+        {
+          id: 'option-routing-columns',
+          option_category: 'column_mapping',
+          option_name: 'routing_columns',
+          option_value: SAMPLE_ROUTING_COLUMNS,
+        },
+      ];
 
-      if (error) throw error;
-
-      setOptions(data || []);
-      
-      // Set initial values from loaded options
-      const zScoreOption = data?.find(opt => opt.option_category === 'standard_deviation');
-      if (zScoreOption?.option_value) {
-        setZScoreValue('2'); // Default to 2 sigma
-      }
-
-      const columnsOption = data?.find(opt => opt.option_category === 'column_mapping');
-      if (columnsOption?.option_value) {
-        setRoutingColumns(columnsOption.option_value);
-      }
-    } catch (error: any) {
-      toast({
-        title: "옵션 로드 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
+      setOptions(mockOptions);
+      setZScoreValue(String(SAMPLE_STANDARD_DEVIATION));
+      setSimilarityMethod(SAMPLE_SIMILARITY_METHOD);
+      setRoutingColumns(SAMPLE_ROUTING_COLUMNS);
       setLoading(false);
-    }
+    }, 200);
   };
 
   const saveOptions = async () => {
     setLoading(true);
     try {
-      // Save Z-score setting
-      await supabase
-        .from('system_options_2025_09_28_04_25')
-        .upsert({
-          option_category: 'standard_deviation',
-          option_name: 'selected_z_score',
-          option_value: { value: parseFloat(zScoreValue) }
-        });
-
-      // Save similarity method
-      await supabase
-        .from('system_options_2025_09_28_04_25')
-        .upsert({
-          option_category: 'similarity_search',
-          option_name: 'selected_method',
-          option_value: { method: similarityMethod }
-        });
-
-      // Save routing columns
-      await supabase
-        .from('system_options_2025_09_28_04_25')
-        .upsert({
-          option_category: 'column_mapping',
-          option_name: 'routing_columns',
-          option_value: routingColumns
-        });
-
       toast({
         title: "설정 저장 완료",
-        description: "시스템 옵션이 성공적으로 저장되었습니다.",
+        description: "데모 환경에서 선택한 옵션이 저장되었습니다.",
       });
     } catch (error: any) {
       toast({

@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  Activity, 
-  Database, 
-  Route, 
+import { SAMPLE_PRODUCTS, SAMPLE_MODELS, SAMPLE_ACTIVITY } from '@/data/sampleData';
+import {
+  Activity,
+  Database,
+  Route,
   Settings, 
   TrendingUp,
   Users,
@@ -31,33 +31,18 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      // Load statistics from database
-      const [productsResult, routingsResult, modelsResult, activityResult] = await Promise.all([
-        supabase.from('product_reference_data_2025_09_28_04_25').select('id', { count: 'exact' }),
-        supabase.from('routing_configurations_2025_09_28_04_25').select('id', { count: 'exact' }),
-        supabase.from('ml_model_data_2025_09_28_04_25').select('id', { count: 'exact' }),
-        supabase.from('activity_logs_2025_09_28_04_25')
-          .select('id', { count: 'exact' })
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      ]);
-
+    const timer = setTimeout(() => {
       setStats({
-        totalProducts: productsResult.count || 0,
-        totalRoutings: routingsResult.count || 0,
-        activeModels: modelsResult.count || 0,
-        recentActivity: activityResult.count || 0
+        totalProducts: SAMPLE_PRODUCTS.length,
+        totalRoutings: SAMPLE_PRODUCTS.length * 3,
+        activeModels: SAMPLE_MODELS.length,
+        recentActivity: SAMPLE_ACTIVITY.length
       });
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-    } finally {
       setLoading(false);
-    }
-  };
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const quickActions = [
     {
@@ -90,12 +75,7 @@ export const Dashboard: React.FC = () => {
     }
   ];
 
-  const recentActivities = [
-    { action: '라우팅 생성', item: 'PROD_A_001', time: '5분 전', status: 'success' },
-    { action: '모델 학습', item: 'ProductRoutingModel_v2', time: '1시간 전', status: 'success' },
-    { action: '데이터 업로드', item: '제품 기준정보', time: '2시간 전', status: 'success' },
-    { action: '설정 변경', item: '출력 포맷', time: '3시간 전', status: 'success' }
-  ];
+  const recentActivities = SAMPLE_ACTIVITY;
 
   if (loading) {
     return (

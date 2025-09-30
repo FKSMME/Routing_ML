@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { SAMPLE_PRODUCTS } from '@/data/sampleData';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Search, 
@@ -41,26 +41,16 @@ export const ReferenceData: React.FC = () => {
     filterProducts();
   }, [searchTerm, products]);
 
-  const loadProducts = async () => {
+  const loadProducts = () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('product_reference_data_2025_09_28_04_25')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setProducts(data || []);
-    } catch (error: any) {
-      toast({
-        title: "데이터 로드 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
+    setTimeout(() => {
+      setProducts([...SAMPLE_PRODUCTS]);
       setLoading(false);
-    }
+      toast({
+        title: '데이터 로드 완료',
+        description: '샘플 제품 데이터가 갱신되었습니다.',
+      });
+    }, 200);
   };
 
   const filterProducts = () => {
@@ -96,18 +86,20 @@ export const ReferenceData: React.FC = () => {
         }
       };
 
-      const { error } = await supabase
-        .from('product_reference_data_2025_09_28_04_25')
-        .insert(mockData);
-
-      if (error) throw error;
-
       toast({
         title: "파일 업로드 성공",
         description: "제품 데이터가 성공적으로 업로드되었습니다.",
       });
-
-      loadProducts();
+      setProducts(prev => [
+        {
+          id: `upload-${Date.now()}`,
+          product_name: mockData.product_name,
+          product_code: mockData.product_code,
+          matrix_data: mockData.matrix_data,
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
     } catch (error: any) {
       toast({
         title: "파일 업로드 실패",
