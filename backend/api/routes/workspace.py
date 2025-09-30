@@ -126,7 +126,7 @@ async def save_workspace_settings(
     response_class=Response,
 )
 async def record_ui_audit(event: AuditEvent, request: Request) -> Response:
-    persist_ui_audit_events([event], request)
+    persist_ui_audit_events([event], request, source="workspace.stream")
     logger.info("workspace.audit", extra={"action": event.action, "username": event.username})
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
