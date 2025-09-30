@@ -24,10 +24,11 @@
 3. **GA**: 전체 대상 배포 → 설치 가이드/릴리즈 노트 최종 버전 배포.
 
 ## 4. Distribution & Integrity Controls
-1. 빌드 산출물: `build/windows/RoutingMLInstaller_<버전>.exe`.
+1. 빌드 산출물: `build/windows/RoutingMLInstaller_<버전>.exe` 및 프런트엔드 정적 번들 `build/frontend/RoutingMLFrontend_<버전>.zip`.
 2. 무결성 검증: `Get-FileHash -Algorithm SHA256`로 해시값 산출 후 릴리즈 노트 및 포털에 게시.
 3. 사내 포털 업로드: NAS 또는 SCCM에 설치 파일과 해시 파일(`.sha256`) 동시 업로드.
-4. 기록 보관: 업로드 로그/스크린샷을 JIRA 태스크에 첨부.
+4. 정적 번들 동기화: `\\fileshare\routing_ml\frontend\latest`에 최신 번들을 배치하고, `Sync-FrontendBundle.ps1` 스크립트가 IIS 팜(노드1~노드4) 및 DMZ Nginx 캐시 노드에 `robocopy /MIR`로 동기화한다. VPN 미지원 거점은 `build/windows/RoutingMLFrontend_<버전>.zip` 오프라인 패키지를 받아 로컬 IIS에 수동 업로드한다.
+5. 기록 보관: 업로드 로그/스크린샷을 JIRA 태스크에 첨부하고, Stage 4 재승인 근거로 `docs/stage4_frontend_report.md#배포-준비`에 동기화 결과를 링크한다.
 
 ## 5. Rollback & Backup
 1. 기존 버전은 배포 전 `\share\routing_ml\backup\<버전>`에 복제.
