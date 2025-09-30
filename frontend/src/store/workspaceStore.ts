@@ -1,6 +1,9 @@
 import type { FeatureWeightsProfile, PredictionResponse } from "@app-types/routing";
 import { create } from "zustand";
 
+import { saveWorkspaceSettings, type WorkspaceSettingsPayload, type WorkspaceSettingsResponse } from "@lib/apiClient";
+
+import { useRoutingStore } from "./routingStore";
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
   registerReferenceMatrixPersistence,
@@ -44,6 +47,34 @@ interface ExportProfileState {
   lastSyncAt?: string;
 }
 
+export interface WorkspaceColumnMappingRow {
+  id: string;
+  scope: string;
+  source: string;
+  target: string;
+}
+
+export interface WorkspaceOptionsSnapshot {
+  standard: string[];
+  similarity: string[];
+  accessPath: string;
+  accessTable: string;
+  columnMappings: WorkspaceColumnMappingRow[];
+  erpInterface: boolean;
+}
+
+interface WorkspaceOptionsState {
+  data: WorkspaceOptionsSnapshot;
+  loading: boolean;
+  saving: boolean;
+  dirty: boolean;
+  lastSyncedAt?: string;
+}
+
+interface SaveWorkspaceOptionsArgs {
+  version?: number;
+  metadata?: WorkspaceSettingsPayload["metadata"];
+  columnMappings?: WorkspaceColumnMappingRow[];
 export interface OutputMappingRow {
   id: string;
   source: string;
@@ -72,6 +103,8 @@ interface WorkspaceStoreState {
   featureWeights: FeatureWeightState;
   exportProfile: ExportProfileState;
   erpInterfaceEnabled: boolean;
+  workspaceOptions: WorkspaceOptionsState;
+  setLayout: (layout: LayoutMode) => void;
   referenceMatrixColumns: ReferenceMatrixColumnKey[];
  (layout: LayoutMode) => void;
   setActiveMenu: (menu: NavigationKey) => void;
@@ -89,13 +122,22 @@ interface WorkspaceStoreState {
   setErpInterfaceEnabled: (enabled: boolean) => void;
   markExportSynced: () => void;
   applyPredictionResponse: (response: PredictionResponse) => void;
+  setWorkspaceOptionsLoading: (loading: boolean) => void;
+  setWorkspaceOptionsSnapshot: (snapshot: WorkspaceOptionsSnapshot, options?: { dirty?: boolean; lastSyncedAt?: string }) => void;
+  updateWorkspaceOptions: (
+    patch: Partial<WorkspaceOptionsSnapshot> | ((prev: WorkspaceOptionsSnapshot) => WorkspaceOptionsSnapshot),
+  ) => void;
+  updateWorkspaceColumnMappings: (
+    updater: (rows: WorkspaceColumnMappingRow[]) => WorkspaceColumnMappingRow[],
+  ) => void;
+  setWorkspaceOptionsDirty: (dirty: boolean) => void;
+  saveWorkspaceOptions: (args?: SaveWorkspaceOptionsArgs) => Promise<WorkspaceSettingsResponse>;
   setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
   setOutputMappings: (rows: OutputMappingRow[]) => void;
   updateOutputMappings: (updater: (rows: OutputMappingRow[]) => OutputMappingRow[]) => void;
   reorderOutputMappings: (fromIndex: number, toIndex: number) => void;
   clearOutputMappings: () => void;
   saveRouting: () => RoutingSaveState;
-
 }
 
 const DEFAULT_PROFILES: FeatureProfileSummary[] = [
@@ -146,7 +188,22 @@ const normalizeReferenceMatrixColumns = (
 };
 
 const nowIsoString = () => new Date().toISOString();
+const createDefaultWorkspaceOptions = (): WorkspaceOptionsSnapshot => ({
+  standard: ["zscore"],
+  similarity: ["cosine", "profile"],
+  accessPath: "",
+  accessTable: "",
+  columnMappings: [],
+  erpInterface: useRoutingStore.getState().erpRequired,
+});
 
+const createWorkspaceOptionsState = (): WorkspaceOptionsState => ({
+  data: createDefaultWorkspaceOptions(),
+  loading: false,
+  saving: false,
+  dirty: false,
+  lastSyncedAt: undefined,
+});
 const createMappingRowId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -175,6 +232,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     lastSyncAt: undefined,
   },
   erpInterfaceEnabled: useRoutingStore.getState().erpRequired,
+  workspaceOptions: createWorkspaceOptionsState(),
   referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
   outputMappings: [],
   setLayout: (layout) => set({ layout }),
@@ -281,7 +339,18 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     })),
   setErpInterfaceEnabled: (enabled) => {
     useRoutingStore.getState().setERPRequired(enabled);
-    set({ erpInterfaceEnabled: enabled });
+    set((state) => ({
+      erpInterfaceEnabled: enabled,
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        data:
+          state.workspaceOptions.data.erpInterface === enabled
+            ? state.workspaceOptions.data
+            : { ...state.workspaceOptions.data, erpInterface: enabled },
+        dirty:
+          state.workspaceOptions.dirty || state.workspaceOptions.data.erpInterface !== enabled,
+      },
+    }));
   },
   markExportSynced: () =>
     set((state) => ({
@@ -383,6 +452,131 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
       },
     }));
   },
+  setWorkspaceOptionsLoading: (loading) =>
+    set((state) => ({
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        loading,
+      },
+    })),
+  setWorkspaceOptionsSnapshot: (snapshot, options) => {
+    useRoutingStore.getState().setERPRequired(snapshot.erpInterface);
+    set((state) => ({
+      erpInterfaceEnabled: snapshot.erpInterface,
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        data: snapshot,
+        loading: false,
+        saving: false,
+        dirty: options?.dirty ?? state.workspaceOptions.dirty,
+        lastSyncedAt: options?.lastSyncedAt ?? state.workspaceOptions.lastSyncedAt,
+      },
+    }));
+  },
+  updateWorkspaceOptions: (patch) =>
+    set((state) => {
+      const current = state.workspaceOptions.data;
+      const next = typeof patch === "function" ? patch(current) : { ...current, ...patch };
+      return {
+        workspaceOptions: {
+          ...state.workspaceOptions,
+          data: next,
+          dirty: true,
+        },
+      };
+    }),
+  updateWorkspaceColumnMappings: (updater) =>
+    set((state) => ({
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        data: {
+          ...state.workspaceOptions.data,
+          columnMappings: updater(state.workspaceOptions.data.columnMappings),
+        },
+        dirty: true,
+      },
+    })),
+  setWorkspaceOptionsDirty: (dirty) =>
+    set((state) => ({
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        dirty,
+      },
+    })),
+  saveWorkspaceOptions: async (args) => {
+    const current = get().workspaceOptions.data;
+    const standard = Array.from(new Set(current.standard.map((value) => value.trim()).filter(Boolean)));
+    const similarity = Array.from(new Set(current.similarity.map((value) => value.trim()).filter(Boolean)));
+    const accessPath = current.accessPath.trim();
+    const accessTable = current.accessTable.trim();
+    const mappingsSource = args?.columnMappings ?? current.columnMappings;
+    const normalizedMappings = mappingsSource.map((row) => ({
+      id: row.id,
+      scope: row.scope.trim(),
+      source: row.source.trim(),
+      target: row.target.trim(),
+    }));
+    const payloadMappings = normalizedMappings
+      .map((row) => ({
+        scope: row.scope,
+        source: row.source,
+        target: row.target,
+      }))
+      .filter((row) => row.scope || row.source || row.target);
+    const payload: WorkspaceSettingsPayload = {
+      version: args?.version ?? Date.now(),
+      options: {
+        standard,
+        similarity,
+        access_path: accessPath,
+        access_table: accessTable || null,
+        erp_interface: current.erpInterface,
+        column_mappings: payloadMappings,
+      },
+      access: {
+        path: accessPath || null,
+        table: accessTable || null,
+      },
+      metadata: args?.metadata,
+    };
+    set((state) => ({
+      workspaceOptions: {
+        ...state.workspaceOptions,
+        saving: true,
+      },
+    }));
+    try {
+      const response = await saveWorkspaceSettings(payload);
+      useRoutingStore.getState().setERPRequired(current.erpInterface);
+      set((state) => ({
+        erpInterfaceEnabled: current.erpInterface,
+        workspaceOptions: {
+          ...state.workspaceOptions,
+          data: {
+            ...state.workspaceOptions.data,
+            standard,
+            similarity,
+            accessPath,
+            accessTable,
+            columnMappings: normalizedMappings,
+            erpInterface: current.erpInterface,
+          },
+          saving: false,
+          dirty: false,
+          lastSyncedAt: response.updated_at ?? nowIsoString(),
+        },
+      }));
+      return response;
+    } catch (error) {
+      set((state) => ({
+        workspaceOptions: {
+          ...state.workspaceOptions,
+          saving: false,
+        },
+      }));
+      throw error;
+    }
+  },
 }));
 
 registerReferenceMatrixPersistence((columns) => {
@@ -402,7 +596,16 @@ useRoutingStore.getState().hydrateReferenceMatrixColumns(useWorkspaceStore.getSt
 useRoutingStore.subscribe(
   (state) => state.erpRequired,
   (erpRequired) => {
-    useWorkspaceStore.setState({ erpInterfaceEnabled: erpRequired });
+    useWorkspaceStore.setState((current) => ({
+      erpInterfaceEnabled: erpRequired,
+      workspaceOptions: {
+        ...current.workspaceOptions,
+        data:
+          current.workspaceOptions.data.erpInterface === erpRequired
+            ? current.workspaceOptions.data
+            : { ...current.workspaceOptions.data, erpInterface: erpRequired },
+      },
+    }));
   },
 );
 
