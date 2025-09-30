@@ -148,6 +148,8 @@ Copy-Item deploy/docker/volumes/config/trainer_config.example.yaml -Destination 
 - [ ] 로그/모니터링 연동 확인(Grafana/Teams 알람) — 증빙: `deliverables/onboarding_evidence/monitoring_test.log`, 내부 공유 드라이브 QA/Lab3/monitoring/teams_alert_save_event.png; 테스트 환경 알람 발송 확인, 운영 연동 재검증 필요
 
 > **검증 진행 현황**: 최신 실행 결과와 증빙은 `docs/onboarding_validation_report.md` 및 `deliverables/onboarding_evidence/`를 확인한다. 2025-10-29 재검증 결과, 완료 항목 4건의 증빙 로그/파일을 모두 확인했고 미완료 3건은 증빙 대기 상태다.
+> - 완료 항목 증빙 재확인: 절대 지령 감사 로그(`deliverables/onboarding_evidence/absolute_rules_audit.log`), API Health 로그(`deliverables/onboarding_evidence/api_health_ok.log`), 프런트엔드/백엔드 동시 실행 로그(`deliverables/onboarding_evidence/frontend_console.log`, `deliverables/onboarding_evidence/backend_runtime.log`), 워크플로우 저장 테스트 로그(`deliverables/onboarding_evidence/workflow_config_test.log`).
+> - 미완료 항목 현황: 모델 산출물 재생성 대기, Stage 5 SQL 저장 재검증, 모니터링 연동 재확인.
 
 ### 9. 문제 보고 절차
 1. Stage 0 요구 추적표를 참고해 이슈를 기록한다.
