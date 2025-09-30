@@ -83,9 +83,10 @@ interface RoutingWorkspaceState {
 - [x] ReactFlow 도입 및 캔버스 컴포넌트 작성 – `frontend/src/components/routing/RoutingCanvas.tsx`에서 타임라인 노드/엣지 변환 및 드래그 액션 연결 구현 완료.
 - [x] IndexedDB persistence 유틸 (`idb-keyval`) – `frontend/src/lib/persistence/indexedDbPersistence.ts`에서 상태 스냅샷/감사 큐 저장 및 IndexedDB 미지원 환경 graceful fallback 구현 (2025-09-29 완료).
 - [x] 감사 로그 배치 API 스텁 구현 – `backend/api/routes/audit.py`에 UI 감사 로그 배치 엔드포인트(`POST /api/audit/ui/batch`) 및 파일 기반 저장 스텁 구축.
-- [ ] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 통합 테스트 추가 실시 (Vitest 시나리오 자동화 전환 대기).
-  - 예정 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (Vitest 러너 고정, CI 인입 시 `CI=1` 환경 변수 추가).
-  - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts` (상태 동기화/Undo 로직 검증 커버리지 확장).
+- [x] QA: Undo/Redo, 저장 옵션, ERP 인터페이스 플래그 통합 테스트 추가 실시 (Vitest 자동화 PASS).
+    - 실행 명령: `cd frontend && npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (로컬), `cd frontend && CI=1 npm run test:e2e -- --run tests/e2e/routing-groups.spec.ts` (CI).
+    - Evidence: `logs/qa/routing-groups-local.log`, `logs/qa/routing-groups-ci.log`
+    - 대상 파일: `tests/e2e/routing-groups.spec.ts`, `frontend/src/store/workspaceStore.ts`, `frontend/src/store/routingStore.ts` (상태 동기화/Undo 로직 검증 커버리지 확장).
 
 
 ## 7. RoutingCanvas 컴포넌트 구조 (2025-10-03)
