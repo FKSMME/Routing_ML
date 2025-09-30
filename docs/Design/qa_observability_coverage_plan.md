@@ -18,17 +18,17 @@
 - Audit logs stored separately with immutable append-only semantics.
 
 ## Metrics & Dashboards
-| Metric | Source | Target |
-| --- | --- | --- |
-| Prediction latency p95 | Inference service | < 2s |
-| Training job duration | Scheduler logs | Baseline + 10% tolerance |
-| Registry activation count | Registry API | Alert if > 5 per day |
-| Rule violation rate | Frontend telemetry | Track < 3% per session |
+| Metric | Source | Target | Collection Channel |
+| --- | --- | --- | --- |
+| Prediction latency p95 | Inference service | < 2s | Windows Event Forwarding → Operations Control Center |
+| Training job duration | Scheduler logs | Baseline + 10% tolerance | Windows Event Forwarding → Operations Control Center |
+| Registry activation count | Registry API | Alert if > 5 per day | Internal metrics gateway (on-prem Prom collector) |
+| Rule violation rate | Frontend telemetry | Track < 3% per session | Internal metrics gateway (on-prem Prom collector) |
 
 ## Alerting
-- `/health` endpoint monitors: manifest load, registry DSN, cache status.
-- Windows Task Scheduler job verifies installer success; sends alert if failure exit code detected.
-- PagerDuty integration for sustained p95 breach (> 15 minutes).
+- `/health` endpoint monitors: manifest load, registry DSN, cache status, with failures mirrored into Windows Event Forwarding.
+- Windows Task Scheduler job verifies installer success; 실패 시 이벤트 뷰어 경고와 함께 운영 관제팀에 내부 이메일 티켓 발송.
+- 지속적인 p95 초과(> 15분) 발생 시 관제 대시보드에서 임계 경보가 생성되고, 사내 SMS 게이트웨이로 1차 알림, 대응 미확인 시 15분 후 내부 음성 브리지 호출.
 
 ## Reporting Cadence
 - Daily digest summarizing key metrics delivered via email export (CSV) for offline review.
