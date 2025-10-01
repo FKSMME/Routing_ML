@@ -193,6 +193,9 @@ async def test_data_source_patch_includes_audit_summary(workflow_sync_context, m
     assert "C:/sensitive/path/AccessConfig.accdb" not in repr(data_source_summary)
 
     assert "data_source" in audit_extra.get("updated_keys", [])
+
+
+@pytest.mark.anyio
 async def test_patch_accepts_mdb_access_path(workflow_sync_context):
     store, user, _ = workflow_sync_context
 
