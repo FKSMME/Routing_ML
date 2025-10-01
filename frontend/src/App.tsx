@@ -23,11 +23,11 @@ import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWork
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
-import { useRoutingStore } from "@store/routingStore";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { BarChart3, Database, FileOutput, Layers, Menu, Route, Settings, Table, Workflow } from "lucide-react";
-import { useEffect } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
 const NAVIGATION_ITEMS = [
   {
@@ -80,6 +80,49 @@ const NAVIGATION_ITEMS = [
   },
 ];
 
+const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
+
+interface PredictionErrorInfo {
+  banner: string;
+  details?: string;
+}
+
+const ensureNonEmptyString = (value: unknown): string | undefined => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  return undefined;
+};
+
+const extractAxiosErrorDetail = (error: unknown): string | undefined => {
+  if (!axios.isAxiosError(error)) {
+    return undefined;
+  }
+
+  const responseData = error.response?.data as unknown;
+  const responseString = ensureNonEmptyString(responseData);
+  if (responseString) {
+    return responseString;
+  }
+
+  if (responseData && typeof responseData === "object") {
+    const record = responseData as Record<string, unknown>;
+    return ensureNonEmptyString(record.detail) ?? ensureNonEmptyString(record.message);
+  }
+
+  return ensureNonEmptyString(error.message);
+};
+
+const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
+  const banner = PREDICTION_DELAY_MESSAGE;
+  const detail =
+    extractAxiosErrorDetail(error) ??
+    (error instanceof Error ? ensureNonEmptyString(error.message) : ensureNonEmptyString(error));
+
+  return detail && detail !== banner ? { banner, details: detail } : { banner };
+};
+
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
@@ -104,7 +147,7 @@ export default function App() {
     setWorkspaceLayout(normalizedLayout);
   }, [layout, setWorkspaceLayout]);
 
-  const { data, isLoading, isFetching, refetch } = usePredictRoutings({
+  const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
     topK,
     threshold,
@@ -113,6 +156,26 @@ export default function App() {
     exportFormats: exportProfile.formats,
     withVisualization: exportProfile.withVisualization,
   });
+
+  const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
+
+  useEffect(() => {
+    if (error) {
+      setPredictionError(toPredictionErrorInfo(error));
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (data) {
+      setPredictionError(null);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (itemCodes.length === 0) {
+      setPredictionError(null);
+    }
+  }, [itemCodes]);
 
   const setRoutingLoading = useRoutingStore((state) => state.setLoading);
 
@@ -126,6 +189,16 @@ export default function App() {
     }
   }, [applyPredictionResponse, data]);
 
+  const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? null;
+
+  const renderPredictionBanner = () =>
+    predictionError ? (
+      <div className="status-banner status-banner--error mb-4" role="alert">
+        <strong>{predictionError.banner}</strong>
+        {predictionError.details ? <p className="mt-1 text-sm">{predictionError.details}</p> : null}
+      </div>
+    ) : null;
+
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
   const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
@@ -134,6 +207,7 @@ export default function App() {
       <RoutingWorkspaceLayout
         left={
           <>
+            {renderPredictionBanner()}
             <PredictionControls
               itemCodes={itemCodes}
               onChangeItemCodes={updateItemCodes}
@@ -143,6 +217,7 @@ export default function App() {
               onChangeThreshold={updateThreshold}
               loading={isLoading || isFetching}
               onSubmit={refetch}
+              errorMessage={predictionControlsError}
             />
             <ReferenceMatrixPanel key={`reference-${tabKey}`} />
           </>
@@ -173,45 +248,49 @@ export default function App() {
   };
 
   const routingContent = (
-    <RoutingProductTabs
-      renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
-      emptyState={renderRoutingWorkspace()}
-    />
-    <div className="routing-workspace-grid">
-      <aside className="routing-column routing-column--left">
-        <PredictionControls
-          itemCodes={itemCodes}
-          onChangeItemCodes={updateItemCodes}
-          topK={topK}
-          onChangeTopK={updateTopK}
-          threshold={threshold}
-          onChangeThreshold={updateThreshold}
-          loading={isLoading || isFetching}
-          onSubmit={refetch}
-        />
-        <ReferenceMatrixPanel />
-      </aside>
+    <>
+      <RoutingProductTabs
+        renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
+        emptyState={renderRoutingWorkspace()}
+      />
+      <div className="routing-workspace-grid">
+        <aside className="routing-column routing-column--left">
+          {renderPredictionBanner()}
+          <PredictionControls
+            itemCodes={itemCodes}
+            onChangeItemCodes={updateItemCodes}
+            topK={topK}
+            onChangeTopK={updateTopK}
+            threshold={threshold}
+            onChangeThreshold={updateThreshold}
+            loading={isLoading || isFetching}
+            onSubmit={refetch}
+            errorMessage={predictionControlsError}
+          />
+          <ReferenceMatrixPanel />
+        </aside>
 
-      <section className="routing-column routing-column--center">
-        <RoutingProductTabs />
-        <TimelinePanel />
-        <VisualizationSummary metrics={data?.metrics} />
-        <FeatureWeightPanel
-          profiles={featureWeights.availableProfiles}
-          selectedProfile={featureWeights.profile}
-          onSelectProfile={setFeatureWeightProfile}
-          manualWeights={featureWeights.manualWeights}
-          onChangeManualWeight={setManualWeight}
-          onReset={resetManualWeights}
-        />
-        <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-      </section>
+        <section className="routing-column routing-column--center">
+          <RoutingProductTabs />
+          <TimelinePanel />
+          <VisualizationSummary metrics={data?.metrics} />
+          <FeatureWeightPanel
+            profiles={featureWeights.availableProfiles}
+            selectedProfile={featureWeights.profile}
+            onSelectProfile={setFeatureWeightProfile}
+            manualWeights={featureWeights.manualWeights}
+            onChangeManualWeight={setManualWeight}
+            onReset={resetManualWeights}
+          />
+          <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
+        </section>
 
-      <aside className="routing-column routing-column--right">
-        <CandidatePanel />
-        <SaveInterfacePanel />
-      </aside>
-    </div>
+        <aside className="routing-column routing-column--right">
+          <CandidatePanel />
+          <SaveInterfacePanel />
+        </aside>
+      </div>
+    </>
   );
 
   let workspace: JSX.Element;

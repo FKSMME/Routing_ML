@@ -2926,6 +2926,12 @@
   resize: vertical;
 }
 
+.prediction-panel__error {
+  font-size: 0.78rem;
+  color: var(--danger-strong);
+  line-height: 1.4;
+}
+
 .prediction-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
