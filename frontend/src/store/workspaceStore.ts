@@ -15,6 +15,7 @@ export type LayoutMode = "desktop" | "tablet" | "mobile";
 export type NavigationKey =
   | "master-data"
   | "routing"
+  | "routing-matrix"
   | "algorithm"
   | "data-output"
   | "training-status"
