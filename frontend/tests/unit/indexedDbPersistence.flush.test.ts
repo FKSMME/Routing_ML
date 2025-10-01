@@ -37,6 +37,7 @@ vi.mock("@lib/apiClient", async (original) => {
   };
 });
 
+const persistenceModule = await import("@lib/persistence");
 const {
   __internal,
   enableRoutingPersistenceFlush,
@@ -45,7 +46,10 @@ const {
   readAuditEntries,
   readLatestRoutingWorkspaceSnapshot,
   writeRoutingWorkspaceSnapshot,
-} = await import("@lib/persistence");
+} = persistenceModule;
+
+const routingStoreModule = await import("@store/routingStore");
+const { createRoutingStore } = routingStoreModule;
 
 const ensureCrypto = () => {
   if (!globalThis.crypto) {
@@ -123,6 +127,56 @@ describe("routing persistence flush", () => {
 
     expect(__internal.debug.getBackoffAttempt()).toBe(1);
     expect(__internal.debug.getLastScheduledDelay()).toBeGreaterThanOrEqual(2000);
+  });
+
+  it("does not persist a new snapshot when flush update matches current state", async () => {
+    const store = createRoutingStore();
+    __internal.debug.disableAutoFlush();
+    __internal.debug.clearScheduledFlush();
+
+    const writeSpy = vi.spyOn(persistenceModule, "writeRoutingWorkspaceSnapshot");
+
+    try {
+      const lastSavedAt = "2024-01-01T00:00:00.000Z";
+      store.setState((state) => ({
+        ...state,
+        activeGroupId: "group-1",
+        activeGroupVersion: 2,
+        lastSavedAt,
+        dirty: false,
+      }));
+
+      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+
+      postRoutingSnapshotsBatchMock.mockResolvedValueOnce({
+        accepted_snapshot_ids: [],
+        accepted_audit_ids: [],
+        updated_groups: [
+          {
+            group_id: "group-1",
+            version: 2,
+            dirty: false,
+            updated_at: lastSavedAt,
+            snapshot_id: null,
+          },
+        ],
+      });
+
+      const result = await flushRoutingPersistence("manual");
+      expect(result?.updatedGroups).toHaveLength(1);
+
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+
+      expect(writeSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      store.destroy?.();
+      writeSpy.mockRestore();
+    }
   });
 });
 
