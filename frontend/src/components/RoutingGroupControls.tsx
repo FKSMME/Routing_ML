@@ -218,6 +218,7 @@ const createLocalMappingRow = (initial?: Partial<OutputMappingRow>): OutputMappi
   mapped: initial?.mapped ?? initial?.source ?? "",
   type: initial?.type ?? "string",
   required: initial?.required ?? false,
+  defaultValue: initial?.defaultValue ?? "",
 });
 
 export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControlsProps = {}) {
@@ -251,6 +252,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const setERPRequired = useRoutingStore((state) => state.setERPRequired);
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const activeGroupName = useRoutingStore((state) => state.activeGroupName);
+  const routingMatrixDefinitions = useRoutingStore((state) => state.routingMatrixDefinitions);
 
   const { saveGroup, loadGroup, fetchGroups } = useRoutingGroups();
 
@@ -462,133 +464,162 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     }));
   }, [workflowConfig?.sql]);
 
-  const routingSetOptions = useMemo(() => {
-    const values = new Set<string>();
-    timeline.forEach((step) => {
-      const value = resolveRoutingSetCode(step);
-      if (value) {
-        values.add(value);
-      }
-    });
-    return Array.from(values).sort();
-  }, [resolveRoutingSetCode, timeline]);
+  type RoutingMatrixCombo = {
+    key: string;
+    routingSetCode: string | null;
+    variantCode: string | null;
+    primaryRoutingCode: string | null;
+    secondaryRoutingCode: string | null;
+    count: number;
+  };
 
-  const variantOptions = useMemo(() => {
-    const values = new Set<string>();
+  const timelineMatrixCombos = useMemo<RoutingMatrixCombo[]>(() => {
+    const combos = new Map<string, RoutingMatrixCombo>();
     timeline.forEach((step) => {
       const routingSet = resolveRoutingSetCode(step);
-      if (selectedRoutingSet && routingSet !== selectedRoutingSet) {
-        return;
-      }
-      const value = resolveVariantCode(step);
-      if (value) {
-        values.add(value);
-      }
-    });
-    return Array.from(values).sort();
-  }, [resolveRoutingSetCode, resolveVariantCode, selectedRoutingSet, timeline]);
-
-  const primaryRoutingOptions = useMemo(() => {
-    const values = new Set<string>();
-    timeline.forEach((step) => {
-      const routingSet = resolveRoutingSetCode(step);
-      if (selectedRoutingSet && routingSet !== selectedRoutingSet) {
-        return;
-      }
       const variant = resolveVariantCode(step);
-      if (selectedVariantCode && variant !== selectedVariantCode) {
-        return;
-      }
-      const value = resolvePrimaryRoutingCode(step);
-      if (value) {
-        values.add(value);
-      }
-    });
-    return Array.from(values).sort();
-  }, [
-    resolvePrimaryRoutingCode,
-    resolveRoutingSetCode,
-    resolveVariantCode,
-    selectedRoutingSet,
-    selectedVariantCode,
-    timeline,
-  ]);
-
-  const secondaryRoutingOptions = useMemo(() => {
-    const values = new Set<string>();
-    timeline.forEach((step) => {
-      const routingSet = resolveRoutingSetCode(step);
-      if (selectedRoutingSet && routingSet !== selectedRoutingSet) {
-        return;
-      }
-      const variant = resolveVariantCode(step);
-      if (selectedVariantCode && variant !== selectedVariantCode) {
-        return;
-      }
       const primary = resolvePrimaryRoutingCode(step);
-      if (selectedPrimaryRouting && primary !== selectedPrimaryRouting) {
-        return;
-      }
-      const value = resolveSecondaryRoutingCode(step);
-      if (value) {
-        values.add(value);
+      const secondary = resolveSecondaryRoutingCode(step);
+      const key = [routingSet ?? "", variant ?? "", primary ?? "", secondary ?? ""].join("::");
+      const existing = combos.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        combos.set(key, {
+          key,
+          routingSetCode: routingSet,
+          variantCode: variant,
+          primaryRoutingCode: primary,
+          secondaryRoutingCode: secondary,
+          count: 1,
+        });
       }
     });
-    return Array.from(values).sort();
+    return Array.from(combos.values()).sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
   }, [
     resolvePrimaryRoutingCode,
     resolveRoutingSetCode,
     resolveSecondaryRoutingCode,
     resolveVariantCode,
-    selectedPrimaryRouting,
-    selectedRoutingSet,
-    selectedVariantCode,
     timeline,
   ]);
 
-  const routingMatrixOptions = useMemo(
-    () => {
-      const combos = new Map<
-        string,
-        {
-          key: string;
-          routingSetCode: string | null;
-          variantCode: string | null;
-          primaryRoutingCode: string | null;
-          secondaryRoutingCode: string | null;
-          count: number;
-        }
-      >();
+  const configuredMatrixCombos = useMemo<RoutingMatrixCombo[]>(() => {
+    if (routingMatrixDefinitions.length === 0) {
+      return [];
+    }
+    const combos = routingMatrixDefinitions.map((definition) => {
+      let count = 0;
       timeline.forEach((step) => {
         const routingSet = resolveRoutingSetCode(step);
         const variant = resolveVariantCode(step);
         const primary = resolvePrimaryRoutingCode(step);
         const secondary = resolveSecondaryRoutingCode(step);
-        const key = [routingSet ?? "", variant ?? "", primary ?? "", secondary ?? ""].join("::");
-        const existing = combos.get(key);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          combos.set(key, {
-            key,
-            routingSetCode: routingSet,
-            variantCode: variant,
-            primaryRoutingCode: primary,
-            secondaryRoutingCode: secondary,
-            count: 1,
-          });
+        if ((definition.routingSetCode ?? null) !== (routingSet ?? null)) {
+          return;
         }
+        if ((definition.variantCode ?? null) !== (variant ?? null)) {
+          return;
+        }
+        if ((definition.primaryRoutingCode ?? null) !== (primary ?? null)) {
+          return;
+        }
+        if ((definition.secondaryRoutingCode ?? null) !== (secondary ?? null)) {
+          return;
+        }
+        count += 1;
       });
-      return Array.from(combos.values()).sort((a, b) => b.count - a.count);
-    },
-    [
-      resolvePrimaryRoutingCode,
-      resolveRoutingSetCode,
-      resolveSecondaryRoutingCode,
-      resolveVariantCode,
-      timeline,
-    ],
+      return {
+        key: definition.id,
+        routingSetCode: definition.routingSetCode,
+        variantCode: definition.variantCode,
+        primaryRoutingCode: definition.primaryRoutingCode,
+        secondaryRoutingCode: definition.secondaryRoutingCode,
+        count,
+      } satisfies RoutingMatrixCombo;
+    });
+    return combos.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  }, [
+    resolvePrimaryRoutingCode,
+    resolveRoutingSetCode,
+    resolveSecondaryRoutingCode,
+    resolveVariantCode,
+    routingMatrixDefinitions,
+    timeline,
+  ]);
+
+  const usingConfiguredMatrix = routingMatrixDefinitions.length > 0;
+
+  const effectiveMatrixCombos = useMemo<RoutingMatrixCombo[]>(
+    () => (usingConfiguredMatrix ? configuredMatrixCombos : timelineMatrixCombos),
+    [configuredMatrixCombos, timelineMatrixCombos, usingConfiguredMatrix],
   );
+
+  const routingSetOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (combo.routingSetCode) {
+        values.add(combo.routingSetCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos]);
+
+  const variantOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (combo.variantCode) {
+        values.add(combo.variantCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedRoutingSet]);
+
+  const primaryRoutingOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (selectedVariantCode && combo.variantCode !== selectedVariantCode) {
+        return;
+      }
+      if (combo.primaryRoutingCode) {
+        values.add(combo.primaryRoutingCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedRoutingSet, selectedVariantCode]);
+
+  const secondaryRoutingOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (selectedVariantCode && combo.variantCode !== selectedVariantCode) {
+        return;
+      }
+      if (selectedPrimaryRouting && combo.primaryRoutingCode !== selectedPrimaryRouting) {
+        return;
+      }
+      if (combo.secondaryRoutingCode) {
+        values.add(combo.secondaryRoutingCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedPrimaryRouting, selectedRoutingSet, selectedVariantCode]);
+
+  const routingMatrixOptions = effectiveMatrixCombos;
+  const matrixSourceDescription = usingConfiguredMatrix
+    ? "설정한 라우팅 행렬을 사용합니다."
+    : "타임라인에서 자동 감지한 라우팅 행렬입니다.";
+  const matrixEmptyMessage = usingConfiguredMatrix
+    ? "구성된 라우팅 조합이 없습니다. 행을 추가해 주세요."
+    : "타임라인에 라우팅 조합 정보가 없습니다.";
 
   useEffect(() => {
     setSelectedVariantCode("");
@@ -642,6 +673,14 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       const generatedAt = new Date().toISOString();
       const aliasMap = workflowConfig?.sql?.column_aliases ?? {};
       const defaultColumns = workflowConfig?.sql?.output_columns ?? [];
+      const matrixSource = usingConfiguredMatrix ? "configured" : "timeline";
+      const matrixSummary = effectiveMatrixCombos.map((combo) => ({
+        routing_set_code: combo.routingSetCode ?? null,
+        variant_code: combo.variantCode ?? null,
+        primary_routing_code: combo.primaryRoutingCode ?? null,
+        secondary_routing_code: combo.secondaryRoutingCode ?? null,
+        step_count: combo.count,
+      }));
       const effectiveMappings =
         mappingRows.length > 0
           ? mappingRows
@@ -654,8 +693,9 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           target: (mapping.mapped ?? mapping.source).trim(),
           type: mapping.type,
           required: mapping.required,
+          defaultValue: mapping.defaultValue?.trim() ?? "",
         }))
-        .filter((mapping) => mapping.source !== "" && mapping.target !== "");
+        .filter((mapping) => mapping.target !== "" && (mapping.source !== "" || mapping.defaultValue !== ""));
       const fallbackColumns = [
         "ITEM_CD",
         "CANDIDATE_ID",
@@ -825,21 +865,34 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         targetColumns.push(...fallbackColumns);
       }
 
+      const mappingLookup = new Map(
+        normalizedMappings.map((mapping) => [mapping.target, mapping] as const),
+      );
+
       const resolveValue = (column: string, sources: Record<string, unknown>): unknown => {
         const direct =
           sources[column] ?? sources[column.toUpperCase()] ?? sources[column.toLowerCase()];
-        if (direct !== undefined) {
+        if (direct !== undefined && direct !== null) {
           return direct;
         }
         const aliasKey =
           aliasMap[column] ?? aliasMap[column.toUpperCase()] ?? aliasMap[column.toLowerCase()];
         if (aliasKey) {
-          return (
+          const aliasValue =
             sources[aliasKey] ??
             sources[aliasKey.toUpperCase()] ??
             sources[aliasKey.toLowerCase()] ??
-            null
-          );
+            null;
+          if (aliasValue !== undefined && aliasValue !== null) {
+            return aliasValue;
+          }
+        }
+        const mapping =
+          mappingLookup.get(column) ??
+          mappingLookup.get(column.toUpperCase()) ??
+          mappingLookup.get(column.toLowerCase());
+        if (mapping && mapping.defaultValue !== "") {
+          return mapping.defaultValue;
         }
         return null;
       };
@@ -860,10 +913,25 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         itemCodes: collectItemCodes(activeTimeline),
         erpRequired,
         rows,
-      columns: targetColumns,
-      profile: selectedProfile,
-      mappings: normalizedMappings,
-    };
+        columns: targetColumns,
+        profile: selectedProfile,
+        mappings: normalizedMappings,
+        matrix: matrixSummary,
+        matrixSource,
+      };
+    }, [
+      groupName,
+      activeGroupName,
+      workflowConfig?.sql,
+      mappingRows,
+      timeline,
+      collectItemCodes,
+      erpRequired,
+      selectedProfile,
+      effectiveMatrixCombos,
+      usingConfiguredMatrix,
+    ]);
+      };
   }, [
     groupName,
     activeGroupName,
@@ -908,6 +976,8 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
               steps: dataset.steps,
               profile: dataset.profile,
               mappings: dataset.mappings,
+              routing_matrix: dataset.matrix,
+              matrix_source: dataset.matrixSource,
             },
             null,
             2,
@@ -979,6 +1049,8 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         destination: "server" as const,
         item_codes: dataset.itemCodes,
         step_count: dataset.steps.length,
+        routing_matrix: dataset.matrix,
+        matrix_source: dataset.matrixSource,
         ...metadata,
       };
 
@@ -1445,11 +1517,12 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
             <table>
               <thead>
                 <tr>
-                  <th style={{ width: "32%" }}>소스 컬럼</th>
-                  <th style={{ width: "32%" }}>대상 컬럼</th>
-                  <th style={{ width: "16%" }}>타입</th>
+                  <th style={{ width: "26%" }}>소스 컬럼</th>
+                  <th style={{ width: "26%" }}>대상 컬럼</th>
+                  <th style={{ width: "18%" }}>기본값</th>
+                  <th style={{ width: "12%" }}>타입</th>
                   <th style={{ width: "8%" }}>필수</th>
-                  <th style={{ width: "12%" }} aria-label="행 작업">&nbsp;</th>
+                  <th style={{ width: "10%" }} aria-label="행 작업">&nbsp;</th>
                 </tr>
               </thead>
               <tbody>
@@ -1478,6 +1551,16 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
                           value={row.mapped ?? ""}
                           onChange={(event) => handleMappingRowChange(row.id, { mapped: event.target.value })}
                           placeholder={sourceValue}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.defaultValue ?? ""}
+                          onChange={(event) =>
+                            handleMappingRowChange(row.id, { defaultValue: event.target.value })
+                          }
+                          placeholder="고정값"
                         />
                       </td>
                       <td>
@@ -1578,9 +1661,12 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         ))}
       </select>
     </div>
+    <p className="empty-hint" style={{ marginTop: "0.5rem" }}>
+      {matrixSourceDescription}
+    </p>
     {routingMatrixOptions.length === 0 ? (
       <p className="empty-hint" style={{ marginTop: "0.5rem" }}>
-        타임라인에 라우팅 조합 정보가 없습니다.
+        {matrixEmptyMessage}
       </p>
     ) : (
       <ul

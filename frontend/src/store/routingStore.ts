@@ -77,6 +77,14 @@ export interface TimelineStep {
   violations?: RuleViolation[];
 }
 
+export interface RoutingMatrixDefinition {
+  id: string;
+  routingSetCode: string | null;
+  variantCode: string | null;
+  primaryRoutingCode: string | null;
+  secondaryRoutingCode: string | null;
+}
+
 export interface DraggableOperationPayload {
   itemCode: string;
   candidateId?: string | null;
@@ -152,6 +160,8 @@ interface RoutingWorkspacePersistedState {
   dirty: boolean;
   customRecommendations?: CustomRecommendationEntry[];
   hiddenRecommendationKeys?: HiddenRecommendationMap;
+
+  routingMatrixDefinitions: RoutingMatrixDefinition[];
 }
 
 type PersistedSelectionState = Omit<
@@ -208,6 +218,59 @@ const cloneHiddenMap = (source: HiddenRecommendationMap): HiddenRecommendationMa
     cloned[bucketKey] = [...keys];
   });
   return cloned;
+const createMatrixDefinitionId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `matrix-${crypto.randomUUID()}`;
+  }
+  return `matrix-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+};
+
+const sanitizeMatrixValue = (value?: string | null): string | null => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const trimmed = `${value}`.trim();
+  return trimmed.length === 0 ? null : trimmed;
+};
+
+const createRoutingMatrixDefinition = (
+  value?: Partial<RoutingMatrixDefinition>,
+): RoutingMatrixDefinition => ({
+  id: value?.id ?? createMatrixDefinitionId(),
+  routingSetCode: sanitizeMatrixValue(value?.routingSetCode),
+  variantCode: sanitizeMatrixValue(value?.variantCode),
+  primaryRoutingCode: sanitizeMatrixValue(value?.primaryRoutingCode),
+  secondaryRoutingCode: sanitizeMatrixValue(value?.secondaryRoutingCode),
+});
+
+const cloneRoutingMatrixDefinitions = (
+  rows: RoutingMatrixDefinition[],
+): RoutingMatrixDefinition[] => rows.map((row) => ({ ...row }));
+
+const routingMatrixDefinitionsEqual = (
+  a: RoutingMatrixDefinition,
+  b: RoutingMatrixDefinition,
+): boolean =>
+  a.routingSetCode === b.routingSetCode &&
+  a.variantCode === b.variantCode &&
+  a.primaryRoutingCode === b.primaryRoutingCode &&
+  a.secondaryRoutingCode === b.secondaryRoutingCode;
+
+const routingMatrixArraysEqual = (
+  a: RoutingMatrixDefinition[],
+  b: RoutingMatrixDefinition[],
+): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const rowA = a[index];
+    const rowB = b[index];
+    if (rowA.id !== rowB.id || !routingMatrixDefinitionsEqual(rowA, rowB)) {
+      return false;
+    }
+  }
+  return true;
 };
 
 const recordsEqual = (
@@ -502,6 +565,7 @@ const toPersistedState = (selection: PersistedSelectionState): RoutingWorkspaceP
   dirty: selection.dirty,
   customRecommendations: cloneCustomRecommendations(selection.customRecommendations),
   hiddenRecommendationKeys: cloneHiddenMap(selection.hiddenRecommendationKeys),
+  routingMatrixDefinitions: cloneRoutingMatrixDefinitions(selection.routingMatrixDefinitions ?? []),
 });
 
 const persistedSelector = (state: RoutingStoreState): PersistedSelectionState => ({
@@ -514,6 +578,7 @@ const persistedSelector = (state: RoutingStoreState): PersistedSelectionState =>
   dirty: state.dirty,
   customRecommendations: state.customRecommendations,
   hiddenRecommendationKeys: state.hiddenRecommendationKeys,
+  routingMatrixDefinitions: state.routingMatrixDefinitions,
 });
 
 export interface RoutingStoreState {
@@ -535,6 +600,7 @@ export interface RoutingStoreState {
   referenceMatrixColumns: ReferenceMatrixColumnKey[];
   history: HistoryState;
   lastSuccessfulTimeline: LastSuccessMap;
+  routingMatrixDefinitions: RoutingMatrixDefinition[];
   validationErrors: string[];
   sourceItemCodes: string[];
   setLoading: (loading: boolean) => void;
@@ -551,6 +617,11 @@ export interface RoutingStoreState {
   setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
   reorderReferenceMatrixColumns: (source: ReferenceMatrixColumnKey, target: ReferenceMatrixColumnKey) => void;
   hydrateReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
+  setRoutingMatrixDefinitions: (rows: Array<Partial<RoutingMatrixDefinition>>) => void;
+  addRoutingMatrixDefinition: (row?: Partial<RoutingMatrixDefinition>) => void;
+  updateRoutingMatrixDefinition: (id: string, patch: Partial<RoutingMatrixDefinition>) => void;
+  removeRoutingMatrixDefinition: (id: string) => void;
+  hydrateRoutingMatrixDefinitions: (rows: RoutingMatrixDefinition[]) => void;
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
@@ -586,6 +657,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
   history: { past: [], future: [] },
   lastSuccessfulTimeline: {},
+  routingMatrixDefinitions: [],
   validationErrors: [],
   sourceItemCodes: [],
   setLoading: (loading) => set({ loading }),
@@ -616,6 +688,53 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         return state;
       }
       return { referenceMatrixColumns: normalized };
+    }),
+  setRoutingMatrixDefinitions: (rows) =>
+    set((state) => {
+      const normalized = rows.map((row) => createRoutingMatrixDefinition(row));
+      if (routingMatrixArraysEqual(normalized, state.routingMatrixDefinitions)) {
+        return state;
+      }
+      return { routingMatrixDefinitions: normalized, dirty: true };
+    }),
+  addRoutingMatrixDefinition: (row) =>
+    set((state) => ({
+      routingMatrixDefinitions: [
+        ...state.routingMatrixDefinitions,
+        createRoutingMatrixDefinition(row),
+      ],
+      dirty: true,
+    })),
+  updateRoutingMatrixDefinition: (id, patch) =>
+    set((state) => {
+      const index = state.routingMatrixDefinitions.findIndex((entry) => entry.id === id);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.routingMatrixDefinitions[index];
+      const updated = createRoutingMatrixDefinition({ ...previous, ...patch, id });
+      if (routingMatrixDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.routingMatrixDefinitions];
+      next[index] = updated;
+      return { routingMatrixDefinitions: next, dirty: true };
+    }),
+  removeRoutingMatrixDefinition: (id) =>
+    set((state) => {
+      const next = state.routingMatrixDefinitions.filter((entry) => entry.id !== id);
+      if (next.length === state.routingMatrixDefinitions.length) {
+        return state;
+      }
+      return { routingMatrixDefinitions: next, dirty: true };
+    }),
+  hydrateRoutingMatrixDefinitions: (rows) =>
+    set((state) => {
+      const normalized = rows.map((row) => createRoutingMatrixDefinition(row));
+      if (routingMatrixArraysEqual(normalized, state.routingMatrixDefinitions)) {
+        return state;
+      }
+      return { routingMatrixDefinitions: normalized };
     }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({
@@ -1152,6 +1271,9 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
       : {};
     const restoredDirty = computeDirty(normalizedTimeline, successMap, activeProductId);
+    const restoredMatrix = persisted.routingMatrixDefinitions
+      ? cloneRoutingMatrixDefinitions(persisted.routingMatrixDefinitions)
+      : [];
     const restoredSelection: PersistedSelectionState = {
       activeProductId,
       activeItemId: persisted.activeItemId ?? activeProductId,
@@ -1162,12 +1284,14 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       dirty: restoredDirty,
       customRecommendations: cloneCustomRecommendations(persisted.customRecommendations ?? []),
       hiddenRecommendationKeys: cloneHiddenMap(persisted.hiddenRecommendationKeys ?? {}),
+      routingMatrixDefinitions: restoredMatrix,
     };
 
     store.setState((current) => ({
       ...current,
       ...restoredSelection,
       history: { past: [], future: [] },
+      routingMatrixDefinitions: restoredMatrix,
     }));
     lastPersistedSnapshotSignature = computeSnapshotSignature(toPersistedState(restoredSelection));
 

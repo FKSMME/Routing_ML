@@ -45,6 +45,7 @@ function createMappingRow(partial?: Partial<Omit<MappingRow, "id">>): MappingRow
     mapped: partial?.mapped ?? "",
     type: partial?.type ?? "string",
     required: partial?.required ?? false,
+    defaultValue: partial?.defaultValue ?? "",
   };
 }
 
@@ -54,6 +55,7 @@ function toMappingRow(column: OutputProfileColumn): MappingRow {
     mapped: column.mapped ?? "",
     type: column.type ?? "string",
     required: Boolean(column.required),
+    defaultValue: column.default_value ?? column.defaultValue ?? "",
   });
 }
 
@@ -70,7 +72,8 @@ function rowsEqual(a: MappingRow[], b: MappingRow[]): boolean {
       row.source === other.source &&
       row.mapped === other.mapped &&
       row.type === other.type &&
-      row.required === other.required
+      row.required === other.required &&
+      (row.defaultValue ?? "") === (other.defaultValue ?? "")
     );
   });
 }
@@ -278,8 +281,9 @@ export function DataOutputWorkspace() {
         mapped: row.mapped.trim(),
         type: row.type.trim() || "string",
         required: row.required,
+        defaultValue: row.defaultValue?.trim() ?? "",
       }))
-      .filter((row) => row.source !== "");
+      .filter((row) => row.source !== "" || row.defaultValue !== "");
 
     if (trimmedRows.length === 0) {
       setPreviewRows([]);
@@ -295,7 +299,13 @@ export function DataOutputWorkspace() {
 
     generateOutputPreview({
       profileId: selectedProfileId,
-      mappings: trimmedRows,
+      mappings: trimmedRows.map((row) => ({
+        source: row.source,
+        mapped: row.mapped,
+        type: row.type,
+        required: row.required,
+        default_value: row.defaultValue || undefined,
+      })),
       format,
     })
       .then(({ rows, columns }) => {
@@ -406,8 +416,11 @@ export function DataOutputWorkspace() {
       mapped: row.mapped.trim(),
       type: row.type.trim(),
       required: row.required,
+      defaultValue: row.defaultValue?.trim() ?? "",
     }));
-    const requiredMissing = trimmedRows.filter((row) => row.required && (!row.source || !row.mapped));
+    const requiredMissing = trimmedRows.filter(
+      (row) => row.required && ((!row.source && !row.defaultValue) || !row.mapped),
+    );
     if (requiredMissing.length > 0) {
       issues.push(
         `Required columns missing mapping: ${requiredMissing
@@ -459,6 +472,8 @@ export function DataOutputWorkspace() {
         current.mapped = value;
       } else if (field === "type" && typeof value === "string") {
         current.type = value;
+      } else if (field === "defaultValue" && typeof value === "string") {
+        current.defaultValue = value;
       }
       next[index] = current;
       return next;
@@ -508,15 +523,18 @@ export function DataOutputWorkspace() {
         mapped: row.mapped.trim(),
         type: row.type.trim() || "string",
         required: row.required,
+        defaultValue: row.defaultValue?.trim() ?? "",
       }))
-      .filter((row) => row.source !== "");
+      .filter((row) => row.source !== "" || row.defaultValue !== "");
 
     if (trimmedRows.length === 0) {
       setErrorMessage("Add at least one mapped column before saving.");
       return;
     }
 
-    const missingRequired = trimmedRows.filter((row) => row.required && row.mapped === "");
+    const missingRequired = trimmedRows.filter(
+      (row) => row.required && (row.mapped === "" || (row.source === "" && row.defaultValue === "")),
+    );
     if (missingRequired.length > 0) {
       setErrorMessage("Fill in all required column aliases before saving.");
       return;
@@ -543,7 +561,7 @@ export function DataOutputWorkspace() {
       setPreviewErrorMessage("");
       const aliasMap: Record<string, string> = {};
       trimmedRows.forEach((row) => {
-        if (row.mapped && row.mapped !== row.source) {
+        if (row.source && row.mapped && row.mapped !== row.source) {
           aliasMap[row.mapped] = row.source;
         }
       });
@@ -553,6 +571,7 @@ export function DataOutputWorkspace() {
         mapped: row.mapped || row.source,
         type: row.type,
         required: row.required,
+        defaultValue: row.defaultValue,
       }));
       await saveWorkspaceSettings({
         version: Date.now(),
@@ -560,12 +579,18 @@ export function DataOutputWorkspace() {
           profile_id: selectedProfileId,
           profile_name: selectedProfile?.name ?? null,
           format,
-          mappings: trimmedRows,
+          mappings: trimmedRows.map((row) => ({
+            source: row.source,
+            mapped: row.mapped,
+            type: row.type,
+            required: row.required,
+            default_value: row.defaultValue || undefined,
+          })),
         },
       });
       await saveConfig({
         sql: {
-          output_columns: trimmedRows.map((row) => row.source),
+          output_columns: trimmedRows.filter((row) => row.source !== "").map((row) => row.source),
           column_aliases: aliasMap,
           active_profile: selectedProfile?.id ?? selectedProfile?.name ?? selectedProfileId,
         },
@@ -683,6 +708,7 @@ export function DataOutputWorkspace() {
                 <tr>
                   <th>Source</th>
                   <th>Mapped</th>
+                  <th>Default value</th>
                   <th>Type</th>
                   <th>Required</th>
                   <th>Actions</th>
@@ -721,6 +747,14 @@ export function DataOutputWorkspace() {
                       />
                     </td>
                     <td>
+                      <input
+                        type="text"
+                        value={row.defaultValue ?? ""}
+                        placeholder="Optional constant"
+                        onChange={(event) => handleRowChange(index, "defaultValue", event.target.value)}
+                      />
+                    </td>
+                    <td>
                       <select value={row.type} onChange={(event) => handleRowChange(index, "type", event.target.value)}>
                         {COLUMN_TYPES.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -750,7 +784,7 @@ export function DataOutputWorkspace() {
                 ))}
                 {mappingRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <p className="output-status">No columns mapped yet. Add a column to get started.</p>
                     </td>
                   </tr>
