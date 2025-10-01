@@ -490,6 +490,8 @@ export interface OutputProfileColumn {
   mapped: string;
   type?: string | null;
   required?: boolean;
+  default_value?: string | null;
+  defaultValue?: string | null;
 }
 
 export interface OutputProfileDetail extends OutputProfileSummary {
