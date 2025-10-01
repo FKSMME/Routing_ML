@@ -193,3 +193,14 @@ async def test_data_source_patch_includes_audit_summary(workflow_sync_context, m
     assert "C:/sensitive/path/AccessConfig.accdb" not in repr(data_source_summary)
 
     assert "data_source" in audit_extra.get("updated_keys", [])
+async def test_patch_accepts_mdb_access_path(workflow_sync_context):
+    store, user, _ = workflow_sync_context
+
+    patch_model = WorkflowConfigPatch.parse_obj(
+        {"data_source": {"access_path": "C:/data/source.mdb"}}
+    )
+
+    response = await workflow_module.patch_workflow_graph(patch_model, current_user=user)
+
+    assert response.data_source.access_path == "C:/data/source.mdb"
+    assert store.get_data_source_config().access_path == "C:/data/source.mdb"

@@ -30,6 +30,7 @@ from backend.api.schemas import (
     WorkflowGraphNode,
 )
 from backend.api.security import require_auth
+from backend.api.services.master_data_service import ACCESS_FILE_SUFFIXES
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
 from backend.trainer_ml import apply_trainer_runtime_config
 from common.config_store import (
@@ -345,10 +346,11 @@ async def patch_workflow_graph(
         data_cfg = DataSourceConfig.from_dict(working_snapshot.get("data_source", {}))
         if payload.data_source.access_path is not None:
             access_path = payload.data_source.access_path.strip()
-            if not access_path.lower().endswith(".accdb"):
+            allowed_suffixes = sorted(ACCESS_FILE_SUFFIXES)
+            if Path(access_path).suffix.lower() not in ACCESS_FILE_SUFFIXES:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Access 데이터베이스 파일(.accdb)만 허용됩니다.",
+                    detail=f"Access 데이터베이스 파일({', '.join(allowed_suffixes)})만 허용됩니다.",
                 )
             data_cfg.access_path = access_path
         if payload.data_source.default_table is not None:
