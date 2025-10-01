@@ -4,21 +4,11 @@ import {
   createRecommendationOperationKey,
   useRoutingStore,
 } from "@store/routingStore";
-import {
-  Activity,
-  Database,
-  Edit3,
-  EyeOff,
-  Plus,
-  RotateCcw,
-  Search,
-  ToggleLeft,
-  ToggleRight,
-  Trash2,
-  Undo2,
-} from "lucide-react";
-import type { DragEvent, FormEvent, MouseEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { Activity, Database, Edit3, EyeOff, Plus, Search, Settings, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
+import type { DragEvent, MouseEvent } from "react";
+import { useMemo, useState } from "react";
+
+import { CandidateSettingsModal } from "./CandidateSettingsModal";
 
 interface OperationBucket {
   itemCode: string;
@@ -32,39 +22,6 @@ interface CandidateOperation {
   source: "default" | "custom";
   entryId?: string;
 }
-
-interface CustomFormState {
-  code: string;
-  seq: string;
-  desc: string;
-  setup: string;
-  run: string;
-  wait: string;
-}
-
-const createEmptyFormState = (): CustomFormState => ({
-  code: "",
-  seq: "",
-  desc: "",
-  setup: "",
-  run: "",
-  wait: "",
-});
-
-const toFormNumber = (value: number | null | undefined): string =>
-  typeof value === "number" ? String(value) : "";
-
-const parseOptionalNumber = (input: string): { value: number | null; valid: boolean } => {
-  const trimmed = input.trim();
-  if (trimmed === "") {
-    return { value: null, valid: true };
-  }
-  const numeric = Number(trimmed);
-  if (!Number.isFinite(numeric)) {
-    return { value: null, valid: false };
-  }
-  return { value: numeric, valid: true };
-};
 
 export function CandidatePanel() {
   const activeProductId = useRoutingStore((state) => state.activeProductId);
@@ -87,9 +44,8 @@ export function CandidatePanel() {
   const setERPRequired = useRoutingStore((state) => state.setERPRequired);
 
   const [filter, setFilter] = useState("");
-  const [formState, setFormState] = useState<CustomFormState>(createEmptyFormState);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingEditId, setPendingEditId] = useState<string | null>(null);
 
   const bucket = useMemo<OperationBucket | null>(() => {
     if (!activeProductId) {
@@ -167,12 +123,6 @@ export function CandidatePanel() {
   const customCount = bucketCustomEntries.length;
   const hiddenCount = hiddenOperations.length;
 
-  useEffect(() => {
-    setFormState(createEmptyFormState());
-    setEditingId(null);
-    setFormError(null);
-  }, [bucket?.itemCode, bucketCandidateId]);
-
   const handleDragStart = (operation: OperationStep) => (event: DragEvent<HTMLDivElement>) => {
     event.dataTransfer.effectAllowed = "copy";
     event.dataTransfer.setData(
@@ -189,75 +139,9 @@ export function CandidatePanel() {
     insertOperation({ itemCode: bucket.itemCode, candidateId: bucket.candidateId, operation });
   };
 
-  const resetForm = () => {
-    setFormState(createEmptyFormState());
-    setEditingId(null);
-    setFormError(null);
-  };
-
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!bucket) {
-      setFormError("활성 품목을 먼저 선택해 주세요.");
-      return;
-    }
-    const code = formState.code.trim();
-    if (!code) {
-      setFormError("공정 코드를 입력해 주세요.");
-      return;
-    }
-    const seqValue = Number(formState.seq.trim());
-    if (!Number.isFinite(seqValue) || !Number.isInteger(seqValue) || seqValue <= 0) {
-      setFormError("유효한 공정 순번(양의 정수)을 입력해 주세요.");
-      return;
-    }
-
-    const setup = parseOptionalNumber(formState.setup);
-    const run = parseOptionalNumber(formState.run);
-    const wait = parseOptionalNumber(formState.wait);
-    if (!setup.valid || !run.valid || !wait.valid) {
-      setFormError("세팅/가공/대기 시간은 숫자로 입력해 주세요.");
-      return;
-    }
-
-    const operation: OperationStep = {
-      PROC_CD: code,
-      PROC_SEQ: seqValue,
-      PROC_DESC: formState.desc.trim() ? formState.desc.trim() : undefined,
-      SETUP_TIME: setup.value,
-      RUN_TIME: run.value,
-      WAIT_TIME: wait.value,
-    };
-
-    if (editingId) {
-      updateCustomRecommendation(editingId, operation);
-    } else {
-      addCustomRecommendation({
-        itemCode: bucket.itemCode,
-        candidateId: bucketCandidateId,
-        operation,
-      });
-    }
-
-    resetForm();
-  };
-
   const handleEditCustom = (entryId: string) => {
-    const entry = bucketCustomEntries.find((item) => item.id === entryId);
-    if (!entry) {
-      return;
-    }
-    const { operation } = entry;
-    setFormState({
-      code: operation.PROC_CD ?? "",
-      seq: operation.PROC_SEQ !== undefined ? String(operation.PROC_SEQ) : "",
-      desc: operation.PROC_DESC ?? "",
-      setup: toFormNumber(operation.SETUP_TIME),
-      run: toFormNumber(operation.RUN_TIME),
-      wait: toFormNumber(operation.WAIT_TIME),
-    });
-    setEditingId(entryId);
-    setFormError(null);
+    setPendingEditId(entryId);
+    setSettingsOpen(true);
   };
 
   const handleRemoveOperation = (item: CandidateOperation) => (event: MouseEvent) => {
@@ -267,16 +151,21 @@ export function CandidatePanel() {
     }
     if (item.source === "custom" && item.entryId) {
       removeCustomRecommendation(item.entryId);
-      if (editingId === item.entryId) {
-        resetForm();
-      }
       return;
     }
     const operationKey = createRecommendationOperationKey(item.operation);
     hideRecommendation(bucket.itemCode, bucketCandidateId, operationKey);
   };
 
-  const formDisabled = !bucket;
+  const handleOpenSettings = () => {
+    setPendingEditId(null);
+    setSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setPendingEditId(null);
+    setSettingsOpen(false);
+  };
 
   return (
     <section className="panel-card interactive-card candidate-panel">
@@ -342,90 +231,11 @@ export function CandidatePanel() {
         />
       </div>
 
-      <form className="candidate-custom-form" onSubmit={handleFormSubmit}>
-        <div className="candidate-custom-form__header">
-          <h3>사용자 정의 공정 {editingId ? "수정" : "추가"}</h3>
-          {editingId ? <span className="candidate-custom-form__badge">편집 중</span> : null}
-        </div>
-        <p className="candidate-custom-form__hint">활성 품목에 맞춤 공정을 직접 추가하거나 기존 항목을 수정할 수 있습니다.</p>
-        {formError ? <p className="candidate-custom-form__error">{formError}</p> : null}
-        <div className="candidate-custom-form__grid">
-          <label>
-            <span>공정 코드*</span>
-            <input
-              type="text"
-              value={formState.code}
-              onChange={(event) => setFormState((prev) => ({ ...prev, code: event.target.value }))}
-              placeholder="예: CUT-01"
-              required
-              disabled={formDisabled}
-            />
-          </label>
-          <label>
-            <span>순번*</span>
-            <input
-              type="number"
-              value={formState.seq}
-              onChange={(event) => setFormState((prev) => ({ ...prev, seq: event.target.value }))}
-              placeholder="예: 10"
-              min={1}
-              step={1}
-              required
-              disabled={formDisabled}
-            />
-          </label>
-          <label className="candidate-custom-form__wide">
-            <span>설명</span>
-            <input
-              type="text"
-              value={formState.desc}
-              onChange={(event) => setFormState((prev) => ({ ...prev, desc: event.target.value }))}
-              placeholder="공정 설명 입력"
-              disabled={formDisabled}
-            />
-          </label>
-          <label>
-            <span>세팅 시간</span>
-            <input
-              type="text"
-              value={formState.setup}
-              onChange={(event) => setFormState((prev) => ({ ...prev, setup: event.target.value }))}
-              placeholder="분"
-              disabled={formDisabled}
-            />
-          </label>
-          <label>
-            <span>가공 시간</span>
-            <input
-              type="text"
-              value={formState.run}
-              onChange={(event) => setFormState((prev) => ({ ...prev, run: event.target.value }))}
-              placeholder="분"
-              disabled={formDisabled}
-            />
-          </label>
-          <label>
-            <span>대기 시간</span>
-            <input
-              type="text"
-              value={formState.wait}
-              onChange={(event) => setFormState((prev) => ({ ...prev, wait: event.target.value }))}
-              placeholder="분"
-              disabled={formDisabled}
-            />
-          </label>
-        </div>
-        <div className="candidate-custom-form__actions">
-          <button type="submit" className="candidate-custom-form__submit" disabled={formDisabled}>
-            <Plus size={14} /> {editingId ? "공정 업데이트" : "공정 추가"}
-          </button>
-          {editingId ? (
-            <button type="button" onClick={resetForm} className="candidate-custom-form__cancel">
-              취소
-            </button>
-          ) : null}
-        </div>
-      </form>
+      <div className="candidate-manage">
+        <button type="button" className="candidate-manage__button" onClick={handleOpenSettings}>
+          <Settings size={16} /> 추천 관리
+        </button>
+      </div>
 
       {loading ? (
         <div className="candidate-placeholder">추천 공정을 불러오는 중입니다...</div>
@@ -499,39 +309,21 @@ export function CandidatePanel() {
         </div>
       )}
 
-      {bucket && hiddenOperations.length > 0 ? (
-        <div className="candidate-hidden">
-          <div className="candidate-hidden__header">
-            <h3>숨김 처리된 공정 ({hiddenCount})</h3>
-            <button
-              type="button"
-              className="candidate-hidden__restore-all"
-              onClick={() => restoreAllRecommendations(bucket.itemCode, bucketCandidateId)}
-            >
-              <RotateCcw size={14} /> 모두 복원
-            </button>
-          </div>
-          <ul className="candidate-hidden__list">
-            {hiddenOperations.map((operation) => {
-              const key = createRecommendationOperationKey(operation);
-              return (
-                <li key={`hidden-${key}`} className="candidate-hidden__item">
-                  <span className="candidate-hidden__label">
-                    {operation.PROC_CD} #{operation.PROC_SEQ}
-                  </span>
-                  <button
-                    type="button"
-                    className="candidate-hidden__restore"
-                    onClick={() => restoreRecommendation(bucket.itemCode, bucketCandidateId, key)}
-                  >
-                    <Undo2 size={14} /> 복원
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ) : null}
+      <CandidateSettingsModal
+        open={settingsOpen}
+        onClose={handleCloseSettings}
+        bucket={bucket ? { itemCode: bucket.itemCode, candidateId: bucketCandidateId } : null}
+        customEntries={customRecommendations}
+        hiddenOperations={hiddenOperations}
+        recommendationOperations={bucket?.operations ?? []}
+        addCustomRecommendation={addCustomRecommendation}
+        updateCustomRecommendation={updateCustomRecommendation}
+        removeCustomRecommendation={removeCustomRecommendation}
+        hideRecommendation={hideRecommendation}
+        restoreRecommendation={restoreRecommendation}
+        restoreAllRecommendations={restoreAllRecommendations}
+        initialEditId={pendingEditId}
+      />
     </section>
   );
 }
