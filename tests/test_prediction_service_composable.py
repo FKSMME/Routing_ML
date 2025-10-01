@@ -3,6 +3,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import List
 
 import pandas as pd
 import pytest
@@ -48,6 +49,10 @@ if "faiss" not in sys.modules:
 
 from backend.api.schemas import (
     AuthenticatedUser,
+    CandidateRouting,
+    OperationStep,
+    PredictionRequest,
+    RoutingSummary,
     RuleValidationRequest,
     SimilarItem,
     SimilaritySearchRequest,
@@ -60,6 +65,7 @@ from backend.api.schemas import (
 from backend.api.services.prediction_service import PredictionService, prediction_service
 from models.manifest import write_manifest
 from backend.api.routes import prediction as prediction_routes
+from common.config_store import WorkflowConfigStore
 
 
 @pytest.fixture()
@@ -194,6 +200,51 @@ def test_rule_validation_detects_threshold_violation(prediction_service_with_man
     assert any(violation.severity == "warning" for violation in response.violations)
 
 
+def test_export_predictions_reports_partial_failures(tmp_path, monkeypatch):
+    service = PredictionService()
+    store = WorkflowConfigStore(path=tmp_path / "workflow.json")
+    export_cfg = store.get_export_config()
+    export_cfg.export_directory = str(tmp_path / "exports")
+    export_cfg.compress_on_save = False
+    store.update_export_config(export_cfg)
+
+    monkeypatch.setattr(
+        "backend.api.services.prediction_service.workflow_config_store", store
+    )
+    monkeypatch.setattr("common.config_store.workflow_config_store", store)
+
+    routings = [
+        RoutingSummary(
+            item_code="ITEM-001",
+            candidate_id="CAND-1",
+            operations=[OperationStep(proc_seq=1, job_cd="CUT", setup_time=1.0)],
+        )
+    ]
+    candidates = [
+        CandidateRouting(
+            candidate_item_code="SIM-1",
+            similarity_score=0.92,
+            source_item_code="ITEM-001",
+        )
+    ]
+
+    original_to_csv = pd.DataFrame.to_csv
+
+    def flaky_to_csv(self, path, *args, **kwargs):
+        if kwargs.get("sep") == "\t":
+            raise IOError("disk full")
+        return original_to_csv(self, path, *args, **kwargs)
+
+    monkeypatch.setattr(pd.DataFrame, "to_csv", flaky_to_csv)
+
+    exported, errors = service.export_predictions(routings, candidates, ["csv", "txt"])
+
+    assert any(path.endswith(".csv") for path in exported)
+    assert errors, "Expected JSON export failure to be reported"
+    assert errors[0]["path"].endswith(".txt")
+    assert "disk full" in errors[0]["error"]
+
+
 @pytest.fixture()
 def dummy_user():
     return AuthenticatedUser(
@@ -239,6 +290,41 @@ def test_similarity_endpoint_integration(dummy_user, monkeypatch):
 
     assert response.metrics["total_matches"] == 1
     assert response.results[0].item_code == "ITEM1"
+
+
+def test_predict_endpoint_includes_export_error_feedback(dummy_user, monkeypatch):
+    items: List[RoutingSummary] = []
+    candidates: List[CandidateRouting] = []
+    metrics = {"threshold": 0.85}
+
+    monkeypatch.setattr(
+        prediction_service,
+        "predict",
+        lambda *args, **kwargs: (items, candidates, dict(metrics)),
+    )
+    monkeypatch.setattr(
+        prediction_service,
+        "export_predictions",
+        lambda routings, preds, formats: (
+            ["/tmp/routing_operations_20240101.csv"],
+            [
+                {
+                    "path": "/tmp/routing_bundle_20240101.json",
+                    "error": "IOError: disk full",
+                }
+            ],
+        ),
+    )
+
+    request = PredictionRequest(item_codes=["ITEM1"], export_formats=["csv", "json"])
+    response = asyncio.run(
+        prediction_routes.predict(request, current_user=dummy_user)
+    )
+
+    assert response.metrics["exported_files"] == [
+        "/tmp/routing_operations_20240101.csv"
+    ]
+    assert response.metrics["export_errors"][0]["path"].endswith(".json")
 
 
 def test_time_summary_endpoint_integration(dummy_user, monkeypatch):

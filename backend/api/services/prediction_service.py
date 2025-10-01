@@ -1320,12 +1320,13 @@ class PredictionService:
         routings: List[RoutingSummary],
         candidates: List[CandidateRouting],
         formats: Iterable[str],
-    ) -> List[str]:
+    ) -> Tuple[List[str], List[Dict[str, str]]]:
         export_cfg = workflow_config_store.get_export_config()
         requested = {fmt.lower() for fmt in formats}
         exported_paths: List[str] = []
+        export_errors: List[Dict[str, str]] = []
         if not requested:
-            return exported_paths
+            return exported_paths, export_errors
 
         export_dir = Path(export_cfg.export_directory)
         export_dir.mkdir(parents=True, exist_ok=True)
@@ -1356,6 +1357,9 @@ class PredictionService:
                 logger.info("예측 결과 내보내기 완료: %s", path)
             except Exception as exc:  # pragma: no cover - 파일 쓰기 실패 보호
                 logger.warning("예측 결과 내보내기 실패 (%s): %s", path, exc)
+                export_errors.append(
+                    {"path": str(path), "error": f"{exc.__class__.__name__}: {exc}"}
+                )
 
         if "csv" in requested and export_cfg.enable_csv and not routing_df.empty:
             csv_path = export_dir / f"routing_operations_{timestamp}.csv"
@@ -1437,7 +1441,7 @@ class PredictionService:
                     gz_path,
                 )
 
-        return exported_paths
+        return exported_paths, export_errors
 
     def prepare_visualization_snapshot(
         self,
