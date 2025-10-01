@@ -1,6 +1,7 @@
 import type { PredictionResponse } from "@app-types/routing";
 import { predictRoutings } from "@lib/apiClient";
 import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
 interface UsePredictOptions {
   itemCodes: string[];
@@ -44,5 +45,12 @@ export function usePredictRoutings({
       }),
     enabled: itemCodes.length > 0,
     staleTime: 30_000,
+    retry: (failureCount, error) => {
+      if (axios.isAxiosError(error) && error.response && error.response.status >= 400 && error.response.status < 500) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 5_000),
   });
 }

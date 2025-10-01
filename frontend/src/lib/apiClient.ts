@@ -114,7 +114,7 @@ export async function predictRoutings(params: {
     payload.export_formats = params.exportFormats;
   }
 
-  const response = await api.post<PredictionResponse>("/predict", payload);
+  const response = await api.post<PredictionResponse>("/predict", payload, { timeout: 20_000 });
   return response.data;
 }
 

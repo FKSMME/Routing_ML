@@ -9,6 +9,7 @@ interface PredictionControlsProps {
   onChangeThreshold: (value: number) => void;
   loading: boolean;
   onSubmit: () => void;
+  errorMessage?: string | null;
 }
 
 const splitItemCodes = (value: string): string[] =>
@@ -26,6 +27,7 @@ export function PredictionControls({
   onChangeThreshold,
   loading,
   onSubmit,
+  errorMessage,
 }: PredictionControlsProps) {
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
 
@@ -78,6 +80,12 @@ export function PredictionControls({
           />
         </div>
       </div>
+
+      {errorMessage ? (
+        <p className="prediction-panel__error" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
 
       <button type="submit" disabled={loading} className="btn-primary w-full">
         {loading ? "추천 불러오는 중..." : "추천 실행"}
