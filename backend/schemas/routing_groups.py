@@ -21,6 +21,30 @@ class RoutingStep(BaseModel):
         ge=0,
         description="예상 가공 시간(분)",
     )
+    routing_set_code: Optional[str] = Field(
+        default=None, description="주라우팅 세트 코드"
+    )
+    variant_code: Optional[str] = Field(
+        default=None, description="Variant 식별자"
+    )
+    primary_routing_code: Optional[str] = Field(
+        default=None, description="주라우팅 코드"
+    )
+    secondary_routing_code: Optional[str] = Field(
+        default=None, description="부라우팅 코드"
+    )
+    branch_code: Optional[str] = Field(
+        default=None, description="분기 코드"
+    )
+    branch_label: Optional[str] = Field(
+        default=None, description="분기 설명"
+    )
+    branch_path: Optional[str] = Field(
+        default=None, description="분기 경로"
+    )
+    sql_values: Dict[str, Any] | None = Field(
+        default=None, description="사용자 정의 SQL 컬럼 값"
+    )
     metadata: Dict[str, Any] | None = Field(
         default=None, description="추가 파라미터(JSON)"
     )

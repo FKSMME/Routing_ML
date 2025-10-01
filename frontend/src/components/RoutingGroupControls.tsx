@@ -1,10 +1,12 @@
-import type { RoutingGroupSummary } from "@app-types/routing";
+import type { RoutingGroupSummary, TimelineStepMetadata } from "@app-types/routing";
 import { useRoutingGroups } from "@hooks/useRoutingGroups";
+import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { fetchWorkspaceSettings, postUiAudit, triggerRoutingInterface } from "@lib/apiClient";
-import { useRoutingStore } from "@store/routingStore";
+import { useRoutingStore, type TimelineStep } from "@store/routingStore";
+import { type OutputMappingRow, useWorkspaceStore } from "@store/workspaceStore";
 import { Download, Play, Save, Settings, Upload } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import type { ChangeEvent, CSSProperties } from "react";
 import axios from "axios";
 
 interface ConfirmationModalProps {
@@ -154,6 +156,13 @@ const DESTINATION_OPTIONS: Array<{ value: Destination; label: string }> = [
   { value: "clipboard", label: "Clipboard" },
 ];
 
+const COLUMN_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "string", label: "Text" },
+  { value: "number", label: "Number" },
+  { value: "boolean", label: "Boolean" },
+  { value: "date", label: "Date/Time" },
+];
+
 const FORMAT_CAPABILITIES: Record<FileFormat, { local: boolean; clipboard: boolean; extension: string; mime: string }> = {
   CSV: { local: true, clipboard: true, extension: "csv", mime: "text/csv;charset=utf-8" },
   XML: { local: true, clipboard: true, extension: "xml", mime: "application/xml;charset=utf-8" },
@@ -180,7 +189,6 @@ const csvEscape = (value: unknown) => {
   return text;
 };
 
-
 const xmlEscape = (value: unknown) => {
   const text = value === null || value === undefined ? "" : String(value);
   return text
@@ -190,6 +198,28 @@ const xmlEscape = (value: unknown) => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 };
+
+const cloneTimelineMetadata = (metadata?: TimelineStepMetadata | null): TimelineStepMetadata | null => {
+  if (!metadata) {
+    return null;
+  }
+  const sqlValues = metadata.sqlValues ? { ...metadata.sqlValues } : undefined;
+  const extra = metadata.extra ? { ...metadata.extra } : undefined;
+  return {
+    ...metadata,
+    sqlValues,
+    extra,
+  };
+};
+
+const createLocalMappingRow = (initial?: Partial<OutputMappingRow>): OutputMappingRow => ({
+  id: initial?.id ?? "",
+  source: initial?.source ?? "",
+  mapped: initial?.mapped ?? initial?.source ?? "",
+  type: initial?.type ?? "string",
+  required: initial?.required ?? false,
+  defaultValue: initial?.defaultValue ?? "",
+});
 
 export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControlsProps = {}) {
   const [groupName, setGroupName] = useState("");
@@ -203,6 +233,18 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const [pendingAction, setPendingAction] = useState<null | "server" | "interface">(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
 
+  const { data: workflowConfig } = useWorkflowConfig();
+  const mappingRows = useWorkspaceStore((state) => state.outputMappings);
+  const setOutputMappings = useWorkspaceStore((state) => state.setOutputMappings);
+  const updateOutputMappings = useWorkspaceStore((state) => state.updateOutputMappings);
+  const reorderOutputMappings = useWorkspaceStore((state) => state.reorderOutputMappings);
+  const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [selectedRoutingSet, setSelectedRoutingSet] = useState<string>("");
+  const [selectedVariantCode, setSelectedVariantCode] = useState<string>("");
+  const [selectedPrimaryRouting, setSelectedPrimaryRouting] = useState<string>("");
+  const [selectedSecondaryRouting, setSelectedSecondaryRouting] = useState<string>("");
+
   const saving = useRoutingStore((state) => state.saving);
   const timeline = useRoutingStore((state) => state.timeline);
   const timelineLength = timeline.length;
@@ -210,8 +252,28 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const setERPRequired = useRoutingStore((state) => state.setERPRequired);
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const activeGroupName = useRoutingStore((state) => state.activeGroupName);
+  const routingMatrixDefinitions = useRoutingStore((state) => state.routingMatrixDefinitions);
 
   const { saveGroup, loadGroup, fetchGroups } = useRoutingGroups();
+
+  const resolveRoutingSetCode = useCallback(
+    (step: TimelineStep): string | null => step.routingSetCode ?? step.metadata?.routingSetCode ?? null,
+    [],
+  );
+  const resolveVariantCode = useCallback(
+    (step: TimelineStep): string | null => step.variantCode ?? step.metadata?.variantCode ?? null,
+    [],
+  );
+  const resolvePrimaryRoutingCode = useCallback(
+    (step: TimelineStep): string | null =>
+      step.primaryRoutingCode ?? step.metadata?.primaryRoutingCode ?? null,
+    [],
+  );
+  const resolveSecondaryRoutingCode = useCallback(
+    (step: TimelineStep): string | null =>
+      step.secondaryRoutingCode ?? step.metadata?.secondaryRoutingCode ?? null,
+    [],
+  );
 
   const refreshGroups = useCallback(async () => {
     setListing(true);
@@ -251,56 +313,655 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     };
   }, [setERPRequired]);
 
-  const collectItemCodes = useCallback((): string[] => {
-    const codes = new Set<string>();
+  useEffect(() => {
+    if (!workflowConfig?.sql) {
+      return;
+    }
+    const profiles = workflowConfig.sql.profiles ?? [];
+    const activeName = workflowConfig.sql.active_profile || profiles[0]?.name || null;
+    setSelectedProfile((prev) => prev ?? activeName);
+  }, [workflowConfig?.sql]);
+
+  useEffect(() => {
+    if (!selectedProfile || !workflowConfig?.sql) {
+      return;
+    }
+    if (mappingRows.length > 0) {
+      return;
+    }
+    const profile = workflowConfig.sql.profiles.find((item) => item.name === selectedProfile);
+    if (!profile) {
+      return;
+    }
+    const rows = Object.entries(profile.mapping ?? {}).map(([source, target]) =>
+      createLocalMappingRow({ source, mapped: target }),
+    );
+    if (rows.length > 0) {
+      setOutputMappings(rows);
+    }
+  }, [selectedProfile, workflowConfig?.sql, mappingRows.length, setOutputMappings]);
+
+  const collectItemCodes = useCallback(
+    (steps?: TimelineStep[]): string[] => {
+      const codes = new Set<string>();
+      (steps ?? timeline).forEach((step) => {
+        if (step.itemCode) {
+          codes.add(step.itemCode);
+        }
+      });
+      sourceItemCodes.forEach((code) => codes.add(code));
+      return Array.from(codes);
+    },
+    [timeline, sourceItemCodes],
+  );
+
+  const handleProfileSelect = useCallback(
+    (profileName: string) => {
+      const normalized = profileName || null;
+      setSelectedProfile(normalized);
+      if (!workflowConfig?.sql || !normalized) {
+        return;
+      }
+      const profile = workflowConfig.sql.profiles.find((item) => item.name === normalized);
+      if (!profile) {
+        return;
+      }
+    const rows = Object.entries(profile.mapping ?? {}).map(([source, target]) =>
+      createLocalMappingRow({ source, mapped: target }),
+    );
+      setOutputMappings(rows);
+    },
+    [setOutputMappings, workflowConfig?.sql],
+  );
+
+  const handleAppendProfile = useCallback(() => {
+    if (!selectedProfile || !workflowConfig?.sql) {
+      return;
+    }
+    const profile = workflowConfig.sql.profiles.find((item) => item.name === selectedProfile);
+    if (!profile) {
+      return;
+    }
+    const entries = Object.entries(profile.mapping ?? {});
+    if (entries.length === 0) {
+      return;
+    }
+    updateOutputMappings((rows) => {
+      const existing = new Set(rows.map((row) => row.source));
+      const additions = entries
+        .filter(([source]) => !existing.has(source))
+        .map(([source, target]) => createLocalMappingRow({ source, mapped: target }));
+      if (additions.length === 0) {
+        return rows;
+      }
+      return [...rows, ...additions];
+    });
+  }, [selectedProfile, updateOutputMappings, workflowConfig?.sql]);
+
+  const handleMappingRowChange = useCallback(
+    (id: string, patch: Partial<OutputMappingRow>) => {
+      updateOutputMappings((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    },
+    [updateOutputMappings],
+  );
+
+  const handleRemoveMappingRow = useCallback(
+    (id: string) => {
+      updateOutputMappings((rows) => rows.filter((row) => row.id !== id));
+    },
+    [updateOutputMappings],
+  );
+
+  const handleAddMappingRow = useCallback(() => {
+    const defaultSource =
+      workflowConfig?.sql?.available_columns?.[0] ?? workflowConfig?.sql?.output_columns?.[0] ?? "";
+    updateOutputMappings((rows) => [
+      ...rows,
+      createLocalMappingRow({ source: defaultSource, mapped: defaultSource }),
+    ]);
+  }, [updateOutputMappings, workflowConfig?.sql]);
+
+  const handleAddSelectedColumns = useCallback(() => {
+    if (selectedColumns.length === 0) {
+      return;
+    }
+    updateOutputMappings((rows) => {
+      const existing = new Set(rows.map((row) => row.source));
+      const additions = selectedColumns
+        .map((column) => column.trim())
+        .filter((column) => column !== "" && !existing.has(column))
+        .map((column) => createLocalMappingRow({ source: column, mapped: column }));
+      if (additions.length === 0) {
+        return rows;
+      }
+      return [...rows, ...additions];
+    });
+    setSelectedColumns([]);
+  }, [selectedColumns, updateOutputMappings]);
+
+  const handleMoveMappingRow = useCallback(
+    (fromIndex: number, delta: number) => {
+      const toIndex = fromIndex + delta;
+      reorderOutputMappings(fromIndex, toIndex);
+    },
+    [reorderOutputMappings],
+  );
+
+  const handleColumnBatchChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+    const options = Array.from(event.target.selectedOptions).map((option) => option.value);
+    setSelectedColumns(options);
+  }, []);
+
+  const availableColumns = useMemo(() => {
+    const candidates = workflowConfig?.sql?.available_columns ?? workflowConfig?.sql?.output_columns ?? [];
+    return candidates;
+  }, [workflowConfig?.sql]);
+
+  const profileOptions = useMemo(() => {
+    return (workflowConfig?.sql?.profiles ?? []).map((profile) => ({
+      value: profile.name,
+      label: profile.description ? `${profile.name} · ${profile.description}` : profile.name,
+    }));
+  }, [workflowConfig?.sql]);
+
+  type RoutingMatrixCombo = {
+    key: string;
+    routingSetCode: string | null;
+    variantCode: string | null;
+    primaryRoutingCode: string | null;
+    secondaryRoutingCode: string | null;
+    count: number;
+  };
+
+  const timelineMatrixCombos = useMemo<RoutingMatrixCombo[]>(() => {
+    const combos = new Map<string, RoutingMatrixCombo>();
     timeline.forEach((step) => {
-      if (step.itemCode) {
-        codes.add(step.itemCode);
+      const routingSet = resolveRoutingSetCode(step);
+      const variant = resolveVariantCode(step);
+      const primary = resolvePrimaryRoutingCode(step);
+      const secondary = resolveSecondaryRoutingCode(step);
+      const key = [routingSet ?? "", variant ?? "", primary ?? "", secondary ?? ""].join("::");
+      const existing = combos.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        combos.set(key, {
+          key,
+          routingSetCode: routingSet,
+          variantCode: variant,
+          primaryRoutingCode: primary,
+          secondaryRoutingCode: secondary,
+          count: 1,
+        });
       }
     });
-    sourceItemCodes.forEach((code) => codes.add(code));
-    return Array.from(codes);
-  }, [timeline, sourceItemCodes]);
+    return Array.from(combos.values()).sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  }, [
+    resolvePrimaryRoutingCode,
+    resolveRoutingSetCode,
+    resolveSecondaryRoutingCode,
+    resolveVariantCode,
+    timeline,
+  ]);
 
-  const buildExportDataset = useCallback(() => {
-    const normalizedName = groupName.trim() || activeGroupName || "routing-group";
-    const generatedAt = new Date().toISOString();
-    const steps = timeline.map((step, index) => ({
-      seq: index + 1,
-      process_code: step.processCode,
-      description: step.description ?? "",
-      setup_time: step.setupTime ?? "",
-      run_time: step.runTime ?? "",
-      wait_time: step.waitTime ?? "",
-      item_code: step.itemCode ?? "",
-    }));
-    return {
-      groupName: normalizedName,
-      generatedAt,
-      steps,
-      itemCodes: collectItemCodes(),
+  const configuredMatrixCombos = useMemo<RoutingMatrixCombo[]>(() => {
+    if (routingMatrixDefinitions.length === 0) {
+      return [];
+    }
+    const combos = routingMatrixDefinitions.map((definition) => {
+      let count = 0;
+      timeline.forEach((step) => {
+        const routingSet = resolveRoutingSetCode(step);
+        const variant = resolveVariantCode(step);
+        const primary = resolvePrimaryRoutingCode(step);
+        const secondary = resolveSecondaryRoutingCode(step);
+        if ((definition.routingSetCode ?? null) !== (routingSet ?? null)) {
+          return;
+        }
+        if ((definition.variantCode ?? null) !== (variant ?? null)) {
+          return;
+        }
+        if ((definition.primaryRoutingCode ?? null) !== (primary ?? null)) {
+          return;
+        }
+        if ((definition.secondaryRoutingCode ?? null) !== (secondary ?? null)) {
+          return;
+        }
+        count += 1;
+      });
+      return {
+        key: definition.id,
+        routingSetCode: definition.routingSetCode,
+        variantCode: definition.variantCode,
+        primaryRoutingCode: definition.primaryRoutingCode,
+        secondaryRoutingCode: definition.secondaryRoutingCode,
+        count,
+      } satisfies RoutingMatrixCombo;
+    });
+    return combos.sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+  }, [
+    resolvePrimaryRoutingCode,
+    resolveRoutingSetCode,
+    resolveSecondaryRoutingCode,
+    resolveVariantCode,
+    routingMatrixDefinitions,
+    timeline,
+  ]);
+
+  const usingConfiguredMatrix = routingMatrixDefinitions.length > 0;
+
+  const effectiveMatrixCombos = useMemo<RoutingMatrixCombo[]>(
+    () => (usingConfiguredMatrix ? configuredMatrixCombos : timelineMatrixCombos),
+    [configuredMatrixCombos, timelineMatrixCombos, usingConfiguredMatrix],
+  );
+
+  const routingSetOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (combo.routingSetCode) {
+        values.add(combo.routingSetCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos]);
+
+  const variantOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (combo.variantCode) {
+        values.add(combo.variantCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedRoutingSet]);
+
+  const primaryRoutingOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (selectedVariantCode && combo.variantCode !== selectedVariantCode) {
+        return;
+      }
+      if (combo.primaryRoutingCode) {
+        values.add(combo.primaryRoutingCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedRoutingSet, selectedVariantCode]);
+
+  const secondaryRoutingOptions = useMemo(() => {
+    const values = new Set<string>();
+    effectiveMatrixCombos.forEach((combo) => {
+      if (selectedRoutingSet && combo.routingSetCode !== selectedRoutingSet) {
+        return;
+      }
+      if (selectedVariantCode && combo.variantCode !== selectedVariantCode) {
+        return;
+      }
+      if (selectedPrimaryRouting && combo.primaryRoutingCode !== selectedPrimaryRouting) {
+        return;
+      }
+      if (combo.secondaryRoutingCode) {
+        values.add(combo.secondaryRoutingCode);
+      }
+    });
+    return Array.from(values).sort();
+  }, [effectiveMatrixCombos, selectedPrimaryRouting, selectedRoutingSet, selectedVariantCode]);
+
+  const routingMatrixOptions = effectiveMatrixCombos;
+  const matrixSourceDescription = usingConfiguredMatrix
+    ? "설정한 라우팅 행렬을 사용합니다."
+    : "타임라인에서 자동 감지한 라우팅 행렬입니다.";
+  const matrixEmptyMessage = usingConfiguredMatrix
+    ? "구성된 라우팅 조합이 없습니다. 행을 추가해 주세요."
+    : "타임라인에 라우팅 조합 정보가 없습니다.";
+
+  useEffect(() => {
+    setSelectedVariantCode("");
+    setSelectedPrimaryRouting("");
+    setSelectedSecondaryRouting("");
+  }, [selectedRoutingSet]);
+
+  useEffect(() => {
+    setSelectedPrimaryRouting("");
+    setSelectedSecondaryRouting("");
+  }, [selectedVariantCode]);
+
+  useEffect(() => {
+    setSelectedSecondaryRouting("");
+  }, [selectedPrimaryRouting]);
+
+  const matrixFilter = useMemo(() => {
+    const filter: {
+      routingSetCode?: string | null;
+      variantCode?: string | null;
+      primaryRoutingCode?: string | null;
+      secondaryRoutingCode?: string | null;
+    } = {};
+    if (selectedRoutingSet) {
+      filter.routingSetCode = selectedRoutingSet;
+    }
+    if (selectedVariantCode) {
+      filter.variantCode = selectedVariantCode;
+    }
+    if (selectedPrimaryRouting) {
+      filter.primaryRoutingCode = selectedPrimaryRouting;
+    }
+    if (selectedSecondaryRouting) {
+      filter.secondaryRoutingCode = selectedSecondaryRouting;
+    }
+    return Object.keys(filter).length > 0 ? filter : undefined;
+  }, [selectedPrimaryRouting, selectedRoutingSet, selectedSecondaryRouting, selectedVariantCode]);
+
+  const buildExportDataset = useCallback(
+    (
+      options?: {
+        filter?: {
+          routingSetCode?: string | null;
+          variantCode?: string | null;
+          primaryRoutingCode?: string | null;
+          secondaryRoutingCode?: string | null;
+        };
+      },
+    ) => {
+      const normalizedName = groupName.trim() || activeGroupName || "routing-group";
+      const generatedAt = new Date().toISOString();
+      const aliasMap = workflowConfig?.sql?.column_aliases ?? {};
+      const defaultColumns = workflowConfig?.sql?.output_columns ?? [];
+      const matrixSource = usingConfiguredMatrix ? "configured" : "timeline";
+      const matrixSummary = effectiveMatrixCombos.map((combo) => ({
+        routing_set_code: combo.routingSetCode ?? null,
+        variant_code: combo.variantCode ?? null,
+        primary_routing_code: combo.primaryRoutingCode ?? null,
+        secondary_routing_code: combo.secondaryRoutingCode ?? null,
+        step_count: combo.count,
+      }));
+      const effectiveMappings =
+        mappingRows.length > 0
+          ? mappingRows
+          : defaultColumns.map((column) =>
+              createLocalMappingRow({ source: column, mapped: column }),
+            );
+      const normalizedMappings = effectiveMappings
+        .map((mapping) => ({
+          source: mapping.source.trim(),
+          target: (mapping.mapped ?? mapping.source).trim(),
+          type: mapping.type,
+          required: mapping.required,
+          defaultValue: mapping.defaultValue?.trim() ?? "",
+        }))
+        .filter((mapping) => mapping.target !== "" && (mapping.source !== "" || mapping.defaultValue !== ""));
+      const fallbackColumns = [
+        "ITEM_CD",
+        "CANDIDATE_ID",
+        "PROC_SEQ",
+        "PROC_CD",
+        "JOB_NM",
+        "SETUP_TIME",
+        "RUN_TIME",
+        "WAIT_TIME",
+        "ROUTING_SET_CODE",
+        "ROUTING_VARIANT",
+        "PRIMARY_ROUTING_CODE",
+        "SECONDARY_ROUTING_CODE",
+        "BRANCH_CODE",
+        "BRANCH_LABEL",
+        "BRANCH_PATH",
+        "QUEUE_TIME",
+        "MOVE_TIME",
+      ];
+
+      const filter = options?.filter;
+      const matchesFilter = (step: TimelineStep): boolean => {
+        if (!filter) {
+          return true;
+        }
+        const metadata = step.metadata;
+        const routingSet = step.routingSetCode ?? metadata?.routingSetCode ?? null;
+        if (filter.routingSetCode && routingSet !== filter.routingSetCode) {
+          return false;
+        }
+        const variant = step.variantCode ?? metadata?.variantCode ?? null;
+        if (filter.variantCode && variant !== filter.variantCode) {
+          return false;
+        }
+        const primary = step.primaryRoutingCode ?? metadata?.primaryRoutingCode ?? null;
+        if (filter.primaryRoutingCode && primary !== filter.primaryRoutingCode) {
+          return false;
+        }
+        const secondary = step.secondaryRoutingCode ?? metadata?.secondaryRoutingCode ?? null;
+        if (filter.secondaryRoutingCode && secondary !== filter.secondaryRoutingCode) {
+          return false;
+        }
+        return true;
+      };
+
+      const activeTimeline = filter ? timeline.filter(matchesFilter) : timeline;
+      const columnAccumulator = new Set<string>();
+      const stepEntries: Array<{
+        sources: Record<string, unknown>;
+        summary: { [key: string]: unknown };
+      }> = [];
+
+      activeTimeline.forEach((step, index) => {
+        const metadata = cloneTimelineMetadata(step.metadata);
+        const seq = index + 1;
+        const routingSet = step.routingSetCode ?? metadata?.routingSetCode ?? null;
+        const variant = step.variantCode ?? metadata?.variantCode ?? null;
+        const primaryRouting = step.primaryRoutingCode ?? metadata?.primaryRoutingCode ?? null;
+        const secondaryRouting = step.secondaryRoutingCode ?? metadata?.secondaryRoutingCode ?? null;
+        const branchCode = step.branchCode ?? metadata?.branchCode ?? null;
+        const branchLabel = step.branchLabel ?? metadata?.branchLabel ?? null;
+        const branchPath = step.branchPath ?? metadata?.branchPath ?? null;
+        const sqlValues = step.sqlValues ?? metadata?.sqlValues ?? null;
+        if (metadata) {
+          metadata.routingSetCode = routingSet ?? null;
+          metadata.variantCode = variant ?? null;
+          metadata.primaryRoutingCode = primaryRouting ?? null;
+          metadata.secondaryRoutingCode = secondaryRouting ?? null;
+          metadata.branchCode = branchCode ?? null;
+          metadata.branchLabel = branchLabel ?? null;
+          metadata.branchPath = branchPath ?? null;
+          metadata.sqlValues = sqlValues ? { ...sqlValues } : metadata.sqlValues ?? null;
+        }
+        const resolvedSqlValues = sqlValues ? { ...sqlValues } : null;
+        const summary = {
+          seq,
+          process_code: step.processCode,
+          description: step.description ?? null,
+          duration_min: step.runTime ?? metadata?.actualRunTime ?? metadata?.machineHours ?? null,
+          setup_time: step.setupTime ?? metadata?.actualSetupTime ?? null,
+          wait_time: step.waitTime ?? metadata?.queueTime ?? null,
+          run_time: step.runTime ?? metadata?.actualRunTime ?? metadata?.machineHours ?? null,
+          queue_time: metadata?.queueTime ?? null,
+          move_time: metadata?.moveTime ?? null,
+          item_code: step.itemCode ?? null,
+          candidate_id: step.candidateId ?? null,
+          routing_set_code: routingSet ?? null,
+          variant_code: variant ?? null,
+          primary_routing_code: primaryRouting ?? null,
+          secondary_routing_code: secondaryRouting ?? null,
+          branch_code: branchCode ?? null,
+          branch_label: branchLabel ?? null,
+          branch_path: branchPath ?? null,
+          sql_values: resolvedSqlValues,
+          metadata,
+        };
+        const sources: Record<string, unknown> = {};
+        const register = (key: string, value: unknown) => {
+          const normalizedKey = key.trim();
+          if (!normalizedKey) {
+            return;
+          }
+          columnAccumulator.add(normalizedKey);
+          if (value === undefined || value === null || value === "") {
+            return;
+          }
+          if (!(normalizedKey in sources)) {
+            sources[normalizedKey] = value;
+          }
+        };
+        register("SEQ", seq);
+        register("PROC_SEQ", seq);
+        register("PROC_CD", step.processCode);
+        register("PROC_DESC", step.description ?? null);
+        register("ITEM_CD", step.itemCode ?? null);
+        register("CANDIDATE_ID", step.candidateId ?? null);
+        if (step.setupTime != null) register("SETUP_TIME", step.setupTime);
+        if (step.runTime != null) register("RUN_TIME", step.runTime);
+        if (step.waitTime != null) register("WAIT_TIME", step.waitTime);
+        if (routingSet) register("ROUTING_SET_CODE", routingSet);
+        if (variant) register("ROUTING_VARIANT", variant);
+        if (primaryRouting) register("PRIMARY_ROUTING_CODE", primaryRouting);
+        if (secondaryRouting) register("SECONDARY_ROUTING_CODE", secondaryRouting);
+        if (branchCode) register("BRANCH_CODE", branchCode);
+        if (branchLabel) register("BRANCH_LABEL", branchLabel);
+        if (branchPath) register("BRANCH_PATH", branchPath);
+        if (metadata) {
+          register("QUEUE_TIME", metadata.queueTime ?? null);
+          register("MOVE_TIME", metadata.moveTime ?? null);
+          register("MACH_WORKED_HOURS", metadata.machineHours ?? null);
+          register("ACT_SETUP_TIME", metadata.actualSetupTime ?? null);
+          register("ACT_RUN_TIME", metadata.actualRunTime ?? null);
+          register("MFG_LT", metadata.leadTime ?? null);
+          register("RUN_TIME_QTY", metadata.runTimeQuantity ?? null);
+          register("RUN_TIME_UNIT", metadata.runTimeUnit ?? null);
+          register("INSIDE_FLAG", metadata.insideFlag ?? null);
+          register("RES_CD", metadata.resourceCode ?? null);
+          register("RES_DIS", metadata.resourceName ?? null);
+          register("TIME_UNIT", metadata.timeUnit ?? null);
+          register("MILESTONE_FLG", metadata.milestoneFlag ?? null);
+          register("INSP_FLG", metadata.inspectionFlag ?? null);
+          if (metadata.sqlValues) {
+            Object.entries(metadata.sqlValues).forEach(([key, value]) => register(key, value));
+          }
+          if (metadata.extra) {
+            Object.entries(metadata.extra).forEach(([key, value]) => register(key, value));
+          }
+        }
+        if (resolvedSqlValues) {
+          Object.entries(resolvedSqlValues).forEach(([key, value]) => register(key, value));
+        }
+        stepEntries.push({ sources, summary });
+      });
+
+      const targetColumnCandidates =
+        normalizedMappings.length > 0
+          ? normalizedMappings.map((mapping) => mapping.target)
+          : defaultColumns;
+      const targetColumns = Array.from(
+        new Set(
+          [...targetColumnCandidates, ...fallbackColumns, ...Array.from(columnAccumulator)]
+            .map((column) => column.trim())
+            .filter(Boolean),
+        ),
+      );
+      if (targetColumns.length === 0) {
+        targetColumns.push(...fallbackColumns);
+      }
+
+      const mappingLookup = new Map(
+        normalizedMappings.map((mapping) => [mapping.target, mapping] as const),
+      );
+
+      const resolveValue = (column: string, sources: Record<string, unknown>): unknown => {
+        const direct =
+          sources[column] ?? sources[column.toUpperCase()] ?? sources[column.toLowerCase()];
+        if (direct !== undefined && direct !== null) {
+          return direct;
+        }
+        const aliasKey =
+          aliasMap[column] ?? aliasMap[column.toUpperCase()] ?? aliasMap[column.toLowerCase()];
+        if (aliasKey) {
+          const aliasValue =
+            sources[aliasKey] ??
+            sources[aliasKey.toUpperCase()] ??
+            sources[aliasKey.toLowerCase()] ??
+            null;
+          if (aliasValue !== undefined && aliasValue !== null) {
+            return aliasValue;
+          }
+        }
+        const mapping =
+          mappingLookup.get(column) ??
+          mappingLookup.get(column.toUpperCase()) ??
+          mappingLookup.get(column.toLowerCase());
+        if (mapping && mapping.defaultValue !== "") {
+          return mapping.defaultValue;
+        }
+        return null;
+      };
+
+      const rows = stepEntries.map(({ sources }) => {
+        const row: Record<string, unknown> = {};
+        targetColumns.forEach((column) => {
+          row[column] = resolveValue(column, sources);
+        });
+        return row;
+      });
+      const steps = stepEntries.map(({ summary }) => summary);
+
+      return {
+        groupName: normalizedName,
+        generatedAt,
+        steps,
+        itemCodes: collectItemCodes(activeTimeline),
+        erpRequired,
+        rows,
+        columns: targetColumns,
+        profile: selectedProfile,
+        mappings: normalizedMappings,
+        matrix: matrixSummary,
+        matrixSource,
+      };
+    }, [
+      groupName,
+      activeGroupName,
+      workflowConfig?.sql,
+      mappingRows,
+      timeline,
+      collectItemCodes,
       erpRequired,
-    };
-  }, [groupName, activeGroupName, timeline, collectItemCodes, erpRequired]);
+      selectedProfile,
+      effectiveMatrixCombos,
+      usingConfiguredMatrix,
+    ]);
+      };
+  }, [
+    groupName,
+    activeGroupName,
+    workflowConfig?.sql,
+    mappingRows,
+    timeline,
+    collectItemCodes,
+    erpRequired,
+    selectedProfile,
+  ]);
 
+  const datasetPreview = useMemo(
+    () => buildExportDataset(matrixFilter ? { filter: matrixFilter } : undefined),
+    [buildExportDataset, matrixFilter],
+  );
+  const previewRowLimit = 8;
+  const previewRows = useMemo(
+    () => datasetPreview.rows.slice(0, previewRowLimit),
+    [datasetPreview.rows],
+  );
   const buildExportContent = useCallback(
     (targetFormat: FileFormat, dataset: ReturnType<typeof buildExportDataset>) => {
+      const columns = dataset.columns ?? [];
       switch (targetFormat) {
         case "CSV": {
-          const header = "seq,process_code,description,setup_time,run_time,wait_time,item_code";
-          const lines = dataset.steps.map((step) =>
-            [
-              csvEscape(step.seq),
-              csvEscape(step.process_code),
-              csvEscape(step.description),
-              csvEscape(step.setup_time),
-              csvEscape(step.run_time),
-              csvEscape(step.wait_time),
-              csvEscape(step.item_code),
-            ].join(","),
+          const header = columns.join(",");
+          const lines = dataset.rows.map((row) =>
+            columns.map((column) => csvEscape(row[column])).join(","),
           );
           const content = CSV_BOM + [header, ...lines].join(NEWLINE);
-
           return { content, extension: FORMAT_CAPABILITIES.CSV.extension, mime: FORMAT_CAPABILITIES.CSV.mime };
         }
         case "JSON": {
@@ -310,7 +971,13 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
               generated_at: dataset.generatedAt,
               erp_required: dataset.erpRequired,
               item_codes: dataset.itemCodes,
+              columns,
+              rows: dataset.rows,
               steps: dataset.steps,
+              profile: dataset.profile,
+              mappings: dataset.mappings,
+              routing_matrix: dataset.matrix,
+              matrix_source: dataset.matrixSource,
             },
             null,
             2,
@@ -318,19 +985,13 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           return { content, extension: FORMAT_CAPABILITIES.JSON.extension, mime: FORMAT_CAPABILITIES.JSON.mime };
         }
         case "XML": {
-          const rows = dataset.steps
-            .map(
-              (step) =>
-                [
-                  `  <step seq="${step.seq}" process="${xmlEscape(step.process_code)}">`,
-                  `    <description>${xmlEscape(step.description)}</description>`,
-                  `    <setup>${xmlEscape(step.setup_time)}</setup>`,
-                  `    <run>${xmlEscape(step.run_time)}</run>`,
-                  `    <wait>${xmlEscape(step.wait_time)}</wait>`,
-                  `    <item>${xmlEscape(step.item_code)}</item>`,
-                  "  </step>",
-                ].join(NEWLINE),
-            )
+          const rows = dataset.rows
+            .map((row, index) => {
+              const cells = columns
+                .map((column) => `    <${column}>${xmlEscape(row[column])}</${column}>`)
+                .join(NEWLINE);
+              return [`  <row index="${index + 1}">`, cells, "  </row>"].join(NEWLINE);
+            })
             .join(NEWLINE);
           const content =
             `<?xml version="1.0" encoding="UTF-8"?>
@@ -341,22 +1002,11 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           return { content, extension: FORMAT_CAPABILITIES.XML.extension, mime: FORMAT_CAPABILITIES.XML.mime };
         }
         case "Excel": {
-          const header =
-            "<tr><th>Seq</th><th>Process Code</th><th>Description</th><th>Setup</th><th>Run</th><th>Wait</th><th>Item</th></tr>";
-          const rows = dataset.steps
+          const header = `<tr>${columns.map((column) => `<th>${xmlEscape(column)}</th>`).join("")}</tr>`;
+          const rows = dataset.rows
             .map(
-              (step) =>
-                [
-                  "<tr>",
-                  `<td>${step.seq}</td>`,
-                  `<td>${xmlEscape(step.process_code)}</td>`,
-                  `<td>${xmlEscape(step.description)}</td>`,
-                  `<td>${xmlEscape(step.setup_time)}</td>`,
-                  `<td>${xmlEscape(step.run_time)}</td>`,
-                  `<td>${xmlEscape(step.wait_time)}</td>`,
-                  `<td>${xmlEscape(step.item_code)}</td>`,
-                  "</tr>",
-                ].join(""),
+              (row) =>
+                `<tr>${columns.map((column) => `<td>${xmlEscape(row[column])}</td>`).join("")}</tr>`,
             )
             .join("");
           const content =
@@ -399,6 +1049,8 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         destination: "server" as const,
         item_codes: dataset.itemCodes,
         step_count: dataset.steps.length,
+        routing_matrix: dataset.matrix,
+        matrix_source: dataset.matrixSource,
         ...metadata,
       };
 
@@ -771,11 +1423,320 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           ))}
         </div>
       </div>
-      <button
-        id={ROUTING_SAVE_CONTROL_IDS.primary}
-        type="button"
-        className="primary-button"
-        onClick={handleSave}
+
+  <div className="form-field">
+    <label htmlFor="routing-sql-profile">SQL 출력 프로파일</label>
+    <div className="profile-select" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <select
+        id="routing-sql-profile"
+        value={selectedProfile ?? ""}
+        onChange={(event) => handleProfileSelect(event.target.value)}
+        disabled={profileOptions.length === 0}
+      >
+        <option value="">프로파일 선택</option>
+        {profileOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <button type="button" className="secondary-button" onClick={() => handleAddMappingRow()}>
+          단일 행 추가
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => handleAppendProfile()}
+          disabled={!selectedProfile || profileOptions.length === 0}
+        >
+          템플릿 추가
+        </button>
+      </div>
+    </div>
+    {profileOptions.length === 0 ? (
+      <p className="empty-hint" style={{ marginTop: "0.35rem" }}>
+        저장된 프로파일이 없습니다. 매핑 추가 버튼으로 직접 구성하세요.
+      </p>
+    ) : null}
+      </div>
+
+  <div className="form-field">
+    <label>컬럼 매핑</label>
+    <div
+      style={{
+        display: "flex",
+        gap: "1rem",
+        alignItems: "flex-start",
+        flexWrap: "wrap",
+        marginBottom: "0.75rem",
+      }}
+    >
+      <div style={{ minWidth: "220px", flexGrow: 1 }}>
+        <label
+          htmlFor="mapping-column-selector"
+          style={{ display: "block", fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}
+        >
+          선택하여 행으로 추가할 SQL 컬럼
+        </label>
+        <select
+          id="mapping-column-selector"
+          multiple
+          size={Math.min(Math.max(availableColumns.length, 4), 12)}
+          value={selectedColumns}
+          onChange={handleColumnBatchChange}
+          style={{ width: "100%", minHeight: "8rem" }}
+        >
+          {availableColumns.map((column) => (
+            <option key={column} value={column}>
+              {column}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() => handleAddSelectedColumns()}
+          disabled={selectedColumns.length === 0}
+        >
+          선택 열 추가
+        </button>
+        <button type="button" className="secondary-button" onClick={() => handleAddMappingRow()}>
+          빈 행 추가
+        </button>
+      </div>
+    </div>
+    {mappingRows.length === 0 ? (
+      <p className="empty-hint">
+        출력할 컬럼을 설정해 주세요. 프로파일을 선택하거나 “매핑 추가” 버튼으로 직접 구성할 수 있습니다.
+      </p>
+    ) : (
+          <div className="mapping-table">
+            <table>
+              <thead>
+                <tr>
+                  <th style={{ width: "26%" }}>소스 컬럼</th>
+                  <th style={{ width: "26%" }}>대상 컬럼</th>
+                  <th style={{ width: "18%" }}>기본값</th>
+                  <th style={{ width: "12%" }}>타입</th>
+                  <th style={{ width: "8%" }}>필수</th>
+                  <th style={{ width: "10%" }} aria-label="행 작업">&nbsp;</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mappingRows.map((row, index) => {
+                  const sourceValue = row.source ?? "";
+                  const sourceOptions = availableColumns.includes(sourceValue)
+                    ? availableColumns
+                    : [sourceValue, ...availableColumns];
+                  return (
+                    <tr key={row.id}>
+                      <td>
+                        <select
+                          value={sourceValue}
+                          onChange={(event) => handleMappingRowChange(row.id, { source: event.target.value })}
+                        >
+                          {sourceOptions.map((column) => (
+                            <option key={column} value={column}>
+                              {column}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.mapped ?? ""}
+                          onChange={(event) => handleMappingRowChange(row.id, { mapped: event.target.value })}
+                          placeholder={sourceValue}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.defaultValue ?? ""}
+                          onChange={(event) =>
+                            handleMappingRowChange(row.id, { defaultValue: event.target.value })
+                          }
+                          placeholder="고정값"
+                        />
+                      </td>
+                      <td>
+                        <select
+                          value={row.type || "string"}
+                          onChange={(event) => handleMappingRowChange(row.id, { type: event.target.value })}
+                        >
+                          {COLUMN_TYPE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(row.required)}
+                          onChange={(event) => handleMappingRowChange(row.id, { required: event.target.checked })}
+                        />
+                      </td>
+                      <td className="mapping-actions">
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => handleMoveMappingRow(index, -1)}
+                          disabled={index === 0}
+                          aria-label="위로 이동"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button"
+                          onClick={() => handleMoveMappingRow(index, 1)}
+                          disabled={index === mappingRows.length - 1}
+                          aria-label="아래로 이동"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          className="icon-button icon-button--danger"
+                          onClick={() => handleRemoveMappingRow(row.id)}
+                          aria-label="행 삭제"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+    )}
+  </div>
+
+  <div className="form-field">
+    <label>주/부라우팅 조합 선택</label>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+        gap: "0.5rem",
+      }}
+    >
+      <select value={selectedRoutingSet} onChange={(event) => setSelectedRoutingSet(event.target.value)}>
+        <option value="">전체 주라우팅</option>
+        {routingSetOptions.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+      <select value={selectedVariantCode} onChange={(event) => setSelectedVariantCode(event.target.value)}>
+        <option value="">전체 Variant</option>
+        {variantOptions.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+      <select value={selectedPrimaryRouting} onChange={(event) => setSelectedPrimaryRouting(event.target.value)}>
+        <option value="">전체 주라우팅 코드</option>
+        {primaryRoutingOptions.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+      <select value={selectedSecondaryRouting} onChange={(event) => setSelectedSecondaryRouting(event.target.value)}>
+        <option value="">전체 부라우팅 코드</option>
+        {secondaryRoutingOptions.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+    </div>
+    <p className="empty-hint" style={{ marginTop: "0.5rem" }}>
+      {matrixSourceDescription}
+    </p>
+    {routingMatrixOptions.length === 0 ? (
+      <p className="empty-hint" style={{ marginTop: "0.5rem" }}>
+        {matrixEmptyMessage}
+      </p>
+    ) : (
+      <ul
+        style={{
+          marginTop: "0.5rem",
+          paddingLeft: "1.25rem",
+          fontSize: "0.85rem",
+          color: "var(--text-muted)",
+          maxHeight: "6.5rem",
+          overflowY: "auto",
+        }}
+      >
+        {routingMatrixOptions.slice(0, 5).map((combo) => (
+          <li key={combo.key}>
+            {(combo.routingSetCode ?? "기본")}
+            {" / "}
+            {(combo.variantCode ?? "-")}
+            {" / "}
+            {(combo.primaryRoutingCode ?? "-")}
+            {" / "}
+            {(combo.secondaryRoutingCode ?? "-")}
+            {` · ${combo.count}단계`}
+          </li>
+        ))}
+        {routingMatrixOptions.length > 5 ? (
+          <li>...외 {routingMatrixOptions.length - 5}개 조합</li>
+        ) : null}
+      </ul>
+    )}
+  </div>
+
+  <div className="form-field">
+    <label>SQL 행렬 미리보기</label>
+    {datasetPreview.rows.length === 0 ? (
+      <p className="empty-hint">선택한 조건에 해당하는 데이터가 없습니다.</p>
+    ) : (
+      <div className="mapping-table mapping-table--preview">
+        <table>
+          <thead>
+            <tr>
+              {datasetPreview.columns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {previewRows.map((row, rowIndex) => (
+              <tr key={`preview-${rowIndex}`}>
+                {datasetPreview.columns.map((column) => {
+                  const value = row[column];
+                  return <td key={`${column}-${rowIndex}`}>{value == null ? "" : String(value)}</td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+    {datasetPreview.rows.length > previewRowLimit ? (
+      <p className="empty-hint" style={{ marginTop: "0.5rem" }}>
+        총 {datasetPreview.rows.length}행 중 상위 {previewRowLimit}행을 표시합니다.
+      </p>
+    ) : null}
+  </div>
+
+  <button
+    id={ROUTING_SAVE_CONTROL_IDS.primary}
+    type="button"
+    className="primary-button"
+    onClick={handleSave}
         disabled={disabledSave}
       >
         <Save size={16} />
