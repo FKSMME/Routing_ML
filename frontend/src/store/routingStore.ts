@@ -3,11 +3,11 @@ import { create, type StateCreator, type StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 
 import {
-  enqueueAuditEntry,
-  readLatestRoutingWorkspaceSnapshot,
   enableRoutingPersistenceFlush,
-  subscribeToRoutingPersistenceFlush,
+  enqueueAuditEntry,
   flushRoutingPersistence,
+  readLatestRoutingWorkspaceSnapshot,
+  subscribeToRoutingPersistenceFlush,
   writeRoutingWorkspaceSnapshot,
 } from "../lib/persistence";
 
@@ -106,6 +106,27 @@ export interface RecommendationBucket {
   operations: OperationStep[];
 }
 
+export interface CustomRecommendationEntry {
+  id: string;
+  itemCode: string;
+  candidateId: string | null;
+  operation: OperationStep;
+}
+
+export interface CustomRecommendationInput {
+  itemCode: string;
+  candidateId: string | null;
+  operation: OperationStep;
+}
+
+type HiddenRecommendationMap = Record<string, string[]>;
+
+export const createRecommendationBucketKey = (itemCode: string, candidateId: string | null): string =>
+  `${itemCode}::${candidateId ?? "null"}`;
+
+export const createRecommendationOperationKey = (operation: OperationStep): string =>
+  `${operation.PROC_CD}::${operation.PROC_SEQ}`;
+
 interface TimelineSnapshot {
   steps: TimelineStep[];
   reason: SnapshotReason;
@@ -137,10 +158,19 @@ interface RoutingWorkspacePersistedState {
   lastSuccessfulTimeline: LastSuccessMap;
   lastSavedAt?: string;
   dirty: boolean;
+  customRecommendations?: CustomRecommendationEntry[];
+  hiddenRecommendationKeys?: HiddenRecommendationMap;
+
   routingMatrixDefinitions: RoutingMatrixDefinition[];
 }
 
-type PersistedSelectionState = RoutingWorkspacePersistedState;
+type PersistedSelectionState = Omit<
+  RoutingWorkspacePersistedState,
+  "customRecommendations" | "hiddenRecommendationKeys"
+> & {
+  customRecommendations: CustomRecommendationEntry[];
+  hiddenRecommendationKeys: HiddenRecommendationMap;
+};
 
 const cloneRecord = (
   input?: Record<string, unknown> | null,
@@ -168,6 +198,26 @@ const cloneStepMetadata = (metadata?: TimelineStepMetadata | null): TimelineStep
   return cloned;
 };
 
+const cloneOperation = (operation: OperationStep): OperationStep => ({
+  ...operation,
+  metadata:
+    typeof operation.metadata === "undefined"
+      ? undefined
+      : cloneStepMetadata(operation.metadata) ?? null,
+});
+
+const cloneCustomRecommendations = (entries: CustomRecommendationEntry[]): CustomRecommendationEntry[] =>
+  entries.map((entry) => ({
+    ...entry,
+    operation: cloneOperation(entry.operation),
+  }));
+
+const cloneHiddenMap = (source: HiddenRecommendationMap): HiddenRecommendationMap => {
+  const cloned: HiddenRecommendationMap = {};
+  Object.entries(source).forEach(([bucketKey, keys]) => {
+    cloned[bucketKey] = [...keys];
+  });
+  return cloned;
 const createMatrixDefinitionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `matrix-${crypto.randomUUID()}`;
@@ -513,6 +563,8 @@ const toPersistedState = (selection: PersistedSelectionState): RoutingWorkspaceP
   lastSuccessfulTimeline: cloneSuccessMap(selection.lastSuccessfulTimeline),
   lastSavedAt: selection.lastSavedAt,
   dirty: selection.dirty,
+  customRecommendations: cloneCustomRecommendations(selection.customRecommendations),
+  hiddenRecommendationKeys: cloneHiddenMap(selection.hiddenRecommendationKeys),
   routingMatrixDefinitions: cloneRoutingMatrixDefinitions(selection.routingMatrixDefinitions ?? []),
 });
 
@@ -524,6 +576,8 @@ const persistedSelector = (state: RoutingStoreState): PersistedSelectionState =>
   lastSuccessfulTimeline: state.lastSuccessfulTimeline,
   lastSavedAt: state.lastSavedAt,
   dirty: state.dirty,
+  customRecommendations: state.customRecommendations,
+  hiddenRecommendationKeys: state.hiddenRecommendationKeys,
   routingMatrixDefinitions: state.routingMatrixDefinitions,
 });
 
@@ -540,6 +594,8 @@ export interface RoutingStoreState {
   lastSavedAt?: string;
   productTabs: RoutingProductTab[];
   recommendations: RecommendationBucket[];
+  customRecommendations: CustomRecommendationEntry[];
+  hiddenRecommendationKeys: HiddenRecommendationMap;
   timeline: TimelineStep[];
   referenceMatrixColumns: ReferenceMatrixColumnKey[];
   history: HistoryState;
@@ -551,6 +607,12 @@ export interface RoutingStoreState {
   setSaving: (saving: boolean) => void;
   setERPRequired: (enabled: boolean) => void;
   loadRecommendations: (response: PredictionResponse) => void;
+  addCustomRecommendation: (input: CustomRecommendationInput) => void;
+  updateCustomRecommendation: (entryId: string, operation: OperationStep) => void;
+  removeCustomRecommendation: (entryId: string) => void;
+  hideRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
+  restoreRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
+  restoreAllRecommendations: (itemCode: string, candidateId: string | null) => void;
   setActiveProduct: (tabId: string) => void;
   setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
   reorderReferenceMatrixColumns: (source: ReferenceMatrixColumnKey, target: ReferenceMatrixColumnKey) => void;
@@ -589,6 +651,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   lastSavedAt: undefined,
   productTabs: [],
   recommendations: [],
+  customRecommendations: [],
+  hiddenRecommendationKeys: {},
   timeline: [],
   referenceMatrixColumns: [...DEFAULT_REFERENCE_MATRIX_COLUMNS],
   history: { past: [], future: [] },
@@ -706,23 +770,133 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       successMap[tab.id] = cloneTimeline(tab.timeline);
     });
 
-    set({
-      recommendations: buckets,
-      productTabs: tabs,
-      activeProductId: activeTabId,
-      activeItemId: activeTabId,
-      timeline: activeTimeline,
-      history: { past: [], future: [] },
-      dirty: false,
-      validationErrors: [],
-      sourceItemCodes: response.items.map((item) => item.ITEM_CD),
-      lastSuccessfulTimeline: successMap,
-      activeGroupId: null,
-      activeGroupName: null,
-      activeGroupVersion: undefined,
-      lastSavedAt: undefined,
+    set((state) => {
+      const validBucketKeys = new Set<string>();
+      const operationKeyMap = new Map<string, Set<string>>();
+      buckets.forEach((bucket) => {
+        const bucketKey = createRecommendationBucketKey(bucket.itemCode, bucket.candidateId);
+        validBucketKeys.add(bucketKey);
+        operationKeyMap.set(
+          bucketKey,
+          new Set(bucket.operations.map((operation) => createRecommendationOperationKey(operation))),
+        );
+      });
+
+      const filteredCustom = state.customRecommendations.filter((entry) =>
+        validBucketKeys.has(createRecommendationBucketKey(entry.itemCode, entry.candidateId)),
+      );
+
+      const filteredHidden: HiddenRecommendationMap = {};
+      Object.entries(state.hiddenRecommendationKeys).forEach(([bucketKey, keys]) => {
+        if (!validBucketKeys.has(bucketKey)) {
+          return;
+        }
+        const available = operationKeyMap.get(bucketKey);
+        if (!available) {
+          return;
+        }
+        const remaining = keys.filter((key) => available.has(key));
+        if (remaining.length > 0) {
+          filteredHidden[bucketKey] = remaining;
+        }
+      });
+
+      return {
+        recommendations: buckets,
+        productTabs: tabs,
+        activeProductId: activeTabId,
+        activeItemId: activeTabId,
+        timeline: activeTimeline,
+        history: { past: [], future: [] },
+        dirty: false,
+        validationErrors: [],
+        sourceItemCodes: response.items.map((item) => item.ITEM_CD),
+        lastSuccessfulTimeline: successMap,
+        activeGroupId: null,
+        activeGroupName: null,
+        activeGroupVersion: undefined,
+        lastSavedAt: undefined,
+        customRecommendations: filteredCustom,
+        hiddenRecommendationKeys: filteredHidden,
+      };
     });
   },
+  addCustomRecommendation: (input) =>
+    set((state) => {
+      if (!input.itemCode) {
+        return state;
+      }
+      const entry: CustomRecommendationEntry = {
+        id: createId(),
+        itemCode: input.itemCode,
+        candidateId: input.candidateId ?? null,
+        operation: cloneOperation(input.operation),
+      };
+      return {
+        customRecommendations: [...state.customRecommendations, entry],
+      };
+    }),
+  updateCustomRecommendation: (entryId, operation) =>
+    set((state) => {
+      const index = state.customRecommendations.findIndex((entry) => entry.id === entryId);
+      if (index === -1) {
+        return state;
+      }
+      const next = [...state.customRecommendations];
+      next[index] = { ...next[index], operation: cloneOperation(operation) };
+      return { customRecommendations: next };
+    }),
+  removeCustomRecommendation: (entryId) =>
+    set((state) => {
+      const next = state.customRecommendations.filter((entry) => entry.id !== entryId);
+      if (next.length === state.customRecommendations.length) {
+        return state;
+      }
+      return { customRecommendations: next };
+    }),
+  hideRecommendation: (itemCode, candidateId, operationKey) =>
+    set((state) => {
+      const bucketKey = createRecommendationBucketKey(itemCode, candidateId);
+      const existing = state.hiddenRecommendationKeys[bucketKey] ?? [];
+      if (existing.includes(operationKey)) {
+        return state;
+      }
+      return {
+        hiddenRecommendationKeys: {
+          ...state.hiddenRecommendationKeys,
+          [bucketKey]: [...existing, operationKey],
+        },
+      };
+    }),
+  restoreRecommendation: (itemCode, candidateId, operationKey) =>
+    set((state) => {
+      const bucketKey = createRecommendationBucketKey(itemCode, candidateId);
+      const existing = state.hiddenRecommendationKeys[bucketKey];
+      if (!existing) {
+        return state;
+      }
+      const remaining = existing.filter((key) => key !== operationKey);
+      if (remaining.length === existing.length) {
+        return state;
+      }
+      const nextMap = { ...state.hiddenRecommendationKeys };
+      if (remaining.length === 0) {
+        delete nextMap[bucketKey];
+      } else {
+        nextMap[bucketKey] = remaining;
+      }
+      return { hiddenRecommendationKeys: nextMap };
+    }),
+  restoreAllRecommendations: (itemCode, candidateId) =>
+    set((state) => {
+      const bucketKey = createRecommendationBucketKey(itemCode, candidateId);
+      if (!state.hiddenRecommendationKeys[bucketKey]) {
+        return state;
+      }
+      const nextMap = { ...state.hiddenRecommendationKeys };
+      delete nextMap[bucketKey];
+      return { hiddenRecommendationKeys: nextMap };
+    }),
   setActiveProduct: (tabId) =>
     set((state) => {
       const tab = state.productTabs.find((item) => item.id === tabId);
@@ -1108,6 +1282,8 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       lastSuccessfulTimeline: successMap,
       lastSavedAt: persisted.lastSavedAt,
       dirty: restoredDirty,
+      customRecommendations: cloneCustomRecommendations(persisted.customRecommendations ?? []),
+      hiddenRecommendationKeys: cloneHiddenMap(persisted.hiddenRecommendationKeys ?? {}),
       routingMatrixDefinitions: restoredMatrix,
     };
 
