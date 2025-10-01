@@ -663,11 +663,16 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
 });
 
 let snapshotTimer: ReturnType<typeof setTimeout> | undefined;
+let lastPersistedSnapshotSignature: string | null = null;
 
-const persistRoutingSnapshot = (state: RoutingWorkspacePersistedState) => {
+const computeSnapshotSignature = (state: RoutingWorkspacePersistedState): string =>
+  JSON.stringify(state);
+
+const persistRoutingSnapshot = (state: RoutingWorkspacePersistedState, signature: string) => {
   void (async () => {
     try {
       const snapshot = await writeRoutingWorkspaceSnapshot(state);
+      lastPersistedSnapshotSignature = signature;
       await enqueueAuditEntry({
         action: "routing.snapshot.save",
         message: "Saved routing workspace snapshot to IndexedDB.",
@@ -693,12 +698,16 @@ const persistRoutingSnapshot = (state: RoutingWorkspacePersistedState) => {
 
 const scheduleSnapshotSave = (selection: PersistedSelectionState) => {
   const stateForSave = toPersistedState(selection);
+  const signature = computeSnapshotSignature(stateForSave);
+  if (lastPersistedSnapshotSignature !== null && Object.is(lastPersistedSnapshotSignature, signature)) {
+    return;
+  }
   if (snapshotTimer) {
     clearTimeout(snapshotTimer);
   }
   snapshotTimer = setTimeout(() => {
     snapshotTimer = undefined;
-    persistRoutingSnapshot(stateForSave);
+    persistRoutingSnapshot(stateForSave, signature);
   }, SNAPSHOT_DEBOUNCE_MS);
 };
 
@@ -726,11 +735,19 @@ const initializeRoutingPersistence = (store: StoreApi<RoutingStoreState>) => {
       if (!update) {
         return state;
       }
+      const nextLastSavedAt = update.updatedAt ?? state.lastSavedAt;
+      if (
+        state.dirty === update.dirty &&
+        state.activeGroupVersion === update.version &&
+        Object.is(state.lastSavedAt, nextLastSavedAt)
+      ) {
+        return state;
+      }
       return {
         ...state,
         dirty: update.dirty,
         activeGroupVersion: update.version,
-        lastSavedAt: update.updatedAt ?? state.lastSavedAt,
+        lastSavedAt: nextLastSavedAt,
       };
     });
   });
@@ -760,18 +777,23 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
     const successMap = persisted.lastSuccessfulTimeline
       ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
       : {};
+    const restoredDirty = computeDirty(normalizedTimeline, successMap, activeProductId);
+    const restoredSelection: PersistedSelectionState = {
+      activeProductId,
+      activeItemId: persisted.activeItemId ?? activeProductId,
+      productTabs: restoredTabs,
+      timeline: normalizedTimeline,
+      lastSuccessfulTimeline: successMap,
+      lastSavedAt: persisted.lastSavedAt,
+      dirty: restoredDirty,
+    };
 
-      store.setState((current) => ({
-        ...current,
-        activeProductId,
-        activeItemId: persisted.activeItemId ?? activeProductId,
-        productTabs: restoredTabs,
-        timeline: normalizedTimeline,
-        history: { past: [], future: [] },
-        lastSuccessfulTimeline: successMap,
-        lastSavedAt: persisted.lastSavedAt,
-        dirty: computeDirty(normalizedTimeline, successMap, activeProductId),
-      }));
+    store.setState((current) => ({
+      ...current,
+      ...restoredSelection,
+      history: { past: [], future: [] },
+    }));
+    lastPersistedSnapshotSignature = computeSnapshotSignature(toPersistedState(restoredSelection));
 
     await enqueueAuditEntry({
       action: "routing.snapshot.restore",
