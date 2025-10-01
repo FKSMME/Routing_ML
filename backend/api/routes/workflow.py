@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -522,6 +523,25 @@ async def patch_workflow_graph(
             sql_summary["training_mapping_keys"] = sorted(mapping_keys)
         if sql_summary:
             audit_details["sql_changes"] = sql_summary
+    data_source_payload = payload_dict.get("data_source")
+    if isinstance(data_source_payload, dict):
+        data_source_summary: dict[str, object] = {}
+        access_path = data_source_payload.get("access_path")
+        if isinstance(access_path, str):
+            access_path_name = Path(access_path).name or Path(access_path).stem or ""
+            if not access_path_name:
+                access_path_name = access_path.split("/")[-1].split("\\")[-1]
+            hashed_path = hashlib.sha256(access_path.encode("utf-8")).hexdigest()[:12]
+            data_source_summary["access_path_name"] = access_path_name
+            data_source_summary["access_path_hash"] = hashed_path
+        if "default_table" in data_source_payload:
+            data_source_summary["default_table"] = data_source_payload.get("default_table")
+        if "backup_paths" in data_source_payload:
+            backup_paths = data_source_payload.get("backup_paths") or []
+            if isinstance(backup_paths, list):
+                data_source_summary["backup_count"] = len(backup_paths)
+        if data_source_summary:
+            audit_details["data_source_changes"] = data_source_summary
     audit_logger.info("workflow.graph.patch", extra=audit_details)
     return _build_response(final_snapshot)
 
