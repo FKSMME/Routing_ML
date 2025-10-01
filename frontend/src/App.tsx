@@ -18,13 +18,14 @@ import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
 import { AlgorithmWorkspace } from "@components/workspaces/AlgorithmWorkspace";
 import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
+import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore } from "@store/routingStore";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
-import { BarChart3, Database, FileOutput, Menu, Route, Settings, Workflow } from "lucide-react";
+import { BarChart3, Database, FileOutput, Menu, Route, Settings, Table, Workflow } from "lucide-react";
 import { useEffect } from "react";
 
 const NAVIGATION_ITEMS = [
@@ -39,6 +40,12 @@ const NAVIGATION_ITEMS = [
     label: "라우팅 생성",
     description: "Drag&Drop 타임라인 · 후보 공정 카드 · SAVE 패널",
     icon: <Workflow size={18} />,
+  },
+  {
+    id: "routing-matrix",
+    label: "라우팅 조합 관리",
+    description: "라우팅 세트 · Variant 조합 편집",
+    icon: <Table size={18} />,
   },
   {
     id: "algorithm",
@@ -212,6 +219,9 @@ export default function App() {
           <WorkflowGraphPanel />
         </>
       );
+      break;
+    case "routing-matrix":
+      workspace = <RoutingMatrixWorkspace />;
       break;
     case "algorithm":
       workspace = <AlgorithmWorkspace />;
