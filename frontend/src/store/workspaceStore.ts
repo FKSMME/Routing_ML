@@ -84,6 +84,7 @@ export interface OutputMappingRow {
   mapped: string;
   type: string;
   required: boolean;
+  defaultValue?: string;
 }
 
 export interface SerializedOutputMappingRow {
@@ -91,6 +92,7 @@ export interface SerializedOutputMappingRow {
   mapped: string;
   type: string;
   required: boolean;
+  defaultValue?: string;
 }
 
 interface RoutingSaveState {
@@ -382,6 +384,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         mapped: row.mapped,
         type: row.type,
         required: row.required,
+        defaultValue: row.defaultValue ?? "",
       })),
     }),
   updateOutputMappings: (updater) =>
@@ -392,6 +395,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         mapped: row.mapped,
         type: row.type,
         required: row.required,
+        defaultValue: row.defaultValue ?? "",
       })),
     })),
   reorderOutputMappings: (fromIndex, toIndex) =>
@@ -417,11 +421,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     const columnMappings: SerializedOutputMappingRow[] = state.outputMappings
       .map((row) => ({
         source: row.source.trim(),
-        mapped: row.mapped.trim(),
+        mapped: (row.mapped ?? "").trim() || row.source.trim(),
         type: row.type.trim() || "string",
         required: Boolean(row.required),
+        defaultValue: row.defaultValue?.trim() || undefined,
       }))
-      .filter((row) => row.source !== "");
+      .filter((row) => row.mapped !== "" && (row.source !== "" || (row.defaultValue ?? "") !== ""));
     return {
       exportProfile: state.exportProfile,
       erpInterfaceEnabled: state.erpInterfaceEnabled,

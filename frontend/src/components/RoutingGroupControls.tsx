@@ -218,6 +218,7 @@ const createLocalMappingRow = (initial?: Partial<OutputMappingRow>): OutputMappi
   mapped: initial?.mapped ?? initial?.source ?? "",
   type: initial?.type ?? "string",
   required: initial?.required ?? false,
+  defaultValue: initial?.defaultValue ?? "",
 });
 
 export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControlsProps = {}) {
@@ -692,8 +693,9 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           target: (mapping.mapped ?? mapping.source).trim(),
           type: mapping.type,
           required: mapping.required,
+          defaultValue: mapping.defaultValue?.trim() ?? "",
         }))
-        .filter((mapping) => mapping.source !== "" && mapping.target !== "");
+        .filter((mapping) => mapping.target !== "" && (mapping.source !== "" || mapping.defaultValue !== ""));
       const fallbackColumns = [
         "ITEM_CD",
         "CANDIDATE_ID",
@@ -863,21 +865,34 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         targetColumns.push(...fallbackColumns);
       }
 
+      const mappingLookup = new Map(
+        normalizedMappings.map((mapping) => [mapping.target, mapping] as const),
+      );
+
       const resolveValue = (column: string, sources: Record<string, unknown>): unknown => {
         const direct =
           sources[column] ?? sources[column.toUpperCase()] ?? sources[column.toLowerCase()];
-        if (direct !== undefined) {
+        if (direct !== undefined && direct !== null) {
           return direct;
         }
         const aliasKey =
           aliasMap[column] ?? aliasMap[column.toUpperCase()] ?? aliasMap[column.toLowerCase()];
         if (aliasKey) {
-          return (
+          const aliasValue =
             sources[aliasKey] ??
             sources[aliasKey.toUpperCase()] ??
             sources[aliasKey.toLowerCase()] ??
-            null
-          );
+            null;
+          if (aliasValue !== undefined && aliasValue !== null) {
+            return aliasValue;
+          }
+        }
+        const mapping =
+          mappingLookup.get(column) ??
+          mappingLookup.get(column.toUpperCase()) ??
+          mappingLookup.get(column.toLowerCase());
+        if (mapping && mapping.defaultValue !== "") {
+          return mapping.defaultValue;
         }
         return null;
       };
@@ -916,6 +931,17 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       effectiveMatrixCombos,
       usingConfiguredMatrix,
     ]);
+      };
+  }, [
+    groupName,
+    activeGroupName,
+    workflowConfig?.sql,
+    mappingRows,
+    timeline,
+    collectItemCodes,
+    erpRequired,
+    selectedProfile,
+  ]);
 
   const datasetPreview = useMemo(
     () => buildExportDataset(matrixFilter ? { filter: matrixFilter } : undefined),
@@ -1491,11 +1517,12 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
             <table>
               <thead>
                 <tr>
-                  <th style={{ width: "32%" }}>소스 컬럼</th>
-                  <th style={{ width: "32%" }}>대상 컬럼</th>
-                  <th style={{ width: "16%" }}>타입</th>
+                  <th style={{ width: "26%" }}>소스 컬럼</th>
+                  <th style={{ width: "26%" }}>대상 컬럼</th>
+                  <th style={{ width: "18%" }}>기본값</th>
+                  <th style={{ width: "12%" }}>타입</th>
                   <th style={{ width: "8%" }}>필수</th>
-                  <th style={{ width: "12%" }} aria-label="행 작업">&nbsp;</th>
+                  <th style={{ width: "10%" }} aria-label="행 작업">&nbsp;</th>
                 </tr>
               </thead>
               <tbody>
@@ -1524,6 +1551,16 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
                           value={row.mapped ?? ""}
                           onChange={(event) => handleMappingRowChange(row.id, { mapped: event.target.value })}
                           placeholder={sourceValue}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={row.defaultValue ?? ""}
+                          onChange={(event) =>
+                            handleMappingRowChange(row.id, { defaultValue: event.target.value })
+                          }
+                          placeholder="고정값"
                         />
                       </td>
                       <td>
