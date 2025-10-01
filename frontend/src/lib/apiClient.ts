@@ -302,6 +302,14 @@ const mapGroupStepToApi = (step: RoutingGroupStep) => ({
   duration_min: step.duration_min ?? null,
   setup_time: step.setup_time ?? null,
   wait_time: step.wait_time ?? null,
+  routing_set_code: step.routing_set_code ?? null,
+  variant_code: step.variant_code ?? null,
+  primary_routing_code: step.primary_routing_code ?? null,
+  secondary_routing_code: step.secondary_routing_code ?? null,
+  branch_code: step.branch_code ?? null,
+  branch_label: step.branch_label ?? null,
+  branch_path: step.branch_path ?? null,
+  sql_values: step.sql_values ?? null,
   metadata: step.metadata ?? undefined,
 });
 

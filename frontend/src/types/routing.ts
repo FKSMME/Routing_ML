@@ -1,10 +1,38 @@
-﻿export interface OperationStep {
+export interface TimelineStepMetadata {
+  routingSetCode?: string | null;
+  variantCode?: string | null;
+  primaryRoutingCode?: string | null;
+  secondaryRoutingCode?: string | null;
+  branchCode?: string | null;
+  branchLabel?: string | null;
+  branchPath?: string | null;
+  queueTime?: number | null;
+  moveTime?: number | null;
+  machineHours?: number | null;
+  actualSetupTime?: number | null;
+  actualRunTime?: number | null;
+  leadTime?: number | null;
+  runTimeQuantity?: number | null;
+  runTimeUnit?: string | null;
+  insideFlag?: string | null;
+  resourceCode?: string | null;
+  resourceName?: string | null;
+  timeUnit?: string | null;
+  milestoneFlag?: string | null;
+  inspectionFlag?: string | null;
+  sqlValues?: Record<string, unknown> | null;
+  extra?: Record<string, unknown> | null;
+  [key: string]: unknown;
+}
+
+export interface OperationStep {
   PROC_SEQ: number;
   PROC_CD: string;
   PROC_DESC?: string;
   SETUP_TIME?: number | null;
   RUN_TIME?: number | null;
   WAIT_TIME?: number | null;
+  metadata?: TimelineStepMetadata | null;
 }
 
 export interface RoutingSummary {
@@ -82,6 +110,14 @@ export interface RoutingGroupStep {
   duration_min?: number | null;
   setup_time?: number | null;
   wait_time?: number | null;
+  routing_set_code?: string | null;
+  variant_code?: string | null;
+  primary_routing_code?: string | null;
+  secondary_routing_code?: string | null;
+  branch_code?: string | null;
+  branch_label?: string | null;
+  branch_path?: string | null;
+  sql_values?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
 }
 

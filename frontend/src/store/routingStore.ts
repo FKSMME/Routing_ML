@@ -1,4 +1,4 @@
-﻿import type { OperationStep, PredictionResponse, RoutingGroupDetail } from "@app-types/routing";
+import type { OperationStep, PredictionResponse, RoutingGroupDetail, TimelineStepMetadata } from "@app-types/routing";
 import { create, type StateCreator, type StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 
@@ -64,6 +64,15 @@ export interface TimelineStep {
   waitTime?: number | null;
   itemCode?: string | null;
   candidateId?: string | null;
+  routingSetCode?: string | null;
+  variantCode?: string | null;
+  primaryRoutingCode?: string | null;
+  secondaryRoutingCode?: string | null;
+  branchCode?: string | null;
+  branchLabel?: string | null;
+  branchPath?: string | null;
+  sqlValues?: Record<string, unknown> | null;
+  metadata?: TimelineStepMetadata | null;
   positionX?: number;
   violations?: RuleViolation[];
 }
@@ -72,6 +81,15 @@ export interface DraggableOperationPayload {
   itemCode: string;
   candidateId?: string | null;
   operation: OperationStep;
+  metadata?: TimelineStepMetadata | null;
+  routingSetCode?: string | null;
+  variantCode?: string | null;
+  primaryRoutingCode?: string | null;
+  secondaryRoutingCode?: string | null;
+  branchCode?: string | null;
+  branchLabel?: string | null;
+  branchPath?: string | null;
+  sqlValues?: Record<string, unknown> | null;
 }
 
 export interface RecommendationBucket {
@@ -115,9 +133,81 @@ interface RoutingWorkspacePersistedState {
 
 type PersistedSelectionState = RoutingWorkspacePersistedState;
 
+const cloneRecord = (
+  input?: Record<string, unknown> | null,
+): Record<string, unknown> | null | undefined => {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (input === null) {
+    return null;
+  }
+  return { ...input };
+};
+
+const cloneStepMetadata = (metadata?: TimelineStepMetadata | null): TimelineStepMetadata | null => {
+  if (!metadata) {
+    return null;
+  }
+  const cloned: TimelineStepMetadata = { ...metadata };
+  if ("sqlValues" in cloned) {
+    cloned.sqlValues = cloneRecord(metadata.sqlValues) ?? null;
+  }
+  if ("extra" in cloned) {
+    cloned.extra = cloneRecord(metadata.extra) ?? null;
+  }
+  return cloned;
+};
+
+const recordsEqual = (
+  a?: Record<string, unknown> | null,
+  b?: Record<string, unknown> | null,
+): boolean => {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return !a && !b;
+  }
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (a[key] !== b[key]) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const metadataEqual = (a?: TimelineStepMetadata | null, b?: TimelineStepMetadata | null): boolean => {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return !a && !b;
+  }
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (key === "sqlValues" || key === "extra") {
+      if (!recordsEqual(
+        (a[key] as Record<string, unknown> | null | undefined) ?? null,
+        (b[key] as Record<string, unknown> | null | undefined) ?? null,
+      )) {
+        return false;
+      }
+      continue;
+    }
+    if (a[key] !== b[key]) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const cloneTimeline = (steps: TimelineStep[]): TimelineStep[] =>
   steps.map((step) => ({
     ...step,
+    sqlValues: cloneRecord(step.sqlValues) ?? null,
+    metadata: cloneStepMetadata(step.metadata),
     violations: step.violations?.map((violation) => ({ ...violation })),
   }));
 
@@ -202,7 +292,16 @@ const timelinesEqual = (a: TimelineStep[], b: TimelineStep[]): boolean => {
       stepA.runTime !== stepB.runTime ||
       stepA.waitTime !== stepB.waitTime ||
       stepA.itemCode !== stepB.itemCode ||
-      stepA.candidateId !== stepB.candidateId
+      stepA.candidateId !== stepB.candidateId ||
+      stepA.routingSetCode !== stepB.routingSetCode ||
+      stepA.variantCode !== stepB.variantCode ||
+      stepA.primaryRoutingCode !== stepB.primaryRoutingCode ||
+      stepA.secondaryRoutingCode !== stepB.secondaryRoutingCode ||
+      stepA.branchCode !== stepB.branchCode ||
+      stepA.branchLabel !== stepB.branchLabel ||
+      stepA.branchPath !== stepB.branchPath ||
+      !recordsEqual(stepA.sqlValues ?? null, stepB.sqlValues ?? null) ||
+      !metadataEqual(stepA.metadata ?? null, stepB.metadata ?? null)
     ) {
       return false;
     }
@@ -242,21 +341,92 @@ const pushHistory = (
   return { past, future: [] };
 };
 
+interface TimelineStepCreationContext {
+  itemCode?: string | null;
+  candidateId?: string | null;
+  metadata?: TimelineStepMetadata | null;
+  routingSetCode?: string | null;
+  variantCode?: string | null;
+  primaryRoutingCode?: string | null;
+  secondaryRoutingCode?: string | null;
+  branchCode?: string | null;
+  branchLabel?: string | null;
+  branchPath?: string | null;
+  sqlValues?: Record<string, unknown> | null;
+}
+
 const toTimelineStep = (
   operation: OperationStep,
-  context: { itemCode?: string | null; candidateId?: string | null },
-): TimelineStep => ({
-  id: createId(),
-  seq: operation.PROC_SEQ ?? 0,
-  processCode: operation.PROC_CD,
-  description: operation.PROC_DESC ?? null,
-  setupTime: operation.SETUP_TIME ?? null,
-  runTime: operation.RUN_TIME ?? null,
-  waitTime: operation.WAIT_TIME ?? null,
-  itemCode: context.itemCode ?? null,
-  candidateId: context.candidateId ?? null,
-  violations: [],
-});
+  context: TimelineStepCreationContext,
+): TimelineStep => {
+  const baseMetadata =
+    cloneStepMetadata(context.metadata ?? operation.metadata ?? undefined) ?? null;
+  const routingSetCode = context.routingSetCode ?? baseMetadata?.routingSetCode ?? null;
+  const variantCode = context.variantCode ?? baseMetadata?.variantCode ?? null;
+  const primaryRoutingCode =
+    context.primaryRoutingCode ?? baseMetadata?.primaryRoutingCode ?? null;
+  const secondaryRoutingCode =
+    context.secondaryRoutingCode ?? baseMetadata?.secondaryRoutingCode ?? null;
+  const branchCode = context.branchCode ?? baseMetadata?.branchCode ?? null;
+  const branchLabel = context.branchLabel ?? baseMetadata?.branchLabel ?? null;
+  const branchPath = context.branchPath ?? baseMetadata?.branchPath ?? null;
+  const sqlValuesSource = context.sqlValues ?? baseMetadata?.sqlValues ?? null;
+  const sqlValues = cloneRecord(sqlValuesSource) ?? null;
+
+  let metadata = baseMetadata;
+  if (metadata) {
+    metadata.routingSetCode = routingSetCode ?? null;
+    metadata.variantCode = variantCode ?? null;
+    metadata.primaryRoutingCode = primaryRoutingCode ?? null;
+    metadata.secondaryRoutingCode = secondaryRoutingCode ?? null;
+    metadata.branchCode = branchCode ?? null;
+    metadata.branchLabel = branchLabel ?? null;
+    metadata.branchPath = branchPath ?? null;
+    metadata.sqlValues = sqlValues ? { ...sqlValues } : null;
+  } else if (
+    routingSetCode ||
+    variantCode ||
+    primaryRoutingCode ||
+    secondaryRoutingCode ||
+    branchCode ||
+    branchLabel ||
+    branchPath ||
+    sqlValues
+  ) {
+    metadata = {
+      routingSetCode: routingSetCode ?? null,
+      variantCode: variantCode ?? null,
+      primaryRoutingCode: primaryRoutingCode ?? null,
+      secondaryRoutingCode: secondaryRoutingCode ?? null,
+      branchCode: branchCode ?? null,
+      branchLabel: branchLabel ?? null,
+      branchPath: branchPath ?? null,
+      sqlValues: sqlValues ? { ...sqlValues } : null,
+    };
+  }
+
+  return {
+    id: createId(),
+    seq: operation.PROC_SEQ ?? 0,
+    processCode: operation.PROC_CD,
+    description: operation.PROC_DESC ?? null,
+    setupTime: operation.SETUP_TIME ?? null,
+    runTime: operation.RUN_TIME ?? null,
+    waitTime: operation.WAIT_TIME ?? null,
+    itemCode: context.itemCode ?? null,
+    candidateId: context.candidateId ?? null,
+    routingSetCode,
+    variantCode,
+    primaryRoutingCode,
+    secondaryRoutingCode,
+    branchCode,
+    branchLabel,
+    branchPath,
+    sqlValues,
+    metadata,
+    violations: [],
+  };
+};
 
 const updateTabTimeline = (
   tabs: RoutingProductTab[],
@@ -393,7 +563,11 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       const operations = item.operations ?? [];
       const timeline = normalizeSequence(
         operations.map((operation) =>
-          toTimelineStep(operation, { itemCode: item.ITEM_CD, candidateId: item.CANDIDATE_ID ?? null }),
+          toTimelineStep(operation, {
+            itemCode: item.ITEM_CD,
+            candidateId: item.CANDIDATE_ID ?? null,
+            metadata: operation.metadata ?? null,
+          }),
         ),
       );
       return {
@@ -453,9 +627,21 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       const history = pushHistory(state.history, state.timeline, "insert-operation");
       const timeline = [...state.timeline];
       const insertIndex = typeof index === "number" && index >= 0 && index <= timeline.length ? index : timeline.length;
+      const contextMetadata = payload.metadata ?? payload.operation.metadata ?? null;
       const newStep = toTimelineStep(payload.operation, {
         itemCode: payload.itemCode,
         candidateId: payload.candidateId ?? null,
+        metadata: contextMetadata,
+        routingSetCode: payload.routingSetCode ?? contextMetadata?.routingSetCode ?? null,
+        variantCode: payload.variantCode ?? contextMetadata?.variantCode ?? null,
+        primaryRoutingCode:
+          payload.primaryRoutingCode ?? contextMetadata?.primaryRoutingCode ?? null,
+        secondaryRoutingCode:
+          payload.secondaryRoutingCode ?? contextMetadata?.secondaryRoutingCode ?? null,
+        branchCode: payload.branchCode ?? contextMetadata?.branchCode ?? null,
+        branchLabel: payload.branchLabel ?? contextMetadata?.branchLabel ?? null,
+        branchPath: payload.branchPath ?? contextMetadata?.branchPath ?? null,
+        sqlValues: payload.sqlValues ?? contextMetadata?.sqlValues ?? null,
       });
       timeline.splice(insertIndex, 0, newStep);
       const normalized = normalizeSequence(timeline);
@@ -528,8 +714,21 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
             SETUP_TIME: step.setup_time ?? undefined,
             RUN_TIME: step.duration_min ?? undefined,
             WAIT_TIME: step.wait_time ?? undefined,
+            metadata: (step.metadata as TimelineStepMetadata | null) ?? null,
           },
-          { itemCode: detail.item_codes[0] ?? state.activeItemId, candidateId: detail.group_id },
+          {
+            itemCode: detail.item_codes[0] ?? state.activeItemId,
+            candidateId: detail.group_id,
+            metadata: (step.metadata as TimelineStepMetadata | null) ?? null,
+            routingSetCode: step.routing_set_code ?? null,
+            variantCode: step.variant_code ?? null,
+            primaryRoutingCode: step.primary_routing_code ?? null,
+            secondaryRoutingCode: step.secondary_routing_code ?? null,
+            branchCode: step.branch_code ?? null,
+            branchLabel: step.branch_label ?? null,
+            branchPath: step.branch_path ?? null,
+            sqlValues: step.sql_values ?? null,
+          },
         ),
       );
       const timeline = normalizeSequence([...baseTimeline, ...converted]);
