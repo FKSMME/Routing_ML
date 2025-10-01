@@ -1,0 +1,1 @@
+2025-10-02 07:29:27 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: C:\Users\syyun\Documents\GitHub\Routing_ML\models\default

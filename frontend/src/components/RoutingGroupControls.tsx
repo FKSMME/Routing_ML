@@ -1002,17 +1002,6 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       usingConfiguredMatrix,
       activeProcessGroup,
     ]);
-      };
-  }, [
-    groupName,
-    activeGroupName,
-    workflowConfig?.sql,
-    mappingRows,
-    timeline,
-    collectItemCodes,
-    erpRequired,
-    selectedProfile,
-  ]);
 
   const datasetPreview = useMemo(
     () => buildExportDataset(matrixFilter ? { filter: matrixFilter } : undefined),

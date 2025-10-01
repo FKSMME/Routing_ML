@@ -1,0 +1,1 @@
+2025-10-02 07:29:26 | predictor_ml_improved | INFO     | [predictor_ml.py:1806] | apply_runtime_config | MainThread | 런타임 설정 갱신: threshold=0.82, variants=6, trim_std=True (0.04~0.96), encoding_cache=(size=20000, ttl=900s)

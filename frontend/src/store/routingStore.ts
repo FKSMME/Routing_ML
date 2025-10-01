@@ -175,6 +175,82 @@ interface RoutingWorkspacePersistedState {
   activeProcessGroupId: string | null;
 }
 
+export interface RoutingStoreState {
+  loading: boolean;
+  saving: boolean;
+  dirty: boolean;
+  erpRequired: boolean;
+  activeItemId: string | null;
+  activeProductId: string | null;
+  activeGroupId: string | null;
+  activeGroupName: string | null;
+  activeGroupVersion?: number;
+  lastSavedAt?: string;
+  productTabs: RoutingProductTab[];
+  recommendations: RecommendationBucket[];
+  customRecommendations: CustomRecommendationEntry[];
+  hiddenRecommendationKeys: HiddenRecommendationMap;
+  timeline: TimelineStep[];
+  referenceMatrixColumns: ReferenceMatrixColumnKey[];
+  history: HistoryState;
+  lastSuccessfulTimeline: LastSuccessMap;
+  routingMatrixDefinitions: RoutingMatrixDefinition[];
+  processGroups: ProcessGroupDefinition[];
+  activeProcessGroupId: string | null;
+  validationErrors: string[];
+  sourceItemCodes: string[];
+  setLoading: (loading: boolean) => void;
+  setSaving: (saving: boolean) => void;
+  setERPRequired: (enabled: boolean) => void;
+  loadRecommendations: (response: PredictionResponse) => void;
+  addCustomRecommendation: (input: CustomRecommendationInput) => void;
+  updateCustomRecommendation: (entryId: string, operation: OperationStep) => void;
+  removeCustomRecommendation: (entryId: string) => void;
+  hideRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
+  restoreRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
+  restoreAllRecommendations: (itemCode: string, candidateId: string | null) => void;
+  setActiveProduct: (tabId: string) => void;
+  setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
+  reorderReferenceMatrixColumns: (source: ReferenceMatrixColumnKey, target: ReferenceMatrixColumnKey) => void;
+  hydrateReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
+  setRoutingMatrixDefinitions: (rows: Array<Partial<RoutingMatrixDefinition>>) => void;
+  addRoutingMatrixDefinition: (row?: Partial<RoutingMatrixDefinition>) => void;
+  updateRoutingMatrixDefinition: (id: string, patch: Partial<RoutingMatrixDefinition>) => void;
+  removeRoutingMatrixDefinition: (id: string) => void;
+  hydrateRoutingMatrixDefinitions: (rows: RoutingMatrixDefinition[]) => void;
+  setProcessGroups: (groups: Array<Partial<ProcessGroupDefinition>>) => void;
+  hydrateProcessGroups: (groups: ProcessGroupDefinition[]) => void;
+  addProcessGroup: (group?: Partial<ProcessGroupDefinition>) => void;
+  updateProcessGroup: (id: string, patch: Partial<ProcessGroupDefinition>) => void;
+  removeProcessGroup: (id: string) => void;
+  addProcessGroupColumn: (
+    groupId: string,
+    column?: Partial<ProcessGroupColumnDefinition>,
+  ) => void;
+  updateProcessGroupColumn: (
+    groupId: string,
+    columnId: string,
+    patch: Partial<ProcessGroupColumnDefinition>,
+  ) => void;
+  removeProcessGroupColumn: (groupId: string, columnId: string) => void;
+  setProcessGroupFixedValue: (groupId: string, columnKey: string, value: unknown) => void;
+  setActiveProcessGroup: (groupId: string | null) => void;
+  insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
+  moveStep: (stepId: string, toIndex: number) => void;
+  removeStep: (stepId: string) => void;
+  clearValidation: () => void;
+  setValidationErrors: (errors: string[]) => void;
+  pushValidationError: (message: string) => void;
+  applyGroup: (detail: RoutingGroupDetail, strategy?: MergeStrategy) => void;
+  setActiveGroup: (meta: { id: string; name: string; version?: number; updatedAt?: string } | null) => void;
+  setDirty: (dirty: boolean) => void;
+  setLastSavedAt: (timestamp?: string) => void;
+  captureLastSuccess: () => void;
+  rollbackToLastSuccess: () => void;
+  undo: () => void;
+  redo: () => void;
+}
+
 type PersistedSelectionState = Omit<
   RoutingWorkspacePersistedState,
   "customRecommendations" | "hiddenRecommendationKeys"
@@ -229,6 +305,8 @@ const cloneHiddenMap = (source: HiddenRecommendationMap): HiddenRecommendationMa
     cloned[bucketKey] = [...keys];
   });
   return cloned;
+};
+
 const createMatrixDefinitionId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return `matrix-${crypto.randomUUID()}`;
@@ -762,82 +840,6 @@ const persistedSelector = (state: RoutingStoreState): PersistedSelectionState =>
   processGroups: state.processGroups,
   activeProcessGroupId: state.activeProcessGroupId,
 });
-
-export interface RoutingStoreState {
-  loading: boolean;
-  saving: boolean;
-  dirty: boolean;
-  erpRequired: boolean;
-  activeItemId: string | null;
-  activeProductId: string | null;
-  activeGroupId: string | null;
-  activeGroupName: string | null;
-  activeGroupVersion?: number;
-  lastSavedAt?: string;
-  productTabs: RoutingProductTab[];
-  recommendations: RecommendationBucket[];
-  customRecommendations: CustomRecommendationEntry[];
-  hiddenRecommendationKeys: HiddenRecommendationMap;
-  timeline: TimelineStep[];
-  referenceMatrixColumns: ReferenceMatrixColumnKey[];
-  history: HistoryState;
-  lastSuccessfulTimeline: LastSuccessMap;
-  routingMatrixDefinitions: RoutingMatrixDefinition[];
-  processGroups: ProcessGroupDefinition[];
-  activeProcessGroupId: string | null;
-  validationErrors: string[];
-  sourceItemCodes: string[];
-  setLoading: (loading: boolean) => void;
-  setSaving: (saving: boolean) => void;
-  setERPRequired: (enabled: boolean) => void;
-  loadRecommendations: (response: PredictionResponse) => void;
-  addCustomRecommendation: (input: CustomRecommendationInput) => void;
-  updateCustomRecommendation: (entryId: string, operation: OperationStep) => void;
-  removeCustomRecommendation: (entryId: string) => void;
-  hideRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
-  restoreRecommendation: (itemCode: string, candidateId: string | null, operationKey: string) => void;
-  restoreAllRecommendations: (itemCode: string, candidateId: string | null) => void;
-  setActiveProduct: (tabId: string) => void;
-  setReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
-  reorderReferenceMatrixColumns: (source: ReferenceMatrixColumnKey, target: ReferenceMatrixColumnKey) => void;
-  hydrateReferenceMatrixColumns: (columns: Array<string | ReferenceMatrixColumnKey>) => void;
-  setRoutingMatrixDefinitions: (rows: Array<Partial<RoutingMatrixDefinition>>) => void;
-  addRoutingMatrixDefinition: (row?: Partial<RoutingMatrixDefinition>) => void;
-  updateRoutingMatrixDefinition: (id: string, patch: Partial<RoutingMatrixDefinition>) => void;
-  removeRoutingMatrixDefinition: (id: string) => void;
-  hydrateRoutingMatrixDefinitions: (rows: RoutingMatrixDefinition[]) => void;
-  setProcessGroups: (groups: Array<Partial<ProcessGroupDefinition>>) => void;
-  hydrateProcessGroups: (groups: ProcessGroupDefinition[]) => void;
-  addProcessGroup: (group?: Partial<ProcessGroupDefinition>) => void;
-  updateProcessGroup: (id: string, patch: Partial<ProcessGroupDefinition>) => void;
-  removeProcessGroup: (id: string) => void;
-  addProcessGroupColumn: (
-    groupId: string,
-    column?: Partial<ProcessGroupColumnDefinition>,
-  ) => void;
-  updateProcessGroupColumn: (
-    groupId: string,
-    columnId: string,
-    patch: Partial<ProcessGroupColumnDefinition>,
-  ) => void;
-  removeProcessGroupColumn: (groupId: string, columnId: string) => void;
-  setProcessGroupFixedValue: (groupId: string, columnKey: string, value: unknown) => void;
-  setActiveProcessGroup: (groupId: string | null) => void;
-  insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
-  moveStep: (stepId: string, toIndex: number) => void;
-  removeStep: (stepId: string) => void;
-  clearValidation: () => void;
-  setValidationErrors: (errors: string[]) => void;
-  pushValidationError: (message: string) => void;
-  applyGroup: (detail: RoutingGroupDetail, strategy?: MergeStrategy) => void;
-  setActiveGroup: (meta: { id: string; name: string; version?: number; updatedAt?: string } | null) => void;
-  setDirty: (dirty: boolean) => void;
-  setLastSavedAt: (timestamp?: string) => void;
-  captureLastSuccess: () => void;
-  rollbackToLastSuccess: () => void;
-  undo: () => void;
-  redo: () => void;
-}
 
 const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   loading: false,

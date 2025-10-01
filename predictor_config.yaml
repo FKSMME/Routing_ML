@@ -1,0 +1,15 @@
+# Predictor configuration template
+similarity_threshold: 0.8
+max_candidates: 4
+min_candidates: 3
+hnsw:
+  ef_search: 64
+  top_k: 25
+aggregation:
+  weighting:
+    setup_time: trimmed_std
+    mach_worked_hours: trimmed_std
+  trim_percent: 0.05
+sql_export:
+  table_candidates: dbo.routing_candidates
+  table_operations: dbo.routing_candidate_operations

@@ -423,19 +423,12 @@ function NodeSettingsDialog({
                   <label className="space-y-2 text-sm">
                     <span className="text-muted-strong">레이블</span>
                     <input
-        <div className="blueprint-modal__content">
-          <section className="space-y-3">
-            <h3 className="text-lg font-semibold text-accent-strong">기본 정보</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-2 text-sm">
-                <span className="text-muted-strong">레이블</span>
-                <input
-                  type="text"
-                  value={form.label}
-                  onChange={(event) => onChange({ ...form, label: event.target.value })}
-                  className="form-control"
-                />
-              </label>
+                      type="text"
+                      value={form.label}
+                      onChange={(event) => onChange({ ...form, label: event.target.value })}
+                      className="form-control"
+                    />
+                  </label>
               <label className="space-y-2 text-sm">
                 <span className="text-muted-strong">상태</span>
                 <input
