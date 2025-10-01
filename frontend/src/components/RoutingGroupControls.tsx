@@ -253,6 +253,9 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const activeGroupName = useRoutingStore((state) => state.activeGroupName);
   const routingMatrixDefinitions = useRoutingStore((state) => state.routingMatrixDefinitions);
+  const processGroups = useRoutingStore((state) => state.processGroups);
+  const activeProcessGroupId = useRoutingStore((state) => state.activeProcessGroupId);
+  const setActiveProcessGroup = useRoutingStore((state) => state.setActiveProcessGroup);
 
   const { saveGroup, loadGroup, fetchGroups } = useRoutingGroups();
 
@@ -636,6 +639,36 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     setSelectedSecondaryRouting("");
   }, [selectedPrimaryRouting]);
 
+  const activeProcessGroup = useMemo(
+    () => processGroups.find((group) => group.id === activeProcessGroupId) ?? null,
+    [activeProcessGroupId, processGroups],
+  );
+
+  const processGroupColumnSummary = useMemo(
+    () =>
+      activeProcessGroup
+        ? activeProcessGroup.defaultColumns.map((column) => column.key).join(", ")
+        : "",
+    [activeProcessGroup],
+  );
+
+  const processGroupFixedValueEntries = useMemo(
+    () => (activeProcessGroup ? Object.entries(activeProcessGroup.fixedValues) : []),
+    [activeProcessGroup],
+  );
+
+  useEffect(() => {
+    if (!activeProcessGroup) {
+      return;
+    }
+    setGroupName((previous) => {
+      if (previous.trim().length > 0) {
+        return previous;
+      }
+      return activeProcessGroup.name;
+    });
+  }, [activeProcessGroup]);
+
   const matrixFilter = useMemo(() => {
     const filter: {
       routingSetCode?: string | null;
@@ -681,6 +714,30 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         secondary_routing_code: combo.secondaryRoutingCode ?? null,
         step_count: combo.count,
       }));
+      const processGroupSnapshot = activeProcessGroup
+        ? {
+            id: activeProcessGroup.id,
+            name: activeProcessGroup.name,
+            type: activeProcessGroup.type,
+            description: activeProcessGroup.description ?? null,
+            defaultColumns: activeProcessGroup.defaultColumns.map((column) => ({ ...column })),
+            fixedValues: { ...activeProcessGroup.fixedValues },
+          }
+        : null;
+      const processGroupColumnKeys = processGroupSnapshot
+        ? processGroupSnapshot.defaultColumns.map((column) => column.key).filter((key) => key.trim().length > 0)
+        : [];
+      const processGroupFixedValueLookup = new Map<string, unknown>();
+      if (processGroupSnapshot) {
+        Object.entries(processGroupSnapshot.fixedValues).forEach(([key, value]) => {
+          if (!key) {
+            return;
+          }
+          processGroupFixedValueLookup.set(key, value);
+          processGroupFixedValueLookup.set(key.toUpperCase(), value);
+          processGroupFixedValueLookup.set(key.toLowerCase(), value);
+        });
+      }
       const effectiveMappings =
         mappingRows.length > 0
           ? mappingRows
@@ -856,7 +913,12 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
           : defaultColumns;
       const targetColumns = Array.from(
         new Set(
-          [...targetColumnCandidates, ...fallbackColumns, ...Array.from(columnAccumulator)]
+          [
+            ...targetColumnCandidates,
+            ...fallbackColumns,
+            ...Array.from(columnAccumulator),
+            ...processGroupColumnKeys,
+          ]
             .map((column) => column.trim())
             .filter(Boolean),
         ),
@@ -900,7 +962,14 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       const rows = stepEntries.map(({ sources }) => {
         const row: Record<string, unknown> = {};
         targetColumns.forEach((column) => {
-          row[column] = resolveValue(column, sources);
+          let resolved = resolveValue(column, sources);
+          if ((resolved === null || resolved === undefined) && processGroupSnapshot) {
+            const fallbackValue = processGroupFixedValueLookup.get(column);
+            if (fallbackValue !== undefined) {
+              resolved = fallbackValue;
+            }
+          }
+          row[column] = resolved ?? null;
         });
         return row;
       });
@@ -918,6 +987,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         mappings: normalizedMappings,
         matrix: matrixSummary,
         matrixSource,
+        processGroup: processGroupSnapshot,
       };
     }, [
       groupName,
@@ -930,6 +1000,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       selectedProfile,
       effectiveMatrixCombos,
       usingConfiguredMatrix,
+      activeProcessGroup,
     ]);
       };
   }, [
@@ -978,6 +1049,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
               mappings: dataset.mappings,
               routing_matrix: dataset.matrix,
               matrix_source: dataset.matrixSource,
+              process_group: dataset.processGroup,
             },
             null,
             2,
@@ -1051,6 +1123,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         step_count: dataset.steps.length,
         routing_matrix: dataset.matrix,
         matrix_source: dataset.matrixSource,
+        process_group: dataset.processGroup,
         ...metadata,
       };
 
@@ -1359,6 +1432,49 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
 
   const content = (
     <div className="routing-save-panel__content">
+      <div className="form-field">
+        <label htmlFor="routing-process-group">공정 그룹 정의</label>
+        <select
+          id="routing-process-group"
+          value={activeProcessGroupId ?? ""}
+          onChange={(event) =>
+            setActiveProcessGroup(event.target.value ? event.target.value : null)
+          }
+        >
+          <option value="">선택하지 않음</option>
+          {processGroups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name} · {group.type === "machining" ? "가공" : "후처리"}
+            </option>
+          ))}
+        </select>
+        {activeProcessGroup ? (
+          <div style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            <div>기본 컬럼: {processGroupColumnSummary || "없음"}</div>
+            {processGroupFixedValueEntries.length > 0 ? (
+              <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem" }}>
+                {processGroupFixedValueEntries.map(([key, value]) => (
+                  <li key={key} style={{ lineHeight: 1.4 }}>
+                    {key}: {
+                      value === null
+                        ? "(null)"
+                        : typeof value === "object"
+                        ? JSON.stringify(value)
+                        : String(value)
+                    }
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div style={{ marginTop: "0.35rem" }}>고정값 없음</div>
+            )}
+          </div>
+        ) : (
+          <p className="empty-hint" style={{ marginTop: "0.35rem" }}>
+            공정 그룹 워크스페이스에서 그룹을 생성하고 선택하세요.
+          </p>
+        )}
+      </div>
       <div className="form-field">
         <label htmlFor="routing-group-name">그룹 이름</label>
         <input

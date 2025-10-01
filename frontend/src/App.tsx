@@ -18,6 +18,7 @@ import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
 import { AlgorithmWorkspace } from "@components/workspaces/AlgorithmWorkspace";
 import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
+import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
 import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
@@ -25,7 +26,7 @@ import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore } from "@store/routingStore";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
-import { BarChart3, Database, FileOutput, Menu, Route, Settings, Table, Workflow } from "lucide-react";
+import { BarChart3, Database, FileOutput, Layers, Menu, Route, Settings, Table, Workflow } from "lucide-react";
 import { useEffect } from "react";
 
 const NAVIGATION_ITEMS = [
@@ -46,6 +47,12 @@ const NAVIGATION_ITEMS = [
     label: "라우팅 조합 관리",
     description: "라우팅 세트 · Variant 조합 편집",
     icon: <Table size={18} />,
+  },
+  {
+    id: "process-groups",
+    label: "공정 그룹 관리",
+    description: "대체 경로 컬럼 · 후공정 고정값 구성",
+    icon: <Layers size={18} />,
   },
   {
     id: "algorithm",
@@ -222,6 +229,9 @@ export default function App() {
       break;
     case "routing-matrix":
       workspace = <RoutingMatrixWorkspace />;
+      break;
+    case "process-groups":
+      workspace = <ProcessGroupsWorkspace />;
       break;
     case "algorithm":
       workspace = <AlgorithmWorkspace />;
