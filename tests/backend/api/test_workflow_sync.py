@@ -150,3 +150,46 @@ async def test_code_generation_response_contains_tensorboard_paths(workflow_sync
     assert tensorboard_paths["projector_config"].endswith("projector_config.json")
     assert tensorboard_paths["vectors"].endswith("vectors.tsv")
     assert tensorboard_paths["metadata"].endswith("metadata.tsv")
+
+
+@pytest.mark.anyio
+async def test_data_source_patch_includes_audit_summary(workflow_sync_context, monkeypatch):
+    _, user, _ = workflow_sync_context
+
+    records: list[tuple[str, dict[str, object] | None]] = []
+
+    def _capture_audit(message: str, *args, **kwargs) -> None:
+        records.append((message, kwargs.get("extra")))
+
+    monkeypatch.setattr(workflow_module.audit_logger, "info", _capture_audit)
+
+    patch_model = WorkflowConfigPatch.parse_obj(
+        {
+            "data_source": {
+                "access_path": "C:/sensitive/path/AccessConfig.accdb",
+                "default_table": "dbo_NEW_TABLE",
+                "backup_paths": [
+                    "\\\\server\\share\\backup1.accdb",
+                    "/var/tmp/backup2.accdb",
+                ],
+            }
+        }
+    )
+
+    await workflow_module.patch_workflow_graph(patch_model, current_user=user)
+
+    assert records, "Expected audit log to be emitted"
+    _, audit_extra = records[-1]
+    assert audit_extra is not None
+
+    data_source_summary = audit_extra.get("data_source_changes")
+    assert isinstance(data_source_summary, dict)
+    assert data_source_summary["access_path_name"] == "AccessConfig.accdb"
+    assert data_source_summary["default_table"] == "dbo_NEW_TABLE"
+    assert data_source_summary["backup_count"] == 2
+
+    access_hash = data_source_summary.get("access_path_hash")
+    assert isinstance(access_hash, str) and len(access_hash) == 12
+    assert "C:/sensitive/path/AccessConfig.accdb" not in repr(data_source_summary)
+
+    assert "data_source" in audit_extra.get("updated_keys", [])
