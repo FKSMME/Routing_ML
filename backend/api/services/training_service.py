@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 import pandas as pd
 
 from backend.api.config import get_settings
+from backend.api.services.master_data_service import ACCESS_FILE_SUFFIXES, MasterDataService
 from backend.maintenance.model_registry import list_versions, register_version
 from common.config_store import (
     DataSourceConfig,
@@ -330,12 +331,26 @@ class TrainingService:
         }
 
     def _load_dataset(self, data_cfg: DataSourceConfig) -> pd.DataFrame:
-        access_path = Path(data_cfg.access_path)
+        access_path = Path(data_cfg.access_path).expanduser()
+        suffix = access_path.suffix.lower()
+
         if access_path.exists():
-            if access_path.suffix.lower() == ".csv":
+            if suffix == ".csv":
                 return pd.read_csv(access_path)
-            if access_path.suffix.lower() == ".parquet":
+            if suffix == ".parquet":
                 return pd.read_parquet(access_path)
+
+        if suffix in ACCESS_FILE_SUFFIXES:
+            validator = MasterDataService(cache_ttl_seconds=0)
+            validated_path = validator.validate_access_path(access_path)
+            try:
+                with validated_path.open("rb") as handle:
+                    handle.read(1)
+            except OSError as exc:
+                raise RuntimeError(
+                    f"Access 데이터베이스 파일을 열 수 없습니다: {validated_path}"
+                ) from exc
+
         # Access 혹은 미지원 포맷일 경우 빈 데이터프레임 생성
         columns = ["ITEM_CD", "ITEM_NM"]
         columns.extend(data_cfg.column_overrides.get("features", []))
@@ -615,15 +630,7 @@ class TrainingService:
             )
             if version_directory and version_directory.exists():
                 shutil.rmtree(version_directory, ignore_errors=True)
-            failure = self._status.to_dict()
-            failure.update(
-                {
-                    "job_id": job_id,
-                    "version": resolved_version,
-                    "error": str(exc),
-                }
-            )
-            return failure
+            raise
 
     def _update_status(
         self,
