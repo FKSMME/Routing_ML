@@ -2495,6 +2495,95 @@
   background: color-mix(in oklch, var(--accent-soft) 45%, transparent);
 }
 
+.profile-select {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-select select {
+  flex: 1;
+  min-height: 2.25rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+  background: color-mix(in oklch, var(--surface-card) 92%, transparent);
+}
+
+.mapping-table {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.mapping-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mapping-table th,
+.mapping-table td {
+  border-bottom: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+  padding: 0.45rem 0.55rem;
+  background: color-mix(in oklch, var(--surface) 97%, transparent);
+}
+
+.mapping-table th {
+  background: color-mix(in oklch, var(--surface-card) 88%, transparent);
+  font-weight: 600;
+  text-align: left;
+}
+
+.mapping-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mapping-table select,
+.mapping-table input[type="text"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  background: color-mix(in oklch, var(--surface) 98%, transparent);
+}
+
+.mapping-actions {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: flex-end;
+}
+
+.icon-button {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--surface) 98%, transparent);
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-emphasis);
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-button--danger {
+  border-color: color-mix(in oklch, var(--red-500) 75%, var(--border));
+  color: var(--red-500);
+}
+
+.empty-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.4rem 0;
+}
+
 .save-shortcuts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
