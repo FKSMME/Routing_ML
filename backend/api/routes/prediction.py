@@ -120,14 +120,17 @@ async def predict(
             with_visualization=request.with_visualization,
         )
         exported_files: List[str] = []
+        export_errors: List[Dict[str, str]] = []
         if request.export_formats:
-            exported_files = prediction_service.export_predictions(
+            exported_files, export_errors = prediction_service.export_predictions(
                 items,
                 candidates,
                 request.export_formats,
             )
             if exported_files:
                 metrics["exported_files"] = exported_files
+            if export_errors:
+                metrics["export_errors"] = export_errors
         audit_logger.info(
             "predict",
             extra={
@@ -136,6 +139,7 @@ async def predict(
                 "returned_candidates": len(candidates),
                 "threshold": metrics.get("threshold"),
                 "exported_files": exported_files,
+                "export_errors": export_errors,
             },
         )
         return PredictionResponse(items=items, candidates=candidates, metrics=metrics)
@@ -273,13 +277,20 @@ async def trigger_routing_interface(
         formats.append("erp")
 
     try:
-        exported_files = prediction_service.export_predictions(routings, [], formats)
+        exported_files, export_errors = prediction_service.export_predictions(
+            routings, [], formats
+        )
     except FileNotFoundError as exc:
         logger.error("ERP 내보내기 경로 오류: %s", exc)
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - 방어
         logger.exception("ERP 내보내기 실패")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)) from exc
+
+    if export_errors:
+        logger.warning(
+            "ERP 내보내기 중 일부 파일 저장 실패", extra={"errors": export_errors}
+        )
 
     erp_path = next(
         (path for path in exported_files if Path(path).name.startswith("routing_erp_")),

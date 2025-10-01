@@ -10,6 +10,9 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
   }
 
   const exportedFiles = metrics.exported_files ?? [];
+  const exportErrors = metrics.export_errors ?? [];
+  const hasExportedFiles = exportedFiles.length > 0;
+  const hasExportErrors = exportErrors.length > 0;
   const visualization = metrics.visualization ?? {};
   const tensorboardPath =
     typeof visualization.tensorboard === "string" && visualization.tensorboard.trim() !== ""
@@ -35,6 +38,25 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
       </header>
 
       <div className="space-y-4 text-sm">
+        <div
+          className="rounded-2xl bg-surface-weak/70 p-4"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-xs font-semibold text-accent-strong">내보내기 상태</p>
+          {hasExportErrors ? (
+            <p className="text-xs font-medium" style={{ color: "var(--danger-strong)" }}>
+              총 {exportErrors.length}건의 내보내기 실패가 발생했습니다. 관리자에게 전달하여 조치하세요.
+            </p>
+          ) : hasExportedFiles ? (
+            <p className="text-xs text-accent">
+              총 {exportedFiles.length}개의 파일을 성공적으로 저장했습니다.
+            </p>
+          ) : (
+            <p className="text-xs text-muted">최근 실행된 내보내기 결과가 없습니다.</p>
+          )}
+        </div>
+
         <div>
           <p className="text-xs font-semibold text-accent-strong">TensorBoard Projector</p>
           <p className="text-xs text-muted">
@@ -55,13 +77,29 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
           </p>
         </div>
 
-        {exportedFiles.length > 0 ? (
+        {hasExportedFiles ? (
           <div>
             <p className="text-xs font-semibold text-accent-strong">내보낸 파일</p>
             <ul className="space-y-1 text-xs text-muted">
               {exportedFiles.map((file) => (
                 <li key={file} className="truncate">{file}</li>
               ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {hasExportErrors ? (
+          <div>
+            <p className="text-xs font-semibold text-accent-strong">실패한 내보내기</p>
+            <ul className="space-y-1 text-[11px]" style={{ color: "var(--danger-strong)" }}>
+              {exportErrors.map((entry, index) => {
+                const key = `${entry.path}-${index}`;
+                return (
+                  <li key={key} className="truncate">
+                    <span className="font-semibold">{entry.path}:</span> {entry.error}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ) : null}

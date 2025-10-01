@@ -73,6 +73,11 @@ export interface FeatureWeightsSummary {
   profiles?: FeatureWeightsProfile[];
 }
 
+export interface ExportErrorInfo {
+  path: string;
+  error: string;
+}
+
 export interface PredictionMetrics {
   requested_items?: number;
   returned_routings?: number;
@@ -82,6 +87,7 @@ export interface PredictionMetrics {
   feature_weights?: FeatureWeightsSummary;
   visualization?: VisualizationSnapshot;
   exported_files?: string[];
+  export_errors?: ExportErrorInfo[];
 }
 
 export interface PredictionResponse {
