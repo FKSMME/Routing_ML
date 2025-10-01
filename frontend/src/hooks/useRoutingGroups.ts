@@ -3,6 +3,7 @@
   RoutingGroupDetail,
   RoutingGroupListResponse,
   RoutingGroupStep,
+  TimelineStepMetadata,
 } from "@app-types/routing";
 import {
   createRoutingGroup,
@@ -32,15 +33,49 @@ interface LoadGroupResult {
   detail?: RoutingGroupDetail;
 }
 
+const cloneStepMetadata = (metadata?: TimelineStepMetadata | null): TimelineStepMetadata | null => {
+  if (!metadata) {
+    return null;
+  }
+  const cloned: TimelineStepMetadata = { ...metadata };
+  if (metadata.sqlValues) {
+    cloned.sqlValues = { ...metadata.sqlValues };
+  } else if (metadata.sqlValues === null) {
+    cloned.sqlValues = null;
+  }
+  if (metadata.extra) {
+    cloned.extra = { ...metadata.extra };
+  } else if (metadata.extra === null) {
+    cloned.extra = null;
+  }
+  return cloned;
+};
+
 const buildSteps = (timeline: ReturnType<typeof useRoutingStore.getState>["timeline"]): RoutingGroupStep[] =>
-  timeline.map((step, index) => ({
-    seq: index + 1,
-    process_code: step.processCode,
-    description: step.description ?? null,
-    duration_min: step.runTime ?? null,
-    setup_time: step.setupTime ?? null,
-    wait_time: step.waitTime ?? null,
-  }));
+  timeline.map((step, index) => {
+    const metadata = cloneStepMetadata(step.metadata);
+    const sqlValues = step.sqlValues ?? metadata?.sqlValues ?? null;
+    if (metadata && sqlValues && metadata.sqlValues !== sqlValues) {
+      metadata.sqlValues = { ...sqlValues };
+    }
+    return {
+      seq: index + 1,
+      process_code: step.processCode,
+      description: step.description ?? null,
+      duration_min: step.runTime ?? null,
+      setup_time: step.setupTime ?? null,
+      wait_time: step.waitTime ?? null,
+      routing_set_code: step.routingSetCode ?? metadata?.routingSetCode ?? null,
+      variant_code: step.variantCode ?? metadata?.variantCode ?? null,
+      primary_routing_code: step.primaryRoutingCode ?? metadata?.primaryRoutingCode ?? null,
+      secondary_routing_code: step.secondaryRoutingCode ?? metadata?.secondaryRoutingCode ?? null,
+      branch_code: step.branchCode ?? metadata?.branchCode ?? null,
+      branch_label: step.branchLabel ?? metadata?.branchLabel ?? null,
+      branch_path: step.branchPath ?? metadata?.branchPath ?? null,
+      sql_values: sqlValues ?? null,
+      metadata: metadata ?? undefined,
+    };
+  });
 
 export function useRoutingGroups() {
   const timeline = useRoutingStore((state) => state.timeline);
