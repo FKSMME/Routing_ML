@@ -85,6 +85,9 @@ export function CandidatePanel() {
   const lastSavedAt = useRoutingStore((state) => state.lastSavedAt);
   const erpRequired = useRoutingStore((state) => state.erpRequired);
   const setERPRequired = useRoutingStore((state) => state.setERPRequired);
+  const processGroups = useRoutingStore((state) => state.processGroups);
+  const activeProcessGroupId = useRoutingStore((state) => state.activeProcessGroupId);
+  const setActiveProcessGroup = useRoutingStore((state) => state.setActiveProcessGroup);
 
   const [filter, setFilter] = useState("");
   const [formState, setFormState] = useState<CustomFormState>(createEmptyFormState);
@@ -166,6 +169,11 @@ export function CandidatePanel() {
   const visibleCount = bucket ? visibleOperations.length : 0;
   const customCount = bucketCustomEntries.length;
   const hiddenCount = hiddenOperations.length;
+
+  const activeProcessGroup = useMemo(
+    () => processGroups.find((group) => group.id === activeProcessGroupId) ?? null,
+    [activeProcessGroupId, processGroups],
+  );
 
   useEffect(() => {
     setFormState(createEmptyFormState());
@@ -329,6 +337,33 @@ export function CandidatePanel() {
             <span>{erpRequired ? "ON" : "OFF"}</span>
           </button>
           <p className="candidate-summary__hint">INTERFACE 저장과 Access 연동은 ERP ON 시에만 가능합니다.</p>
+        </div>
+        <div className="candidate-summary__item candidate-summary__item--group">
+          <span className="candidate-summary__label">공정 그룹</span>
+          <div className="candidate-summary__value candidate-summary__value--select">
+            <select
+              value={activeProcessGroupId ?? ""}
+              onChange={(event) =>
+                setActiveProcessGroup(event.target.value ? event.target.value : null)
+              }
+              aria-label="활성 공정 그룹 선택"
+            >
+              <option value="">선택되지 않음</option>
+              {processGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name} · {group.type === "machining" ? "가공" : "후처리"}
+                </option>
+              ))}
+            </select>
+          </div>
+          {activeProcessGroup ? (
+            <span className="candidate-summary__hint">
+              기본 컬럼 {activeProcessGroup.defaultColumns.length}개 · 고정값
+              {` ${Object.keys(activeProcessGroup.fixedValues).length}개`}
+            </span>
+          ) : (
+            <span className="candidate-summary__hint">워크스페이스에서 공정 그룹을 구성하세요.</span>
+          )}
         </div>
       </div>
 

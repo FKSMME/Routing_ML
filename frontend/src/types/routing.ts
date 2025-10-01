@@ -121,6 +121,29 @@ export interface RoutingGroupStep {
   metadata?: Record<string, unknown> | null;
 }
 
+export type ProcessGroupType = "machining" | "post-process";
+
+export type ProcessGroupColumnType = "string" | "number" | "boolean" | "date";
+
+export interface ProcessGroupColumnDefinition {
+  id: string;
+  key: string;
+  label: string;
+  dataType: ProcessGroupColumnType;
+  description?: string | null;
+}
+
+export interface ProcessGroupDefinition {
+  id: string;
+  name: string;
+  description?: string | null;
+  type: ProcessGroupType;
+  defaultColumns: ProcessGroupColumnDefinition[];
+  fixedValues: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface RoutingGroupCreatePayload {
   groupName: string;
   itemCodes: string[];

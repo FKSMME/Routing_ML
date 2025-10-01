@@ -1,4 +1,13 @@
-import type { OperationStep, PredictionResponse, RoutingGroupDetail, TimelineStepMetadata } from "@app-types/routing";
+import type {
+  OperationStep,
+  PredictionResponse,
+  ProcessGroupColumnDefinition,
+  ProcessGroupColumnType,
+  ProcessGroupDefinition,
+  ProcessGroupType,
+  RoutingGroupDetail,
+  TimelineStepMetadata,
+} from "@app-types/routing";
 import { create, type StateCreator, type StoreApi } from "zustand";
 import { shallow } from "zustand/shallow";
 
@@ -162,6 +171,8 @@ interface RoutingWorkspacePersistedState {
   hiddenRecommendationKeys?: HiddenRecommendationMap;
 
   routingMatrixDefinitions: RoutingMatrixDefinition[];
+  processGroups: ProcessGroupDefinition[];
+  activeProcessGroupId: string | null;
 }
 
 type PersistedSelectionState = Omit<
@@ -267,6 +278,173 @@ const routingMatrixArraysEqual = (
     const rowA = a[index];
     const rowB = b[index];
     if (rowA.id !== rowB.id || !routingMatrixDefinitionsEqual(rowA, rowB)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const PROCESS_GROUP_COLUMN_TYPES: ProcessGroupColumnType[] = [
+  "string",
+  "number",
+  "boolean",
+  "date",
+];
+
+const createProcessGroupId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `pg-${crypto.randomUUID()}`;
+  }
+  return `pg-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+};
+
+const createProcessGroupColumnId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `pgcol-${crypto.randomUUID()}`;
+  }
+  return `pgcol-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+};
+
+const sanitizeProcessGroupColumnKey = (value?: string | null): string => {
+  if (value === undefined || value === null) {
+    return "";
+  }
+  return `${value}`.trim();
+};
+
+const isProcessGroupColumnType = (value: string): value is ProcessGroupColumnType =>
+  PROCESS_GROUP_COLUMN_TYPES.includes(value as ProcessGroupColumnType);
+
+const createProcessGroupColumnDefinition = (
+  value?: Partial<ProcessGroupColumnDefinition>,
+): ProcessGroupColumnDefinition => {
+  const keySource = sanitizeProcessGroupColumnKey(value?.key ?? value?.label ?? "");
+  const normalizedKey = keySource || `COLUMN_${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const labelSource = sanitizeProcessGroupColumnKey(value?.label ?? normalizedKey);
+  const normalizedLabel = labelSource || normalizedKey;
+  const description =
+    value?.description === undefined ? null : value.description ?? null;
+
+  return {
+    id: value?.id ?? createProcessGroupColumnId(),
+    key: normalizedKey,
+    label: normalizedLabel,
+    dataType: isProcessGroupColumnType(value?.dataType ?? "")
+      ? (value?.dataType as ProcessGroupColumnType)
+      : "string",
+    description,
+  };
+};
+
+const normalizeProcessGroupFixedValues = (
+  values: Record<string, unknown> | undefined,
+  columns: ProcessGroupColumnDefinition[],
+): Record<string, unknown> => {
+  if (!values) {
+    return {};
+  }
+  const allowedKeys = new Set(columns.map((column) => column.key));
+  const normalized: Record<string, unknown> = {};
+  Object.entries(values).forEach(([rawKey, rawValue]) => {
+    const key = sanitizeProcessGroupColumnKey(rawKey);
+    if (!key) {
+      return;
+    }
+    if (allowedKeys.size > 0 && !allowedKeys.has(key)) {
+      return;
+    }
+    normalized[key] = rawValue ?? null;
+  });
+  return normalized;
+};
+
+const sanitizeProcessGroupName = (value?: string | null): string => {
+  const trimmed = sanitizeProcessGroupColumnKey(value);
+  return trimmed.length > 0 ? trimmed : "새 공정 그룹";
+};
+
+const createProcessGroupDefinition = (
+  value?: Partial<ProcessGroupDefinition>,
+): ProcessGroupDefinition => {
+  const columns = (value?.defaultColumns ?? []).map((column) =>
+    createProcessGroupColumnDefinition(column),
+  );
+  const now = new Date().toISOString();
+  return {
+    id: value?.id ?? createProcessGroupId(),
+    name: sanitizeProcessGroupName(value?.name),
+    description: value?.description ?? null,
+    type: (value?.type ?? "machining") as ProcessGroupType,
+    defaultColumns: columns,
+    fixedValues: normalizeProcessGroupFixedValues(value?.fixedValues, columns),
+    createdAt: value?.createdAt ?? now,
+    updatedAt: value?.updatedAt ?? now,
+  };
+};
+
+const cloneProcessGroupDefinitions = (
+  groups: ProcessGroupDefinition[],
+): ProcessGroupDefinition[] =>
+  groups.map((group) => ({
+    ...group,
+    defaultColumns: group.defaultColumns.map((column) => ({ ...column })),
+    fixedValues: { ...group.fixedValues },
+  }));
+
+const processGroupColumnsEqual = (
+  a: ProcessGroupColumnDefinition[],
+  b: ProcessGroupColumnDefinition[],
+): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const colA = a[index];
+    const colB = b[index];
+    if (
+      colA.id !== colB.id ||
+      colA.key !== colB.key ||
+      colA.label !== colB.label ||
+      colA.dataType !== colB.dataType ||
+      (colA.description ?? null) !== (colB.description ?? null)
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const processGroupDefinitionsEqual = (
+  a: ProcessGroupDefinition,
+  b: ProcessGroupDefinition,
+): boolean => {
+  if (
+    a.name !== b.name ||
+    (a.description ?? null) !== (b.description ?? null) ||
+    a.type !== b.type
+  ) {
+    return false;
+  }
+  if (!processGroupColumnsEqual(a.defaultColumns, b.defaultColumns)) {
+    return false;
+  }
+  if (!recordsEqual(a.fixedValues, b.fixedValues)) {
+    return false;
+  }
+  return true;
+};
+
+const processGroupArraysEqual = (
+  a: ProcessGroupDefinition[],
+  b: ProcessGroupDefinition[],
+): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const groupA = a[index];
+    const groupB = b[index];
+    if (groupA.id !== groupB.id || !processGroupDefinitionsEqual(groupA, groupB)) {
       return false;
     }
   }
@@ -566,6 +744,8 @@ const toPersistedState = (selection: PersistedSelectionState): RoutingWorkspaceP
   customRecommendations: cloneCustomRecommendations(selection.customRecommendations),
   hiddenRecommendationKeys: cloneHiddenMap(selection.hiddenRecommendationKeys),
   routingMatrixDefinitions: cloneRoutingMatrixDefinitions(selection.routingMatrixDefinitions ?? []),
+  processGroups: cloneProcessGroupDefinitions(selection.processGroups ?? []),
+  activeProcessGroupId: selection.activeProcessGroupId ?? null,
 });
 
 const persistedSelector = (state: RoutingStoreState): PersistedSelectionState => ({
@@ -579,6 +759,8 @@ const persistedSelector = (state: RoutingStoreState): PersistedSelectionState =>
   customRecommendations: state.customRecommendations,
   hiddenRecommendationKeys: state.hiddenRecommendationKeys,
   routingMatrixDefinitions: state.routingMatrixDefinitions,
+  processGroups: state.processGroups,
+  activeProcessGroupId: state.activeProcessGroupId,
 });
 
 export interface RoutingStoreState {
@@ -601,6 +783,8 @@ export interface RoutingStoreState {
   history: HistoryState;
   lastSuccessfulTimeline: LastSuccessMap;
   routingMatrixDefinitions: RoutingMatrixDefinition[];
+  processGroups: ProcessGroupDefinition[];
+  activeProcessGroupId: string | null;
   validationErrors: string[];
   sourceItemCodes: string[];
   setLoading: (loading: boolean) => void;
@@ -622,6 +806,23 @@ export interface RoutingStoreState {
   updateRoutingMatrixDefinition: (id: string, patch: Partial<RoutingMatrixDefinition>) => void;
   removeRoutingMatrixDefinition: (id: string) => void;
   hydrateRoutingMatrixDefinitions: (rows: RoutingMatrixDefinition[]) => void;
+  setProcessGroups: (groups: Array<Partial<ProcessGroupDefinition>>) => void;
+  hydrateProcessGroups: (groups: ProcessGroupDefinition[]) => void;
+  addProcessGroup: (group?: Partial<ProcessGroupDefinition>) => void;
+  updateProcessGroup: (id: string, patch: Partial<ProcessGroupDefinition>) => void;
+  removeProcessGroup: (id: string) => void;
+  addProcessGroupColumn: (
+    groupId: string,
+    column?: Partial<ProcessGroupColumnDefinition>,
+  ) => void;
+  updateProcessGroupColumn: (
+    groupId: string,
+    columnId: string,
+    patch: Partial<ProcessGroupColumnDefinition>,
+  ) => void;
+  removeProcessGroupColumn: (groupId: string, columnId: string) => void;
+  setProcessGroupFixedValue: (groupId: string, columnKey: string, value: unknown) => void;
+  setActiveProcessGroup: (groupId: string | null) => void;
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
@@ -658,6 +859,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   history: { past: [], future: [] },
   lastSuccessfulTimeline: {},
   routingMatrixDefinitions: [],
+  processGroups: [],
+  activeProcessGroupId: null,
   validationErrors: [],
   sourceItemCodes: [],
   setLoading: (loading) => set({ loading }),
@@ -735,6 +938,238 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         return state;
       }
       return { routingMatrixDefinitions: normalized };
+    }),
+  setProcessGroups: (groups) =>
+    set((state) => {
+      const normalized = groups.map((group) => createProcessGroupDefinition(group));
+      const activeExists = state.activeProcessGroupId
+        ? normalized.some((group) => group.id === state.activeProcessGroupId)
+        : false;
+      const nextActive = activeExists
+        ? state.activeProcessGroupId
+        : normalized[0]?.id ?? null;
+      if (
+        processGroupArraysEqual(normalized, state.processGroups) &&
+        state.activeProcessGroupId === nextActive
+      ) {
+        return state;
+      }
+      return { processGroups: normalized, activeProcessGroupId: nextActive };
+    }),
+  hydrateProcessGroups: (groups) =>
+    set((state) => {
+      const normalized = groups.map((group) => createProcessGroupDefinition(group));
+      if (processGroupArraysEqual(normalized, state.processGroups)) {
+        return state;
+      }
+      const activeExists = state.activeProcessGroupId
+        ? normalized.some((group) => group.id === state.activeProcessGroupId)
+        : false;
+      return {
+        processGroups: normalized,
+        activeProcessGroupId: activeExists
+          ? state.activeProcessGroupId
+          : normalized[0]?.id ?? null,
+      };
+    }),
+  addProcessGroup: (group) =>
+    set((state) => {
+      const definition = createProcessGroupDefinition(group);
+      return {
+        processGroups: [...state.processGroups, definition],
+        activeProcessGroupId: definition.id,
+      };
+    }),
+  updateProcessGroup: (id, patch) =>
+    set((state) => {
+      const index = state.processGroups.findIndex((group) => group.id === id);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.processGroups[index];
+      const updated = createProcessGroupDefinition({
+        ...previous,
+        ...patch,
+        id,
+        createdAt: previous.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+      if (processGroupDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.processGroups];
+      next[index] = updated;
+      return { processGroups: next };
+    }),
+  removeProcessGroup: (id) =>
+    set((state) => {
+      const next = state.processGroups.filter((group) => group.id !== id);
+      if (next.length === state.processGroups.length) {
+        return state;
+      }
+      const nextActive = state.activeProcessGroupId === id ? next[0]?.id ?? null : state.activeProcessGroupId;
+      return {
+        processGroups: next,
+        activeProcessGroupId: nextActive ?? null,
+      };
+    }),
+  addProcessGroupColumn: (groupId, column) =>
+    set((state) => {
+      const index = state.processGroups.findIndex((group) => group.id === groupId);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.processGroups[index];
+      const updatedColumns = [
+        ...previous.defaultColumns,
+        createProcessGroupColumnDefinition(column),
+      ];
+      const updated = createProcessGroupDefinition({
+        ...previous,
+        defaultColumns: updatedColumns,
+        fixedValues: previous.fixedValues,
+        id: previous.id,
+        createdAt: previous.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+      if (processGroupDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.processGroups];
+      next[index] = updated;
+      return { processGroups: next };
+    }),
+  updateProcessGroupColumn: (groupId, columnId, patch) =>
+    set((state) => {
+      const index = state.processGroups.findIndex((group) => group.id === groupId);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.processGroups[index];
+      const columnIndex = previous.defaultColumns.findIndex((column) => column.id === columnId);
+      if (columnIndex === -1) {
+        return state;
+      }
+      const currentColumn = previous.defaultColumns[columnIndex];
+      const patchedColumn = createProcessGroupColumnDefinition({
+        ...currentColumn,
+        ...patch,
+        id: columnId,
+      });
+      if (
+        currentColumn.key === patchedColumn.key &&
+        currentColumn.label === patchedColumn.label &&
+        currentColumn.dataType === patchedColumn.dataType &&
+        (currentColumn.description ?? null) === (patchedColumn.description ?? null)
+      ) {
+        return state;
+      }
+      const updatedColumns = [...previous.defaultColumns];
+      updatedColumns[columnIndex] = patchedColumn;
+      const fixedValues = { ...previous.fixedValues };
+      if (currentColumn.key !== patchedColumn.key) {
+        const preserved = fixedValues[currentColumn.key];
+        delete fixedValues[currentColumn.key];
+        if (preserved !== undefined) {
+          fixedValues[patchedColumn.key] = preserved;
+        }
+      }
+      const updated = createProcessGroupDefinition({
+        ...previous,
+        defaultColumns: updatedColumns,
+        fixedValues,
+        id: previous.id,
+        createdAt: previous.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+      if (processGroupDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.processGroups];
+      next[index] = updated;
+      return { processGroups: next };
+    }),
+  removeProcessGroupColumn: (groupId, columnId) =>
+    set((state) => {
+      const index = state.processGroups.findIndex((group) => group.id === groupId);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.processGroups[index];
+      const removedColumn = previous.defaultColumns.find((column) => column.id === columnId);
+      if (!removedColumn) {
+        return state;
+      }
+      const updatedColumns = previous.defaultColumns.filter((column) => column.id !== columnId);
+      const fixedValues = { ...previous.fixedValues };
+      delete fixedValues[removedColumn.key];
+      const updated = createProcessGroupDefinition({
+        ...previous,
+        defaultColumns: updatedColumns,
+        fixedValues,
+        id: previous.id,
+        createdAt: previous.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+      if (processGroupDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.processGroups];
+      next[index] = updated;
+      return { processGroups: next };
+    }),
+  setProcessGroupFixedValue: (groupId, columnKey, value) =>
+    set((state) => {
+      const index = state.processGroups.findIndex((group) => group.id === groupId);
+      if (index === -1) {
+        return state;
+      }
+      const previous = state.processGroups[index];
+      const key = sanitizeProcessGroupColumnKey(columnKey);
+      if (!key) {
+        return state;
+      }
+      if (!previous.defaultColumns.some((column) => column.key === key)) {
+        return state;
+      }
+      const fixedValues = { ...previous.fixedValues };
+      if (value === undefined) {
+        if (!(key in fixedValues)) {
+          return state;
+        }
+        delete fixedValues[key];
+      } else if (Object.is(fixedValues[key], value)) {
+        return state;
+      } else {
+        fixedValues[key] = value;
+      }
+      const updated = createProcessGroupDefinition({
+        ...previous,
+        fixedValues,
+        id: previous.id,
+        createdAt: previous.createdAt,
+        updatedAt: new Date().toISOString(),
+      });
+      if (processGroupDefinitionsEqual(previous, updated)) {
+        return state;
+      }
+      const next = [...state.processGroups];
+      next[index] = updated;
+      return { processGroups: next };
+    }),
+  setActiveProcessGroup: (groupId) =>
+    set((state) => {
+      if (groupId && !state.processGroups.some((group) => group.id === groupId)) {
+        const fallback = state.processGroups[0]?.id ?? null;
+        if (state.activeProcessGroupId === fallback) {
+          return state;
+        }
+        return { activeProcessGroupId: fallback };
+      }
+      if (state.activeProcessGroupId === groupId) {
+        return state;
+      }
+      return { activeProcessGroupId: groupId };
     }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({
@@ -1274,6 +1709,10 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
     const restoredMatrix = persisted.routingMatrixDefinitions
       ? cloneRoutingMatrixDefinitions(persisted.routingMatrixDefinitions)
       : [];
+    const restoredGroups = persisted.processGroups
+      ? cloneProcessGroupDefinitions(persisted.processGroups)
+      : [];
+    const restoredActiveProcessGroupId = persisted.activeProcessGroupId ?? null;
     const restoredSelection: PersistedSelectionState = {
       activeProductId,
       activeItemId: persisted.activeItemId ?? activeProductId,
@@ -1285,6 +1724,8 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       customRecommendations: cloneCustomRecommendations(persisted.customRecommendations ?? []),
       hiddenRecommendationKeys: cloneHiddenMap(persisted.hiddenRecommendationKeys ?? {}),
       routingMatrixDefinitions: restoredMatrix,
+      processGroups: restoredGroups,
+      activeProcessGroupId: restoredActiveProcessGroupId,
     };
 
     store.setState((current) => ({
@@ -1292,6 +1733,10 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       ...restoredSelection,
       history: { past: [], future: [] },
       routingMatrixDefinitions: restoredMatrix,
+      processGroups: restoredGroups,
+      activeProcessGroupId: restoredGroups.some((group) => group.id === restoredActiveProcessGroupId)
+        ? restoredActiveProcessGroupId
+        : restoredGroups[0]?.id ?? null,
     }));
     lastPersistedSnapshotSignature = computeSnapshotSignature(toPersistedState(restoredSelection));
 
