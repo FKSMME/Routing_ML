@@ -125,30 +125,47 @@ class TrainingService:
             metrics.setdefault("metric_history", [])
             return metrics
 
-        feature_weights = self._load_json_artifact(version_path, "feature_weights.json")
+        warnings = metrics.setdefault("warnings", [])
+
+        feature_weights = self._load_json_artifact(
+            version_path, "feature_weights.json", warnings=warnings
+        )
         if feature_weights:
             metrics.setdefault("feature_weights", feature_weights)
 
-        training_metrics = self._load_json_artifact(version_path, "training_metrics.json")
+        training_metrics = self._load_json_artifact(
+            version_path, "training_metrics.json", warnings=warnings
+        )
         if training_metrics:
             metrics.setdefault("training_metrics", training_metrics)
 
-        training_metadata = self._load_json_artifact(version_path, "training_metadata.json")
+        training_metadata = self._load_json_artifact(
+            version_path, "training_metadata.json", warnings=warnings
+        )
         if training_metadata:
             metrics.setdefault("training_metadata", training_metadata)
 
-        feature_statistics = self._load_json_artifact(version_path, "feature_statistics.json")
+        feature_statistics = self._load_json_artifact(
+            version_path, "feature_statistics.json", warnings=warnings
+        )
         if feature_statistics:
             metrics.setdefault("feature_statistics", feature_statistics)
 
         metrics.setdefault("run_history", self._build_run_history())
         metrics.setdefault(
             "metric_history",
-            self._build_metric_history(version_path, training_metrics, training_metadata),
+            self._build_metric_history(
+                version_path, training_metrics, training_metadata, warnings=warnings
+            ),
         )
+
+        if not warnings:
+            metrics.pop("warnings", None)
         return metrics
 
-    def _load_json_artifact(self, root: Path, filename: str) -> Optional[Dict[str, Any]]:
+    def _load_json_artifact(
+        self, root: Path, filename: str, *, warnings: Optional[List[str]] = None
+    ) -> Optional[Dict[str, Any]]:
         """Attempt to load an artifact JSON file from several known locations."""
 
         for candidate in self._artifact_candidates(root, filename):
@@ -157,6 +174,15 @@ class TrainingService:
                     return json.loads(candidate.read_text(encoding="utf-8"))
                 except json.JSONDecodeError:
                     logger.warning("JSON 파싱 실패", extra={"artifact": str(candidate)})
+                except (OSError, PermissionError) as exc:
+                    logger.warning(
+                        "아티팩트 읽기 실패",
+                        extra={"artifact": str(candidate), "error": str(exc)},
+                    )
+                    if warnings is not None:
+                        warnings.append(
+                            f"{filename}을(를) 읽을 수 없습니다: {exc}"
+                        )
         return None
 
     def _artifact_candidates(self, root: Path, filename: str) -> Iterable[Path]:
@@ -206,14 +232,20 @@ class TrainingService:
         version_root: Path,
         _training_metrics: Optional[Dict[str, Any]],
         _training_metadata: Optional[Dict[str, Any]],
+        *,
+        warnings: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
         """Collect representative training metrics for visualization."""
 
         snapshots: List[Tuple[str, Dict[str, Any], Optional[Dict[str, Any]]]] = []
 
         def append_snapshot(label: str, root: Path) -> None:
-            metrics_payload = self._load_json_artifact(root, "training_metrics.json")
-            metadata_payload = self._load_json_artifact(root, "training_metadata.json")
+            metrics_payload = self._load_json_artifact(
+                root, "training_metrics.json", warnings=warnings
+            )
+            metadata_payload = self._load_json_artifact(
+                root, "training_metadata.json", warnings=warnings
+            )
             if metrics_payload or metadata_payload:
                 snapshots.append((label, metrics_payload or {}, metadata_payload))
 
