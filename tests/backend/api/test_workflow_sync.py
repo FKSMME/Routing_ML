@@ -150,3 +150,17 @@ async def test_code_generation_response_contains_tensorboard_paths(workflow_sync
     assert tensorboard_paths["projector_config"].endswith("projector_config.json")
     assert tensorboard_paths["vectors"].endswith("vectors.tsv")
     assert tensorboard_paths["metadata"].endswith("metadata.tsv")
+
+
+@pytest.mark.anyio
+async def test_patch_accepts_mdb_access_path(workflow_sync_context):
+    store, user, _ = workflow_sync_context
+
+    patch_model = WorkflowConfigPatch.parse_obj(
+        {"data_source": {"access_path": "C:/data/source.mdb"}}
+    )
+
+    response = await workflow_module.patch_workflow_graph(patch_model, current_user=user)
+
+    assert response.data_source.access_path == "C:/data/source.mdb"
+    assert store.get_data_source_config().access_path == "C:/data/source.mdb"
