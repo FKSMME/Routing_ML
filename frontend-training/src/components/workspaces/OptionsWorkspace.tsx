@@ -29,6 +29,7 @@ const DEFAULT_OPTIONS = {
   standard: ["zscore"] as string[],
   similarity: ["cosine", "profile"] as string[],
   accessPath: "",
+  tensorboardUrl: "",
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -207,6 +208,7 @@ export function OptionsWorkspace() {
   const accessPath = workspaceOptions.data.accessPath;
   const accessTable = workspaceOptions.data.accessTable;
   const erpInterface = workspaceOptions.data.erpInterface;
+  const tensorboardUrl = workspaceOptions.data.tensorboardUrl;
   const columnMappings = workspaceOptions.data.columnMappings;
   const [availableTables, setAvailableTables] = useState<string[]>([]);
   const [testedPath, setTestedPath] = useState<string>("");
@@ -233,6 +235,7 @@ export function OptionsWorkspace() {
         setAvailableTables([]);
         setTestedPath("");
         const erpEnabled = Boolean((options.erp_interface as boolean | undefined) ?? (data.export?.erp_interface_enabled as boolean | undefined));
+        const initialTensorboardUrl = (options.tensorboard_url as string | undefined) ?? DEFAULT_OPTIONS.tensorboardUrl;
 
         let mappingRows = dedupeMappings(normalizeMappingCandidate((options.column_mappings as unknown) ?? null));
         let mappingSource = "workspace";
@@ -260,6 +263,7 @@ export function OptionsWorkspace() {
             accessPath: initialPath,
             accessTable: savedTable,
             erpInterface: erpEnabled,
+            tensorboardUrl: initialTensorboardUrl,
             columnMappings: mappingRows,
           },
           { dirty: false, lastSyncedAt: data.updated_at },
@@ -275,6 +279,7 @@ export function OptionsWorkspace() {
               accessPath: DEFAULT_OPTIONS.accessPath,
               accessTable: "",
               erpInterface: false,
+              tensorboardUrl: DEFAULT_OPTIONS.tensorboardUrl,
               columnMappings: [makeRow({ scope: "Routing Generation" })],
             },
             { dirty: false },
@@ -770,6 +775,18 @@ export function OptionsWorkspace() {
             </article>
           </div>
           <div className="options-access">
+            <label>
+              <span>TensorBoard URL</span>
+              <input
+                type="text"
+                value={tensorboardUrl}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  updateWorkspaceOptions((prev) => ({ ...prev, tensorboardUrl: value }));
+                }}
+                placeholder="http://localhost:6006"
+              />
+            </label>
             <label>
               <span>Access database path</span>
               <input

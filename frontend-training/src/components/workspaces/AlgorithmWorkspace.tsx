@@ -199,6 +199,8 @@ const createReactFlowEdges = (edges: WorkflowGraphEdge[]): WorkflowEdge[] =>
     id: edge.id,
     source: edge.source,
     target: edge.target,
+    sourceHandle: null,
+    targetHandle: null,
     label: edge.label,
     animated: edge.kind !== "data-flow",
     data: { kind: edge.kind },

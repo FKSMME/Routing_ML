@@ -62,6 +62,7 @@ export interface WorkspaceOptionsSnapshot {
   accessTable: string;
   columnMappings: WorkspaceColumnMappingRow[];
   erpInterface: boolean;
+  tensorboardUrl: string;
 }
 
 interface WorkspaceOptionsState {
@@ -199,6 +200,7 @@ const createDefaultWorkspaceOptions = (): WorkspaceOptionsSnapshot => ({
   accessTable: "",
   columnMappings: [],
   erpInterface: useRoutingStore.getState().erpRequired,
+  tensorboardUrl: "",
 });
 
 const createWorkspaceOptionsState = (): WorkspaceOptionsState => ({
@@ -538,6 +540,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         access_path: accessPath,
         access_table: accessTable || null,
         erp_interface: current.erpInterface,
+        tensorboard_url: current.tensorboardUrl.trim(),
         column_mappings: payloadMappings,
       },
       access: {

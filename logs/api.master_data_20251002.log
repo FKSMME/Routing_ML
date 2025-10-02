@@ -1,0 +1,752 @@
+2025-10-02 08:37:59 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:38:03 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:39:33 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:39:47 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:40:08 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:40:12 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:42:33 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:42:40 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:46:53 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:46:57 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:47:09 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:47:13 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 08:47:21 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 08:47:25 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 09:02:04 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 09:02:09 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 09:23:49 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 09:23:54 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 09:27:44 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 09:27:49 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:13:44 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:13:49 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:17:07 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:17:11 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:17:16 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:17:20 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:17:24 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:17:29 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:17:33 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:17:37 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
+2025-10-02 10:21:16 | api.master_data | ERROR    | [master_data.py:47] | get_master_data_tree | MainThread | /master-data/tree 조회 실패: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+Traceback (most recent call last):
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2675, in execute
+    cur.execute(sql, *args)
+pyodbc.Error: ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 457, in _run_query
+    df = pd.read_sql(query, conn, params=list(prepared_params))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 706, in read_sql
+    return pandas_sql.read_query(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2739, in read_query
+    cursor = self.execute(sql, params)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\syyun\Documents\GitHub\Routing_ML\.venv\Lib\site-packages\pandas\io\sql.py", line 2687, in execute
+    raise ex from exc
+pandas.errors.DatabaseError: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\routes\master_data.py", line 36, in get_master_data_tree
+    data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 242, in get_tree
+    df = self._load_item_master()
+         ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\api\services\master_data_service.py", line 84, in _load_item_master
+    df = database.fetch_item_master(columns=ITEM_MASTER_COLUMNS)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 605, in fetch_item_master
+    df = _fetch_item_master_cached(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 475, in _fetch_item_master_cached
+    return _load_item_master(columns_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 470, in _load_item_master
+    return _run_query(query, ())
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\syyun\Documents\GitHub\Routing_ML\backend\database.py", line 466, in _run_query
+    raise RuntimeError(f"[DB] 쿼리 실패: {exc}") from exc
+RuntimeError: [DB] 쿼리 실패: Execution failed on sql 'SELECT ITEM_CD, ITEM_NM, ITEM_SPEC, ADDITIONAL_SPEC, ITEM_MATERIAL, ITEM_GRP1, ITEM_GRP1NM, ITEM_GRP2, ITEM_GRP2NM, GROUP1, GROUP2, GROUP3, INSRT_DT, MODI_DT FROM dbo_BI_ITEM_INFO_VIEW': ('07002', '[07002] [Microsoft][ODBC Microsoft Access 드라이버] 매개 변수가 너무 적습니다. 4이(가) 필요합니다. (-3010) (SQLExecDirectW)')
+2025-10-02 10:21:20 | api.master_data | WARNING  | [master_data.py:70] | get_master_data_item | MainThread | /master-data/items/ITEM-001 404: 해당 품목을 찾을 수 없습니다: ITEM-001
