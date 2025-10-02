@@ -4,6 +4,7 @@ import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
+import { LoginPage } from "@components/auth/LoginPage";
 import { MasterDataWorkspace } from "@components/master-data/MasterDataWorkspace";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
@@ -25,6 +26,7 @@ import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
+import { useAuthStore } from "@store/authStore";
 import { BarChart3, Database, FileOutput, Layers, Menu, Route, Settings, Table, Workflow } from "lucide-react";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -126,6 +128,12 @@ const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const login = useAuthStore((state) => state.login);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // All hooks must be called before any conditional returns
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
   const itemCodes = useWorkspaceStore((state) => state.itemSearch.itemCodes);
@@ -191,6 +199,19 @@ export default function App() {
 
   const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? null;
 
+  // 인증 확인
+  useEffect(() => {
+    const verifyAuth = async () => {
+      await checkAuth();
+      setAuthLoading(false);
+    };
+    verifyAuth();
+  }, [checkAuth]);
+
+  const handleLoginSuccess = async () => {
+    await checkAuth();
+  };
+
   const renderPredictionBanner = () =>
     predictionError ? (
       <div className="status-banner status-banner--error mb-4" role="alert">
@@ -200,6 +221,20 @@ export default function App() {
     ) : null;
 
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
+
+  // 인증 확인 중이면 로딩 표시
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center surface-base">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  // 인증되지 않은 경우 로그인 페이지 표시
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
     const tabKey = tab?.id ?? "default";

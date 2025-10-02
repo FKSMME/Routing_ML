@@ -11,7 +11,8 @@
       "Bash(\".venv/Scripts/python.exe\" -m uvicorn backend.run_api:app --host 0.0.0.0 --port 8000)",
       "Bash(timeout:*)",
       "Bash(npm run dev:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(\".venv/Scripts/python.exe\" scripts/create_test_user.py)"
     ],
     "deny": [],
     "ask": []

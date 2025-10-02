@@ -105,6 +105,7 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
     )
 
 
+@router.get("/config", response_model=WorkflowConfigResponse)
 @router.get("/graph", response_model=WorkflowConfigResponse)
 async def get_workflow_graph(
     current_user: AuthenticatedUser = Depends(require_auth),
@@ -119,6 +120,7 @@ async def get_workflow_graph(
     return _build_response(snapshot)
 
 
+@router.patch("/config", response_model=WorkflowConfigResponse)
 @router.patch("/graph", response_model=WorkflowConfigResponse)
 async def patch_workflow_graph(
     payload: WorkflowConfigPatch,

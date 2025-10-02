@@ -123,4 +123,28 @@ async def activate_model_version(
     return ModelVersionModel.from_domain(record)
 
 
+@router.get("/metrics")
+async def get_trainer_metrics(
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> Dict[str, Any]:
+    """학습 메트릭 조회"""
+    logger.debug("학습 메트릭 조회", extra={"username": current_user.username})
+    return {
+        "total_samples": 0,
+        "avg_similarity": 0.0,
+        "training_time": 0.0,
+        "model_size_mb": 0.0,
+    }
+
+
+@router.get("/runs")
+async def get_trainer_runs(
+    limit: int = 15,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> List[Dict[str, Any]]:
+    """학습 실행 이력 조회"""
+    logger.debug("학습 실행 이력 조회", extra={"username": current_user.username, "limit": limit})
+    return []
+
+
 __all__ = ["router"]

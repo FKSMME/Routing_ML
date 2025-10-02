@@ -1,0 +1,234 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MainNavigation > matches snapshot for desktop layout 1`] = `
+<div
+  data-layout="desktop"
+>
+  <nav
+    aria-label="주요 메뉴"
+    class="main-nav"
+  >
+    <div
+      class="main-nav-inner"
+    >
+      <span
+        class="main-nav-heading"
+      >
+        운영 메뉴
+      </span>
+      <div
+        class="main-nav-tabs"
+        role="tablist"
+      >
+        <button
+          aria-label="첫번째 - First"
+          aria-selected="true"
+          class="main-nav-tab is-active"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-one"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              첫번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              First
+            </span>
+          </span>
+        </button>
+        <button
+          aria-label="두번째 - Second"
+          aria-selected="false"
+          class="main-nav-tab"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-two"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              두번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              Second
+            </span>
+          </span>
+        </button>
+        <button
+          aria-label="세번째 - Third"
+          aria-selected="false"
+          class="main-nav-tab"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-three"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              세번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              Third
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</div>
+`;
+
+exports[`MainNavigation > matches snapshot for mobile layout 1`] = `
+<div
+  data-layout="mobile"
+  data-nav-mode="drawer"
+>
+  <nav
+    aria-label="주요 메뉴"
+    class="main-nav"
+  >
+    <div
+      class="main-nav-inner"
+    >
+      <span
+        class="main-nav-heading"
+      >
+        운영 메뉴
+      </span>
+      <div
+        class="main-nav-tabs"
+        role="tablist"
+      >
+        <button
+          aria-label="첫번째 - First"
+          aria-selected="false"
+          class="main-nav-tab"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-one"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              첫번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              First
+            </span>
+          </span>
+        </button>
+        <button
+          aria-label="두번째 - Second"
+          aria-selected="true"
+          class="main-nav-tab is-active"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-two"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              두번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              Second
+            </span>
+          </span>
+        </button>
+        <button
+          aria-label="세번째 - Third"
+          aria-selected="false"
+          class="main-nav-tab"
+          role="tab"
+          type="button"
+        >
+          <span
+            aria-hidden="true"
+            class="main-nav-icon"
+          >
+            <span
+              data-testid="icon-three"
+            />
+          </span>
+          <span
+            class="main-nav-labels"
+          >
+            <span
+              class="main-nav-label"
+            >
+              세번째
+            </span>
+            <span
+              class="main-nav-desc"
+            >
+              Third
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </nav>
+</div>
+`;
