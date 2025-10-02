@@ -4,7 +4,16 @@
       "Bash(Select-String \"routing\")",
       "Bash(Select-Object -Last 20)",
       "Bash(\".venv/Scripts/python.exe\" -m uvicorn backend.run_api:app --host 0.0.0.0 --port 8000 --reload)",
-      "Bash(curl -X GET http://localhost:8000/api/routing/output-profiles/default -H \"Cookie: session=test\")"
+      "Bash(curl -X GET http://localhost:8000/api/routing/output-profiles/default -H \"Cookie: session=test\")",
+      "Bash(.venv/Scripts/python.exe -m uvicorn:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(SET DB_TYPE=MSSQL)",
+      "Bash(SET MSSQL_PASSWORD=실제비밀번호)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(.venvScriptspython.exe -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")",
+      "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")"
     ],
     "deny": [],
     "ask": []

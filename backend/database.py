@@ -34,9 +34,31 @@ _DEMO_MODE = demo_mode_enabled()
 BASE_DIR   = Path(__file__).resolve().parents[1]     # e.g., machine/
 ACCESS_DIR = BASE_DIR / "routing_data"               # Access DB 폴더
 
-VIEW_ITEM_MASTER = "dbo_BI_ITEM_INFO_VIEW"
-VIEW_ROUTING     = "dbo_BI_ROUTING_VIEW"
-VIEW_WORK_RESULT = "dbo_BI_WORK_ORDER_RESULTS"
+# DB 타입 선택 (환경 변수로 제어)
+import os
+DB_TYPE = os.getenv("DB_TYPE", "ACCESS")  # ACCESS or MSSQL
+
+# MSSQL 연결 정보
+MSSQL_CONFIG = {
+    "server": os.getenv("MSSQL_SERVER", "K3-DB.ksm.co.kr,1433"),
+    "database": os.getenv("MSSQL_DATABASE", "KsmErp"),
+    "user": os.getenv("MSSQL_USER", "FKSM_BI"),
+    "password": os.getenv("MSSQL_PASSWORD", ""),
+    "encrypt": os.getenv("MSSQL_ENCRYPT", "False").lower() == "true",
+    "trust_certificate": os.getenv("MSSQL_TRUST_CERTIFICATE", "True").lower() == "true",
+}
+
+# 뷰 이름 (MSSQL은 dbo. 스키마 사용, Access는 dbo_ 접두사)
+if DB_TYPE == "MSSQL":
+    VIEW_ITEM_MASTER = "dbo.BI_ITEM_INFO_VIEW"
+    VIEW_ROUTING     = "dbo.BI_ROUTING_HIS_VIEW"
+    VIEW_WORK_RESULT = "dbo.BI_WORK_ORDER_RESULTS"
+    VIEW_PURCHASE_ORDER = "dbo.BI_PUR_PO_VIEW"
+else:
+    VIEW_ITEM_MASTER = "dbo_BI_ITEM_INFO_VIEW"
+    VIEW_ROUTING     = "dbo_BI_ROUTING_VIEW"
+    VIEW_WORK_RESULT = "dbo_BI_WORK_ORDER_RESULTS"
+    VIEW_PURCHASE_ORDER = None  # Access DB에는 없음
 
 # 제한된 컬럼 목록 (SELECT * 방지)
 ITEM_MASTER_EXTRA_COLUMNS: List[str] = [
@@ -142,8 +164,25 @@ def _latest_db(path: Path | str) -> Path:
 # ════════════════════════════════════════════════
 # 2) 기본 연결 함수
 # ════════════════════════════════════════════════
-def _create_connection() -> pyodbc.Connection:
-    """새로운 데이터베이스 연결 생성"""
+def _create_mssql_connection() -> pyodbc.Connection:
+    """MSSQL 서버 연결 생성"""
+    conn_str = (
+        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+        f"SERVER={MSSQL_CONFIG['server']};"
+        f"DATABASE={MSSQL_CONFIG['database']};"
+        f"UID={MSSQL_CONFIG['user']};"
+        f"PWD={MSSQL_CONFIG['password']};"
+        f"Encrypt={'yes' if MSSQL_CONFIG['encrypt'] else 'no'};"
+        f"TrustServerCertificate={'yes' if MSSQL_CONFIG['trust_certificate'] else 'no'};"
+    )
+    try:
+        logger.debug(f"MSSQL 연결 시도: {MSSQL_CONFIG['server']}/{MSSQL_CONFIG['database']}")
+        return pyodbc.connect(conn_str, timeout=10)
+    except pyodbc.Error as exc:
+        raise ConnectionError(f"MSSQL DB 연결 실패: {exc}") from exc
+
+def _create_access_connection() -> pyodbc.Connection:
+    """Access DB 연결 생성"""
     db_path = _latest_db(ACCESS_DIR)
     conn_str = (
         r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};"
@@ -154,8 +193,15 @@ def _create_connection() -> pyodbc.Connection:
     except pyodbc.Error as exc:
         raise ConnectionError(f"Access DB 연결 실패: {exc}") from exc
 
+def _create_connection() -> pyodbc.Connection:
+    """새로운 데이터베이스 연결 생성 (DB_TYPE에 따라 자동 선택)"""
+    if DB_TYPE == "MSSQL":
+        return _create_mssql_connection()
+    else:
+        return _create_access_connection()
+
 def _connect() -> pyodbc.Connection:
-    """가장 최신 Access DB에 연결 (기존 호환성)"""
+    """데이터베이스에 연결 (기존 호환성)"""
     return _create_connection()
 
 # ════════════════════════════════════════════════
@@ -1158,11 +1204,11 @@ def get_distinct_rout_nos(item_cd: str) -> List[str]:
 def fetch_routing_by_rout_no(item_cd: str, rout_no: str) -> pd.DataFrame:
     """
     특정 ROUT_NO의 라우팅 정보 조회
-    
+
     Args:
         item_cd: 품목 코드
         rout_no: 라우팅 번호
-        
+
     Returns:
         pd.DataFrame: 라우팅 정보
     """
@@ -1172,6 +1218,85 @@ def fetch_routing_by_rout_no(item_cd: str, rout_no: str) -> pd.DataFrame:
         rout_no,
         ROUTING_VIEW_COLUMNS,
     ).copy()
+
+
+def fetch_purchase_order_items() -> pd.DataFrame:
+    """
+    발주 품목 목록 조회 (BI_PUR_PO_VIEW)
+
+    Returns:
+        pd.DataFrame: 발주 품목 목록 (ITEM_CD, PO_NO, PO_DATE, QTY 등)
+    """
+    if VIEW_PURCHASE_ORDER is None:
+        logger.warning("[DB] BI_PUR_PO_VIEW는 MSSQL 모드에서만 사용 가능합니다")
+        return pd.DataFrame()
+
+    query = f"""
+        SELECT DISTINCT
+            ITEM_CD,
+            PO_NO,
+            PO_DATE,
+            QTY,
+            UNIT_PRICE,
+            VENDOR_CD,
+            VENDOR_NM
+        FROM {VIEW_PURCHASE_ORDER}
+        WHERE ITEM_CD IS NOT NULL
+        ORDER BY PO_DATE DESC
+    """
+
+    try:
+        logger.info("[DB] 발주 품목 목록 조회 중...")
+        return _run_query(query, ())
+    except Exception as e:
+        logger.error(f"[DB] 발주 품목 조회 오류: {str(e)}")
+        return pd.DataFrame()
+
+
+def fetch_item_with_purchase_info(item_cd: str) -> pd.DataFrame:
+    """
+    품목 정보 + 발주 정보 조회
+
+    Args:
+        item_cd: 품목 코드
+
+    Returns:
+        pd.DataFrame: 품목 정보와 발주 정보가 결합된 데이터
+    """
+    item_cd_upper = item_cd.upper().strip()
+
+    # 품목 기본 정보
+    item_info = fetch_single_item(item_cd_upper)
+
+    if VIEW_PURCHASE_ORDER is None or item_info.empty:
+        return item_info
+
+    # 발주 정보
+    query = f"""
+        SELECT
+            PO_NO,
+            PO_DATE,
+            QTY,
+            UNIT_PRICE,
+            VENDOR_CD,
+            VENDOR_NM
+        FROM {VIEW_PURCHASE_ORDER}
+        WHERE ITEM_CD = ?
+        ORDER BY PO_DATE DESC
+    """
+
+    try:
+        po_info = _run_query(query, (item_cd_upper,))
+        if not po_info.empty:
+            # 가장 최근 발주 정보를 품목 정보에 추가
+            latest_po = po_info.iloc[0]
+            for col in po_info.columns:
+                item_info[f'LATEST_{col}'] = latest_po[col]
+            item_info['PO_COUNT'] = len(po_info)
+    except Exception as e:
+        logger.warning(f"[DB] 발주 정보 조회 실패: {e}")
+
+    return item_info
 
 
 def invalidate_item_master_cache(tag: Optional[str] = None) -> str:
