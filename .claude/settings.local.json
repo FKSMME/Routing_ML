@@ -16,7 +16,21 @@
       "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")",
       "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import OK'')\")",
       "Read(//c/**)",
-      "Bash(.venvScriptspython.exe -m uvicorn run_api:app --host 0.0.0.0 --port 8000 --reload)"
+      "Bash(.venvScriptspython.exe -m uvicorn run_api:app --host 0.0.0.0 --port 8000 --reload)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(timeout:*)",
+      "Bash(py:*)",
+      "Bash(where python)",
+      "Bash(C:UserssyyunAppDataLocalProgramsPythonPython312python.exe -m venv .venv)",
+      "Bash(\"/c/Users/syyun/AppData/Local/Programs/Python/Python312/python.exe\" -m venv .venv)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(if [ -f requirements.txt ])",
+      "Bash(then .venv/Scripts/pip install -r requirements.txt)",
+      "Bash(else .venv/Scripts/pip install cachetools)",
+      "Bash(fi)",
+      "Bash(.venv/Scripts/pip uninstall:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

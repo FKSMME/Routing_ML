@@ -11,6 +11,12 @@ from pydantic import BaseSettings, Field, validator
 class Settings(BaseSettings):
     """환경 변수 기반 설정."""
 
+    class Config:
+        env_prefix = ""
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "allow"
+
     model_directory: Optional[Path] = Field(
         default=None,
         description="비상시 수동 지정할 모델 경로",
@@ -77,10 +83,25 @@ class Settings(BaseSettings):
     jwt_cookie_name: str = Field(default="routing_ml_session")
     jwt_cookie_secure: bool = Field(default=False)
 
-    class Config:
-        env_prefix = "ROUTING_ML_"
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # Database connection settings (from environment)
+    access_connection_string: Optional[str] = Field(default=None, description="MS Access DB 연결 문자열")
+    db_type: str = Field(default="ACCESS", description="데이터베이스 타입 (ACCESS, MSSQL)")
+    mssql_server: Optional[str] = Field(default=None, description="MSSQL 서버 주소")
+    mssql_database: Optional[str] = Field(default=None, description="MSSQL 데이터베이스명")
+    mssql_user: Optional[str] = Field(default=None, description="MSSQL 사용자명")
+    mssql_password: Optional[str] = Field(default=None, description="MSSQL 비밀번호")
+    mssql_encrypt: bool = Field(default=False, description="MSSQL 암호화 사용 여부")
+    mssql_trust_certificate: bool = Field(default=True, description="MSSQL 인증서 신뢰 여부")
+
+    # API server settings
+    api_host: str = Field(default="0.0.0.0", description="API 서버 호스트")
+    api_port: int = Field(default=8000, description="API 서버 포트")
+
+    # Legacy model path
+    model_path: Optional[str] = Field(
+        default=None,
+        description="레거시 모델 경로"
+    )
 
     @validator(
         "model_directory",
