@@ -81,6 +81,49 @@ class UserStatusResponse(BaseModel):
     is_admin: bool = False
 
 
+class ChangePasswordRequest(BaseModel):
+    """비밀번호 변경 요청."""
+
+    current_password: str = Field(..., min_length=1, description="현재 비밀번호")
+    new_password: str = Field(..., min_length=6, description="새 비밀번호 (최소 6자)")
+
+    @validator("new_password")
+    def _validate_password_strength(cls, value: str) -> str:  # noqa: N805
+        if len(value) < 6:
+            raise ValueError("비밀번호는 최소 6자 이상이어야 합니다")
+        return value
+
+
+class ChangePasswordResponse(BaseModel):
+    """비밀번호 변경 응답."""
+
+    username: str
+    message: str = "비밀번호가 성공적으로 변경되었습니다"
+    changed_at: datetime
+
+
+class UserListItem(BaseModel):
+    """사용자 목록 아이템."""
+
+    username: str
+    display_name: Optional[str] = None
+    status: Literal["pending", "approved", "rejected"]
+    is_admin: bool = False
+    created_at: Optional[datetime] = None
+    last_login_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    rejected_at: Optional[datetime] = None
+
+
+class UserListResponse(BaseModel):
+    """사용자 목록 응답."""
+
+    users: List[UserListItem] = Field(default_factory=list)
+    total: int = Field(..., ge=0, description="전체 사용자 수")
+    limit: int = Field(..., ge=1, description="페이지 크기")
+    offset: int = Field(..., ge=0, description="오프셋")
+
+
 class PredictionRequest(BaseModel):
     """Payload for routing prediction requests."""
 
@@ -770,7 +813,16 @@ class RslExportBundle(BaseModel):
 __all__ = [
     "LoginRequest",
     "LoginResponse",
+    "RegisterRequest",
+    "RegisterResponse",
     "AuthenticatedUser",
+    "AdminApproveRequest",
+    "AdminRejectRequest",
+    "UserStatusResponse",
+    "ChangePasswordRequest",
+    "ChangePasswordResponse",
+    "UserListItem",
+    "UserListResponse",
     "PredictionRequest",
     "PredictionResponse",
     "RoutingInterfaceRequest",
@@ -889,6 +941,70 @@ class MasterDataConnectionStatus(BaseModel):
 class MasterDataLogsResponse(BaseModel):
     logs: List[MasterDataLogEntry]
     connection: MasterDataConnectionStatus
+
+
+class AuditLogEntry(BaseModel):
+    """감사 로그 항목."""
+
+    timestamp: str = Field(..., description="로그 발생 시각")
+    level: str = Field(..., description="로그 레벨")
+    name: str = Field(..., description="로거 이름")
+    message: str = Field(..., description="로그 메시지")
+    username: Optional[str] = Field(None, description="사용자명")
+    client_host: Optional[str] = Field(None, description="클라이언트 IP")
+    action: Optional[str] = Field(None, description="액션")
+    extra: Dict[str, Any] = Field(default_factory=dict, description="추가 필드")
+
+
+class AuditLogsResponse(BaseModel):
+    """로그 조회 응답."""
+
+    logs: List[AuditLogEntry] = Field(default_factory=list)
+    total: int = Field(..., ge=0, description="전체 로그 수")
+    limit: int = Field(..., ge=1, description="페이지 크기")
+    offset: int = Field(..., ge=0, description="오프셋")
+    log_file: str = Field(..., description="로그 파일 경로")
+
+
+class BulkUploadValidationError(BaseModel):
+    """대량 업로드 검증 오류."""
+
+    row: int = Field(..., description="오류 발생 행 번호")
+    column: Optional[str] = Field(None, description="오류 발생 컬럼")
+    error: str = Field(..., description="오류 메시지")
+    value: Optional[str] = Field(None, description="문제가 된 값")
+
+
+class BulkUploadPreviewRow(BaseModel):
+    """대량 업로드 미리보기 행."""
+
+    routing_code: str = Field(..., description="라우팅 코드")
+    item_codes: List[str] = Field(default_factory=list, description="품목 코드 목록")
+    step_count: int = Field(..., ge=0, description="공정 단계 수")
+    has_errors: bool = Field(default=False, description="검증 오류 존재 여부")
+    errors: List[str] = Field(default_factory=list, description="오류 메시지 목록")
+
+
+class BulkUploadPreviewResponse(BaseModel):
+    """대량 업로드 미리보기 응답."""
+
+    total_rows: int = Field(..., ge=0, description="전체 행 수")
+    valid_rows: int = Field(..., ge=0, description="유효한 행 수")
+    error_rows: int = Field(..., ge=0, description="오류 행 수")
+    preview: List[BulkUploadPreviewRow] = Field(default_factory=list, description="미리보기 데이터")
+    errors: List[BulkUploadValidationError] = Field(default_factory=list, description="검증 오류 목록")
+    column_mapping: Dict[str, str] = Field(default_factory=dict, description="컬럼 매핑 정보")
+
+
+class BulkUploadResponse(BaseModel):
+    """대량 업로드 결과."""
+
+    created: int = Field(..., ge=0, description="생성된 라우팅 수")
+    updated: int = Field(..., ge=0, description="업데이트된 라우팅 수")
+    skipped: int = Field(..., ge=0, description="건너뛴 라우팅 수")
+    errors: List[BulkUploadValidationError] = Field(default_factory=list, description="오류 목록")
+    created_ids: List[str] = Field(default_factory=list, description="생성된 라우팅 ID 목록")
+
 
 MasterDataTreeNode.update_forward_refs()
 

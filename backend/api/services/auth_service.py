@@ -10,10 +10,14 @@ from argon2.exceptions import VerificationError
 from backend.api.config import Settings, get_settings
 from backend.api.schemas import (
     AuthenticatedUser,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
     LoginRequest,
     LoginResponse,
     RegisterRequest,
     RegisterResponse,
+    UserListItem,
+    UserListResponse,
     UserStatusResponse,
 )
 from backend.api.session_manager import JWTManager, get_jwt_manager
@@ -228,6 +232,87 @@ class AuthService:
             if not user:
                 raise ValueError("사용자를 찾을 수 없습니다")
             return self._to_status_response(user)
+
+    # ------------------------------------------------------------------
+    # 비밀번호 변경
+    # ------------------------------------------------------------------
+    def change_password(
+        self, username: str, payload: ChangePasswordRequest
+    ) -> ChangePasswordResponse:
+        """사용자 비밀번호 변경"""
+        normalized = normalize_username(username)
+        with session_scope() as session:
+            user = (
+                session.query(UserAccount)
+                .filter(UserAccount.normalized_username == normalized)
+                .one_or_none()
+            )
+            if not user:
+                raise ValueError("사용자를 찾을 수 없습니다")
+
+            # 현재 비밀번호 확인
+            try:
+                self._hasher.verify(user.password_hash, payload.current_password)
+            except VerificationError as exc:
+                self._logger.warning(
+                    "비밀번호 변경 실패 - 현재 비밀번호 불일치",
+                    extra={"username": user.username},
+                )
+                raise PermissionError("현재 비밀번호가 일치하지 않습니다") from exc
+
+            # 새 비밀번호로 변경
+            user.password_hash = self._hasher.hash(payload.new_password)
+            session.add(user)
+
+            self._logger.info(
+                "비밀번호 변경 성공", extra={"username": user.username}
+            )
+
+        return ChangePasswordResponse(
+            username=user.username,
+            changed_at=datetime.utcnow(),
+        )
+
+    # ------------------------------------------------------------------
+    # 사용자 목록 조회 (관리자용)
+    # ------------------------------------------------------------------
+    def list_users(
+        self, limit: int = 50, offset: int = 0
+    ) -> UserListResponse:
+        """사용자 목록 조회 (관리자용)"""
+        with session_scope() as session:
+            # 전체 사용자 수
+            total = session.query(UserAccount).count()
+
+            # 페이지네이션
+            users = (
+                session.query(UserAccount)
+                .order_by(UserAccount.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+                .all()
+            )
+
+            user_items = [
+                UserListItem(
+                    username=user.username,
+                    display_name=user.display_name,
+                    status=user.status,
+                    is_admin=user.is_admin,
+                    created_at=user.created_at,
+                    last_login_at=user.last_login_at,
+                    approved_at=user.approved_at,
+                    rejected_at=user.rejected_at,
+                )
+                for user in users
+            ]
+
+        return UserListResponse(
+            users=user_items,
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
 
     # ------------------------------------------------------------------
     # 내부 헬퍼

@@ -50,6 +50,33 @@
   --accent-strong: hsl(195 100% 33%);
   --danger-soft: hsl(0 84% 92%);
   --danger-strong: hsl(0 84.2% 60.2%);
+
+  /* MZ감성 파스텔 컬러 팔레트 */
+  --pastel-pink: hsl(330 80% 85%);
+  --pastel-pink-strong: hsl(330 75% 70%);
+  --pastel-lavender: hsl(270 65% 85%);
+  --pastel-lavender-strong: hsl(270 60% 70%);
+  --pastel-coral: hsl(15 85% 80%);
+  --pastel-coral-strong: hsl(15 80% 65%);
+  --pastel-mint: hsl(140 60% 80%);
+  --pastel-mint-strong: hsl(140 55% 65%);
+  --pastel-peach: hsl(25 85% 82%);
+  --pastel-sky: hsl(195 75% 80%);
+
+  /* 여성친화 그라데이션 */
+  --gradient-dreamy: linear-gradient(135deg,
+    hsl(330 80% 85%) 0%,
+    hsl(270 65% 85%) 50%,
+    hsl(195 75% 80%) 100%);
+  --gradient-sunset: linear-gradient(135deg,
+    hsl(15 85% 80%) 0%,
+    hsl(330 80% 85%) 50%,
+    hsl(270 65% 85%) 100%);
+  --gradient-fresh: linear-gradient(135deg,
+    hsl(140 60% 80%) 0%,
+    hsl(195 75% 80%) 50%,
+    hsl(188 82% 75%) 100%);
+
   --text-heading: hsl(210 45% 18%);
   --text-primary: hsl(210 45% 22%);
   --text-muted: hsl(210 25% 45%);
@@ -94,6 +121,29 @@
     hsl(195 100% 45%) 45%,
     hsl(188 82% 47%) 100%
   );
+
+  /* 추가 유틸리티 색상 */
+  --success-bg: hsl(140 60% 95%);
+  --success-text: hsl(140 55% 25%);
+  --success-border: hsl(140 60% 70%);
+  --error-bg: hsl(0 84% 95%);
+  --error-text: hsl(0 84% 30%);
+  --error-border: hsl(0 84% 70%);
+  --warning-bg: hsl(45 100% 95%);
+  --warning-text: hsl(45 100% 25%);
+  --warning-border: hsl(45 100% 70%);
+  --info-bg: hsl(195 85% 95%);
+  --info-text: hsl(195 100% 25%);
+  --info-border: hsl(195 85% 70%);
+
+  /* 상호작용 상태 */
+  --surface-hover: hsl(195 45% 94%);
+  --border-light: hsl(195 30% 88%);
+  --border-lightest: hsl(195 30% 92%);
+  --accent-primary: hsl(264 60% 60%);
+
+  /* 애니메이션 */
+  --animation-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .frosted-panel {
@@ -731,6 +781,84 @@
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* MZ감성 파스텔 버튼 */
+.btn-pastel-pink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1.5rem;
+  padding: 0.7rem 1.6rem;
+  background: var(--pastel-pink);
+  color: hsl(330 75% 30%);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px hsl(330 75% 70% / 0.4);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-pastel-pink:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  background: var(--pastel-pink-strong);
+  box-shadow: 0 8px 24px hsl(330 75% 70% / 0.5);
+}
+
+.btn-pastel-lavender {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1.5rem;
+  padding: 0.7rem 1.6rem;
+  background: var(--pastel-lavender);
+  color: hsl(270 60% 30%);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px hsl(270 60% 70% / 0.4);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-pastel-lavender:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  background: var(--pastel-lavender-strong);
+  box-shadow: 0 8px 24px hsl(270 60% 70% / 0.5);
+}
+
+.btn-pastel-mint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 1.5rem;
+  padding: 0.7rem 1.6rem;
+  background: var(--pastel-mint);
+  color: hsl(140 55% 25%);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px hsl(140 55% 65% / 0.4);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-pastel-mint:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  background: var(--pastel-mint-strong);
+  box-shadow: 0 8px 24px hsl(140 55% 65% / 0.5);
+}
+
+/* 재미있는 효과: 클릭 시 통통 튀는 애니메이션 */
+.btn-pastel-pink:active:not(:disabled),
+.btn-pastel-lavender:active:not(:disabled),
+.btn-pastel-mint:active:not(:disabled) {
+  transform: scale(0.95);
+  transition: transform 0.1s;
 }
 
 .input-field {
@@ -4118,3 +4246,401 @@
   color: var(--accent);
   background: color-mix(in hsl, var(--accent) 18%, transparent);
 }
+
+/* ============================================
+   MZ세대 감성 애니메이션 & 피드백
+   ============================================ */
+
+/* 로딩 애니메이션 - 귀여운 통통 튀는 점 */
+@keyframes bounce-cute {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.loading-dots {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.loading-dots span {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--pastel-lavender-strong);
+  animation: bounce-cute 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+  background: var(--pastel-pink-strong);
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+  background: var(--pastel-lavender-strong);
+}
+
+.loading-dots span:nth-child(3) {
+  background: var(--pastel-mint-strong);
+}
+
+/* 성공 메시지 - 반짝이는 효과 */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1) rotate(10deg);
+  }
+}
+
+.success-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, var(--pastel-mint) 0%, var(--pastel-sky) 100%);
+  border-radius: 1.5rem;
+  color: hsl(140 55% 25%);
+  font-weight: 600;
+  animation: sparkle 1.5s ease-in-out;
+  box-shadow: 0 4px 16px hsl(140 55% 65% / 0.4);
+}
+
+/* 에러 메시지 - 부드러운 흔들림 */
+@keyframes shake-soft {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+.error-message {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.2rem;
+  background: linear-gradient(135deg, var(--pastel-coral) 0%, var(--pastel-pink) 100%);
+  border-radius: 1.5rem;
+  color: hsl(15 80% 35%);
+  font-weight: 600;
+  animation: shake-soft 0.5s ease-in-out;
+  box-shadow: 0 4px 16px hsl(15 80% 65% / 0.4);
+}
+
+/* 카드 호버 시 살랑살랑 효과 */
+@keyframes card-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.card-cute {
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  background: white;
+  box-shadow: 0 4px 20px hsl(195 100% 33% / 0.08);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2px solid transparent;
+}
+
+.card-cute:hover {
+  animation: card-float 2s ease-in-out infinite;
+  box-shadow: 0 8px 32px hsl(195 100% 33% / 0.15);
+  border-color: var(--pastel-lavender);
+}
+
+/* 진행 바 - 무지개 그라데이션 */
+.progress-rainbow {
+  width: 100%;
+  height: 0.5rem;
+  background: hsl(195 30% 90%);
+  border-radius: 9999px;
+  overflow: hidden;
+  position: relative;
+}
+
+@keyframes progress-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-rainbow-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--pastel-pink) 0%,
+    var(--pastel-lavender) 25%,
+    var(--pastel-sky) 50%,
+    var(--pastel-mint) 75%,
+    var(--pastel-coral) 100%
+  );
+  border-radius: 9999px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.progress-rainbow-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  animation: progress-shine 1.5s infinite;
+}
+
+/* 배지 - 통통한 귀여운 느낌 */
+.badge-cute {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-cute.badge-pink {
+  background: var(--pastel-pink);
+  color: hsl(330 75% 30%);
+}
+
+.badge-cute.badge-lavender {
+  background: var(--pastel-lavender);
+  color: hsl(270 60% 30%);
+}
+
+.badge-cute.badge-mint {
+  background: var(--pastel-mint);
+  color: hsl(140 55% 25%);
+}
+
+
+/* =========================
+   MZ감성 공통 버튼 스타일
+   ========================= */
+
+.btn-pastel-blue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--pastel-sky) 0%, hsl(195 75% 70%) 100%);
+  color: hsl(195 100% 20%);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--animation-bounce);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.btn-pastel-blue:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+.btn-pastel-blue:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-pastel-blue:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-pastel-pink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--pastel-pink) 0%, hsl(330 75% 70%) 100%);
+  color: hsl(330 75% 25%);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--animation-bounce);
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.15);
+}
+
+.btn-pastel-pink:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(236, 72, 153, 0.25);
+}
+
+.btn-pastel-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--pastel-mint) 0%, hsl(140 55% 65%) 100%);
+  color: hsl(140 55% 20%);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--animation-bounce);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.btn-pastel-green:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+}
+
+.btn-pastel-lavender {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--pastel-lavender) 0%, hsl(270 60% 70%) 100%);
+  color: hsl(270 60% 25%);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--animation-bounce);
+  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.15);
+}
+
+.btn-pastel-lavender:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(167, 139, 250, 0.25);
+}
+
+/* =========================
+   로딩 애니메이션
+   ========================= */
+
+.loading-dots {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-dots span {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pastel-pink), var(--pastel-lavender));
+  animation: loading-bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes loading-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* =========================
+   공통 카드 스타일
+   ========================= */
+
+.card-cute {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-lightest);
+}
+
+.panel-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+.panel-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* =========================
+   에러 메시지
+   ========================= */
+
+.error-message {
+  padding: 0.75rem 1rem;
+  background: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.success-message {
+  padding: 0.75rem 1rem;
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+

@@ -11,6 +11,7 @@ ensure_forward_ref_compat()
 import ast
 import importlib.util
 import inspect
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -23,6 +24,10 @@ from common.logger import get_logger
 
 router = APIRouter(prefix="/api/blueprint", tags=["blueprint"])
 logger = get_logger("api.blueprint")
+
+# Simple cache to avoid re-analyzing files
+_analysis_cache: Dict[str, tuple[datetime, Dict[str, Any]]] = {}
+CACHE_TTL = timedelta(minutes=5)
 
 
 class FunctionNode(BaseModel):
@@ -90,9 +95,23 @@ def extract_function_calls(func_ast: ast.FunctionDef) -> List[str]:
     return calls
 
 
-def analyze_python_file(file_path: Path) -> Dict[str, Any]:
-    """Analyze Python file structure using AST"""
+def analyze_python_file(file_path: Path, max_functions: int = 50) -> Dict[str, Any]:
+    """Analyze Python file structure using AST
+
+    Args:
+        file_path: Path to Python file
+        max_functions: Maximum number of functions to analyze (default 50)
+    """
+    # Check cache first
+    cache_key = str(file_path)
+    if cache_key in _analysis_cache:
+        cached_time, cached_result = _analysis_cache[cache_key]
+        if datetime.now() - cached_time < CACHE_TTL:
+            logger.debug(f"Using cached analysis for {file_path}")
+            return cached_result
+
     try:
+        logger.info(f"Analyzing {file_path}...")
         with open(file_path, 'r', encoding='utf-8') as f:
             source = f.read()
 
@@ -100,16 +119,27 @@ def analyze_python_file(file_path: Path) -> Dict[str, Any]:
 
         functions = []
         calls = []
+        func_count = 0
 
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
-                # Extract function info
+                # Limit number of functions to analyze
+                if func_count >= max_functions:
+                    logger.warning(f"Reached max_functions limit ({max_functions}) for {file_path}")
+                    break
+
+                func_count += 1
+
+                # Extract function info (skip private/internal functions for now)
+                if node.name.startswith('__') and node.name != '__init__':
+                    continue
+
                 func_info = {
                     'name': node.name,
                     'line': node.lineno,
-                    'args': [arg.arg for arg in node.args.args],
-                    'doc': ast.get_docstring(node),
-                    'calls': extract_function_calls(node)
+                    'args': [arg.arg for arg in node.args.args][:5],  # Limit args display
+                    'doc': (ast.get_docstring(node) or '')[:200],  # Limit docstring length
+                    'calls': extract_function_calls(node)[:10]  # Limit calls
                 }
 
                 # Extract return type if annotated
@@ -121,19 +151,26 @@ def analyze_python_file(file_path: Path) -> Dict[str, Any]:
 
                 functions.append(func_info)
 
-                # Add function calls as edges
-                for call in func_info['calls']:
+                # Add function calls as edges (limited)
+                for call in func_info['calls'][:5]:  # Only first 5 calls
                     calls.append({
                         'source': node.name,
                         'target': call,
                         'type': 'direct'
                     })
 
-        return {
+        result = {
             'file': str(file_path),
             'functions': functions,
-            'calls': calls
+            'calls': calls,
+            'truncated': func_count >= max_functions
         }
+
+        # Cache the result
+        _analysis_cache[cache_key] = (datetime.now(), result)
+        logger.info(f"Analyzed {len(functions)} functions from {file_path}")
+
+        return result
 
     except Exception as e:
         logger.error(f"Failed to analyze {file_path}: {e}")

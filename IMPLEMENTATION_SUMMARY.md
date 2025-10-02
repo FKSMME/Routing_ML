@@ -270,17 +270,23 @@ curl -X POST http://localhost:8002/api/blueprint/generate-code \
 
 ---
 
-## 🎉 완료!
+## 🎉 구현 상태
 
-모든 요구사항이 구현되었습니다:
-1. ✅ 도면 열람 버튼 - ItemCd 옆 배치
-2. ✅ DRAW_MP 데이터 연동
-3. ✅ 실시간 알고리즘 시각화 (훈련/예측/DB)
-4. ✅ 블루프린트 편집 → 코드 생성
+### ✅ 완료된 기능:
+1. ✅ 도면 열람 버튼 - ItemCd 옆 배치 (**WORKING**)
+2. ✅ DRAW_MP 데이터 연동 (**WORKING**)
+3. ⚠️ 실시간 알고리즘 시각화 (훈련/예측/DB) (**IMPLEMENTED, 최적화 필요**)
+4. ✅ 블루프린트 편집 → 코드 생성 (**IMPLEMENTED**)
+
+### ⚠️ 알려진 이슈:
+- **Blueprint API 성능 문제**: 큰 파일(trainer_ml.py ~1900줄, predictor_ml.py ~1400줄) 분석 시 AST 파싱이 오래 걸림
+  - 해결 방법: 비동기 처리, 캐싱, 또는 더 작은 모듈로 분할 필요
+  - 임시 해결책: 타임아웃 추가 또는 특정 함수만 분석
 
 **서비스 상태:**
 - Training Service: ✅ Running (Port 8001)
 - Prediction Service: ✅ Running (Port 8002)
+- Blueprint API: ⚠️ Running but slow
 
 **다음 작업 시작 전 확인:**
 - [ ] 서비스 재시작 완료 확인

@@ -8,10 +8,13 @@ from backend.api.schemas import (
     AdminApproveRequest,
     AdminRejectRequest,
     AuthenticatedUser,
+    ChangePasswordRequest,
+    ChangePasswordResponse,
     LoginRequest,
     LoginResponse,
     RegisterRequest,
     RegisterResponse,
+    UserListResponse,
     UserStatusResponse,
 )
 from backend.api.security import require_admin, require_auth
@@ -127,6 +130,41 @@ async def reject_user(
             "rejected_by": admin.username,
             "reason": payload.reason,
         },
+    )
+    return result
+
+
+@router.post("/change-password", response_model=ChangePasswordResponse)
+async def change_password(
+    payload: ChangePasswordRequest,
+    user: AuthenticatedUser = Depends(require_auth),
+) -> ChangePasswordResponse:
+    """비밀번호 변경"""
+    try:
+        result = auth_service.change_password(user.username, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    audit_logger.info(
+        "비밀번호 변경",
+        extra={"username": user.username},
+    )
+    return result
+
+
+@router.get("/admin/users", response_model=UserListResponse)
+async def list_users(
+    limit: int = 50,
+    offset: int = 0,
+    admin: AuthenticatedUser = Depends(require_admin),
+) -> UserListResponse:
+    """사용자 목록 조회 (관리자 전용)"""
+    result = auth_service.list_users(limit=limit, offset=offset)
+    audit_logger.info(
+        "사용자 목록 조회",
+        extra={"admin": admin.username, "limit": limit, "offset": offset},
     )
     return result
 

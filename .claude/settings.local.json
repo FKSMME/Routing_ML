@@ -13,7 +13,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(.venvScriptspython.exe -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")",
-      "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")"
+      "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import successful'')\")",
+      "Bash(\".venv\\Scripts\\python.exe\" -c \"from backend.api.routes.blueprint import router; print(''Import OK'')\")",
+      "Read(//c/**)",
+      "Bash(.venvScriptspython.exe -m uvicorn run_api:app --host 0.0.0.0 --port 8000 --reload)"
     ],
     "deny": [],
     "ask": []

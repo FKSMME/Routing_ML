@@ -16,8 +16,10 @@ from backend.api.config import get_settings
 from backend.api.routes.access import router as access_router
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
+from backend.api.routes.bulk_upload import router as bulk_upload_router
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.items import router as items_router
+from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
 from backend.api.routes.prediction import router as prediction_router
 from backend.api.routes.routing import router as routing_router
@@ -41,6 +43,8 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(auth_router)
+    app.include_router(logs_router)
+    app.include_router(bulk_upload_router)
     app.include_router(database_config_router)
     app.include_router(items_router)
     app.include_router(prediction_router)
