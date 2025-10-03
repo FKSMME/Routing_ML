@@ -49,7 +49,8 @@
       "Bash(chmod:*)",
       "Bash(cat:*)",
       "Bash(ln:*)",
-      "Bash(.venv/Scripts/python3.exe:*)"
+      "Bash(.venv/Scripts/python3.exe:*)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "ask": []
