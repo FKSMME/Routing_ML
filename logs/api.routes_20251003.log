@@ -1,0 +1,8 @@
+2025-10-03 11:41:13 | api.routes | INFO     | [prediction.py:104] | predict | MainThread | 예측 요청
+2025-10-03 11:41:14 | api.routes | ERROR    | [prediction.py:147] | predict | MainThread | 모델 경로 오류: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:34 | api.routes | INFO     | [prediction.py:104] | predict | MainThread | 예측 요청
+2025-10-03 11:44:34 | api.routes | ERROR    | [prediction.py:147] | predict | MainThread | 모델 경로 오류: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:37 | api.routes | INFO     | [prediction.py:104] | predict | MainThread | 예측 요청
+2025-10-03 11:44:37 | api.routes | ERROR    | [prediction.py:147] | predict | MainThread | 모델 경로 오류: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:39 | api.routes | INFO     | [prediction.py:104] | predict | MainThread | 예측 요청
+2025-10-03 11:44:40 | api.routes | ERROR    | [prediction.py:147] | predict | MainThread | 모델 경로 오류: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib

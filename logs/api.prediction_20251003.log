@@ -1,0 +1,79 @@
+2025-10-03 10:11:05 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 10:23:47 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 10:33:37 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:01:45 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:07:34 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:30:20 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:37:37 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:41:13 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['ITEM-001'], top_k=10, similarity_threshold=0.30, mode=summary
+2025-10-03 11:41:14 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:41:14 | api.prediction | ERROR    | [prediction_service.py:518] | _ensure_model | MainThread | 모델 매니페스트 검증 실패
+Traceback (most recent call last):
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 512, in _ensure_model
+    manifest = self._refresh_manifest(strict=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 350, in _refresh_manifest
+    manifest = read_model_manifest(self._model_reference, strict=strict)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 170, in read_model_manifest
+    write_manifest(ref_path, strict=strict)
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 112, in write_manifest
+    manifest = build_manifest(directory, strict=strict, metadata=metadata)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 89, in build_manifest
+    raise FileNotFoundError(
+FileNotFoundError: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:34 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['ITEM-001'], top_k=10, similarity_threshold=0.30, mode=summary
+2025-10-03 11:44:34 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:44:34 | api.prediction | ERROR    | [prediction_service.py:518] | _ensure_model | MainThread | 모델 매니페스트 검증 실패
+Traceback (most recent call last):
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 512, in _ensure_model
+    manifest = self._refresh_manifest(strict=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 350, in _refresh_manifest
+    manifest = read_model_manifest(self._model_reference, strict=strict)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 170, in read_model_manifest
+    write_manifest(ref_path, strict=strict)
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 112, in write_manifest
+    manifest = build_manifest(directory, strict=strict, metadata=metadata)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 89, in build_manifest
+    raise FileNotFoundError(
+FileNotFoundError: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:37 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['ITEM-001'], top_k=10, similarity_threshold=0.30, mode=summary
+2025-10-03 11:44:37 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:44:37 | api.prediction | ERROR    | [prediction_service.py:518] | _ensure_model | MainThread | 모델 매니페스트 검증 실패
+Traceback (most recent call last):
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 512, in _ensure_model
+    manifest = self._refresh_manifest(strict=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 350, in _refresh_manifest
+    manifest = read_model_manifest(self._model_reference, strict=strict)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 170, in read_model_manifest
+    write_manifest(ref_path, strict=strict)
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 112, in write_manifest
+    manifest = build_manifest(directory, strict=strict, metadata=metadata)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 89, in build_manifest
+    raise FileNotFoundError(
+FileNotFoundError: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib
+2025-10-03 11:44:39 | api.prediction | INFO     | [prediction_service.py:727] | predict | MainThread | [예측] item=['ITEM-001'], top_k=10, similarity_threshold=0.30, mode=summary
+2025-10-03 11:44:40 | api.prediction | WARNING  | [prediction_service.py:283] | _resolve_model_reference | MainThread | 활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: /workspaces/Routing_ML_4/models/default
+2025-10-03 11:44:40 | api.prediction | ERROR    | [prediction_service.py:518] | _ensure_model | MainThread | 모델 매니페스트 검증 실패
+Traceback (most recent call last):
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 512, in _ensure_model
+    manifest = self._refresh_manifest(strict=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/backend/api/services/prediction_service.py", line 350, in _refresh_manifest
+    manifest = read_model_manifest(self._model_reference, strict=strict)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 170, in read_model_manifest
+    write_manifest(ref_path, strict=strict)
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 112, in write_manifest
+    manifest = build_manifest(directory, strict=strict, metadata=metadata)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Routing_ML_4/models/manifest.py", line 89, in build_manifest
+    raise FileNotFoundError(
+FileNotFoundError: Missing required artifacts for manifest: encoder.joblib, feature_columns.joblib, scaler.joblib, similarity_engine.joblib

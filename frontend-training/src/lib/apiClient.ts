@@ -1,21 +1,6 @@
 import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
-import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
-import type {
-  PredictionResponse,
-  RoutingGroupCreatePayload,
-  RoutingGroupCreateResponse,
-  RoutingGroupDetail,
-  RoutingGroupListResponse,
-  RoutingGroupStep,
-  RoutingInterfaceRequestPayload,
-  RoutingInterfaceResponse,
-} from "@app-types/routing";
+import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
-import type {
-  WorkflowCodeSyncResponse,
-  WorkflowConfigPatch,
-  WorkflowConfigResponse,
-} from "@app-types/workflow";
 import axios from "axios";
 
 // Use relative URL to leverage Vite proxy in development
@@ -110,27 +95,6 @@ export async function predictRoutings(params: {
   return response.data;
 }
 
-export async function fetchMetrics(): Promise<Record<string, unknown>> {
-  const response = await api.get("/metrics");
-  return response.data;
-}
-
-export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
-  const response = await api.get<WorkflowConfigResponse>("/workflow/config");
-  return response.data;
-}
-
-export async function patchWorkflowConfig(
-  payload: WorkflowConfigPatch,
-): Promise<WorkflowConfigResponse> {
-  const response = await api.patch<WorkflowConfigResponse>("/workflow/config", payload);
-  return response.data;
-}
-
-export async function regenerateWorkflowCode(): Promise<WorkflowCodeSyncResponse> {
-  const response = await api.post<WorkflowCodeSyncResponse>("/workflow/code");
-  return response.data;
-}
 
 export interface TrainingStatus {
   job_id?: string | null;
@@ -240,332 +204,101 @@ export async function patchTrainingFeatures(
   return response.data;
 }
 
-export async function fetchMasterDataTree(params?: {
-  query?: string;
-  parentId?: string;
-  parentType?: "group" | "family";
-}): Promise<MasterDataTreeResponse> {
-  const response = await api.get<MasterDataTreeResponse>("/master-data/tree", {
-    params: {
-      ...(params?.query ? { query: params.query } : {}),
-      ...(params?.parentId ? { parent_id: params.parentId } : {}),
-      ...(params?.parentType ? { parent_type: params.parentType } : {}),
-    },
-  });
-  return response.data;
-}
-
-export async function fetchMasterDataItem(itemCode: string): Promise<MasterDataItemResponse> {
-  const response = await api.get<MasterDataItemResponse>(`/master-data/items/${encodeURIComponent(itemCode)}`);
-  return response.data;
-}
-
-export async function fetchMasterDataLogs(limit = 5): Promise<MasterDataLogsResponse> {
-  const response = await api.get<MasterDataLogsResponse>("/master-data/logs", { params: { limit } });
-  return response.data;
-}
-
-export async function downloadMasterDataLog(): Promise<void> {
-  const response = await api.get<Blob>("/master-data/logs/download", { responseType: "blob" });
-  const blob = new Blob([response.data], { type: response.headers["content-type"] || "text/plain" });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  const disposition = response.headers["content-disposition"];
-  const filename = disposition?.split("filename=")?.[1]?.replace(/"/g, "").trim() || "master_data.log";
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
-}
 
 export async function runTraining(payload: TrainingRequestPayload): Promise<TrainingStatus> {
   const response = await api.post<TrainingStatus>("/trainer/run", payload);
   return response.data;
 }
 
-export default api;
+// ============================================================================
+// STUB FUNCTIONS FOR REMOVED APIs
+// These are kept to prevent import errors but will throw or return empty data
+// ============================================================================
 
-const mapGroupStepToApi = (step: RoutingGroupStep) => ({
-  seq: step.seq,
-  process_code: step.process_code,
-  description: step.description ?? null,
-  duration_min: step.duration_min ?? null,
-  setup_time: step.setup_time ?? null,
-  wait_time: step.wait_time ?? null,
-  routing_set_code: step.routing_set_code ?? null,
-  variant_code: step.variant_code ?? null,
-  primary_routing_code: step.primary_routing_code ?? null,
-  secondary_routing_code: step.secondary_routing_code ?? null,
-  branch_code: step.branch_code ?? null,
-  branch_label: step.branch_label ?? null,
-  branch_path: step.branch_path ?? null,
-  sql_values: step.sql_values ?? null,
-  metadata: step.metadata ?? undefined,
-});
-
-export async function createRoutingGroup(payload: RoutingGroupCreatePayload): Promise<RoutingGroupCreateResponse> {
-  const response = await api.post<RoutingGroupCreateResponse>("/routing/groups", {
-    group_name: payload.groupName,
-    item_codes: payload.itemCodes,
-    steps: payload.steps.map((step) => mapGroupStepToApi(step)),
-    erp_required: payload.erpRequired,
-    metadata: payload.metadata ?? undefined,
-  });
-  return response.data;
+export async function fetchMasterDataTree(...args: any[]): Promise<any> {
+  throw new Error("Master data API removed - feature not available");
 }
 
-export async function triggerRoutingInterface(
-  payload: RoutingInterfaceRequestPayload,
-): Promise<RoutingInterfaceResponse> {
-  const response = await api.post<RoutingInterfaceResponse>("/routing/interface", {
-    group_id: payload.groupId,
-    reason: payload.reason ?? undefined,
-    export_formats: payload.exportFormats ?? undefined,
-  });
-  return response.data;
+export async function fetchMasterDataItem(...args: any[]): Promise<any> {
+  throw new Error("Master data API removed - feature not available");
 }
 
-export async function listRoutingGroups(params?: {
-  owner?: string;
-  search?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<RoutingGroupListResponse> {
-  const response = await api.get<RoutingGroupListResponse>("/routing/groups", { params });
-  return response.data;
+export async function fetchMasterDataLogs(...args: any[]): Promise<any> {
+  throw new Error("Master data API removed - feature not available");
 }
 
-export async function fetchRoutingGroup(groupId: string): Promise<RoutingGroupDetail> {
-  const response = await api.get<RoutingGroupDetail>(`/routing/groups/${encodeURIComponent(groupId)}`);
-  return response.data;
-}
-export interface WorkspaceSettingsPayload {
-  version?: number | string;
-  layout?: Record<string, unknown> | null;
-  routing?: Record<string, unknown> | null;
-  algorithm?: Record<string, unknown> | null;
-  options?: Record<string, unknown> | null;
-  export?: Record<string, unknown> | null;
-  output?: Record<string, unknown> | null;
-  access?: Record<string, unknown> | null;
-  metadata?: Record<string, unknown> | null;
+export async function downloadMasterDataLog(...args: any[]): Promise<any> {
+  throw new Error("Master data API removed - feature not available");
 }
 
-export interface WorkspaceSettingsResponse extends WorkspaceSettingsPayload {
-  updated_at?: string;
-  user?: string | null;
+export async function fetchWorkflowConfig(...args: any[]): Promise<any> {
+  throw new Error("Workflow API removed - feature not available");
 }
 
-export interface UiAuditEventPayload {
-  action: string;
-  username?: string;
-  ip_address?: string;
-  payload?: Record<string, unknown> | null;
+export async function patchWorkflowConfig(...args: any[]): Promise<any> {
+  throw new Error("Workflow API removed - feature not available");
 }
 
-export interface UiAuditBatchPayload {
-  events: UiAuditEventPayload[];
-  source?: string;
+export async function regenerateWorkflowCode(...args: any[]): Promise<any> {
+  throw new Error("Workflow API removed - feature not available");
 }
 
-export interface RoutingSnapshotPayload {
-  id: string;
-  created_at: string;
-  reason?: string;
-  version?: number;
-  state: Record<string, unknown>;
+export async function fetchWorkspaceSettings(...args: any[]): Promise<any> {
+  return {};
 }
 
-export interface RoutingAuditPayload {
-  id: string;
-  action: string;
-  level: "info" | "error";
-  message?: string;
-  context?: Record<string, unknown>;
-  created_at: string;
+export async function saveWorkspaceSettings(...args: any[]): Promise<any> {
+  return { updated_at: new Date().toISOString() };
 }
 
-export interface RoutingSnapshotBatchPayload {
-  snapshots: RoutingSnapshotPayload[];
-  audits?: RoutingAuditPayload[];
-  source?: string;
+export async function postUiAudit(...args: any[]): Promise<void> {
+  // Silently ignore audit calls
+  return;
 }
 
-export interface RoutingSnapshotGroupUpdate {
-  group_id: string;
-  version: number;
-  dirty: boolean;
-  updated_at?: string;
-  snapshot_id?: string | null;
+export async function postUiAuditBatch(...args: any[]): Promise<void> {
+  // Silently ignore audit calls
+  return;
 }
 
-export interface RoutingSnapshotBatchResponse {
-  accepted_snapshot_ids?: string[];
-  accepted_audit_ids?: string[];
-  updated_groups?: RoutingSnapshotGroupUpdate[];
+export async function createRoutingGroup(...args: any[]): Promise<any> {
+  throw new Error("Routing groups API removed - feature not available");
 }
 
-export interface AccessConnectionRequest {
-  path: string;
-  table?: string | null;
+export async function fetchRoutingGroup(...args: any[]): Promise<any> {
+  throw new Error("Routing groups API removed - feature not available");
 }
 
-export interface AccessConnectionResponse {
-  ok: boolean;
-  message: string;
-  path_hash?: string;
-  table_profiles?: string[];
-  elapsed_ms?: number;
-  verified_table?: string | null;
+export async function listRoutingGroups(...args: any[]): Promise<any> {
+  return { groups: [], total: 0 };
 }
 
-export async function fetchWorkspaceSettings(): Promise<WorkspaceSettingsResponse> {
-  const response = await api.get<WorkspaceSettingsResponse>("/settings/workspace");
-  return response.data;
+export async function triggerRoutingInterface(...args: any[]): Promise<any> {
+  throw new Error("Routing interface API removed - feature not available");
 }
 
-export async function saveWorkspaceSettings(payload: WorkspaceSettingsPayload): Promise<WorkspaceSettingsResponse> {
-  const response = await api.put<WorkspaceSettingsResponse>("/settings/workspace", payload);
-  return response.data;
+export async function testAccessConnection(...args: any[]): Promise<any> {
+  throw new Error("Access connection API removed - feature not available");
 }
 
-export async function postUiAuditBatch(payload: UiAuditBatchPayload): Promise<void> {
-  if (!payload.events || payload.events.length === 0) {
-    return;
-  }
-  await api.post("/audit/ui/batch", payload);
+export async function fetchAccessMetadata(...args: any[]): Promise<any> {
+  throw new Error("Access metadata API removed - feature not available");
 }
 
-export async function postUiAudit(event: UiAuditEventPayload): Promise<void> {
-  await postUiAuditBatch({ events: [event] });
-}
-
-export async function postRoutingSnapshotsBatch(
-  payload: RoutingSnapshotBatchPayload,
-): Promise<RoutingSnapshotBatchResponse> {
-  const response = await api.post<RoutingSnapshotBatchResponse>("/routing/groups/snapshots", payload);
-  return response.data;
-}
-
-export async function testAccessConnection(payload: AccessConnectionRequest): Promise<AccessConnectionResponse> {
-  const response = await api.post<AccessConnectionResponse>("/access/connection/test", payload);
-  return response.data;
-}
-export interface AccessMetadataResponse {
-  table: string;
-  columns: Array<{
-    name: string;
-    type: string;
-    nullable?: boolean;
-  }>;
-  path?: string | null;
-  updated_at?: string;
-}
-
-export async function fetchAccessMetadata(params?: { table?: string; path?: string }): Promise<AccessMetadataResponse> {
-  const response = await api.get<AccessMetadataResponse>("/access/metadata", { params });
-  return response.data;
-}
-
-export interface OutputProfileSummary {
-  id: string;
-  name: string;
-  description?: string | null;
-  format?: string | null;
-  updated_at?: string | null;
-}
-
-export interface OutputProfileColumn {
-  source: string;
-  mapped: string;
-  type?: string | null;
-  required?: boolean;
-  default_value?: string | null;
-  defaultValue?: string | null;
-}
-
-export interface OutputProfileDetail extends OutputProfileSummary {
-  mappings: OutputProfileColumn[];
-  sample?: Array<Record<string, unknown>>;
-}
-
-export interface OutputPreviewRequest {
-  profileId?: string | null;
-  mappings: OutputProfileColumn[];
-  format?: string | null;
-  limit?: number;
-}
-
-export interface OutputPreviewResponse {
-  format?: string | null;
-  columns?: string[] | null;
-  rows?: Array<Record<string, unknown>>;
-  sample?: Array<Record<string, unknown>>;
-  data?: Array<Record<string, unknown>>;
-  preview?: Array<Record<string, unknown>>;
-}
-
-const isOutputProfileDetail = (value: unknown): value is OutputProfileDetail => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  return Array.isArray((value as OutputProfileDetail).mappings);
-};
-
-export async function fetchOutputProfiles(): Promise<OutputProfileSummary[]> {
-  const response = await api.get<{ profiles?: OutputProfileSummary[] } | OutputProfileSummary[]>("/routing/output-profiles");
-  const payload = response.data;
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  if (Array.isArray(payload.profiles)) {
-    return payload.profiles;
-  }
+export async function fetchOutputProfiles(...args: any[]): Promise<any> {
   return [];
 }
 
-export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
-  const { data } = await api.get<OutputProfileDetail | { profile: OutputProfileDetail }>(
-    `/routing/output-profiles/${encodeURIComponent(profileId)}`,
-  );
-
-  if (typeof data === "object" && data !== null && "profile" in data) {
-    const maybeProfile = (data as { profile?: unknown }).profile;
-    if (isOutputProfileDetail(maybeProfile)) {
-      return maybeProfile;
-    }
-  }
-
-  if (isOutputProfileDetail(data)) {
-    return data;
-  }
-
-  throw new Error("Unexpected output profile response shape");
+export async function fetchOutputProfileDetail(...args: any[]): Promise<any> {
+  throw new Error("Output profiles API removed - feature not available");
 }
 
-export async function generateOutputPreview(
-  payload: OutputPreviewRequest,
-): Promise<{ columns: string[]; rows: Array<Record<string, unknown>>; format?: string | null }> {
-  const response = await api.post<OutputPreviewResponse | Array<Record<string, unknown>>>(
-    "/routing/output-profiles/preview",
-    {
-      profile_id: payload.profileId ?? null,
-      mappings: payload.mappings,
-      format: payload.format ?? null,
-      limit: payload.limit ?? 5,
-    },
-  );
-
-  const data = response.data;
-
-  if (Array.isArray(data)) {
-    const columns = data[0] ? Object.keys(data[0]) : [];
-    return { columns, rows: data, format: payload.format ?? null };
-  }
-
-  const rows = data.rows ?? data.sample ?? data.data ?? data.preview ?? [];
-  const columns = data.columns ?? (rows[0] ? Object.keys(rows[0]) : []);
-  return { columns, rows, format: data.format ?? payload.format ?? null };
+export async function generateOutputPreview(...args: any[]): Promise<any> {
+  return { columns: [], rows: [] };
 }
+
+export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
+  return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
+}
+
+export default api;
