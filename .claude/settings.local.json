@@ -46,7 +46,10 @@
       "Bash(sudo apt-get install:*)",
       "Bash(sqlite3:*)",
       "Bash(rm:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(cat:*)",
+      "Bash(ln:*)",
+      "Bash(.venv/Scripts/python3.exe:*)"
     ],
     "deny": [],
     "ask": []
