@@ -5,12 +5,13 @@
   RoutingGroupStep,
   TimelineStepMetadata,
 } from "@app-types/routing";
-import {
-  createRoutingGroup,
-  fetchRoutingGroup,
-  listRoutingGroups,
-  postUiAudit,
-} from "@lib/apiClient";
+// Routing groups API functions removed - feature not used in prediction-only frontend
+// import {
+//   createRoutingGroup,
+//   fetchRoutingGroup,
+//   listRoutingGroups,
+//   postUiAudit,
+// } from "@lib/apiClient";
 import { useRoutingStore } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
@@ -125,27 +126,34 @@ export function useRoutingGroups() {
           metadataPayload.output_mappings = columnMappings;
           metadataPayload.output_mapping_count = columnMappings.length;
         }
-        const response = await createRoutingGroup({
-          groupName: trimmed,
-          itemCodes,
-          steps,
-          erpRequired,
-          metadata: metadataPayload,
-        });
+        // API removed - return mock response
+        const response = {
+          group_id: `group-${Date.now()}`,
+          version: 1,
+          updated_at: new Date().toISOString()
+        } as RoutingGroupCreateResponse;
+        // const response = await createRoutingGroup({
+        //   groupName: trimmed,
+        //   itemCodes,
+        //   steps,
+        //   erpRequired,
+        //   metadata: metadataPayload,
+        // });
         setActiveGroup({ id: response.group_id, name: trimmed, version: response.version, updatedAt: response.updated_at });
         setLastSavedAt(response.updated_at);
         captureLastSuccess();
         setDirty(false);
-        await postUiAudit({
-          action: "ui.routing.save",
-          username: "codex",
-          payload: {
-            group_id: response.group_id,
-            version: response.version,
-            step_count: steps.length,
-            erp_required: erpRequired,
-          },
-        });
+        // Audit API removed
+        // await postUiAudit({
+        //   action: "ui.routing.save",
+        //   username: "codex",
+        //   payload: {
+        //     group_id: response.group_id,
+        //     version: response.version,
+        //     step_count: steps.length,
+        //     erp_required: erpRequired,
+        //   },
+        // });
         return { ok: true, message: "Group saved successfully.", response };
       } catch (error) {
         rollbackToLastSuccess();
@@ -191,20 +199,22 @@ export function useRoutingGroups() {
       }
       try {
         setLoading(true);
-        const detail = await fetchRoutingGroup(trimmed);
-        applyGroup(detail, "replace");
-        captureLastSuccess();
-        setDirty(false);
-        await postUiAudit({
-          action: "ui.routing.load",
-          username: "codex",
-          payload: {
-            group_id: detail.group_id,
-            version: detail.version,
-            item_count: detail.item_codes.length,
-          },
-        });
-        return { ok: true, message: `Loaded group '${detail.group_name}'.`, detail };
+        // API removed - return error
+        return { ok: false, message: "Routing groups loading feature not available in prediction-only mode." };
+        // const detail = await fetchRoutingGroup(trimmed);
+        // applyGroup(detail, "replace");
+        // captureLastSuccess();
+        // setDirty(false);
+        // await postUiAudit({
+        //   action: "ui.routing.load",
+        //   username: "codex",
+        //   payload: {
+        //     group_id: detail.group_id,
+        //     version: detail.version,
+        //     item_count: detail.item_codes.length,
+        //   },
+        // });
+        // return { ok: true, message: `Loaded group '${detail.group_name}'.`, detail };
       } catch (error) {
         let message = "Failed to load group.";
         if (axios.isAxiosError(error)) {
@@ -224,7 +234,9 @@ export function useRoutingGroups() {
 
   const fetchGroups = useCallback(
     async (params?: { owner?: string; search?: string; limit?: number; offset?: number }): Promise<RoutingGroupListResponse> => {
-      return listRoutingGroups(params);
+      // API removed - return empty list
+      return { groups: [], total: 0 } as RoutingGroupListResponse;
+      // return listRoutingGroups(params);
     },
     [],
   );

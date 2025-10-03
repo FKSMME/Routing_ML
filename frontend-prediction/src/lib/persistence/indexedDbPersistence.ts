@@ -1,6 +1,6 @@
 import { createStore, del, get, keys, set } from "idb-keyval";
 
-import { postRoutingSnapshotsBatch } from "../apiClient";
+// import { postRoutingSnapshotsBatch } from "../apiClient";
 
 const WORKSPACE_DB_NAME = "routing_workspace";
 const SNAPSHOT_STORE_NAME = "snapshots";
@@ -521,12 +521,14 @@ export const flushRoutingPersistence = async (
       resetBackoff();
       return null;
     }
-    const response =
-      (await postRoutingSnapshotsBatch({
-        snapshots,
-        audits,
-        source: "routing-workspace",
-      })) ?? {};
+    // API function removed - routing snapshots feature not used
+    const response = {} as any;
+    // const response =
+    //   (await postRoutingSnapshotsBatch({
+    //     snapshots,
+    //     audits,
+    //     source: "routing-workspace",
+    //   })) ?? {};
     const timestamp = new Date().toISOString();
     const acceptedSnapshotIds = Array.isArray(response.accepted_snapshot_ids)
       ? response.accepted_snapshot_ids

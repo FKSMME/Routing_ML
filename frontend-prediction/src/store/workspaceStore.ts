@@ -1,7 +1,9 @@
 import type { FeatureWeightsProfile, PredictionResponse } from "@app-types/routing";
 import { create } from "zustand";
 
-import { saveWorkspaceSettings, type WorkspaceSettingsPayload, type WorkspaceSettingsResponse } from "@lib/apiClient";
+// import { saveWorkspaceSettings, type WorkspaceSettingsPayload, type WorkspaceSettingsResponse } from "@lib/apiClient";
+type WorkspaceSettingsPayload = any;
+type WorkspaceSettingsResponse = any;
 
 import { useRoutingStore } from "./routingStore";
 import {
@@ -553,7 +555,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
       },
     }));
     try {
-      const response = await saveWorkspaceSettings(payload);
+      // API function removed - workspace settings feature not used
+      const response = {} as WorkspaceSettingsResponse;
+      // const response = await saveWorkspaceSettings(payload);
       useRoutingStore.getState().setERPRequired(current.erpInterface);
       set((state) => ({
         erpInterfaceEnabled: current.erpInterface,

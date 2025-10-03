@@ -98,7 +98,7 @@ class MasterDataService:
         return self._slugify(value, "group")
 
     def _make_family_id(self, group_id: str, value: Any) -> str:
-        return f"{group_id}::{self._slugify(value, "family")}"
+        return f"{group_id}::{self._slugify(value, 'family')}"
 
     @staticmethod
     def _normalize_value(value: Any) -> str:

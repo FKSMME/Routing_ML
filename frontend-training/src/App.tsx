@@ -1,174 +1,39 @@
-import { CandidatePanel } from "@components/CandidatePanel";
-import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
-import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
-import { MasterDataWorkspace } from "@components/master-data/MasterDataWorkspace";
-import { MetricsPanel } from "@components/MetricsPanel";
-import { PredictionControls } from "@components/PredictionControls";
-import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
-import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
-import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
-import { RoutingGroupControls } from "@components/RoutingGroupControls";
-import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
-import { TimelinePanel } from "@components/TimelinePanel";
-import { VisualizationSummary } from "@components/VisualizationSummary";
-import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
-import { AlgorithmWorkspace } from "@components/workspaces/AlgorithmWorkspace";
-import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
-import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
-import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
-import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
-import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
-import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
-import { BarChart3, Database, FileOutput, Layers, Menu, Route, Settings, Table, Workflow } from "lucide-react";
-import axios from "axios";
+import { BarChart3, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // 🟢 Training & Model Management Web Service
 const NAVIGATION_ITEMS = [
   {
-    id: "algorithm",
-    label: "알고리즘",
-    description: "블루프린트 그래프 · 설정 Drawer · 코드 템플릿",
-    icon: <Route size={18} />,
-  },
-  {
     id: "training-status",
-    label: "학습 데이터 현황",
-    description: "모델 버전 카드 · TensorBoard · 피처 토글",
+    label: "학습 관리",
+    description: "모델 학습 · 버전 관리 · 피처 설정",
     icon: <BarChart3 size={18} />,
   },
-  {
-    id: "options",
-    label: "시스템 옵션",
-    description: "표준편차 · 유사 품목 규칙 · ERP/Access 설정",
-    icon: <Settings size={18} />,
-  },
 ];
-
-const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
-
-interface PredictionErrorInfo {
-  banner: string;
-  details?: string;
-}
-
-const ensureNonEmptyString = (value: unknown): string | undefined => {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-  }
-  return undefined;
-};
-
-const extractAxiosErrorDetail = (error: unknown): string | undefined => {
-  if (!axios.isAxiosError(error)) {
-    return undefined;
-  }
-
-  const responseData = error.response?.data as unknown;
-  const responseString = ensureNonEmptyString(responseData);
-  if (responseString) {
-    return responseString;
-  }
-
-  if (responseData && typeof responseData === "object") {
-    const record = responseData as Record<string, unknown>;
-    return ensureNonEmptyString(record.detail) ?? ensureNonEmptyString(record.message);
-  }
-
-  return ensureNonEmptyString(error.message);
-};
-
-const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
-  const banner = PREDICTION_DELAY_MESSAGE;
-  const detail =
-    extractAxiosErrorDetail(error) ??
-    (error instanceof Error ? ensureNonEmptyString(error.message) : ensureNonEmptyString(error));
-
-  return detail && detail !== banner ? { banner, details: detail } : { banner };
-};
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  const login = useAuthStore((state) => state.login);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // All hooks must be called before any conditional returns
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
-  const itemCodes = useWorkspaceStore((state) => state.itemSearch.itemCodes);
-  const topK = useWorkspaceStore((state) => state.itemSearch.topK);
-  const threshold = useWorkspaceStore((state) => state.itemSearch.threshold);
-  const updateItemCodes = useWorkspaceStore((state) => state.updateItemCodes);
-  const updateTopK = useWorkspaceStore((state) => state.updateTopK);
-  const updateThreshold = useWorkspaceStore((state) => state.updateThreshold);
-  const featureWeights = useWorkspaceStore((state) => state.featureWeights);
-  const setFeatureWeightProfile = useWorkspaceStore((state) => state.setFeatureWeightProfile);
-  const setManualWeight = useWorkspaceStore((state) => state.setManualWeight);
-  const resetManualWeights = useWorkspaceStore((state) => state.resetManualWeights);
-  const exportProfile = useWorkspaceStore((state) => state.exportProfile);
-  const applyPredictionResponse = useWorkspaceStore((state) => state.applyPredictionResponse);
   const setWorkspaceLayout = useWorkspaceStore((state) => state.setLayout);
 
   useEffect(() => {
     const normalizedLayout = layout === "mobile" ? "mobile" : layout === "tablet" ? "tablet" : "desktop";
     setWorkspaceLayout(normalizedLayout);
   }, [layout, setWorkspaceLayout]);
-
-  const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
-    itemCodes,
-    topK,
-    threshold,
-    featureWeights: featureWeights.manualWeights,
-    weightProfile: featureWeights.profile,
-    exportFormats: exportProfile.formats,
-    withVisualization: exportProfile.withVisualization,
-  });
-
-  const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
-
-  useEffect(() => {
-    if (error) {
-      setPredictionError(toPredictionErrorInfo(error));
-    }
-  }, [error]);
-
-  useEffect(() => {
-    if (data) {
-      setPredictionError(null);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (itemCodes.length === 0) {
-      setPredictionError(null);
-    }
-  }, [itemCodes]);
-
-  const setRoutingLoading = useRoutingStore((state) => state.setLoading);
-
-  useEffect(() => {
-    setRoutingLoading(isLoading || isFetching);
-  }, [isLoading, isFetching, setRoutingLoading]);
-
-  useEffect(() => {
-    if (data) {
-      applyPredictionResponse(data);
-    }
-  }, [applyPredictionResponse, data]);
-
-  const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? null;
 
   // 인증 확인
   useEffect(() => {
@@ -182,14 +47,6 @@ export default function App() {
   const handleLoginSuccess = async () => {
     await checkAuth();
   };
-
-  const renderPredictionBanner = () =>
-    predictionError ? (
-      <div className="status-banner status-banner--error mb-4" role="alert">
-        <strong>{predictionError.banner}</strong>
-        {predictionError.details ? <p className="mt-1 text-sm">{predictionError.details}</p> : null}
-      </div>
-    ) : null;
 
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
@@ -207,112 +64,8 @@ export default function App() {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
-  const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
-    const tabKey = tab?.id ?? "default";
-    return (
-      <RoutingWorkspaceLayout
-        left={
-          <>
-            {renderPredictionBanner()}
-            <PredictionControls
-              itemCodes={itemCodes}
-              onChangeItemCodes={updateItemCodes}
-              topK={topK}
-              onChangeTopK={updateTopK}
-              threshold={threshold}
-              onChangeThreshold={updateThreshold}
-              loading={isLoading || isFetching}
-              onSubmit={refetch}
-              errorMessage={predictionControlsError}
-            />
-            <ReferenceMatrixPanel key={`reference-${tabKey}`} />
-          </>
-        }
-        center={
-          <>
-            <TimelinePanel key={`timeline-${tabKey}`} />
-            <VisualizationSummary metrics={data?.metrics} />
-            <FeatureWeightPanel
-              profiles={featureWeights.availableProfiles}
-              selectedProfile={featureWeights.profile}
-              onSelectProfile={setFeatureWeightProfile}
-              manualWeights={featureWeights.manualWeights}
-              onChangeManualWeight={setManualWeight}
-              onReset={resetManualWeights}
-            />
-            <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-          </>
-        }
-        right={
-          <>
-            <CandidatePanel key={`candidates-${tabKey}`} />
-            <RoutingGroupControls />
-          </>
-        }
-      />
-    );
-  };
-
-  const routingContent = (
-    <>
-      <RoutingProductTabs
-        renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
-        emptyState={renderRoutingWorkspace()}
-      />
-      <div className="routing-workspace-grid">
-        <aside className="routing-column routing-column--left">
-          {renderPredictionBanner()}
-          <PredictionControls
-            itemCodes={itemCodes}
-            onChangeItemCodes={updateItemCodes}
-            topK={topK}
-            onChangeTopK={updateTopK}
-            threshold={threshold}
-            onChangeThreshold={updateThreshold}
-            loading={isLoading || isFetching}
-            onSubmit={refetch}
-            errorMessage={predictionControlsError}
-          />
-          <ReferenceMatrixPanel />
-        </aside>
-
-        <section className="routing-column routing-column--center">
-          <RoutingProductTabs />
-          <TimelinePanel />
-          <VisualizationSummary metrics={data?.metrics} />
-          <FeatureWeightPanel
-            profiles={featureWeights.availableProfiles}
-            selectedProfile={featureWeights.profile}
-            onSelectProfile={setFeatureWeightProfile}
-            manualWeights={featureWeights.manualWeights}
-            onChangeManualWeight={setManualWeight}
-            onReset={resetManualWeights}
-          />
-          <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-        </section>
-
-        <aside className="routing-column routing-column--right">
-          <CandidatePanel />
-          <SaveInterfacePanel />
-        </aside>
-      </div>
-    </>
-  );
-
-  let workspace: JSX.Element;
-  switch (activeMenu) {
-    case "algorithm":
-      workspace = <AlgorithmWorkspace />;
-      break;
-    case "training-status":
-      workspace = <TrainingStatusWorkspace />;
-      break;
-    case "options":
-      workspace = <OptionsWorkspace />;
-      break;
-    default:
-      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
-  }
+  // Training workspace
+  const workspace = <TrainingStatusWorkspace />;
 
   const drawerId = "responsive-navigation";
 
@@ -345,8 +98,8 @@ export default function App() {
         </div>
       ) : null}
       <Header
-        onRefresh={activeMenu === "routing" ? refetch : () => undefined}
-        loading={activeMenu === "routing" ? isLoading || isFetching : false}
+        onRefresh={() => undefined}
+        loading={false}
         title={headerData.label}
         description={headerData.description}
       />
@@ -354,5 +107,3 @@ export default function App() {
     </div>
   );
 }
-
-
