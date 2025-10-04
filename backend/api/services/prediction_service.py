@@ -442,11 +442,20 @@ class PredictionService:
 
         train_py = self._parse_version_tuple(training_versions.get("python"))
         runtime_py = self._parse_version_tuple(runtime_versions.get("python"))
-        if train_py and runtime_py and train_py[:2] != runtime_py[:2]:
+
+        # Python major version이 다르면 에러, minor version은 경고만
+        if train_py and runtime_py and train_py[0] != runtime_py[0]:
             raise RuntimeError(
                 "Python 런타임 불일치: 모델은 Python %s에서 학습되었고 현재 런타임은 %s 입니다. "
                 "동일한 Python 버전으로 환경을 맞추거나 모델을 재학습하세요."
                 % (training_versions.get("python"), runtime_versions.get("python"))
+            )
+        elif train_py and runtime_py and train_py[:2] != runtime_py[:2]:
+            logger.warning(
+                "Python minor 버전 불일치: 모델은 Python %s에서 학습되었고 현재 런타임은 %s 입니다. "
+                "대부분의 경우 호환되지만, 문제 발생 시 동일한 버전을 사용하세요.",
+                training_versions.get("python"),
+                runtime_versions.get("python")
             )
 
         fallback_required = False

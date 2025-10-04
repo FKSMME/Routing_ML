@@ -1,5 +1,6 @@
 ﻿import { LogOut } from "lucide-react";
 import { useAuthStore } from "@store/authStore";
+import { DarkModeToggle } from "./DarkModeToggle";
 
 interface HeaderProps {
   onRefresh: () => void;
@@ -31,6 +32,7 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
             <p className="text-sm font-medium text-foreground">{displayName || username}</p>
             <p className="text-xs text-muted">{username}</p>
           </div>
+          <DarkModeToggle />
           <button onClick={onRefresh} disabled={loading} className="btn-primary">
             {loading ? "새로고침 중..." : "새로 고침"}
           </button>
