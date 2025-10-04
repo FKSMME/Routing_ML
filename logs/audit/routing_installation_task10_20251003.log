@@ -1,4 +1,0 @@
-2025-10-03T09:42:11+09:00 | routing.install.audit | action=routing.install.verify | result=success | correlation_id=TASK10-001 | note=collected installer automation audit samples before dedup review.
-2025-10-03T09:43:02+09:00 | routing.install.audit | action=routing.install.verify | result=success | correlation_id=TASK10-001 | duplicate=true | reason=manual replay of scheduler hook for QA item 10.
-2025-10-03T09:48:36+09:00 | routing.install.audit | action=routing.install.verify | result=success | correlation_id=TASK10-001 | duplicate_resolved=true | note=consolidated audit payload with scheduler+installer scope; merged into single record.
-2025-10-03T09:49:12+09:00 | routing.install.audit | action=routing.install.scheduler | result=success | correlation_id=TASK10-002 | evidence=deliverables/onboarding_evidence/task10_scheduler_audit.json | dedup_strategy=skip-on-matching-hash.

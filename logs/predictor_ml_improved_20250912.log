@@ -1,4 +1,0 @@
-2025-09-12 15:21:22 | predictor_ml_improved | INFO     | [predictor_ml.py:204] | load | MainThread | 개선된 모델 로드 시도...
-2025-09-12 15:21:23 | predictor_ml_improved | INFO     | [predictor_ml.py:247] | load | MainThread | ✅ 개선된 모델 로드 성공
-2025-09-12 15:23:33 | predictor_ml_improved | INFO     | [predictor_ml.py:492] | predict_single_item_with_ml_enhanced | Thread-3 (ml_batch_task) | 🚀 Enhanced ML 예측 시작 - 품목: 3H54529WD49, 모드: detailed, 라우팅: latest
-2025-09-12 15:23:35 | predictor_ml_improved | INFO     | [predictor_ml.py:492] | predict_single_item_with_ml_enhanced | Thread-3 (ml_batch_task) | 🚀 Enhanced ML 예측 시작 - 품목: 3H54530WD49, 모드: detailed, 라우팅: latest
