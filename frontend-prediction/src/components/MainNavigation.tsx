@@ -20,13 +20,14 @@ export function MainNavigation({ items, activeId, onSelect }: MainNavigationProp
         <div className="main-nav-inner">
           <span className="main-nav-heading">운영 메뉴</span>
           <div className="main-nav-tabs" role="tablist">
-            {items.map((item) => {
+            {items.map((item, index) => {
               const selected = item.id === activeId;
               return (
                 <button
                   key={item.id}
                   type="button"
-                  className={`main-nav-tab hover-lift${selected ? " is-active" : ""}`}
+                  className={`main-nav-tab hover-lift stagger-item${selected ? " is-active neon-cyan" : ""}`}
+                  style={{ animationDelay: `${index * 0.1}s` }}
                   role="tab"
                   aria-selected={selected}
                   aria-label={`${item.label} - ${item.description}`}

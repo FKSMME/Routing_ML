@@ -7,6 +7,11 @@ interface Particle {
   vy: number;
   size: number;
   opacity: number;
+  color: string;
+  life: number;
+  maxLife: number;
+  rotation: number;
+  rotationSpeed: number;
 }
 
 export function ParticleBackground() {
@@ -26,49 +31,92 @@ export function ParticleBackground() {
     setCanvasSize();
 
     const particles: Particle[] = [];
-    const particleCount = 50;
+    const particleCount = 80;
+    const colors = [
+      'rgba(14, 165, 233, ', // cyan
+      'rgba(168, 85, 247, ', // purple
+      'rgba(16, 185, 129, ', // green
+      'rgba(236, 72, 153, ', // pink
+    ];
+
+    // 파티클 생성 함수
+    const createParticle = (): Particle => {
+      const life = Math.random() * 200 + 100;
+      return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: (Math.random() - 0.5) * 1.2,
+        size: Math.random() * 3 + 0.5,
+        opacity: 0,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 0,
+        maxLife: life,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.05,
+      };
+    };
 
     // 파티클 초기화
     for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.3 + 0.1,
-      });
+      particles.push(createParticle());
     }
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      particles.forEach((particle) => {
-        // 파티클 이동
+      particles.forEach((particle, index) => {
+        // 생명주기 업데이트
+        particle.life++;
+        if (particle.life >= particle.maxLife) {
+          particles[index] = createParticle();
+          return;
+        }
+
+        // 페이드 인/아웃 효과
+        const lifeRatio = particle.life / particle.maxLife;
+        if (lifeRatio < 0.1) {
+          particle.opacity = lifeRatio * 10;
+        } else if (lifeRatio > 0.9) {
+          particle.opacity = (1 - lifeRatio) * 10;
+        } else {
+          particle.opacity = Math.min(1, particle.opacity + 0.02);
+        }
+
+        // 파티클 이동 (먼지가 일렁이는 느낌)
         particle.x += particle.vx;
         particle.y += particle.vy;
+        particle.rotation += particle.rotationSpeed;
 
-        // 경계 체크 및 리셋
-        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+        // 경계 밖으로 나가면 재생성
+        if (particle.x < -50 || particle.x > canvas.width + 50 ||
+            particle.y < -50 || particle.y > canvas.height + 50) {
+          particles[index] = createParticle();
+          return;
+        }
 
-        // 파티클 그리기 (사이버 색상)
-        const gradient = ctx.createRadialGradient(
-          particle.x,
-          particle.y,
-          0,
-          particle.x,
-          particle.y,
-          particle.size * 2
-        );
-        gradient.addColorStop(0, `rgba(14, 165, 233, ${particle.opacity})`);
-        gradient.addColorStop(0.5, `rgba(168, 85, 247, ${particle.opacity * 0.5})`);
-        gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+        // 파티클 그리기 (글로우 효과)
+        ctx.save();
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(particle.rotation);
+
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, particle.size * 4);
+        gradient.addColorStop(0, `${particle.color}${particle.opacity})`);
+        gradient.addColorStop(0.4, `${particle.color}${particle.opacity * 0.6})`);
+        gradient.addColorStop(1, `${particle.color}0)`);
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+        ctx.arc(0, 0, particle.size * 4, 0, Math.PI * 2);
         ctx.fill();
+
+        // 코어 (밝은 중심)
+        ctx.fillStyle = `${particle.color}${particle.opacity * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
       });
 
       requestAnimationFrame(animate);
