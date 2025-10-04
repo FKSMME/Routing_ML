@@ -1,3 +1,4 @@
+import { BlueprintGraphPanel } from "@components/blueprint/BlueprintGraphPanel";
 import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
@@ -83,7 +84,15 @@ export default function App() {
   let workspace: JSX.Element;
   switch (activeMenu) {
     case "algorithm":
-      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
+      workspace = (
+        <div className="workspace-container p-6">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground mb-2">알고리즘 블루프린트</h2>
+            <p className="text-muted">예측 알고리즘의 데이터 플로우를 시각화합니다</p>
+          </div>
+          <BlueprintGraphPanel />
+        </div>
+      );
       break;
     case "training-status":
       workspace = <TrainingStatusWorkspace />;
