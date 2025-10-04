@@ -1,21 +1,35 @@
 import { Header } from "@components/Header";
+import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
+import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
-import { BarChart3, Menu } from "lucide-react";
+import { BarChart3, Menu, Route, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // 🟢 Training & Model Management Web Service
 const NAVIGATION_ITEMS = [
   {
+    id: "algorithm",
+    label: "알고리즘",
+    description: "블루프린트 그래프 · 설정 Drawer · 코드 템플릿",
+    icon: <Route size={18} />,
+  },
+  {
     id: "training-status",
-    label: "학습 관리",
-    description: "모델 학습 · 버전 관리 · 피처 설정",
+    label: "학습 데이터 현황",
+    description: "모델 버전 카드 · TensorBoard · 피처 토글",
     icon: <BarChart3 size={18} />,
+  },
+  {
+    id: "options",
+    label: "시스템 옵션",
+    description: "표준편차 · 유사 품목 규칙 · ERP/Access 설정",
+    icon: <Settings size={18} />,
   },
 ];
 
@@ -65,7 +79,20 @@ export default function App() {
   }
 
   // Training workspace
-  const workspace = <TrainingStatusWorkspace />;
+  let workspace: JSX.Element;
+  switch (activeMenu) {
+    case "algorithm":
+      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
+      break;
+    case "training-status":
+      workspace = <TrainingStatusWorkspace />;
+      break;
+    case "options":
+      workspace = <OptionsWorkspace />;
+      break;
+    default:
+      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
+  }
 
   const drawerId = "responsive-navigation";
 

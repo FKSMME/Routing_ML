@@ -10,6 +10,9 @@ import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
 import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
+import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
+import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
+import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
 // Routing groups management components removed - not needed in prediction-only mode
 // import { RoutingGroupControls } from "@components/RoutingGroupControls";
 // import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
@@ -21,17 +24,41 @@ import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
-import { Menu, Workflow } from "lucide-react";
+import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
 // 🔵 Prediction & Routing Creation Web Service
 const NAVIGATION_ITEMS = [
   {
+    id: "master-data",
+    label: "기준정보 확인",
+    description: "Access 연결 · 트리/행렬 탐색 · 즐겨찾기 히스토리",
+    icon: <Database size={18} />,
+  },
+  {
     id: "routing",
-    label: "예측 및 라우팅",
-    description: "ML 기반 라우팅 예측 · 후보 공정 추천",
+    label: "라우팅 생성",
+    description: "Drag&Drop 타임라인 · 후보 공정 카드 · SAVE 패널",
     icon: <Workflow size={18} />,
+  },
+  {
+    id: "routing-matrix",
+    label: "라우팅 조합 관리",
+    description: "라우팅 세트 · Variant 조합 편집",
+    icon: <Table size={18} />,
+  },
+  {
+    id: "process-groups",
+    label: "공정 그룹 관리",
+    description: "대체 경로 컬럼 · 후공정 고정값 구성",
+    icon: <Layers size={18} />,
+  },
+  {
+    id: "data-output",
+    label: "데이터 출력 설정",
+    description: "컬럼 매핑 매트릭스 · 미리보기 · 프로필 저장",
+    icon: <FileOutput size={18} />,
   },
 ];
 
@@ -281,6 +308,9 @@ export default function App() {
 
   let workspace: JSX.Element;
   switch (activeMenu) {
+    case "master-data":
+      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
+      break;
     case "routing":
       workspace = (
         <>
@@ -289,13 +319,17 @@ export default function App() {
         </>
       );
       break;
+    case "routing-matrix":
+      workspace = <RoutingMatrixWorkspace />;
+      break;
+    case "process-groups":
+      workspace = <ProcessGroupsWorkspace />;
+      break;
+    case "data-output":
+      workspace = <DataOutputWorkspace />;
+      break;
     default:
-      workspace = (
-        <>
-          {routingContent}
-          <WorkflowGraphPanel />
-        </>
-      );
+      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
   }
 
   const drawerId = "responsive-navigation";
