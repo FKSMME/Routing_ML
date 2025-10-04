@@ -94,6 +94,126 @@
     hsl(195 100% 45%) 45%,
     hsl(188 82% 47%) 100%
   );
+
+  /* 표준화된 간격 시스템 */
+  --spacing-xs: 0.25rem;    /* 4px */
+  --spacing-sm: 0.5rem;     /* 8px */
+  --spacing-md: 1rem;       /* 16px */
+  --spacing-lg: 1.5rem;     /* 24px */
+  --spacing-xl: 2rem;       /* 32px */
+  --spacing-2xl: 3rem;      /* 48px */
+  --spacing-3xl: 4rem;      /* 64px */
+
+  /* 반응형 컨테이너 padding */
+  --container-padding-mobile: var(--spacing-md);
+  --container-padding-tablet: var(--spacing-lg);
+  --container-padding-desktop: var(--spacing-xl);
+
+  /* 타이포그래피 시스템 */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-size-xs: 0.75rem;      /* 12px */
+  --font-size-sm: 0.875rem;     /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.125rem;     /* 18px */
+  --font-size-xl: 1.25rem;      /* 20px */
+  --font-size-2xl: 1.5rem;      /* 24px */
+  --font-size-3xl: 1.875rem;    /* 30px */
+  --font-size-4xl: 2.25rem;     /* 36px */
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+}
+
+/* 다크모드 CSS 변수 */
+.dark {
+  --primary: hsl(199 89% 48%);
+  --primary-glow: hsl(199 89% 58%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(271 81% 56%);
+  --secondary-foreground: hsl(0 0% 100%);
+
+  /* 다크모드 그라디언트 */
+  --gradient-sky-start: 220 25% 12%;
+  --gradient-sky-mid: 220 20% 16%;
+  --gradient-sky-end: 220 18% 20%;
+  --gradient-start: hsl(220 25% 12%);
+  --gradient-mid: hsl(220 20% 16%);
+  --gradient-end: hsl(220 18% 20%);
+
+  /* 다크모드 서피스 */
+  --surface-base: 220 18% 10%;
+  --surface-raised: 220 15% 15%;
+  --surface: hsl(220 18% 10%);
+  --surface-card: hsl(220 15% 15%);
+  --surface-menu: hsl(220 18% 13%);
+  --surface-overlay: hsl(220 15% 18%);
+  --surface-weak: color-mix(in hsl, var(--surface) 85%, transparent);
+  --surface-strong: color-mix(in hsl, var(--surface-card) 90%, transparent);
+
+  /* 다크모드 배경 및 텍스트 */
+  --background: hsl(220 18% 10%);
+  --foreground: hsl(210 20% 85%);
+  --card: hsl(220 15% 15%);
+  --card-foreground: hsl(210 20% 85%);
+  --popover: hsl(220 15% 15%);
+  --popover-foreground: hsl(210 20% 85%);
+
+  /* 다크모드 보더 */
+  --border: hsl(220 15% 25%);
+  --border-strong: hsl(220 15% 30%);
+
+  /* 다크모드 액센트 */
+  --accent: hsl(199 89% 48%);
+  --accent-hover: hsl(199 89% 58%);
+  --accent-soft: hsl(199 70% 35%);
+  --accent-strong: hsl(199 89% 58%);
+
+  /* 다크모드 위험 색상 */
+  --danger-soft: hsl(0 70% 25%);
+  --danger-strong: hsl(0 84.2% 60.2%);
+
+  /* 다크모드 텍스트 */
+  --text-heading: hsl(210 20% 92%);
+  --text-primary: hsl(210 20% 85%);
+  --text-muted: hsl(210 15% 55%);
+  --text-muted-strong: hsl(210 20% 65%);
+  --text-emphasis: hsl(210 20% 95%);
+
+  /* 다크모드 네비게이션 */
+  --nav-default: hsl(210 20% 70%);
+  --nav-hover: hsl(210 20% 85%);
+  --nav-active: hsl(199 89% 58%);
+
+  /* 다크모드 입력 */
+  --input: hsl(220 15% 20%);
+  --ring: hsl(199 89% 48%);
+
+  /* 다크모드 차트 */
+  --chart-1: hsl(199 89% 48%);
+  --chart-2: hsl(271 81% 56%);
+  --chart-3: hsl(142 76% 36%);
+  --chart-4: hsl(199 70% 35%);
+  --chart-5: hsl(210 20% 60%);
+
+  /* 다크모드 그림자 */
+  --shadow-resting: 0 8px 20px hsl(0 0% 0% / 0.4);
+  --shadow-hover: 0 12px 32px hsl(0 0% 0% / 0.5);
+  --shadow-focus: 0 0 0 3px hsl(199 89% 48% / 0.4);
+  --shadow-elegant: 0 10px 30px hsl(0 0% 0% / 0.6);
+  --shadow-glow: 0 0 40px hsl(199 89% 58% / 0.4);
+  --shadow-raised: 0 12px 28px hsl(0 0% 0% / 0.45);
 }
 
 .frosted-panel {
