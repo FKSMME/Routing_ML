@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.20.0",
+    "@xyflow/react": "^12.8.6",
     "axios": "^1.6.7",
+    "dagre": "^0.8.5",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
     "idb-keyval": "^6.2.1",
