@@ -1,7 +1,0 @@
-2025-10-03 10:11:06 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 10:23:48 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 10:33:38 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 11:01:46 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 11:07:35 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 11:30:21 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료
-2025-10-03 11:37:38 | api.app | INFO     | [app.py:62] | create_app | MainThread | FastAPI 애플리케이션 초기화 완료

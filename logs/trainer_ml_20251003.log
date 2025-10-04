@@ -1,7 +1,0 @@
-2025-10-03 10:11:02 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 10:23:44 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 10:33:34 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 11:01:42 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 11:07:30 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 11:30:17 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False
-2025-10-03 11:37:34 | trainer_ml | INFO     | [trainer_ml.py:167] | apply_trainer_runtime_config | MainThread | 트레이너 런타임 설정 갱신: threshold=0.85, trim_std=True (0.03~0.97), time_profiles=False

@@ -1,3 +1,0 @@
-2025-10-05T08:45Z | 로그/체크리스트 중복 정리 | docs/logs/codex_activity_log.md·docs/sprint/logbook.md 중복 항목 11건에 취소선·[x] 표기 적용, 절대 지령 기록·증빙 위치 갱신.
-2025-10-05T08:52Z | 후속 자동화 검토 메모 | 중복 감시 스크립트 초안 검토 필요, 향후 자동 실행 후보로 Tasklist Phase 5에 제안 예정.
-2025-10-05T09:10Z | BOT-AUTO | Stage9 Firewall #005 - Windows Defender 포트 8000 규칙 검증 | 컨테이너 환경에서 Windows PowerShell 접근 불가로 규칙 생성/확인 미실행. docs/install_guide_ko.md에 오프라인 절차·증빙 경로 업데이트, 현장 담당자 후속 조치 필요. 이전 단계 오류 재확인: 추가 조치 필요.

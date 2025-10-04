@@ -1,5 +1,0 @@
-2025-09-12 15:23:35 | database | INFO     | [database.py:371] | fetch_routing_for_item | Thread-3 (ml_batch_task) | [DB] 최신 ROUT_NO 선택: C1M3002000
-2025-09-12 15:23:35 | database | INFO     | [database.py:386] | fetch_routing_for_item | Thread-3 (ml_batch_task) | [DB] 라우팅 조회 성공: ROUT_NO=C1M3002000, 8개 공정
-2025-09-12 15:23:35 | database | INFO     | [database.py:371] | fetch_routing_for_item | Thread-3 (ml_batch_task) | [DB] 최신 ROUT_NO 선택: 외주
-2025-09-12 15:23:35 | database | INFO     | [database.py:386] | fetch_routing_for_item | Thread-3 (ml_batch_task) | [DB] 라우팅 조회 성공: ROUT_NO=외주, 7개 공정
-2025-09-12 15:26:16 | database | INFO     | [database.py:830] | cleanup_connections | MainThread | 데이터베이스 연결 풀 정리 완료

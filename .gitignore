@@ -36,3 +36,8 @@ deliverables/**/*.pdf
 deliverables/**/*.tar.gz
 deliverables/**/*.joblib
 deliverables/**/*.png
+
+# Virtual environments and logs
+venv-linux/
+logs/
+models/viz_embeddings_plotly.html

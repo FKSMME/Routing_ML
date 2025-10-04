@@ -1,3 +1,0 @@
-2025-10-02 12:18:51 | api.prediction_app | INFO     | [prediction_app.py:55] | create_prediction_app | MainThread | 라우팅 생성 서비스 초기화 완료
-2025-10-02 12:56:08 | api.prediction_app | INFO     | [prediction_app.py:57] | create_prediction_app | MainThread | 라우팅 생성 서비스 초기화 완료
-2025-10-02 13:05:55 | api.prediction_app | INFO     | [prediction_app.py:57] | create_prediction_app | MainThread | 라우팅 생성 서비스 초기화 완료
