@@ -5,14 +5,17 @@ export function DarkModeToggle() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // 초기값: localStorage 또는 시스템 설정
-    const isDark =
-      localStorage.getItem("darkMode") === "true" ||
-      (!localStorage.getItem("darkMode") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    // 초기값: localStorage가 없으면 기본값은 다크모드
+    const storedValue = localStorage.getItem("darkMode");
+    const isDark = storedValue !== null
+      ? storedValue === "true"
+      : true; // 기본값을 다크모드로 설정
 
     setDarkMode(isDark);
     if (isDark) {
       document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
     }
   }, []);
 

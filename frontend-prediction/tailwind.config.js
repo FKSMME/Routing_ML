@@ -86,6 +86,14 @@ export default {
         'drop-in': 'dropIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
         'particle-float': 'particleFloat 4s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        'bounce-in': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards',
+        'bounce-in-1': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.05s forwards',
+        'bounce-in-2': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s forwards',
+        'bounce-in-3': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.15s forwards',
+        'bounce-in-4': 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s forwards',
+        'dust-particle': 'dustParticle 3s ease-in-out infinite',
+        'slide-up': 'slideUp 0.4s ease-out forwards',
+        'slide-down': 'slideDown 0.4s ease-out forwards',
       },
       keyframes: {
         float: {
@@ -156,6 +164,59 @@ export default {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        bounceIn: {
+          '0%': {
+            opacity: '0',
+            transform: 'scale(0.3) translateY(-100px)',
+          },
+          '50%': {
+            opacity: '0.9',
+            transform: 'scale(1.05)',
+          },
+          '70%': {
+            transform: 'scale(0.95)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'scale(1) translateY(0)',
+          },
+        },
+        dustParticle: {
+          '0%': {
+            transform: 'translate(0, 0) rotate(0deg)',
+            opacity: '0',
+          },
+          '10%': {
+            opacity: '1',
+          },
+          '90%': {
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'translate(var(--tx, 100px), var(--ty, -100px)) rotate(360deg)',
+            opacity: '0',
+          },
+        },
+        slideUp: {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(30px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        slideDown: {
+          '0%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+          '100%': {
+            opacity: '0',
+            transform: 'translateY(30px)',
+          },
         },
       },
       spacing: {

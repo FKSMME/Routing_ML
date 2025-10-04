@@ -95,10 +95,10 @@ export const BlueprintNode = memo(({ data, selected }: NodeProps<BlueprintNodeDa
     <div
       className={`
         relative min-w-[200px] rounded-lg border-2
-        bg-dark-surface backdrop-blur-sm
+        glass-morphism holographic
         transition-all duration-300 ease-in-out
-        hover:shadow-lg hover:scale-105
-        ${selected ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-dark-bg' : ''}
+        hover:shadow-lg hover:scale-105 bounce-hover
+        ${selected ? 'ring-2 ring-primary-500 ring-offset-2 ring-offset-dark-bg pulse-glow' : ''}
         ${getStatusColor()}
       `}
     >
