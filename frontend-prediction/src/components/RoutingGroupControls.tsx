@@ -8,6 +8,7 @@ import { Download, Play, Save, Settings, Upload } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import axios from "axios";
+import { SaveButtonDropdown } from "./SaveButtonDropdown";
 
 interface ConfirmationModalProps {
   open: boolean;
@@ -1391,6 +1392,37 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     }
   };
 
+  // SaveButtonDropdown 통합 콜백
+  const handleSaveFromDropdown = async (
+    selectedFormat: FileFormat,
+    selectedDestination: "local" | "clipboard"
+  ) => {
+    // 임시로 format과 destination 상태 업데이트
+    const prevFormat = format;
+    const prevDestination = destination;
+
+    setFormat(selectedFormat);
+    setDestination(selectedDestination);
+
+    try {
+      if (selectedDestination === "local") {
+        const success = await handleLocalExport();
+        if (!success) {
+          throw new Error("로컬 저장 실패");
+        }
+      } else if (selectedDestination === "clipboard") {
+        const success = await handleClipboardExport();
+        if (!success) {
+          throw new Error("클립보드 복사 실패");
+        }
+      }
+    } finally {
+      // 원래 상태로 복원
+      setFormat(prevFormat);
+      setDestination(prevDestination);
+    }
+  };
+
   const handleSave = async () => {
     if (destination === "local") {
       await handleLocalExport();
@@ -1475,10 +1507,13 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
         />
       </div>
 
-      <button type="button" className="primary-button" onClick={handleSave} disabled={disabledSave}>
-        <Save size={16} />
-        {saving || exporting ? "처리 중..." : "저장"}
-      </button>
+      <SaveButtonDropdown
+        onSave={handleSaveFromDropdown}
+        disabled={disabledSave}
+        saving={exporting}
+        defaultFormat={format}
+        defaultDestination={destination === "local" || destination === "clipboard" ? destination : "local"}
+      />
 
       <p
         style={{
@@ -1837,16 +1872,15 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
     ) : null}
   </div>
 
-  <button
-    id={ROUTING_SAVE_CONTROL_IDS.primary}
-    type="button"
-    className="primary-button"
-    onClick={handleSave}
-        disabled={disabledSave}
-      >
-        <Save size={16} />
-        {saving || exporting ? "처리 중..." : `저장 (${formatLabel})`}
-      </button>
+  <div id={ROUTING_SAVE_CONTROL_IDS.primary}>
+    <SaveButtonDropdown
+      onSave={handleSaveFromDropdown}
+      disabled={disabledSave}
+      saving={exporting}
+      defaultFormat={format}
+      defaultDestination={destination === "local" || destination === "clipboard" ? destination : "local"}
+    />
+  </div>
 
       <div className="save-shortcuts">
         <span

@@ -42,9 +42,13 @@ interface RoutingCanvasProps {
   onProfileReady?: (controller: RoutingCanvasProfileController) => void;
 }
 
-function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
+const TimelineNodeComponent = memo(function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const { step, onRemove } = data;
   const violations = step.violations ?? [];
+
+  const handleRemove = useCallback(() => {
+    onRemove(step.id);
+  }, [onRemove, step.id]);
 
   return (
     <div className="timeline-node">
@@ -52,7 +56,7 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
         <span className="timeline-node__title">
           #{step.seq} · {step.processCode}
         </span>
-        <button type="button" className="timeline-node__remove" onClick={() => onRemove(step.id)}>
+        <button type="button" className="timeline-node__remove" onClick={handleRemove} aria-label={`공정 ${step.seq} 삭제`}>
           <Trash2 size={14} />
         </button>
       </header>
@@ -80,11 +84,12 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
       </div>
     </div>
   );
-}
+});
 
 const TimelineNode = memo(TimelineNodeComponent);
 TimelineNode.displayName = "TimelineNode";
 
+// Memoize nodeTypes to prevent re-renders
 const nodeTypes = { timeline: TimelineNode } as const;
 
 interface CanvasViewProps extends RoutingCanvasProps {
@@ -228,6 +233,7 @@ function RoutingCanvasView({
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+      setIsDraggingOver(false);
       const transfer = event.dataTransfer.getData("application/routing-operation");
       if (!transfer) {
         return;
@@ -253,6 +259,19 @@ function RoutingCanvasView({
     },
     [insertOperation, timeline.length],
   );
+
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const handleDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
+    if (event.currentTarget === event.target) {
+      setIsDraggingOver(false);
+    }
+  }, []);
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -310,15 +329,26 @@ function RoutingCanvasView({
     }
   }, [autoFit, fitPadding, timeline.length, isReady, scheduleFrame, syncScrollToViewport]);
 
+  const canvasClassName = `${containerClassName}${isDraggingOver ? " drag-active" : ""}`;
+
   return (
     <div
-      className={containerClassName}
+      className={canvasClassName}
       ref={wrapperRef}
       onDrop={handleDrop}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onScroll={handleScroll}
       data-testid="routing-canvas-scroll"
+      role="region"
+      aria-label="라우팅 타임라인 캔버스"
+      aria-describedby="routing-canvas-description"
     >
+      <div id="routing-canvas-description" className="sr-only">
+        공정 순서를 드래그하여 재배치하거나, 후보 패널에서 공정을 드래그하여 추가할 수 있습니다.
+        현재 {timeline.length}개의 공정이 있습니다.
+      </div>
       <div className="timeline-flow__canvas" style={{ width: canvasDimensions.width, height: canvasDimensions.height }}>
         <ReactFlow
           nodes={nodes}

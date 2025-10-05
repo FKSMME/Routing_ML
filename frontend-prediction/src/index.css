@@ -43,6 +43,19 @@ body::before {
 @tailwind components;
 @tailwind utilities;
 
+/* ♿ Accessibility: Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 :root {
   /* 🎮 Cyberpunk Neon Colors */
   --primary: #0ea5e9;
@@ -4845,4 +4858,668 @@ body::before {
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* ==========================================
+   무게감 있는 페이지 전환 애니메이션
+   ========================================== */
+
+/* 워크스페이스 전환 애니메이션 - 쿵쿵쿵 효과 */
+/* 기존 무거운 낙하 효과 (60px) */
+@keyframes workspaceImpact {
+  0% {
+    opacity: 0;
+    transform: translateY(60px) scale(0.95);
+  }
+  40% {
+    opacity: 0.8;
+    transform: translateY(-10px) scale(1.02);
+  }
+  60% {
+    transform: translateY(5px) scale(0.99);
+  }
+  80% {
+    transform: translateY(-2px) scale(1.005);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 미세한 1mm 낙하 효과 (3-4px, 약 1mm) + 먼지 일으키기 */
+@keyframes subtleDrop {
+  0% {
+    opacity: 0.95;
+    transform: translateY(-4px);
+    filter: blur(0px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0px);
+    filter: blur(0.3px); /* 먼지 일어나는 순간 살짝 흐림 */
+  }
+  40% {
+    transform: translateY(1.5px); /* 살짝 반동 */
+    filter: blur(0.2px);
+  }
+  60% {
+    transform: translateY(-0.5px);
+    filter: blur(0.1px);
+  }
+  80% {
+    transform: translateY(0.3px);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* 먼지 입자 효과 */
+@keyframes dustPuff {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translateY(-8px) scale(1);
+  }
+  60% {
+    opacity: 0.4;
+    transform: translateY(-15px) scale(1.2) translateX(5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(1.4) translateX(10px);
+  }
+}
+
+/* 메뉴 전환 시 먼지 효과 */
+@keyframes dustBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2) rotate(360deg);
+  }
+}
+
+/* 무거운 카드 낙하 애니메이션 */
+@keyframes heavyDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translateY(10px) scale(1.05);
+  }
+  70% {
+    transform: translateY(-5px) scale(0.98);
+  }
+  85% {
+    transform: translateY(2px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 먼지 파티클 향상 */
+@keyframes enhancedDustFloat {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(-100px) translateX(30px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes dustSwirl {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(20px, -50px) rotate(180deg);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(0, -100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 네온 그로우 강화 */
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 10px rgba(14, 165, 233, 0.5),
+      0 0 20px rgba(14, 165, 233, 0.3),
+      0 0 40px rgba(168, 85, 247, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(14, 165, 233, 0.8),
+      0 0 40px rgba(168, 85, 247, 0.5),
+      0 0 60px rgba(16, 185, 129, 0.3);
+  }
+}
+
+.neon-pulse {
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+/* ==========================================
+   REQ-05: 칸 크기 일관성 CSS 표준화
+   REQ-06: 색감 조정 - 파스텔 톤 최적화
+   ========================================== */
+
+:root {
+  /* 🎨 파스텔 톤 색상 최적화 (REQ-06) */
+  --primary-pastel: #7dd3fc;        /* sky-300 - 부드러운 하늘색 */
+  --primary-pastel-dark: #0ea5e9;   /* 강조용 */
+  --secondary-pastel: #c4b5fd;      /* violet-300 - 부드러운 보라 */
+  --secondary-pastel-dark: #a855f7; /* 강조용 */
+  --accent-pastel: #86efac;         /* green-300 - 부드러운 초록 */
+  
+  /* 배경 밝기 증가 */
+  --surface-base-light: #1e293b;    /* slate-800 (밝게) */
+  --surface-card-light: #334155;    /* slate-700 (밝게) */
+  --surface-menu-light: #475569;    /* slate-600 (밝게) */
+  
+  /* 텍스트 대비 향상 */
+  --text-primary-light: #f1f5f9;    /* slate-100 (더 밝게) */
+  --text-muted-light: #cbd5e1;      /* slate-300 (더 밝게) */
+  
+  /* 부드러운 그림자 */
+  --shadow-glow-soft: 0 0 20px rgba(125, 211, 252, 0.25);
+  --shadow-hover-soft: 0 12px 32px rgba(125, 211, 252, 0.2);
+  
+  /* 📐 카드 크기 표준화 (REQ-05) */
+  --card-min-height: 120px;
+  --card-max-width: 100%;
+  --card-padding: var(--spacing-lg);      /* 24px */
+  --card-margin-bottom: var(--spacing-lg); /* 24px */
+  --card-gap: var(--spacing-lg);          /* 24px */
+  
+  --panel-min-height: 200px;
+  --panel-max-height: 600px;
+  --panel-padding: var(--spacing-lg);
+}
+
+/* 🎨 파스텔 톤 적용 */
+.dark {
+  --primary: var(--primary-pastel);
+  --primary-glow: var(--primary-pastel-dark);
+  --secondary: var(--secondary-pastel);
+  --accent: var(--accent-pastel);
+  
+  --surface-base: var(--surface-base-light);
+  --surface-card: var(--surface-card-light);
+  --surface-menu: var(--surface-menu-light);
+  
+  --text-primary: var(--text-primary-light);
+  --text-muted: var(--text-muted-light);
+  
+  --shadow-glow: var(--shadow-glow-soft);
+  --shadow-hover: var(--shadow-hover-soft);
+}
+
+/* 📐 카드 크기 일관성 적용 */
+.panel-card {
+  min-height: var(--card-min-height);
+  max-width: var(--card-max-width);
+  padding: var(--card-padding) !important;
+  margin-bottom: var(--card-margin-bottom);
+  box-sizing: border-box;
+}
+
+.panel-card--large {
+  min-height: 300px;
+}
+
+.panel-card--medium {
+  min-height: 200px;
+}
+
+.panel-card--small {
+  min-height: 80px;
+  padding: var(--spacing-md) !important;
+}
+
+/* Grid 간격 통일 */
+.routing-workspace__grid,
+.routing-workspace-grid {
+  gap: var(--card-gap);
+}
+
+.prediction-grid,
+.timeline-grid,
+.candidate-grid {
+  gap: var(--card-gap);
+}
+
+/* 반응형 조정 */
+@media (max-width: 1024px) {
+  :root {
+    --card-padding: var(--spacing-md); /* 16px */
+    --card-margin-bottom: var(--spacing-md);
+    --card-gap: var(--spacing-md);
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --card-padding: var(--spacing-sm); /* 8px */
+    --card-margin-bottom: var(--spacing-sm);
+    --card-gap: var(--spacing-sm);
+  }
+}
+
+/* 부드러운 호버 효과 */
+.panel-card:hover,
+.surface-card:hover,
+.frosted-panel:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 25px 50px rgba(125, 211, 252, 0.3),
+    0 0 60px rgba(196, 181, 253, 0.2),
+    0 0 80px rgba(134, 239, 172, 0.15);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==========================================
+   REQ-02: 드롭 존 하이라이트 및 삽입 위치 미리보기
+   ========================================== */
+
+/* 드래그 중일 때 타임라인 플로우 하이라이트 */
+.timeline-flow.drag-active {
+  position: relative;
+}
+
+.timeline-flow.drag-active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px dashed rgba(125, 211, 252, 0.8);
+  border-radius: 12px;
+  background: rgba(125, 211, 252, 0.08);
+  pointer-events: none;
+  z-index: 10;
+  animation: dropZonePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dropZonePulse {
+  0%, 100% {
+    border-color: rgba(125, 211, 252, 0.6);
+    background: rgba(125, 211, 252, 0.05);
+  }
+  50% {
+    border-color: rgba(125, 211, 252, 1);
+    background: rgba(125, 211, 252, 0.12);
+  }
+}
+
+/* 삽입 위치 미리보기 선 */
+.timeline-flow__insert-indicator {
+  position: absolute;
+  width: 3px;
+  height: 100px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(125, 211, 252, 0.8) 10%,
+    rgba(125, 211, 252, 1) 50%,
+    rgba(125, 211, 252, 0.8) 90%,
+    transparent
+  );
+  pointer-events: none;
+  z-index: 20;
+  transition: left 0.15s ease-out;
+  animation: insertPulse 1s ease-in-out infinite;
+}
+
+.timeline-flow__insert-indicator::before,
+.timeline-flow__insert-indicator::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: rgba(125, 211, 252, 1);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(125, 211, 252, 0.8);
+}
+
+.timeline-flow__insert-indicator::before {
+  top: -6px;
+}
+
+.timeline-flow__insert-indicator::after {
+  bottom: -6px;
+}
+
+@keyframes insertPulse {
+  0%, 100% {
+    opacity: 0.8;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.3);
+  }
+}
+
+/* 드롭 성공 피드백 */
+.timeline-flow__drop-feedback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.5rem 2rem;
+  background: rgba(134, 239, 172, 0.95);
+  color: #064e3b;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(134, 239, 172, 0.5);
+  font-weight: 600;
+  font-size: 1.125rem;
+  z-index: 9999;
+  animation: dropSuccess 0.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.timeline-flow__drop-feedback--error {
+  background: rgba(248, 113, 113, 0.95);
+  color: #7f1d1d;
+  box-shadow: 0 8px 32px rgba(248, 113, 113, 0.5);
+}
+
+.timeline-flow__drop-feedback svg {
+  display: inline-block;
+  margin-right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+}
+
+@keyframes dropSuccess {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+/* 타임라인 노드 드래그 중 스타일 */
+.timeline-node.dragging {
+  opacity: 0.7;
+  transform: rotate(3deg) scale(1.05);
+  box-shadow: 0 10px 40px rgba(125, 211, 252, 0.6);
+  cursor: grabbing !important;
+  z-index: 100;
+}
+
+/* 후보 패널 드래그 시작 시 시각적 피드백 */
+.candidate-operation.dragging {
+  opacity: 0.6;
+  transform: scale(0.95) rotate(-2deg);
+  box-shadow: 0 8px 24px rgba(125, 211, 252, 0.4);
+}
+
+/* ==========================================
+   REQ-03: SAVE 버튼 LOCAL/클립보드 선택 UI
+   ========================================== */
+
+/* SAVE 버튼 드롭다운 스타일 */
+.save-button-group {
+  position: relative;
+  display: inline-flex;
+  gap: 0;
+}
+
+.save-button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary-pastel) 0%, var(--secondary-pastel) 100%);
+  color: #0f172a;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px 0 0 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(125, 211, 252, 0.3);
+}
+
+.save-button-primary:hover {
+  box-shadow: 0 6px 20px rgba(125, 211, 252, 0.5);
+  transform: translateY(-2px);
+}
+
+.save-button-primary:active {
+  transform: translateY(0);
+}
+
+.save-button-dropdown-toggle {
+  padding: 0.75rem;
+  background: linear-gradient(135deg, var(--primary-pastel-dark) 0%, var(--secondary-pastel-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(125, 211, 252, 0.3);
+}
+
+.save-button-dropdown-toggle:hover {
+  background: linear-gradient(135deg, var(--primary-pastel-dark) 20%, var(--secondary-pastel-dark) 120%);
+  box-shadow: 0 6px 20px rgba(125, 211, 252, 0.5);
+}
+
+.save-button-dropdown-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.save-button-dropdown-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* 드롭다운 메뉴 */
+.save-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  background: var(--surface-card-light);
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(125, 211, 252, 0.2);
+  padding: 0.5rem;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.save-dropdown-section {
+  padding: 0.5rem 0;
+}
+
+.save-dropdown-section:not(:last-child) {
+  border-bottom: 1px solid rgba(125, 211, 252, 0.2);
+}
+
+.save-dropdown-label {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.save-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  color: var(--text-primary-light);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.save-dropdown-item:hover {
+  background: rgba(125, 211, 252, 0.15);
+  color: var(--primary-pastel);
+}
+
+.save-dropdown-item:active {
+  background: rgba(125, 211, 252, 0.25);
+}
+
+.save-dropdown-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.save-dropdown-item__label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.save-dropdown-item__shortcut {
+  font-size: 0.75rem;
+  color: var(--text-muted-light);
+  background: rgba(125, 211, 252, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* 포맷 선택 체크박스 */
+.format-checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.format-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(125, 211, 252, 0.1);
+  border: 1px solid rgba(125, 211, 252, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8125rem;
+}
+
+.format-checkbox-label:hover {
+  background: rgba(125, 211, 252, 0.2);
+  border-color: rgba(125, 211, 252, 0.5);
+}
+
+.format-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-pastel);
+}
+
+.format-checkbox-label input[type="checkbox"]:checked + span {
+  font-weight: 600;
+  color: var(--primary-pastel);
+}
+
+/* 토스트 알림 */
+.save-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  padding: 1rem 1.5rem;
+  background: rgba(134, 239, 172, 0.95);
+  color: #064e3b;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(134, 239, 172, 0.4);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 9999;
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+.save-toast--error {
+  background: rgba(248, 113, 113, 0.95);
+  color: #7f1d1d;
+  box-shadow: 0 8px 24px rgba(248, 113, 113, 0.4);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.save-toast svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }

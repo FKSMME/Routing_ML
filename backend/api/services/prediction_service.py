@@ -1441,6 +1441,26 @@ class PredictionService:
                 erp_path,
             )
 
+        if "xml" in requested and export_cfg.enable_xml and not routing_df.empty:
+            xml_path = export_dir / f"routing_operations_{timestamp}.xml"
+            _safe_export(lambda: self._write_xml_export(routing_records, candidate_records, xml_path, encoding), xml_path)
+
+        if "access" in requested and export_cfg.enable_access and export_cfg.access_db_path:
+            try:
+                inserted_count = self._write_access_export(
+                    routing_records,
+                    export_cfg.access_db_path,
+                    export_cfg.access_table_name
+                )
+                access_info = f"{export_cfg.access_db_path}::{export_cfg.access_table_name} ({inserted_count} rows)"
+                exported_paths.append(access_info)
+                logger.info("ACCESS 데이터베이스 저장 완료: %s", access_info)
+            except Exception as exc:
+                logger.warning("ACCESS 데이터베이스 저장 실패: %s", exc)
+                export_errors.append(
+                    {"path": export_cfg.access_db_path or "unknown", "error": f"{exc.__class__.__name__}: {exc}"}
+                )
+
         if export_cfg.compress_on_save and exported_paths:
             # 간단한 압축: pandas to_csv gzip 옵션 활용
             gz_path = export_dir / f"routing_operations_{timestamp}.csv.gz"
@@ -1451,6 +1471,119 @@ class PredictionService:
                 )
 
         return exported_paths, export_errors
+
+    def _write_xml_export(
+        self,
+        routing_records: List[Dict[str, Any]],
+        candidate_records: List[Dict[str, Any]],
+        xml_path: Path,
+        encoding: str = "utf-8"
+    ) -> None:
+        """XML 형식으로 라우팅 데이터 내보내기."""
+        import xml.etree.ElementTree as ET
+        from xml.dom import minidom
+
+        root = ET.Element("RoutingExport")
+        root.set("generated_at", datetime.utcnow().isoformat())
+        root.set("record_count", str(len(routing_records)))
+
+        # Candidates section
+        candidates_elem = ET.SubElement(root, "Candidates")
+        for candidate in candidate_records:
+            cand_elem = ET.SubElement(candidates_elem, "Candidate")
+            for key, value in candidate.items():
+                if value is not None:
+                    child = ET.SubElement(cand_elem, str(key))
+                    child.text = str(value)
+
+        # Routings section
+        routings_elem = ET.SubElement(root, "Routings")
+
+        # Group by item_code
+        from collections import defaultdict
+        routings_by_item: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        for record in routing_records:
+            item_code = record.get("item_code") or record.get("ITEM_CD", "UNKNOWN")
+            routings_by_item[str(item_code)].append(record)
+
+        for item_code, operations in routings_by_item.items():
+            item_elem = ET.SubElement(routings_elem, "Item")
+            item_elem.set("code", item_code)
+            item_elem.set("operation_count", str(len(operations)))
+
+            ops_elem = ET.SubElement(item_elem, "Operations")
+            for operation in operations:
+                op_elem = ET.SubElement(ops_elem, "Operation")
+                for key, value in operation.items():
+                    if value is not None and key not in ["item_code", "ITEM_CD"]:
+                        child = ET.SubElement(op_elem, str(key))
+                        child.text = str(value)
+
+        # Pretty print
+        xml_str = ET.tostring(root, encoding="unicode")
+        dom = minidom.parseString(xml_str)
+        pretty_xml = dom.toprettyxml(indent="  ", encoding=encoding)
+
+        xml_path.write_bytes(pretty_xml)
+
+    def _write_access_export(
+        self,
+        routing_records: List[Dict[str, Any]],
+        access_db_path: str,
+        table_name: str = "ROUTING_MASTER"
+    ) -> int:
+        """ACCESS 데이터베이스에 라우팅 데이터 저장."""
+        try:
+            import pyodbc
+        except ImportError:
+            logger.error("pyodbc 모듈이 설치되지 않았습니다. 'pip install pyodbc'로 설치하세요.")
+            raise RuntimeError("pyodbc 모듈이 필요합니다")
+
+        if not routing_records:
+            return 0
+
+        # ODBC 연결 문자열
+        conn_str = (
+            f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};"
+            f"DBQ={access_db_path};"
+            "ExtendedAnsiSQL=1;"
+        )
+
+        inserted_count = 0
+
+        try:
+            conn = pyodbc.connect(conn_str)
+            cursor = conn.cursor()
+
+            # 첫 번째 레코드로부터 컬럼 확인
+            sample_record = routing_records[0]
+            columns = [col for col in sample_record.keys() if sample_record.get(col) is not None]
+
+            # INSERT 쿼리 준비
+            placeholders = ", ".join(["?"] * len(columns))
+            column_names = ", ".join(f"[{col}]" for col in columns)
+            insert_query = f"INSERT INTO [{table_name}] ({column_names}) VALUES ({placeholders})"
+
+            # 배치 삽입
+            for record in routing_records:
+                values = [record.get(col) for col in columns]
+                try:
+                    cursor.execute(insert_query, values)
+                    inserted_count += 1
+                except pyodbc.IntegrityError as exc:
+                    # 중복 키 오류 무시
+                    logger.debug("중복 레코드 건너뛰기: %s", exc)
+                    continue
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return inserted_count
+
+        except pyodbc.Error as exc:
+            logger.error("ACCESS 데이터베이스 저장 실패: %s", exc)
+            raise RuntimeError(f"ACCESS 데이터베이스 오류: {exc}")
 
     def prepare_visualization_snapshot(
         self,

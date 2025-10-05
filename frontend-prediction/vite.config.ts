@@ -15,6 +15,20 @@ export default defineConfig({
       "@store": fileURLToPath(new URL("./src/store", import.meta.url)),
     },
   },
+  build: {
+    target: "es2020",
+    minify: "esbuild",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom"],
+          "reactflow-vendor": ["reactflow"],
+          "ui-vendor": ["lucide-react", "zustand"],
+        },
+      },
+    },
+  },
   server: {
     host: "0.0.0.0",
     port: 5173,
