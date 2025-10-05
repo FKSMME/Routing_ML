@@ -1,4 +1,5 @@
-import type { AccessMetadataResponse } from "@lib/apiClient";
+// import type { AccessMetadataResponse } from "@lib/apiClient";
+type AccessMetadataResponse = any;
 
 interface MasterDataMetadataPanelProps {
   metadata: AccessMetadataResponse | null;

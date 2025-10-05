@@ -322,7 +322,9 @@ export function CandidatePanel() {
                     className="candidate-block__action"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleEditCustom(item.entryId);
+                      if (item.entryId) {
+                        handleEditCustom(item.entryId);
+                      }
                     }}
                     aria-label="사용자 정의 공정 편집"
                   >

@@ -23,7 +23,7 @@ import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
-import { useWorkspaceStore } from "@store/workspaceStore";
+import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
 import axios from "axios";
@@ -292,7 +292,7 @@ export default function App() {
         </aside>
 
         <section className="routing-column routing-column--center">
-          <RoutingProductTabs />
+          {/* <RoutingProductTabs /> */}
           <TimelinePanel />
           <VisualizationSummary metrics={data?.metrics} />
           <FeatureWeightPanel
@@ -345,12 +345,12 @@ export default function App() {
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
       <ParticleBackground />
       {isPersistent ? (
-        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={setActiveMenu} />
+        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
         <ResponsiveNavigationDrawer
           items={NAVIGATION_ITEMS}
           activeId={activeMenu}
-          onSelect={setActiveMenu}
+          onSelect={(id) => setActiveMenu(id as NavigationKey)}
           open={isNavOpen}
           onClose={close}
           drawerId={drawerId}

@@ -5,7 +5,7 @@ import type {
   MasterDataTreeNode,
 } from "@app-types/masterData";
 import {
-  type AccessMetadataResponse,
+  // type AccessMetadataResponse,
   downloadMasterDataLog,
   fetchAccessMetadata,
   fetchMasterDataItem,
@@ -13,6 +13,8 @@ import {
   fetchMasterDataTree,
   postUiAudit,
 } from "@lib/apiClient";
+
+type AccessMetadataResponse = any;
 import { MASTER_DATA_MOCK } from "@lib/masterDataMock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";

@@ -29,7 +29,7 @@ body::before {
     transparent 2px
   );
   pointer-events: none;
-  z-index: 999;
+  z-index: 1;
   opacity: 0.3;
   animation: scanlines 8s linear infinite;
 }
@@ -594,8 +594,8 @@ body::before {
 
 .app-header {
   position: sticky;
-  top: var(--nav-height);
-  z-index: 40;
+  top: 0;
+  z-index: 50;
   padding: 0.85rem 1.5rem 1rem;
   background: linear-gradient(
     135deg,
@@ -603,6 +603,7 @@ body::before {
     hsl(var(--gradient-sky-end) / 0.12)
   );
   border-bottom: 0;
+  backdrop-filter: blur(8px);
 }
 .responsive-nav-toggle {
   position: sticky;
@@ -653,7 +654,7 @@ body::before {
 }
 
 .main-nav {
-  position: relative;
+  position: sticky;
   top: 0;
   z-index: 60;
   padding: 0.85rem 1.5rem 1.15rem;
@@ -662,6 +663,7 @@ body::before {
     hsl(var(--gradient-sky-start) / 0.35),
     hsl(var(--gradient-sky-end) / 0.1)
   );
+  backdrop-filter: blur(8px);
 }
 
 .main-nav-surface {
@@ -696,7 +698,8 @@ body::before {
   padding: 0.85rem 1.1rem;
   border-radius: 1rem;
   border: 1px solid color-mix(in hsl, var(--border) 65%, transparent);
-  background: color-mix(in hsl, var(--surface) 82%, transparent);
+  background: color-mix(in hsl, var(--surface-card) 95%, transparent);
+  backdrop-filter: blur(12px);
   color: var(--text-primary);
   transition: var(--transition-lift);
   cursor: pointer;
@@ -749,12 +752,14 @@ body::before {
 
 .main-nav-label {
   font-weight: 600;
-  color: #f1f5f9 !important; /* 명확한 흰색 (slate-100) - 가시성 보장 */
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 8px rgba(14, 165, 233, 0.3);
 }
 
 .main-nav-desc {
   font-size: 0.8rem;
-  color: #cbd5e1 !important; /* 밝은 회색 (slate-300) - 가시성 보장 */
+  color: #e2e8f0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
 .menu-placeholder {

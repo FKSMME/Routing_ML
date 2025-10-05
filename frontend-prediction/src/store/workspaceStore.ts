@@ -5,7 +5,6 @@ import { create } from "zustand";
 type WorkspaceSettingsPayload = any;
 type WorkspaceSettingsResponse = any;
 
-import { useRoutingStore } from "./routingStore";
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
   registerReferenceMatrixPersistence,
@@ -18,8 +17,9 @@ export type NavigationKey =
   | "master-data"
   | "routing"
   | "routing-matrix"
-  | "algorithm"
+  | "process-groups"
   | "data-output"
+  | "algorithm"
   | "training-status"
   | "options";
 
