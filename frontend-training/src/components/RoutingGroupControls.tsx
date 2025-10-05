@@ -234,7 +234,9 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
   const [confirmBusy, setConfirmBusy] = useState(false);
 
   const { data: workflowConfig } = useWorkflowConfig();
-  const mappingRows = useWorkspaceStore((state) => state.outputMappings);
+  // TODO: outputMappings는 prediction 전용 기능 - training에서 제거 필요
+  // const mappingRows = useWorkspaceStore((state) => state.outputMappings);
+  const mappingRows: any[] = []; // 임시: 빌드 에러 방지
   const setOutputMappings = useWorkspaceStore((state) => state.setOutputMappings);
   const updateOutputMappings = useWorkspaceStore((state) => state.updateOutputMappings);
   const reorderOutputMappings = useWorkspaceStore((state) => state.reorderOutputMappings);

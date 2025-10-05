@@ -6,7 +6,7 @@ import {
 } from "@store/routingStore";
 import { Activity, Database, Edit3, EyeOff, Plus, Search, Settings, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CandidateSettingsModal } from "./CandidateSettingsModal";
 
@@ -130,12 +130,6 @@ export function CandidatePanel() {
     () => processGroups.find((group) => group.id === activeProcessGroupId) ?? null,
     [activeProcessGroupId, processGroups],
   );
-
-  useEffect(() => {
-    setFormState(createEmptyFormState());
-    setEditingId(null);
-    setFormError(null);
-  }, [bucket?.itemCode, bucketCandidateId]);
 
   const handleDragStart = (operation: OperationStep) => (event: DragEvent<HTMLDivElement>) => {
     event.dataTransfer.effectAllowed = "copy";
@@ -328,7 +322,9 @@ export function CandidatePanel() {
                     className="candidate-block__action"
                     onClick={(event) => {
                       event.stopPropagation();
-                      handleEditCustom(item.entryId);
+                      if (item.entryId) {
+                        handleEditCustom(item.entryId);
+                      }
                     }}
                     aria-label="사용자 정의 공정 편집"
                   >
