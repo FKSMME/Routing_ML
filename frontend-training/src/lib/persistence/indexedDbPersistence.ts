@@ -225,7 +225,7 @@ export async function writeRoutingWorkspaceSnapshot<TState>(
     version: SNAPSHOT_VERSION,
     syncedAt: null,
   };
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return { ...snapshot, persisted: false };
   }
@@ -238,7 +238,7 @@ export async function writeRoutingWorkspaceSnapshot<TState>(
 export async function readLatestRoutingWorkspaceSnapshot<TState>(): Promise<
   RoutingWorkspaceSnapshot<TState> | undefined
 > {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return undefined;
   }
@@ -266,7 +266,7 @@ export async function writeWorkspaceFacetsSnapshot(
     state,
     version: WORKSPACE_FACETS_VERSION,
   };
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return { ...snapshot, persisted: false };
   }
@@ -278,7 +278,7 @@ export async function writeWorkspaceFacetsSnapshot(
 export async function readLatestWorkspaceFacetsSnapshot(): Promise<
   WorkspaceFacetsSnapshot | undefined
 > {
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return undefined;
   }
@@ -307,7 +307,7 @@ export async function enqueueAuditEntry(input: AuditQueueInput): Promise<AuditQu
     createdAt: new Date().toISOString(),
     syncedAt: null,
   };
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return { ...entry, persisted: false };
   }
@@ -318,7 +318,7 @@ export async function enqueueAuditEntry(input: AuditQueueInput): Promise<AuditQu
 }
 
 export async function readAuditEntries(): Promise<AuditQueueEntry[]> {
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return [];
   }
@@ -334,7 +334,7 @@ export async function readAuditEntries(): Promise<AuditQueueEntry[]> {
 }
 
 export async function clearRoutingWorkspaceSnapshots(): Promise<void> {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return;
   }
@@ -343,7 +343,7 @@ export async function clearRoutingWorkspaceSnapshots(): Promise<void> {
 }
 
 export async function clearWorkspaceFacetsSnapshots(): Promise<void> {
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return;
   }
@@ -456,7 +456,7 @@ const notifyFlushListeners = (result: RoutingPersistenceFlushResult) => {
 };
 
 const collectSnapshotsForFlush = async (): Promise<RoutingSnapshotPayload[]> => {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return [];
   }
@@ -479,7 +479,7 @@ const collectSnapshotsForFlush = async (): Promise<RoutingSnapshotPayload[]> => 
 };
 
 const collectAuditsForFlush = async (): Promise<RoutingAuditPayload[]> => {
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return [];
   }
@@ -506,7 +506,7 @@ const markSnapshotsSynced = async (ids: string[], timestamp: string): Promise<vo
   if (ids.length === 0) {
     return;
   }
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return;
   }
@@ -525,7 +525,7 @@ const removeAuditEntries = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) {
     return;
   }
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return;
   }
