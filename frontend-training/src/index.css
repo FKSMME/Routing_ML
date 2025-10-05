@@ -4778,6 +4778,7 @@
    ========================================== */
 
 /* 워크스페이스 전환 애니메이션 - 쿵쿵쿵 효과 */
+/* 기존 무거운 낙하 효과 (60px) */
 @keyframes workspaceImpact {
   0% {
     opacity: 0;
@@ -4797,6 +4798,89 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* 미세한 1mm 낙하 효과 (3-4px, 약 1mm) + 먼지 일으키기 */
+@keyframes subtleDrop {
+  0% {
+    opacity: 0.95;
+    transform: translateY(-4px);
+    filter: blur(0px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0px);
+    filter: blur(0.3px);
+  }
+  40% {
+    transform: translateY(1.5px);
+    filter: blur(0.2px);
+  }
+  60% {
+    transform: translateY(-0.5px);
+    filter: blur(0.1px);
+  }
+  80% {
+    transform: translateY(0.3px);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+/* 먼지 입자 효과 */
+@keyframes dustPuff {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  30% {
+    opacity: 0.6;
+    transform: translateY(-8px) scale(1);
+  }
+  60% {
+    opacity: 0.4;
+    transform: translateY(-15px) scale(1.2) translateX(5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(1.4) translateX(10px);
+  }
+}
+
+/* 적용 클래스 */
+.workspace-transition {
+  animation: subtleDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.panel-card-drop {
+  animation: subtleDrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 먼지 효과 컨테이너 */
+.dust-effect {
+  position: relative;
+}
+
+.dust-effect::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  height: 20px;
+  background: radial-gradient(ellipse at center, rgba(125, 211, 252, 0.3) 0%, transparent 70%);
+  transform: translateX(-50%);
+  animation: dustPuff 0.6s ease-out forwards;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.workspace-transition::after {
+  animation: dustPuff 0.6s ease-out 0.2s forwards;
 }
 
 /* 무거운 카드 낙하 애니메이션 */

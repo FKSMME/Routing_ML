@@ -68,7 +68,10 @@
       "Bash(npx playwright:*)",
       "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test --project=chromium --reporter=list)",
       "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test ../tests/e2e/save-button-dropdown.spec.ts --project=chromium --reporter=list)",
-      "Bash(export PLAYWRIGHT_SKIP_WEB_SERVER=true)"
+      "Bash(export PLAYWRIGHT_SKIP_WEB_SERVER=true)",
+      "Bash(pkill:*)",
+      "Bash(tee:*)",
+      "Bash(npx vite:*)"
     ],
     "deny": [],
     "ask": []

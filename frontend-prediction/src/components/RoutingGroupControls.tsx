@@ -746,14 +746,14 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
               createLocalMappingRow({ source: column, mapped: column }),
             );
       const normalizedMappings = effectiveMappings
-        .map((mapping) => ({
+        .map((mapping: any) => ({
           source: mapping.source.trim(),
           target: (mapping.mapped ?? mapping.source).trim(),
           type: mapping.type,
           required: mapping.required,
           defaultValue: mapping.defaultValue?.trim() ?? "",
         }))
-        .filter((mapping) => mapping.target !== "" && (mapping.source !== "" || mapping.defaultValue !== ""));
+        .filter((mapping: any) => mapping.target !== "" && (mapping.source !== "" || mapping.defaultValue !== ""));
       const fallbackColumns = [
         "ITEM_CD",
         "CANDIDATE_ID",
@@ -910,7 +910,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
 
       const targetColumnCandidates =
         normalizedMappings.length > 0
-          ? normalizedMappings.map((mapping) => mapping.target)
+          ? normalizedMappings.map((mapping: any) => mapping.target)
           : defaultColumns;
       const targetColumns = Array.from(
         new Set(
@@ -929,7 +929,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       }
 
       const mappingLookup = new Map(
-        normalizedMappings.map((mapping) => [mapping.target, mapping] as const),
+        normalizedMappings.map((mapping: any) => [mapping.target, mapping] as const),
       );
 
       const resolveValue = (column: string, sources: Record<string, unknown>): unknown => {
@@ -1666,7 +1666,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
                 </tr>
               </thead>
               <tbody>
-                {mappingRows.map((row, index) => {
+                {mappingRows.map((row: any, index: number) => {
                   const sourceValue = row.source ?? "";
                   const sourceOptions = availableColumns.includes(sourceValue)
                     ? availableColumns

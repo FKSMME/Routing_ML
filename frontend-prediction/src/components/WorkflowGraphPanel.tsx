@@ -1242,7 +1242,7 @@ export function WorkflowGraphPanel() {
       }
 
       const projectorHint =
-        codeResponse.tensorboard_paths?.projector_config ?? codeResponse.tensorboard_paths?.projector_dir;
+        codeResponse?.tensorboard_paths?.projector_config ?? codeResponse?.tensorboard_paths?.projector_dir;
 
       showToast({
         kind: "success",

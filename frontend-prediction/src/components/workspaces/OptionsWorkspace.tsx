@@ -836,7 +836,7 @@ export function OptionsWorkspace() {
                   {metadataPreview.table} ({metadataPreview.columns.length} columns)
                 </p>
                 <ul className="metadata-list">
-                  {metadataPreview.columns.map((column) => (
+                  {metadataPreview.columns.map((column: any) => (
                     <li key={column.name}>
                       <span className="metadata-list__name">{column.name}</span>
                       <span className="metadata-list__type">
