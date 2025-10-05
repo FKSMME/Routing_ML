@@ -31,29 +31,31 @@ export function ParticleBackground() {
     setCanvasSize();
 
     const particles: Particle[] = [];
-    const particleCount = 80;
+    const particleCount = 150; // 먼지 파티클 수 증가
     const colors = [
       'rgba(14, 165, 233, ', // cyan
       'rgba(168, 85, 247, ', // purple
       'rgba(16, 185, 129, ', // green
       'rgba(236, 72, 153, ', // pink
+      'rgba(245, 158, 11, ', // amber
     ];
 
-    // 파티클 생성 함수
+    // 파티클 생성 함수 - 먼지 느낌 강화
     const createParticle = (): Particle => {
-      const life = Math.random() * 200 + 100;
+      const life = Math.random() * 300 + 150; // 생명 주기 증가
+      const isDust = Math.random() > 0.3; // 70%는 먼지 파티클
       return {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 1.2,
-        vy: (Math.random() - 0.5) * 1.2,
-        size: Math.random() * 3 + 0.5,
+        vx: (Math.random() - 0.5) * (isDust ? 0.8 : 1.5), // 먼지는 느리게
+        vy: (Math.random() - 0.5) * (isDust ? 0.6 : 1.2) - 0.3, // 약간 위로 떠오르는 효과
+        size: isDust ? Math.random() * 2 + 0.3 : Math.random() * 4 + 0.5,
         opacity: 0,
         color: colors[Math.floor(Math.random() * colors.length)],
         life: 0,
         maxLife: life,
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.05,
+        rotationSpeed: (Math.random() - 0.5) * (isDust ? 0.03 : 0.08),
       };
     };
 
@@ -134,8 +136,9 @@ export function ParticleBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-0 opacity-40"
+      className="fixed inset-0 pointer-events-none z-0 opacity-50"
       style={{ mixBlendMode: 'screen' }}
+      aria-hidden="true"
     />
   );
 }

@@ -10,8 +10,10 @@
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings 0",
     "test": "vitest",
-    "test:e2e": "vitest run tests/e2e",
-    "test:playwright": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report playwright-report"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.20.0",

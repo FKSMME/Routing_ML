@@ -6245,7 +6245,6 @@ export const openApiSchema = {
       }
     }
   }
-}
 } as const;
 
 export type OpenApiSchema = typeof openApiSchema;
