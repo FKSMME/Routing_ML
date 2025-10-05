@@ -6,6 +6,7 @@ const WORKSPACE_DB_NAME = "routing_workspace";
 const SNAPSHOT_STORE_NAME = "snapshots";
 const WORKSPACE_FACETS_STORE_NAME = "workspace_facets";
 const AUDIT_STORE_NAME = "audit_queue";
+const DB_VERSION = 2; // Increment version to trigger upgrade
 
 const MAX_SNAPSHOTS = 5;
 const MAX_WORKSPACE_FACET_SNAPSHOTS = 5;
@@ -25,35 +26,95 @@ const isIndexedDbAvailable = (): boolean =>
 let snapshotStoreHandle: MaybeStoreHandle = null;
 let auditStoreHandle: MaybeStoreHandle = null;
 let workspaceFacetsStoreHandle: MaybeStoreHandle = null;
+let dbInitialized = false;
 
-const ensureSnapshotStore = (): MaybeStoreHandle => {
+// Initialize IndexedDB with all required object stores
+const initializeDatabase = (): Promise<void> => {
   if (!isIndexedDbAvailable()) {
-    return null;
+    return Promise.resolve();
   }
-  if (!snapshotStoreHandle) {
-    snapshotStoreHandle = createStore(WORKSPACE_DB_NAME, SNAPSHOT_STORE_NAME);
+
+  if (dbInitialized) {
+    return Promise.resolve();
   }
-  return snapshotStoreHandle;
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(WORKSPACE_DB_NAME, DB_VERSION);
+
+    request.onerror = () => {
+      console.error('IndexedDB initialization failed:', request.error);
+      reject(request.error);
+    };
+
+    request.onsuccess = () => {
+      dbInitialized = true;
+      request.result.close();
+      resolve();
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      // Create object stores if they don't exist
+      if (!db.objectStoreNames.contains(SNAPSHOT_STORE_NAME)) {
+        db.createObjectStore(SNAPSHOT_STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(AUDIT_STORE_NAME)) {
+        db.createObjectStore(AUDIT_STORE_NAME);
+      }
+      if (!db.objectStoreNames.contains(WORKSPACE_FACETS_STORE_NAME)) {
+        db.createObjectStore(WORKSPACE_FACETS_STORE_NAME);
+      }
+    };
+  });
 };
 
-const ensureAuditStore = (): MaybeStoreHandle => {
+const ensureSnapshotStore = async (): Promise<MaybeStoreHandle> => {
   if (!isIndexedDbAvailable()) {
     return null;
   }
-  if (!auditStoreHandle) {
-    auditStoreHandle = createStore(WORKSPACE_DB_NAME, AUDIT_STORE_NAME);
+  try {
+    await initializeDatabase();
+    if (!snapshotStoreHandle) {
+      snapshotStoreHandle = createStore(WORKSPACE_DB_NAME, SNAPSHOT_STORE_NAME);
+    }
+    return snapshotStoreHandle;
+  } catch (error) {
+    console.error('Failed to ensure snapshot store:', error);
+    return null;
   }
-  return auditStoreHandle;
 };
 
-const ensureWorkspaceFacetsStore = (): MaybeStoreHandle => {
+const ensureAuditStore = async (): Promise<MaybeStoreHandle> => {
   if (!isIndexedDbAvailable()) {
     return null;
   }
-  if (!workspaceFacetsStoreHandle) {
-    workspaceFacetsStoreHandle = createStore(WORKSPACE_DB_NAME, WORKSPACE_FACETS_STORE_NAME);
+  try {
+    await initializeDatabase();
+    if (!auditStoreHandle) {
+      auditStoreHandle = createStore(WORKSPACE_DB_NAME, AUDIT_STORE_NAME);
+    }
+    return auditStoreHandle;
+  } catch (error) {
+    console.error('Failed to ensure audit store:', error);
+    return null;
   }
-  return workspaceFacetsStoreHandle;
+};
+
+const ensureWorkspaceFacetsStore = async (): Promise<MaybeStoreHandle> => {
+  if (!isIndexedDbAvailable()) {
+    return null;
+  }
+  try {
+    await initializeDatabase();
+    if (!workspaceFacetsStoreHandle) {
+      workspaceFacetsStoreHandle = createStore(WORKSPACE_DB_NAME, WORKSPACE_FACETS_STORE_NAME);
+    }
+    return workspaceFacetsStoreHandle;
+  } catch (error) {
+    console.error('Failed to ensure workspace facets store:', error);
+    return null;
+  }
 };
 
 const createId = () => {
@@ -164,7 +225,7 @@ export async function writeRoutingWorkspaceSnapshot<TState>(
     version: SNAPSHOT_VERSION,
     syncedAt: null,
   };
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return { ...snapshot, persisted: false };
   }
@@ -177,7 +238,7 @@ export async function writeRoutingWorkspaceSnapshot<TState>(
 export async function readLatestRoutingWorkspaceSnapshot<TState>(): Promise<
   RoutingWorkspaceSnapshot<TState> | undefined
 > {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return undefined;
   }
@@ -205,7 +266,7 @@ export async function writeWorkspaceFacetsSnapshot(
     state,
     version: WORKSPACE_FACETS_VERSION,
   };
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return { ...snapshot, persisted: false };
   }
@@ -217,7 +278,7 @@ export async function writeWorkspaceFacetsSnapshot(
 export async function readLatestWorkspaceFacetsSnapshot(): Promise<
   WorkspaceFacetsSnapshot | undefined
 > {
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return undefined;
   }
@@ -246,7 +307,7 @@ export async function enqueueAuditEntry(input: AuditQueueInput): Promise<AuditQu
     createdAt: new Date().toISOString(),
     syncedAt: null,
   };
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return { ...entry, persisted: false };
   }
@@ -257,7 +318,7 @@ export async function enqueueAuditEntry(input: AuditQueueInput): Promise<AuditQu
 }
 
 export async function readAuditEntries(): Promise<AuditQueueEntry[]> {
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return [];
   }
@@ -273,7 +334,7 @@ export async function readAuditEntries(): Promise<AuditQueueEntry[]> {
 }
 
 export async function clearRoutingWorkspaceSnapshots(): Promise<void> {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return;
   }
@@ -282,7 +343,7 @@ export async function clearRoutingWorkspaceSnapshots(): Promise<void> {
 }
 
 export async function clearWorkspaceFacetsSnapshots(): Promise<void> {
-  const store = ensureWorkspaceFacetsStore();
+  const store = await ensureWorkspaceFacetsStore();
   if (!store) {
     return;
   }
@@ -395,7 +456,7 @@ const notifyFlushListeners = (result: RoutingPersistenceFlushResult) => {
 };
 
 const collectSnapshotsForFlush = async (): Promise<RoutingSnapshotPayload[]> => {
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return [];
   }
@@ -418,7 +479,7 @@ const collectSnapshotsForFlush = async (): Promise<RoutingSnapshotPayload[]> => 
 };
 
 const collectAuditsForFlush = async (): Promise<RoutingAuditPayload[]> => {
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return [];
   }
@@ -445,7 +506,7 @@ const markSnapshotsSynced = async (ids: string[], timestamp: string): Promise<vo
   if (ids.length === 0) {
     return;
   }
-  const store = ensureSnapshotStore();
+  const store = await ensureSnapshotStore();
   if (!store) {
     return;
   }
@@ -464,7 +525,7 @@ const removeAuditEntries = async (ids: string[]): Promise<void> => {
   if (ids.length === 0) {
     return;
   }
-  const store = ensureAuditStore();
+  const store = await ensureAuditStore();
   if (!store) {
     return;
   }

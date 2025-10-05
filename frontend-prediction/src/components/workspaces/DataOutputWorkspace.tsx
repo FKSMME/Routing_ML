@@ -6,8 +6,9 @@ import {
   postUiAudit,
   saveWorkspaceSettings,
 } from "@lib/apiClient";
-import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
+import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { TabContainer, type Tab } from "@components/TabContainer";
 
 import {
   OutputMappingRow as MappingRow,
@@ -628,82 +629,104 @@ export function DataOutputWorkspace() {
   const isSaving = saving || configSaving;
   const isLoading = configLoading || profilesQuery.isLoading || profileDetailQuery.isLoading;
 
-  return (
-    <div className="workspace-grid output-grid" role="region" aria-label="Output profile setup">
-      <aside className="output-column output-column--left">
-        <header className="workspace-panel__header">
-          <h2>Profiles</h2>
-          <button type="button" className="workspace-toolbar__btn" title="Create new profile" disabled>
-            <Plus size={14} /> New
+  // Tab 1: Profile Selection
+  const profilesTab = (
+    <div className="max-w-4xl mx-auto">
+      <div className="glass-morphism p-8 rounded-xl">
+        <header className="flex items-center justify-between mb-6">
+          <h2 className="heading-2">Output Profiles</h2>
+          <button type="button" className="btn-secondary" title="Create new profile" disabled>
+            <Plus size={16} /> New Profile
           </button>
         </header>
-        {profilesQuery.isLoading ? (
-          <p className="output-status">Loading profiles…</p>
-        ) : null}
-        {profilesQuery.isError ? (
-          <p className="output-status">Failed to load profiles.</p>
-        ) : null}
-        <ul className="output-profile-list" role="list">
-          {profilesQuery.data?.map((profile) => {
+        {profilesQuery.isLoading && <p className="body-text-secondary text-center py-8">Loading profiles…</p>}
+        {profilesQuery.isError && <p className="text-red-400 text-center py-8">Failed to load profiles.</p>}
+        <div className="grid gap-3">
+          {profilesQuery.data?.map((profile, index) => {
             const formattedDate = safeFormatDate(profile.updated_at);
             const isActive = selectedProfileId === profile.id;
             return (
-              <li key={profile.id} role="listitem">
-                <button
-                  type="button"
-                  className={`output-profile-list__item${isActive ? " is-active" : ""}`}
-                  onClick={() => {
-                    setSelectedProfileId(profile.id);
-                    setDirty(false);
-                    setStatusMessage("");
-                    setErrorMessage("");
-                    setPreviewRows([]);
-                    setPreviewColumnsState([]);
-                    setPreviewErrorMessage("");
-                    setPreviewLoading(true);
-                  }}
-                  onMouseEnter={() => profileDetailQuery.prefetch(profile.id)}
-                >
-                  <span className="output-profile-list__name">{profile.name}</span>
-                  <span className="output-profile-list__desc">
-                    {profile.description ?? profile.format ?? ""}
-                  </span>
-                  <span className="output-profile-list__date">
-                    {formattedDate ? `Updated ${formattedDate}` : ""}
-                  </span>
-                </button>
-              </li>
+              <button
+                key={profile.id}
+                type="button"
+                className={`
+                  stagger-item text-left p-5 rounded-lg border-2 transition-all duration-300
+                  hover-lift
+                  ${isActive
+                    ? 'border-primary-400 bg-primary-500/10 neon-cyan scale-105'
+                    : 'border-dark-border bg-dark-surface hover:border-primary-500/50 hover:bg-dark-elevated'
+                  }
+                `}
+                style={{ animationDelay: `${index * 0.05}s` }}
+                onClick={() => {
+                  setSelectedProfileId(profile.id);
+                  setDirty(false);
+                  setStatusMessage("");
+                  setErrorMessage("");
+                  setPreviewRows([]);
+                  setPreviewColumnsState([]);
+                  setPreviewErrorMessage("");
+                  setPreviewLoading(true);
+                }}
+                onMouseEnter={() => profileDetailQuery.prefetch(profile.id)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">{profile.name}</h3>
+                    <p className="body-text-secondary text-sm mb-2">
+                      {profile.description || profile.format || 'No description'}
+                    </p>
+                    {formattedDate && (
+                      <p className="text-xs text-dark-text-tertiary">
+                        Updated {formattedDate}
+                      </p>
+                    )}
+                  </div>
+                  {isActive && (
+                    <div className="ml-4">
+                      <span className="px-3 py-1 rounded-full bg-primary-500/20 text-primary-400 text-xs font-medium">
+                        Active
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </button>
             );
           })}
-        </ul>
-      </aside>
+        </div>
+      </div>
+    </div>
+  );
 
-      <section className="output-column output-column--center">
+  // Tab 2: Column Mapping
+  const mappingTab = (
+    <div className="max-w-7xl mx-auto">
+      <div className="glass-morphism p-8 rounded-xl">
         <form className="mapping-form" onSubmit={handleSubmitForm}>
-          <header className="workspace-panel__header">
+          <header className="flex items-center justify-between mb-6">
             <div>
-              <h2>Column Mapping</h2>
-              {selectedProfile ? (
-                <p className="workspace-panel__subtitle">{selectedProfile.description ?? selectedProfile.name}</p>
-              ) : null}
+              <h2 className="heading-2">Column Mapping</h2>
+              {selectedProfile && (
+                <p className="body-text-secondary mt-1">{selectedProfile.description ?? selectedProfile.name}</p>
+              )}
             </div>
-            <div className="workspace-toolbar">
-              <button type="button" className="workspace-toolbar__btn" onClick={handleAddRow} disabled={isSaving}>
-                <Plus size={14} /> Add column
+            <div className="flex gap-3">
+              <button type="button" className="btn-secondary" onClick={handleAddRow} disabled={isSaving}>
+                <Plus size={16} /> Add Column
               </button>
-              <button type="button" className="workspace-toolbar__btn" disabled>
-                <Upload size={14} /> Import
+              <button type="button" className="btn-ghost" disabled>
+                <Upload size={16} /> Import
               </button>
-              <button type="submit" className="workspace-toolbar__btn" disabled={isSaving}>
-                <Save size={14} />
-                {isSaving ? "Saving…" : "Save"}
+              <button type="submit" className="btn-primary neon-cyan" disabled={isSaving}>
+                <Save size={16} />
+                {isSaving ? " Saving…" : " Save"}
               </button>
             </div>
           </header>
           {isLoading ? (
             <p className="output-status">Loading profile mappings…</p>
           ) : (
-            <table className="mapping-table">
+            <table className="table-standard">
               <thead>
                 <tr>
                   <th>Source</th>
@@ -724,9 +747,11 @@ export function DataOutputWorkspace() {
                     onDragOver={handleRowDragOver}
                     onDrop={handleRowDrop(index)}
                     onDragEnd={handleRowDragEnd}
+                    className="draggable-row hover-lift transition-all duration-200"
                   >
                     <td>
                       <select
+                        className="form-input"
                         value={row.source}
                         onChange={(event) => handleRowChange(index, "source", event.target.value)}
                       >
@@ -741,6 +766,7 @@ export function DataOutputWorkspace() {
                     <td>
                       <input
                         type="text"
+                        className="form-input"
                         value={row.mapped}
                         placeholder="Alias or export name"
                         onChange={(event) => handleRowChange(index, "mapped", event.target.value)}
@@ -749,13 +775,14 @@ export function DataOutputWorkspace() {
                     <td>
                       <input
                         type="text"
+                        className="form-input"
                         value={row.defaultValue ?? ""}
                         placeholder="Optional constant"
                         onChange={(event) => handleRowChange(index, "defaultValue", event.target.value)}
                       />
                     </td>
                     <td>
-                      <select value={row.type} onChange={(event) => handleRowChange(index, "type", event.target.value)}>
+                      <select className="form-input" value={row.type} onChange={(event) => handleRowChange(index, "type", event.target.value)}>
                         {COLUMN_TYPES.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
@@ -763,7 +790,7 @@ export function DataOutputWorkspace() {
                         ))}
                       </select>
                     </td>
-                    <td className="mapping-table__cell--checkbox">
+                    <td className="mapping-table__cell--checkbox text-center">
                       <input
                         type="checkbox"
                         checked={row.required}
@@ -773,7 +800,7 @@ export function DataOutputWorkspace() {
                     <td>
                       <button
                         type="button"
-                        className="workspace-toolbar__btn"
+                        className="btn-ghost text-red-500 hover:text-red-400"
                         onClick={() => handleRemoveRow(index)}
                         aria-label="Remove row"
                       >
@@ -793,76 +820,148 @@ export function DataOutputWorkspace() {
             </table>
           )}
           {validationIssues.length > 0 ? (
-            <div className="output-status output-status--warning" role="alert">
-              <p>
+            <div className="output-status output-status--warning mt-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30" role="alert">
+              <p className="flex items-center gap-2 font-medium">
                 <AlertCircle size={14} /> Resolve the following before saving:
               </p>
-              <ul>
+              <ul className="mt-2 ml-6 list-disc">
                 {validationIssues.map((issue) => (
                   <li key={issue}>{issue}</li>
                 ))}
               </ul>
             </div>
           ) : null}
-          {statusMessage ? <p className="output-status output-status--success">{statusMessage}</p> : null}
-          {errorMessage ? <p className="output-status output-status--error">{errorMessage}</p> : null}
+          {statusMessage ? <p className="output-status output-status--success mt-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">{statusMessage}</p> : null}
+          {errorMessage ? <p className="output-status output-status--error mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30">{errorMessage}</p> : null}
         </form>
-      </section>
+      </div>
+    </div>
+  );
 
-      <aside className="output-column output-column--right">
-        <header className="workspace-panel__header">
+  // Tab 3: Preview & Export
+  const previewTab = (
+    <div className="max-w-7xl mx-auto">
+      <div className="glass-morphism p-8 rounded-xl">
+        <header className="flex items-center justify-between mb-6">
           <div>
-            <h2>Preview</h2>
-            <p className="workspace-panel__subtitle">{previewFileLabel}</p>
+            <h2 className="heading-2">Output Preview</h2>
+            <p className="body-text-secondary mt-1">{previewFileLabel}</p>
           </div>
-          <select value={format} onChange={(event) => handleFormatChange(event.target.value)}>
-            {formatOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-3">
+            <label className="body-text-secondary text-sm">Format:</label>
+            <select
+              className="form-input min-w-[180px]"
+              value={format}
+              onChange={(event) => handleFormatChange(event.target.value)}
+            >
+              {formatOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </header>
-        <div className="output-preview" role="table">
-          {previewLoading ? <p className="output-status">Loading preview…</p> : null}
-          {previewColumns.length === 0 && !previewLoading ? (
-            <p className="output-status">No preview data.</p>
-          ) : null}
-          {previewColumns.length > 0 ? (
-            <table>
-              <thead>
-                <tr>
-                  {previewColumns.map((column) => (
-                    <th key={column}>{column}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row, index) => (
-                  <tr key={`preview-${index}`}>
-                    {previewColumns.map((column) => {
-                      const value = (row as Record<string, unknown>)[column];
-                      return <td key={`${index}-${column}`}>{renderPreviewValue(value)}</td>;
-                    })}
+
+        <div className="rounded-lg border-2 border-dark-border overflow-hidden bg-dark-surface/50">
+          {previewLoading && (
+            <div className="p-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-400 mb-3"></div>
+              <p className="body-text-secondary">Loading preview…</p>
+            </div>
+          )}
+
+          {previewColumns.length === 0 && !previewLoading && (
+            <div className="p-12 text-center">
+              <AlertCircle size={32} className="mx-auto mb-3 text-dark-text-tertiary" />
+              <p className="body-text-secondary">No preview data available.</p>
+            </div>
+          )}
+
+          {previewColumns.length > 0 && !previewLoading && (
+            <div className="overflow-auto max-h-[600px]">
+              <table className="table-standard w-full">
+                <thead className="sticky top-0 bg-dark-elevated z-10">
+                  <tr>
+                    {previewColumns.map((column) => (
+                      <th key={column} className="px-4 py-3 text-left font-semibold border-b-2 border-primary-500/30">
+                        {column}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
+                </thead>
+                <tbody>
+                  {previewRows.map((row, index) => (
+                    <tr
+                      key={`preview-${index}`}
+                      className="hover:bg-dark-elevated/50 transition-colors"
+                    >
+                      {previewColumns.map((column) => {
+                        const value = (row as Record<string, unknown>)[column];
+                        return (
+                          <td key={`${index}-${column}`} className="px-4 py-3 border-b border-dark-border">
+                            {renderPreviewValue(value)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        {previewErrorMessage ? (
-          <p className="output-status output-status--warning">{previewErrorMessage}</p>
-        ) : null}
-        <div className="output-preview__actions">
+
+        {previewErrorMessage && (
+          <div className="mt-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-start gap-3">
+            <AlertCircle size={18} className="text-yellow-400 flex-shrink-0 mt-0.5" />
+            <p className="text-yellow-200 text-sm">{previewErrorMessage}</p>
+          </div>
+        )}
+
+        <div className="mt-6 flex items-center justify-between">
+          <div className="body-text-secondary text-sm">
+            {previewRows.length > 0 && (
+              <span>Showing {previewRows.length} sample row{previewRows.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
           <button
             type="button"
-            className="btn-secondary"
+            className="btn-primary neon-cyan flex items-center gap-2"
             disabled={previewColumns.length === 0 || previewLoading}
           >
-            <DownloadCloud size={16} /> Download sample
+            <DownloadCloud size={18} />
+            <span>Download Sample</span>
           </button>
         </div>
-      </aside>
+      </div>
+    </div>
+  );
+
+  const tabs: Tab[] = [
+    {
+      id: 'profiles',
+      label: 'Profiles',
+      icon: <FolderOpen size={16} />,
+      content: profilesTab,
+    },
+    {
+      id: 'mapping',
+      label: 'Column Mapping',
+      icon: <List size={16} />,
+      content: mappingTab,
+    },
+    {
+      id: 'preview',
+      label: 'Preview & Export',
+      icon: <Eye size={16} />,
+      content: previewTab,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen p-6 animate-fade-in" role="region" aria-label="Output profile setup">
+      <TabContainer tabs={tabs} defaultTab="profiles" />
     </div>
   );
 }
