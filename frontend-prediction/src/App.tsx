@@ -136,6 +136,12 @@ export default function App() {
     setWorkspaceLayout(normalizedLayout);
   }, [layout, setWorkspaceLayout]);
 
+  // 🎨 Force dark mode for cyberpunk theme
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    document.body.style.backgroundColor = '#0a0e1a';
+  }, []);
+
   const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
     topK,
