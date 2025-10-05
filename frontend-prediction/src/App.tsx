@@ -376,7 +376,9 @@ export default function App() {
         title={headerData.label}
         description={headerData.description}
       />
-      {workspace}
+      <div key={activeMenu} className="workspace-transition dust-effect">
+        {workspace}
+      </div>
     </div>
   );
 }
