@@ -211,6 +211,15 @@ export async function runTraining(payload: TrainingRequestPayload): Promise<Trai
 }
 
 // ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
+export type WorkspaceSettingsResponse = any;
+export type AccessMetadataResponse = any;
+export type OutputProfileColumn = any;
+export type WorkflowConfigResponse = any;
+
+// ============================================================================
 // STUB FUNCTIONS FOR REMOVED APIs
 // These are kept to prevent import errors but will throw or return empty data
 // ============================================================================

@@ -121,7 +121,7 @@ export function useMasterData(): UseMasterDataState {
       return fetchAccessMetadata(Object.keys(params).length > 0 ? params : undefined);
     },
     staleTime: 300_000,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   const treeData = treeQuery.data;
