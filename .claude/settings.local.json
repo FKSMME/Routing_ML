@@ -71,7 +71,14 @@
       "Bash(export PLAYWRIGHT_SKIP_WEB_SERVER=true)",
       "Bash(pkill:*)",
       "Bash(tee:*)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(systemctl status:*)",
+      "Bash(service docker:*)",
+      "Bash(xargs -r kill -9 2)",
+      "Bash(/dev/null sleep 2 echo \"모든 Node 프로세스 종료 완료\")",
+      "Bash(npm:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ],
     "deny": [],
     "ask": []

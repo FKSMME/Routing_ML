@@ -111,6 +111,7 @@ interface WorkspaceStoreState {
   exportProfile: ExportProfileState;
   erpInterfaceEnabled: boolean;
   workspaceOptions: WorkspaceOptionsState;
+  outputMappings: OutputMappingRow[];
   setLayout: (layout: LayoutMode) => void;
   referenceMatrixColumns: ReferenceMatrixColumnKey[];
   setActiveMenu: (menu: NavigationKey) => void;

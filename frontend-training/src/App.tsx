@@ -12,6 +12,7 @@ import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { BarChart3, Menu, Route, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { NavigationKey } from "@store/workspaceStore";
 
 // 🟢 Training & Model Management Web Service
 const NAVIGATION_ITEMS = [
@@ -110,12 +111,12 @@ export default function App() {
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
       <ParticleBackground />
       {isPersistent ? (
-        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={setActiveMenu} />
+        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
         <ResponsiveNavigationDrawer
           items={NAVIGATION_ITEMS}
           activeId={activeMenu}
-          onSelect={setActiveMenu}
+          onSelect={(id) => setActiveMenu(id as NavigationKey)}
           open={isNavOpen}
           onClose={close}
           drawerId={drawerId}
