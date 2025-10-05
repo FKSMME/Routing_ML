@@ -21,7 +21,7 @@ export function MasterDataMetadataPanel({ metadata, isLoading }: MasterDataMetad
         <p className="text-sm text-muted">No metadata available. Check Access connection.</p>
       ) : (
         <ul className="metadata-list">
-          {columns.map((column) => (
+          {columns.map((column: any) => (
             <li key={column.name}>
               <span className="metadata-list__name">{column.name}</span>
               <span className="metadata-list__type">

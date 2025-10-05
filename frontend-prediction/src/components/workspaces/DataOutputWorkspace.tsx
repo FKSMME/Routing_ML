@@ -64,7 +64,7 @@ function rowsEqual(a: MappingRow[], b: MappingRow[]): boolean {
   if (a.length !== b.length) {
     return false;
   }
-  return a.every((row, index) => {
+  return a.every((row: any, index: number) => {
     const other = b[index];
     if (!other) {
       return false;
@@ -81,7 +81,7 @@ function rowsEqual(a: MappingRow[], b: MappingRow[]): boolean {
 
 function buildColumnNames(rows: MappingRow[]): string[] {
   return rows
-    .map((row) => row.mapped.trim() || row.source.trim())
+    .map((row: any) => row.mapped.trim() || row.source.trim())
     .filter((column, index, all) => column !== "" && all.indexOf(column) === index);
 }
 
@@ -262,7 +262,7 @@ export function DataOutputWorkspace() {
 
   const availableColumns = useMemo(() => {
     const base = workflowConfig?.sql.available_columns ?? [];
-    const fromRows = mappingRows.map((row) => row.source).filter((value) => value.trim() !== "");
+    const fromRows = mappingRows.map((row: any) => row.source).filter((value) => value.trim() !== "");
     const merged = new Set<string>([...base, ...fromRows]);
     return Array.from(merged).sort((a, b) => a.localeCompare(b));
   }, [mappingRows, workflowConfig?.sql.available_columns]);
@@ -277,7 +277,7 @@ export function DataOutputWorkspace() {
     }
 
     const trimmedRows = mappingRows
-      .map((row) => ({
+      .map((row: any) => ({
         source: row.source.trim(),
         mapped: row.mapped.trim(),
         type: row.type.trim() || "string",
@@ -300,7 +300,7 @@ export function DataOutputWorkspace() {
 
     generateOutputPreview({
       profileId: selectedProfileId,
-      mappings: trimmedRows.map((row) => ({
+      mappings: trimmedRows.map((row: any) => ({
         source: row.source,
         mapped: row.mapped,
         type: row.type,
@@ -412,7 +412,7 @@ export function DataOutputWorkspace() {
 
   const validationIssues = useMemo(() => {
     const issues: string[] = [];
-    const trimmedRows = mappingRows.map((row) => ({
+    const trimmedRows = mappingRows.map((row: any) => ({
       source: row.source.trim(),
       mapped: row.mapped.trim(),
       type: row.type.trim(),
@@ -425,7 +425,7 @@ export function DataOutputWorkspace() {
     if (requiredMissing.length > 0) {
       issues.push(
         `Required columns missing mapping: ${requiredMissing
-          .map((row) => row.source || row.mapped || "(blank)")
+          .map((row: any) => row.source || row.mapped || "(blank)")
           .join(", ")}`,
       );
     }
@@ -519,7 +519,7 @@ export function DataOutputWorkspace() {
       return;
     }
     const trimmedRows = mappingRows
-      .map((row) => ({
+      .map((row: any) => ({
         source: row.source.trim(),
         mapped: row.mapped.trim(),
         type: row.type.trim() || "string",
@@ -566,7 +566,7 @@ export function DataOutputWorkspace() {
           aliasMap[row.mapped] = row.source;
         }
       });
-      const normalizedRows: MappingRow[] = trimmedRows.map((row, index) => ({
+      const normalizedRows: MappingRow[] = trimmedRows.map((row: any, index) => ({
         id: mappingRows[index]?.id ?? createMappingRowId(),
         source: row.source,
         mapped: row.mapped || row.source,
@@ -580,7 +580,7 @@ export function DataOutputWorkspace() {
           profile_id: selectedProfileId,
           profile_name: selectedProfile?.name ?? null,
           format,
-          mappings: trimmedRows.map((row) => ({
+          mappings: trimmedRows.map((row: any) => ({
             source: row.source,
             mapped: row.mapped,
             type: row.type,
@@ -591,7 +591,7 @@ export function DataOutputWorkspace() {
       });
       await saveConfig({
         sql: {
-          output_columns: trimmedRows.filter((row) => row.source !== "").map((row) => row.source),
+          output_columns: trimmedRows.filter((row) => row.source !== "").map((row: any) => row.source),
           column_aliases: aliasMap,
           active_profile: selectedProfile?.id ?? selectedProfile?.name ?? selectedProfileId,
         },
@@ -603,7 +603,7 @@ export function DataOutputWorkspace() {
           profile_id: selectedProfileId,
           format,
           column_count: trimmedRows.length,
-          required_columns: trimmedRows.filter((row) => row.required).map((row) => row.source),
+          required_columns: trimmedRows.filter((row) => row.required).map((row: any) => row.source),
         },
       });
       setOutputMappings(normalizedRows);
@@ -738,7 +738,7 @@ export function DataOutputWorkspace() {
                 </tr>
               </thead>
               <tbody>
-                {mappingRows.map((row, index) => (
+                {mappingRows.map((row: any, index) => (
                   <tr
                     key={row.id}
                     data-testid="mapping-row"
@@ -891,7 +891,7 @@ export function DataOutputWorkspace() {
                   </tr>
                 </thead>
                 <tbody>
-                  {previewRows.map((row, index) => (
+                  {previewRows.map((row: any, index) => (
                     <tr
                       key={`preview-${index}`}
                       className="hover:bg-dark-elevated/50 transition-colors"
