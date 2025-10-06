@@ -235,7 +235,7 @@ export function useRoutingGroups() {
   const fetchGroups = useCallback(
     async (params?: { owner?: string; search?: string; limit?: number; offset?: number }): Promise<RoutingGroupListResponse> => {
       // API removed - return empty list
-      return { groups: [], total: 0 } as RoutingGroupListResponse;
+      return { items: [], pagination: { total: 0, limit: 0, offset: 0 } } as RoutingGroupListResponse;
       // return listRoutingGroups(params);
     },
     [],

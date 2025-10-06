@@ -87,11 +87,7 @@ def _build_operation_steps(raw_steps: List[Dict[str, Any]]) -> List[OperationSte
     return operations
 
 
-@router.get("/health", response_model=HealthResponse)
-async def health_check() -> HealthResponse:
-    """서비스 상태 확인."""
-    logger.debug("/health 호출")
-    return HealthResponse(status="ok")
+# Health endpoint moved to backend/api/routes/health.py for comprehensive monitoring
 
 
 @router.post("/predict", response_model=PredictionResponse)

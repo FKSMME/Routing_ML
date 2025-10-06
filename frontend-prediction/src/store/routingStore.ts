@@ -199,6 +199,7 @@ export interface RoutingStoreState {
   activeProcessGroupId: string | null;
   validationErrors: string[];
   sourceItemCodes: string[];
+  selectedCandidateId: string | null;
   setLoading: (loading: boolean) => void;
   setSaving: (saving: boolean) => void;
   setERPRequired: (enabled: boolean) => void;
@@ -235,6 +236,7 @@ export interface RoutingStoreState {
   removeProcessGroupColumn: (groupId: string, columnId: string) => void;
   setProcessGroupFixedValue: (groupId: string, columnKey: string, value: unknown) => void;
   setActiveProcessGroup: (groupId: string | null) => void;
+  setSelectedCandidate: (candidateId: string | null) => void;
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
@@ -865,6 +867,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   activeProcessGroupId: null,
   validationErrors: [],
   sourceItemCodes: [],
+  selectedCandidateId: null,
   setLoading: (loading) => set({ loading }),
   setSaving: (saving) => set({ saving }),
   setERPRequired: (enabled) => set({ erpRequired: enabled, dirty: true }),
@@ -1173,6 +1176,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       }
       return { activeProcessGroupId: groupId };
     }),
+  setSelectedCandidate: (candidateId) =>
+    set({ selectedCandidateId: candidateId }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({
       itemCode: item.ITEM_CD,

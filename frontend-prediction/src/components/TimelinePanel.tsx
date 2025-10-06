@@ -1,4 +1,5 @@
 import { useRoutingStore } from "@store/routingStore";
+import { AnimatedCard } from "./AnimatedCard";
 import { BadgeCheck, Clock3, Redo2, Undo2 } from "lucide-react";
 import { useMemo } from "react";
 
@@ -23,7 +24,7 @@ export function TimelinePanel() {
   const totalDuration = useMemo(() => timeline.reduce((acc, step) => acc + (step.runTime ?? 0), 0), [timeline]);
 
   return (
-    <section className="panel-card interactive-card routing-timeline">
+    <AnimatedCard enableHover className="panel-card interactive-card routing-timeline">
       <header className="timeline-header">
         <div>
           <h2 className="panel-title">Routing Canvas</h2>
@@ -79,6 +80,6 @@ export function TimelinePanel() {
       )}
 
       {activeProductId ? <p className="timeline-footer">Active item: {activeProductId}</p> : null}
-    </section>
+    </AnimatedCard>
   );
 }

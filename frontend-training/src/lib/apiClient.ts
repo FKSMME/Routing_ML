@@ -11,6 +11,25 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// 401 Unauthorized 에러 핸들링 인터셉터
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (axios.isAxiosError(error)) {
+      // 401 에러이고, /auth/me 엔드포인트가 아닌 경우에만 처리
+      // /auth/me는 fetchCurrentUser에서 이미 처리하므로 제외
+      if (error.response?.status === 401 && !error.config?.url?.includes('/auth/me')) {
+        // 인증이 필요한 페이지에서 401 에러 발생 시
+        // 사용자에게 알림 표시 (콘솔 대신 사용자 친화적 메시지)
+        console.warn('인증이 필요합니다. 로그인 페이지로 이동하지 않습니다.');
+        // 실제 프로덕션에서는 로그인 페이지로 리다이렉트 가능:
+        // window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 const toUserSession = (payload: AuthenticatedUserPayload): UserSession => ({
   username: payload.username,
   displayName: payload.display_name ?? undefined,
@@ -209,6 +228,15 @@ export async function runTraining(payload: TrainingRequestPayload): Promise<Trai
   const response = await api.post<TrainingStatus>("/trainer/run", payload);
   return response.data;
 }
+
+// ============================================================================
+// TYPE EXPORTS
+// ============================================================================
+
+export type WorkspaceSettingsResponse = any;
+export type AccessMetadataResponse = any;
+export type OutputProfileColumn = any;
+export type WorkflowConfigResponse = any;
 
 // ============================================================================
 // STUB FUNCTIONS FOR REMOVED APIs

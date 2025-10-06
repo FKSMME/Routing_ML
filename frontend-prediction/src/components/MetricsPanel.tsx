@@ -1,5 +1,6 @@
 import type { PredictionMetrics } from "@app-types/routing";
 import { Fragment } from "react";
+import { AnimatedCard } from "./AnimatedCard";
 
 interface MetricsPanelProps {
   metrics?: PredictionMetrics;
@@ -25,7 +26,7 @@ export function MetricsPanel({ metrics, loading }: MetricsPanelProps) {
     : metrics?.feature_weights?.profiles?.find((profile) => profile.name && profile.name !== "default")?.name;
 
   return (
-    <section className="panel-card interactive-card">
+    <AnimatedCard enableHover className="panel-card interactive-card">
       <header className="panel-header">
         <div>
           <h2 className="panel-title">예측 메트릭</h2>
@@ -72,6 +73,6 @@ export function MetricsPanel({ metrics, loading }: MetricsPanelProps) {
           ) : null}
         </div>
       )}
-    </section>
+    </AnimatedCard>
   );
 }

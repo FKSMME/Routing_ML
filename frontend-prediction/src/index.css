@@ -1,47 +1,24 @@
-﻿body {
-  min-height: 100vh;
-  margin: 0;
-  background: #0a0e1a;
-  background-image:
-    radial-gradient(at 20% 30%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
-    radial-gradient(at 80% 70%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
-  background-attachment: fixed;
-  color: #e4e7eb;
-  font-family: 'Inter', 'Rajdhani', 'Orbitron', system-ui, -apple-system, sans-serif;
-  position: relative;
-  overflow-x: hidden;
-}
-
-/* Cyberpunk scan lines effect */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.05),
-    rgba(0, 0, 0, 0.05) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-  pointer-events: none;
-  z-index: 999;
-  opacity: 0.3;
-  animation: scanlines 8s linear infinite;
-}
-
-@keyframes scanlines {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(10px); }
-}
+﻿@import './styles/responsive-utilities.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Responsive Utilities imported at top */
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--gradient-sky-start)),
+    hsl(var(--gradient-sky-mid)),
+    hsl(var(--gradient-sky-end))
+  );
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-family, 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+}
 
 /* ♿ Accessibility: Screen Reader Only */
 .sr-only {
@@ -57,75 +34,62 @@ body::before {
 }
 
 :root {
-  /* 🎮 Cyberpunk Neon Colors */
-  --primary: #0ea5e9;
-  --primary-glow: #38bdf8;
-  --primary-foreground: #ffffff;
-  --secondary: #a855f7;
-  --secondary-foreground: #ffffff;
-  --gradient-sky-start: 195 100% 50%;
-  --gradient-sky-mid: 280 80% 65%;
-  --gradient-sky-end: 160 80% 50%;
-  --gradient-start: #0ea5e9;
-  --gradient-mid: #a855f7;
-  --gradient-end: #10b981;
-
-  /* 🌃 Dark Surfaces */
-  --surface-base: #0a0e1a;
-  --surface-raised: #131827;
-  --surface: #0a0e1a;
-  --surface-card: #131827;
-  --surface-menu: #1e2438;
-  --surface-overlay: #2d3548;
-  --surface-weak: rgba(19, 24, 39, 0.85);
-  --surface-strong: rgba(30, 36, 56, 0.95);
-  --background: #0a0e1a;
-  --foreground: #e4e7eb;
-  --card: #131827;
-  --card-foreground: #e4e7eb;
-  --popover: #1e2438;
-  --popover-foreground: #e4e7eb;
-
-  /* 🔷 Borders & Accents */
-  --border: #2d3548;
-  --border-strong: #3f4864;
-  --accent: #0ea5e9;
-  --accent-hover: #38bdf8;
-  --accent-soft: rgba(14, 165, 233, 0.2);
-  --accent-strong: #0284c7;
-  --danger-soft: rgba(239, 68, 68, 0.2);
-  --danger-strong: #ef4444;
-
-  /* 📝 Typography */
-  --text-heading: #ffffff;
-  --text-primary: #e4e7eb;
-  --text-muted: #9ca3af;
-  --text-muted-strong: #6b7280;
-  --text-emphasis: #ffffff;
-  --nav-default: #9ca3af;
-  --nav-hover: #e4e7eb;
-  --nav-active: #0ea5e9;
-  --input: #1e2438;
-  --ring: #0ea5e9;
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  /* 📊 Charts */
-  --chart-1: #0ea5e9;
-  --chart-2: #a855f7;
-  --chart-3: #10b981;
-  --chart-4: #ec4899;
-  --chart-5: #f59e0b;
-
-  /* ✨ Shadows & Glows */
-  --shadow-resting: 0 8px 20px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 12px 32px rgba(14, 165, 233, 0.3);
-  --shadow-focus: 0 0 0 3px rgba(14, 165, 233, 0.5);
-  --shadow-elegant: 0 10px 30px rgba(14, 165, 233, 0.4);
-  --shadow-glow: 0 0 40px rgba(14, 165, 233, 0.5), 0 0 80px rgba(168, 85, 247, 0.3);
-  --shadow-raised: 0 12px 28px rgba(0, 0, 0, 0.6);
-
-  /* ⚡ Animations */
+  --primary: hsl(195 100% 33%);
+  --primary-glow: hsl(195 100% 45%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(188 82% 47%);
+  --secondary-foreground: hsl(0 0% 100%);
+  --gradient-sky-start: 195 85% 72%;
+  --gradient-sky-mid: 140 65% 75%;
+  --gradient-sky-end: 195 45% 92%;
+  --gradient-start: hsl(195 85% 72%);
+  --gradient-mid: hsl(140 65% 75%);
+  --gradient-end: hsl(195 45% 92%);
+  --surface-base: 195 45% 98%;
+  --surface-raised: 0 0% 100%;
+  --surface: hsl(195 45% 98%);
+  --surface-card: hsl(0 0% 100%);
+  --surface-menu: hsl(195 45% 96%);
+  --surface-overlay: hsl(195 45% 92%);
+  --surface-weak: color-mix(in hsl, var(--surface) 85%, transparent);
+  --surface-strong: color-mix(in hsl, var(--surface-card) 90%, transparent);
+  --background: hsl(195 45% 98%);
+  --foreground: hsl(210 45% 20%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(210 45% 20%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(210 45% 20%);
+  --border: hsl(195 30% 85%);
+  --border-strong: hsl(195 30% 78%);
+  --accent: hsl(188 82% 47%);
+  --accent-hover: hsl(195 100% 45%);
+  --accent-soft: hsl(195 85% 72%);
+  --accent-strong: hsl(195 100% 33%);
+  --danger-soft: hsl(0 84% 92%);
+  --danger-strong: hsl(0 84.2% 60.2%);
+  --text-heading: hsl(210 45% 18%);
+  --text-primary: hsl(210 45% 22%);
+  --text-muted: hsl(210 25% 45%);
+  --text-muted-strong: hsl(210 30% 35%);
+  --text-emphasis: hsl(210 60% 15%);
+  --nav-default: hsl(210 40% 25%);
+  --nav-hover: hsl(210 60% 15%);
+  --nav-active: hsl(195 100% 18%);
+  --input: hsl(195 30% 95%);
+  --ring: hsl(188 82% 47%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --chart-1: hsl(195 100% 33%);
+  --chart-2: hsl(188 82% 47%);
+  --chart-3: hsl(140 65% 45%);
+  --chart-4: hsl(195 85% 72%);
+  --chart-5: hsl(210 45% 35%);
+  --shadow-resting: 0 8px 20px hsl(195 100% 33% / 0.12);
+  --shadow-hover: 0 12px 32px hsl(195 100% 33% / 0.18);
+  --shadow-focus: 0 0 0 3px hsl(188 82% 47% / 0.35);
+  --shadow-elegant: 0 10px 30px hsl(195 100% 33% / 0.3);
+  --shadow-glow: 0 0 40px hsl(195 100% 45% / 0.35);
+  --shadow-raised: 0 12px 28px hsl(195 100% 33% / 0.16);
   --transition-emphasis: background-color 0.18s ease, color 0.18s ease;
   --transition-lift: transform 0.18s ease, box-shadow 0.2s ease;
   --transition-glow: box-shadow 0.25s ease;
@@ -134,20 +98,18 @@ body::before {
   --motion-duration-sm: 180ms;
   --motion-duration-lg: 320ms;
   --motion-ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-
-  /* 📐 Layout */
-  --layout-max-width: 1800px;
+  --layout-max-width: 1200px;
   --layout-column-gap: 1.5rem;
   --layout-radius: 0.75rem;
   --layout-columns: minmax(220px, 0.8fr) minmax(680px, 2.4fr) minmax(240px, 0.8fr);
   --nav-height: 64px;
-  --font-family: 'Inter', 'Rajdhani', 'Orbitron', sans-serif;
-  --glass-blur: 20px;
+  --font-family: 'Inter', 'Pretendard', 'Segoe UI', sans-serif;
+  --glass-blur: 18px;
   --border-gradient: linear-gradient(
     135deg,
-    #0ea5e9 0%,
-    #a855f7 50%,
-    #10b981 100%
+    hsl(195 100% 33%) 0%,
+    hsl(195 100% 45%) 45%,
+    hsl(188 82% 47%) 100%
   );
 
   /* 표준화된 간격 시스템 */
@@ -192,7 +154,7 @@ body::before {
 }
 
 /* 다크모드 CSS 변수 */
-.dark {
+html.dark {
   --primary: hsl(199 89% 48%);
   --primary-glow: hsl(199 89% 58%);
   --primary-foreground: hsl(0 0% 100%);
@@ -281,6 +243,17 @@ body::before {
   isolation: isolate;
 }
 
+/* Surface utility classes */
+.surface-base {
+  background-color: var(--background);
+  transition: background-color 0.3s ease;
+}
+
+.surface-card {
+  background-color: var(--card);
+  transition: background-color 0.3s ease;
+}
+
 .frosted-panel::before {
   content: "";
   position: absolute;
@@ -353,51 +326,6 @@ body::before {
 
 .text-slate-50 {
   color: var(--text-primary) !important;
-}
-
-/* 🔧 Cyberpunk Dark Mode - Force Override Bright Colors */
-.bg-sky-50,
-.bg-sky-100,
-.bg-sky-200,
-.bg-sky-300,
-.bg-sky-400,
-.bg-sky-500,
-.bg-cyan-50,
-.bg-cyan-100,
-.bg-cyan-200,
-.bg-cyan-300,
-.bg-cyan-400,
-.bg-cyan-500 {
-  background-color: #131827 !important;
-}
-
-.bg-white {
-  background-color: #1e2438 !important;
-}
-
-.text-sky-900,
-.text-sky-800,
-.text-sky-700,
-.text-cyan-900,
-.text-cyan-800,
-.text-cyan-700,
-.text-gray-900,
-.text-gray-800 {
-  color: #e4e7eb !important;
-}
-
-.text-sky-600,
-.text-cyan-600,
-.text-gray-600,
-.text-gray-700 {
-  color: #9ca3af !important;
-}
-
-.border-sky-200,
-.border-sky-300,
-.border-cyan-200,
-.border-cyan-300 {
-  border-color: #2d3548 !important;
 }
 
 .app-shell {
@@ -593,8 +521,7 @@ body::before {
 }
 
 .app-header {
-  position: sticky;
-  top: var(--nav-height);
+  position: relative; /* 스크롤 시 사라지도록 변경 */
   z-index: 40;
   padding: 0.85rem 1.5rem 1rem;
   background: linear-gradient(
@@ -653,15 +580,15 @@ body::before {
 }
 
 .main-nav {
-  position: relative;
-  top: 0;
-  z-index: 60;
+  position: relative; /* 스크롤 시 사라지도록 변경 */
+  z-index: 10; /* 명시적 z-index */
   padding: 0.85rem 1.5rem 1.15rem;
   background: linear-gradient(
     140deg,
-    hsl(var(--gradient-sky-start) / 0.35),
-    hsl(var(--gradient-sky-end) / 0.1)
+    hsl(var(--gradient-sky-start) / 0.9),
+    hsl(var(--gradient-sky-end) / 0.85)
   );
+  backdrop-filter: blur(8px);
 }
 
 .main-nav-surface {
@@ -695,9 +622,10 @@ body::before {
   gap: 0.75rem;
   padding: 0.85rem 1.1rem;
   border-radius: 1rem;
-  border: 1px solid color-mix(in hsl, var(--border) 65%, transparent);
-  background: color-mix(in hsl, var(--surface) 82%, transparent);
-  color: var(--text-primary);
+  border: 1px solid color-mix(in hsl, var(--border) 80%, transparent);
+  background: color-mix(in hsl, var(--surface-card) 95%, transparent);
+  backdrop-filter: blur(8px);
+  color: hsl(210 45% 20%); /* 강제 다크 색상 */
   transition: var(--transition-lift);
   cursor: pointer;
 }
@@ -710,7 +638,7 @@ body::before {
 .main-nav-tab.is-active {
   border-color: var(--accent);
   background: color-mix(in hsl, var(--accent-soft) 35%, hsl(var(--surface-raised) / 0.88));
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 */
   transform: translateY(-2px);
   box-shadow: var(--shadow-elegant);
 }
@@ -737,7 +665,7 @@ body::before {
 }
 
 .main-nav-tab.is-active .main-nav-label {
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 */
 }
 
 .main-nav-labels {
@@ -749,12 +677,11 @@ body::before {
 
 .main-nav-label {
   font-weight: 600;
-  color: #f1f5f9 !important; /* 명확한 흰색 (slate-100) - 가시성 보장 */
+  color: hsl(210 45% 15%); /* 더 진한 색상 */
 }
 
 .main-nav-desc {
-  font-size: 0.8rem;
-  color: #cbd5e1 !important; /* 밝은 회색 (slate-300) - 가시성 보장 */
+  display: none; /* 서브 설명은 접근성 라벨에 남기고 화면에서는 숨김 */
 }
 
 .menu-placeholder {
@@ -2935,6 +2862,86 @@ body::before {
   color: var(--text-muted);
 }
 
+/* 신규: 타이틀 그룹 및 액션 스타일 */
+.timeline-node__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__seq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.4rem;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.timeline-node__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__similarity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.timeline-node__similarity[data-level="high"] {
+  background: color-mix(in oklch, #22c55e 20%, transparent);
+  color: #16a34a;
+}
+
+.timeline-node__similarity[data-level="medium"] {
+  background: color-mix(in oklch, #f59e0b 20%, transparent);
+  color: #d97706;
+}
+
+.timeline-node__similarity[data-level="low"] {
+  background: color-mix(in oklch, #ef4444 20%, transparent);
+  color: #dc2626;
+}
+
+.timeline-node__meta-item strong {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 0.25rem;
+}
+
+/* 드롭 인디케이터 */
+.timeline-flow__drop-indicator {
+  position: absolute;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+  pointer-events: none;
+  z-index: 1000;
+  animation: pulse-drop 1s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes pulse-drop {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.5);
+  }
+}
+
 .timeline-footer {
   margin-top: 0.75rem;
   font-size: 0.75rem;
@@ -4897,10 +4904,10 @@ body::before {
   20% {
     opacity: 1;
     transform: translateY(0px);
-    filter: blur(0.3px); /* 먼지 일어나는 순간 살짝 흐림 */
+    filter: blur(0.3px);
   }
   40% {
-    transform: translateY(1.5px); /* 살짝 반동 */
+    transform: translateY(1.5px);
     filter: blur(0.2px);
   }
   60% {
@@ -4938,22 +4945,6 @@ body::before {
   }
 }
 
-/* 메뉴 전환 시 먼지 효과 */
-@keyframes dustBurst {
-  0% {
-    opacity: 0;
-    transform: scale(0) rotate(0deg);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.5) rotate(180deg);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(2) rotate(360deg);
-  }
-}
-
 /* 적용 클래스 */
 .workspace-transition {
   animation: subtleDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -4982,7 +4973,6 @@ body::before {
   opacity: 0;
 }
 
-/* 페이지 전환 시 먼지 효과 활성화 */
 .workspace-transition::after {
   animation: dustPuff 0.6s ease-out 0.2s forwards;
 }
@@ -5042,7 +5032,6 @@ body::before {
   }
 }
 
-/* 네온 그로우 강화 */
 @keyframes neonPulse {
   0%, 100% {
     box-shadow:
@@ -5069,56 +5058,36 @@ body::before {
 
 :root {
   /* 🎨 파스텔 톤 색상 최적화 (REQ-06) */
-  --primary-pastel: #7dd3fc;        /* sky-300 - 부드러운 하늘색 */
-  --primary-pastel-dark: #0ea5e9;   /* 강조용 */
-  --secondary-pastel: #c4b5fd;      /* violet-300 - 부드러운 보라 */
-  --secondary-pastel-dark: #a855f7; /* 강조용 */
-  --accent-pastel: #86efac;         /* green-300 - 부드러운 초록 */
+  --primary-pastel: #7dd3fc;
+  --primary-pastel-dark: #0ea5e9;
+  --secondary-pastel: #c4b5fd;
+  --secondary-pastel-dark: #a855f7;
+  --accent-pastel: #86efac;
   
-  /* 배경 밝기 증가 */
-  --surface-base-light: #1e293b;    /* slate-800 (밝게) */
-  --surface-card-light: #334155;    /* slate-700 (밝게) */
-  --surface-menu-light: #475569;    /* slate-600 (밝게) */
+  --surface-base-light: #1e293b;
+  --surface-card-light: #334155;
+  --surface-menu-light: #475569;
   
-  /* 텍스트 대비 향상 */
-  --text-primary-light: #f1f5f9;    /* slate-100 (더 밝게) */
-  --text-muted-light: #cbd5e1;      /* slate-300 (더 밝게) */
+  --text-primary-light: #f1f5f9;
+  --text-muted-light: #cbd5e1;
   
-  /* 부드러운 그림자 */
   --shadow-glow-soft: 0 0 20px rgba(125, 211, 252, 0.25);
   --shadow-hover-soft: 0 12px 32px rgba(125, 211, 252, 0.2);
   
   /* 📐 카드 크기 표준화 (REQ-05) */
   --card-min-height: 120px;
   --card-max-width: 100%;
-  --card-padding: var(--spacing-lg);      /* 24px */
-  --card-margin-bottom: var(--spacing-lg); /* 24px */
-  --card-gap: var(--spacing-lg);          /* 24px */
+  --card-padding: var(--spacing-lg);
+  --card-margin-bottom: var(--spacing-lg);
+  --card-gap: var(--spacing-lg);
   
   --panel-min-height: 200px;
   --panel-max-height: 600px;
   --panel-padding: var(--spacing-lg);
 }
 
-/* 🎨 파스텔 톤 적용 */
-.dark {
-  --primary: var(--primary-pastel);
-  --primary-glow: var(--primary-pastel-dark);
-  --secondary: var(--secondary-pastel);
-  --accent: var(--accent-pastel);
-  
-  --surface-base: var(--surface-base-light);
-  --surface-card: var(--surface-card-light);
-  --surface-menu: var(--surface-menu-light);
-  
-  --text-primary: var(--text-primary-light);
-  --text-muted: var(--text-muted-light);
-  
-  --shadow-glow: var(--shadow-glow-soft);
-  --shadow-hover: var(--shadow-hover-soft);
-}
+/* 다크모드 CSS는 상단 157번째 라인에 정의되어 있습니다 */
 
-/* 📐 카드 크기 일관성 적용 */
 .panel-card {
   min-height: var(--card-min-height);
   max-width: var(--card-max-width);
@@ -5127,49 +5096,26 @@ body::before {
   box-sizing: border-box;
 }
 
-.panel-card--large {
-  min-height: 300px;
-}
-
-.panel-card--medium {
-  min-height: 200px;
-}
-
+.panel-card--large { min-height: 300px; }
+.panel-card--medium { min-height: 200px; }
 .panel-card--small {
   min-height: 80px;
   padding: var(--spacing-md) !important;
 }
 
-/* Grid 간격 통일 */
 .routing-workspace__grid,
 .routing-workspace-grid {
   gap: var(--card-gap);
 }
 
-.prediction-grid,
-.timeline-grid,
-.candidate-grid {
-  gap: var(--card-gap);
-}
-
-/* 반응형 조정 */
 @media (max-width: 1024px) {
   :root {
-    --card-padding: var(--spacing-md); /* 16px */
+    --card-padding: var(--spacing-md);
     --card-margin-bottom: var(--spacing-md);
     --card-gap: var(--spacing-md);
   }
 }
 
-@media (max-width: 768px) {
-  :root {
-    --card-padding: var(--spacing-sm); /* 8px */
-    --card-margin-bottom: var(--spacing-sm);
-    --card-gap: var(--spacing-sm);
-  }
-}
-
-/* 부드러운 호버 효과 */
 .panel-card:hover,
 .surface-card:hover,
 .frosted-panel:hover {
@@ -5179,380 +5125,4 @@ body::before {
     0 0 60px rgba(196, 181, 253, 0.2),
     0 0 80px rgba(134, 239, 172, 0.15);
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* ==========================================
-   REQ-02: 드롭 존 하이라이트 및 삽입 위치 미리보기
-   ========================================== */
-
-/* 드래그 중일 때 타임라인 플로우 하이라이트 */
-.timeline-flow.drag-active {
-  position: relative;
-}
-
-.timeline-flow.drag-active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 3px dashed rgba(125, 211, 252, 0.8);
-  border-radius: 12px;
-  background: rgba(125, 211, 252, 0.08);
-  pointer-events: none;
-  z-index: 10;
-  animation: dropZonePulse 1.5s ease-in-out infinite;
-}
-
-@keyframes dropZonePulse {
-  0%, 100% {
-    border-color: rgba(125, 211, 252, 0.6);
-    background: rgba(125, 211, 252, 0.05);
-  }
-  50% {
-    border-color: rgba(125, 211, 252, 1);
-    background: rgba(125, 211, 252, 0.12);
-  }
-}
-
-/* 삽입 위치 미리보기 선 */
-.timeline-flow__insert-indicator {
-  position: absolute;
-  width: 3px;
-  height: 100px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(125, 211, 252, 0.8) 10%,
-    rgba(125, 211, 252, 1) 50%,
-    rgba(125, 211, 252, 0.8) 90%,
-    transparent
-  );
-  pointer-events: none;
-  z-index: 20;
-  transition: left 0.15s ease-out;
-  animation: insertPulse 1s ease-in-out infinite;
-}
-
-.timeline-flow__insert-indicator::before,
-.timeline-flow__insert-indicator::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 12px;
-  height: 12px;
-  background: rgba(125, 211, 252, 1);
-  border-radius: 50%;
-  box-shadow: 0 0 12px rgba(125, 211, 252, 0.8);
-}
-
-.timeline-flow__insert-indicator::before {
-  top: -6px;
-}
-
-.timeline-flow__insert-indicator::after {
-  bottom: -6px;
-}
-
-@keyframes insertPulse {
-  0%, 100% {
-    opacity: 0.8;
-    filter: brightness(1);
-  }
-  50% {
-    opacity: 1;
-    filter: brightness(1.3);
-  }
-}
-
-/* 드롭 성공 피드백 */
-.timeline-flow__drop-feedback {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 1.5rem 2rem;
-  background: rgba(134, 239, 172, 0.95);
-  color: #064e3b;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(134, 239, 172, 0.5);
-  font-weight: 600;
-  font-size: 1.125rem;
-  z-index: 9999;
-  animation: dropSuccess 0.8s ease-out forwards;
-  pointer-events: none;
-}
-
-.timeline-flow__drop-feedback--error {
-  background: rgba(248, 113, 113, 0.95);
-  color: #7f1d1d;
-  box-shadow: 0 8px 32px rgba(248, 113, 113, 0.5);
-}
-
-.timeline-flow__drop-feedback svg {
-  display: inline-block;
-  margin-right: 0.5rem;
-  width: 24px;
-  height: 24px;
-  vertical-align: middle;
-}
-
-@keyframes dropSuccess {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-  80% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-}
-
-/* 타임라인 노드 드래그 중 스타일 */
-.timeline-node.dragging {
-  opacity: 0.7;
-  transform: rotate(3deg) scale(1.05);
-  box-shadow: 0 10px 40px rgba(125, 211, 252, 0.6);
-  cursor: grabbing !important;
-  z-index: 100;
-}
-
-/* 후보 패널 드래그 시작 시 시각적 피드백 */
-.candidate-operation.dragging {
-  opacity: 0.6;
-  transform: scale(0.95) rotate(-2deg);
-  box-shadow: 0 8px 24px rgba(125, 211, 252, 0.4);
-}
-
-/* ==========================================
-   REQ-03: SAVE 버튼 LOCAL/클립보드 선택 UI
-   ========================================== */
-
-/* SAVE 버튼 드롭다운 스타일 */
-.save-button-group {
-  position: relative;
-  display: inline-flex;
-  gap: 0;
-}
-
-.save-button-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, var(--primary-pastel) 0%, var(--secondary-pastel) 100%);
-  color: #0f172a;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px 0 0 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(125, 211, 252, 0.3);
-}
-
-.save-button-primary:hover {
-  box-shadow: 0 6px 20px rgba(125, 211, 252, 0.5);
-  transform: translateY(-2px);
-}
-
-.save-button-primary:active {
-  transform: translateY(0);
-}
-
-.save-button-dropdown-toggle {
-  padding: 0.75rem;
-  background: linear-gradient(135deg, var(--primary-pastel-dark) 0%, var(--secondary-pastel-dark) 100%);
-  color: white;
-  border: none;
-  border-radius: 0 8px 8px 0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(125, 211, 252, 0.3);
-}
-
-.save-button-dropdown-toggle:hover {
-  background: linear-gradient(135deg, var(--primary-pastel-dark) 20%, var(--secondary-pastel-dark) 120%);
-  box-shadow: 0 6px 20px rgba(125, 211, 252, 0.5);
-}
-
-.save-button-dropdown-toggle svg {
-  transition: transform 0.3s ease;
-}
-
-.save-button-dropdown-toggle[aria-expanded="true"] svg {
-  transform: rotate(180deg);
-}
-
-/* 드롭다운 메뉴 */
-.save-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  min-width: 240px;
-  background: var(--surface-card-light);
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(125, 211, 252, 0.2);
-  padding: 0.5rem;
-  z-index: 1000;
-  animation: dropdownSlideIn 0.2s ease-out;
-}
-
-@keyframes dropdownSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.save-dropdown-section {
-  padding: 0.5rem 0;
-}
-
-.save-dropdown-section:not(:last-child) {
-  border-bottom: 1px solid rgba(125, 211, 252, 0.2);
-}
-
-.save-dropdown-label {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted-light);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.save-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  color: var(--text-primary-light);
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-}
-
-.save-dropdown-item:hover {
-  background: rgba(125, 211, 252, 0.15);
-  color: var(--primary-pastel);
-}
-
-.save-dropdown-item:active {
-  background: rgba(125, 211, 252, 0.25);
-}
-
-.save-dropdown-item svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.save-dropdown-item__label {
-  flex: 1;
-  font-weight: 500;
-}
-
-.save-dropdown-item__shortcut {
-  font-size: 0.75rem;
-  color: var(--text-muted-light);
-  background: rgba(125, 211, 252, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-/* 포맷 선택 체크박스 */
-.format-checkbox-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-}
-
-.format-checkbox-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(125, 211, 252, 0.1);
-  border: 1px solid rgba(125, 211, 252, 0.3);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.8125rem;
-}
-
-.format-checkbox-label:hover {
-  background: rgba(125, 211, 252, 0.2);
-  border-color: rgba(125, 211, 252, 0.5);
-}
-
-.format-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary-pastel);
-}
-
-.format-checkbox-label input[type="checkbox"]:checked + span {
-  font-weight: 600;
-  color: var(--primary-pastel);
-}
-
-/* 토스트 알림 */
-.save-toast {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  padding: 1rem 1.5rem;
-  background: rgba(134, 239, 172, 0.95);
-  color: #064e3b;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(134, 239, 172, 0.4);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  z-index: 9999;
-  animation: toastSlideIn 0.3s ease-out;
-}
-
-.save-toast--error {
-  background: rgba(248, 113, 113, 0.95);
-  color: #7f1d1d;
-  box-shadow: 0 8px 24px rgba(248, 113, 113, 0.4);
-}
-
-@keyframes toastSlideIn {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.save-toast svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
 }

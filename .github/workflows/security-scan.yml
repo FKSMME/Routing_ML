@@ -1,0 +1,116 @@
+name: Docker Security Scan
+
+on:
+  schedule:
+    # Run every Monday at 09:00 UTC
+    - cron: '0 9 * * 1'
+  push:
+    branches: [main, develop]
+    paths:
+      - 'Dockerfile'
+      - 'docker/**'
+      - '.github/workflows/security-scan.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - 'docker/**'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  trivy-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # For GitHub Security tab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner (Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+      - name: Run Trivy vulnerability scanner (Dockerfile)
+        uses: aquasecurity/trivy-action@master
+        if: hashFiles('Dockerfile') != ''
+        with:
+          scan-type: 'config'
+          scan-ref: 'Dockerfile'
+          format: 'table'
+          exit-code: '0' # Don't fail the build
+          severity: 'CRITICAL,HIGH'
+
+      - name: Build Docker image (if Dockerfile exists)
+        if: hashFiles('Dockerfile') != ''
+        run: |
+          docker build -t routing-ml:${{ github.sha }} .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        if: hashFiles('Dockerfile') != ''
+        with:
+          image-ref: 'routing-ml:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1' # Fail if CRITICAL vulnerabilities found
+
+      - name: Upload Image scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always() && hashFiles('Dockerfile') != ''
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+
+      - name: Generate security report
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f trivy-fs-results.sarif ]; then
+            echo "### Filesystem Scan" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Completed - See Security tab for details" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f trivy-image-results.sarif ]; then
+            echo "### Docker Image Scan" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Completed - See Security tab for details" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Fail if critical vulnerabilities found
+        if: failure()
+        run: |
+          echo "❌ CRITICAL vulnerabilities detected!"
+          echo "Please review the Security tab and fix vulnerabilities before merging."
+          exit 1
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: true

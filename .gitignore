@@ -41,3 +41,23 @@ deliverables/**/*.png
 venv-linux/
 logs/
 models/viz_embeddings_plotly.html
+
+# Frontend artifacts
+frontend-*/node_modules/
+frontend-*/dist/
+frontend-*/.vite/
+
+# Test results
+test-results/
+playwright-report/
+*.html
+*_files/
+
+# Deliverables
+deliverables/exports/
+
+# Temporary files
+/tmp/
+
+# Session logs
+작업이력_*_Session*.md

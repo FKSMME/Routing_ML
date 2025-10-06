@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Routing ML PostgreSQL (Local)",
+      "Group": "Development",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "routing_ml",
+      "Username": "routing_admin",
+      "SSLMode": "prefer",
+      "Comment": "Routing ML v4 Development Database"
+    }
+  }
+}

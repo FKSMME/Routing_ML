@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: routing-ml-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_TYPE=${DB_TYPE:-MSSQL}
+      - MSSQL_SERVER=${MSSQL_SERVER:-K3-DB.ksm.co.kr,1433}
+      - MSSQL_DATABASE=${MSSQL_DATABASE:-KsmErp}
+      - MSSQL_USER=${MSSQL_USER:-FKSM_BI}
+      - MSSQL_PASSWORD=${MSSQL_PASSWORD}
+      - MSSQL_ENCRYPT=${MSSQL_ENCRYPT:-False}
+      - MSSQL_TRUST_CERTIFICATE=${MSSQL_TRUST_CERTIFICATE:-True}
+      - ACCESS_DIR=${ACCESS_DIR:-/app/data/db}
+    volumes:
+      - ./models:/app/models
+      - ./reports:/app/reports
+      - ./data/db:/app/data/db
+      - ./logs:/app/logs
+    networks:
+      - routing-ml-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Frontend - Prediction
+  frontend-prediction:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend-prediction
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: routing-ml-frontend-prediction
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - routing-ml-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Frontend - Training
+  frontend-training:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend-training
+      args:
+        - VITE_API_URL=http://localhost:8000
+    container_name: routing-ml-frontend-training
+    ports:
+      - "5174:80"
+    depends_on:
+      - backend
+    networks:
+      - routing-ml-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  routing-ml-network:
+    driver: bridge
+
+volumes:
+  models:
+  reports:
+  logs:

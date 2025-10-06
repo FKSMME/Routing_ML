@@ -363,7 +363,7 @@ export function ProcessGroupsWorkspace() {
                               <div style={{ display: "flex", gap: "0.35rem" }}>
                                 <input
                                   type="text"
-                                  value={activeGroup.fixedValues[column.key] ?? ""}
+                                  value={(activeGroup.fixedValues[column.key] ?? "") as string}
                                   onChange={handleColumnFixedValueChange(column.key, column.dataType)}
                                   placeholder="모든 행에 적용할 값"
                                 />

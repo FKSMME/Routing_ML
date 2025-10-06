@@ -2,10 +2,12 @@ import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import {
   generateOutputPreview,
-  type OutputProfileColumn,
+  // type OutputProfileColumn,
   postUiAudit,
   saveWorkspaceSettings,
 } from "@lib/apiClient";
+
+type OutputProfileColumn = any;
 import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { TabContainer, type Tab } from "@components/TabContainer";

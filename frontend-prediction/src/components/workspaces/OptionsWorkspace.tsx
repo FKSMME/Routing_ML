@@ -1,14 +1,17 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
 import {
-  type AccessMetadataResponse,
+  // type AccessMetadataResponse,
   fetchAccessMetadata,
   fetchWorkflowConfig,
   fetchWorkspaceSettings,
   postUiAudit,
   testAccessConnection,
-  type WorkspaceSettingsResponse,
+  // type WorkspaceSettingsResponse,
 } from "@lib/apiClient";
+
+type AccessMetadataResponse = any;
+type WorkspaceSettingsResponse = any;
 import { useWorkspaceStore, type WorkspaceColumnMappingRow } from "@store/workspaceStore";
 import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -149,6 +152,8 @@ const dedupeMappings = (rows: WorkspaceColumnMappingRow[]): WorkspaceColumnMappi
   });
   return Array.from(map.values());
 };
+
+type ColumnMappingRow = WorkspaceColumnMappingRow;
 
 const extractWorkflowMappings = (workflow: WorkflowConfigResponse | null | undefined): WorkspaceColumnMappingRow[] => {
   if (!workflow) {

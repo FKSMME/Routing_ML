@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { AnimatedCard } from "./AnimatedCard";
 
 interface FeatureWeightPanelProps {
   profiles: { name: string; description?: string | null; weights?: Record<string, number> }[];
@@ -24,7 +25,7 @@ export function FeatureWeightPanel({
   onReset,
 }: FeatureWeightPanelProps) {
   return (
-    <section className="panel-card interactive-card">
+    <AnimatedCard enableHover className="panel-card interactive-card">
       <header className="panel-header">
         <div>
           <h2 className="panel-title">Feature 가중치</h2>
@@ -91,6 +92,6 @@ export function FeatureWeightPanel({
           })}
         </div>
       </div>
-    </section>
+    </AnimatedCard>
   );
 }

@@ -1,9 +1,10 @@
 import {
   fetchOutputProfileDetail,
   fetchOutputProfiles,
-  type OutputProfileDetail,
-  type OutputProfileSummary,
 } from "@lib/apiClient";
+
+type OutputProfileDetail = any;
+type OutputProfileSummary = any;
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const LIST_QUERY_KEY = ["output-profiles"] as const;

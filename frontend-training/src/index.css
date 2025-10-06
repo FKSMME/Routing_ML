@@ -150,7 +150,7 @@
 }
 
 /* 다크모드 CSS 변수 */
-.dark {
+html.dark {
   --primary: hsl(199 89% 48%);
   --primary-glow: hsl(199 89% 58%);
   --primary-foreground: hsl(0 0% 100%);
@@ -243,6 +243,17 @@
   content: "";
   position: absolute;
   inset: 0;
+/* Surface utility classes */
+.surface-base {
+  background-color: var(--background);
+  transition: background-color 0.3s ease;
+}
+
+.surface-card {
+  background-color: var(--card);
+  transition: background-color 0.3s ease;
+}
+
   padding: 1px;
   border-radius: inherit;
   background: var(--border-gradient);
@@ -506,8 +517,7 @@
 }
 
 .app-header {
-  position: sticky;
-  top: var(--nav-height);
+  position: relative; /* 스크롤 시 사라지도록 변경 */
   z-index: 40;
   padding: 0.85rem 1.5rem 1rem;
   background: linear-gradient(
@@ -566,15 +576,15 @@
 }
 
 .main-nav {
-  position: sticky;
-  top: 0;
-  z-index: 60;
+  position: relative; /* 스크롤 시 사라지도록 변경 */
+  z-index: 10; /* 명시적 z-index */
   padding: 0.85rem 1.5rem 1.15rem;
   background: linear-gradient(
     140deg,
-    hsl(var(--gradient-sky-start) / 0.35),
-    hsl(var(--gradient-sky-end) / 0.1)
+    hsl(var(--gradient-sky-start) / 0.9),
+    hsl(var(--gradient-sky-end) / 0.85)
   );
+  backdrop-filter: blur(8px);
 }
 
 .main-nav-surface {
@@ -608,9 +618,10 @@
   gap: 0.75rem;
   padding: 0.85rem 1.1rem;
   border-radius: 1rem;
-  border: 1px solid color-mix(in hsl, var(--border) 65%, transparent);
-  background: color-mix(in hsl, var(--surface) 82%, transparent);
-  color: var(--text-primary);
+  border: 1px solid color-mix(in hsl, var(--border) 80%, transparent);
+  background: color-mix(in hsl, var(--surface-card) 95%, transparent);
+  backdrop-filter: blur(8px);
+  color: hsl(210 45% 20%); /* 강제 다크 색상 - 명확한 가독성 */
   transition: var(--transition-lift);
   cursor: pointer;
 }
@@ -623,7 +634,7 @@
 .main-nav-tab.is-active {
   border-color: var(--accent);
   background: color-mix(in hsl, var(--accent-soft) 35%, hsl(var(--surface-raised) / 0.88));
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 - 활성 상태 명확화 */
   transform: translateY(-2px);
   box-shadow: var(--shadow-elegant);
 }
@@ -650,7 +661,7 @@
 }
 
 .main-nav-tab.is-active .main-nav-label {
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 - 활성 라벨 */
 }
 
 .main-nav-labels {
@@ -662,12 +673,11 @@
 
 .main-nav-label {
   font-weight: 600;
-  color: var(--text-heading);
+  color: hsl(210 45% 15%); /* 더 진한 색상 - 라벨 가독성 */
 }
 
 .main-nav-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  display: none;
 }
 
 .menu-placeholder {
@@ -2848,6 +2858,86 @@
   color: var(--text-muted);
 }
 
+/* 신규: 타이틀 그룹 및 액션 스타일 */
+.timeline-node__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__seq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.4rem;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.timeline-node__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__similarity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.timeline-node__similarity[data-level="high"] {
+  background: color-mix(in oklch, #22c55e 20%, transparent);
+  color: #16a34a;
+}
+
+.timeline-node__similarity[data-level="medium"] {
+  background: color-mix(in oklch, #f59e0b 20%, transparent);
+  color: #d97706;
+}
+
+.timeline-node__similarity[data-level="low"] {
+  background: color-mix(in oklch, #ef4444 20%, transparent);
+  color: #dc2626;
+}
+
+.timeline-node__meta-item strong {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 0.25rem;
+}
+
+/* 드롭 인디케이터 */
+.timeline-flow__drop-indicator {
+  position: absolute;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+  pointer-events: none;
+  z-index: 1000;
+  animation: pulse-drop 1s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes pulse-drop {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.5);
+  }
+}
+
 .timeline-footer {
   margin-top: 0.75rem;
   font-size: 0.75rem;
@@ -4992,22 +5082,7 @@
   --panel-padding: var(--spacing-lg);
 }
 
-.dark {
-  --primary: var(--primary-pastel);
-  --primary-glow: var(--primary-pastel-dark);
-  --secondary: var(--secondary-pastel);
-  --accent: var(--accent-pastel);
-  
-  --surface-base: var(--surface-base-light);
-  --surface-card: var(--surface-card-light);
-  --surface-menu: var(--surface-menu-light);
-  
-  --text-primary: var(--text-primary-light);
-  --text-muted: var(--text-muted-light);
-  
-  --shadow-glow: var(--shadow-glow-soft);
-  --shadow-hover: var(--shadow-hover-soft);
-}
+/* 다크모드 CSS는 상단 153번째 라인에 정의되어 있습니다 */
 
 .panel-card {
   min-height: var(--card-min-height);

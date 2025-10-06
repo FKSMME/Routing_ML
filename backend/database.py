@@ -1376,3 +1376,23 @@ def cleanup_connections():
 
 # 모듈 종료 시 자동 정리
 atexit.register(cleanup_connections)
+
+# ════════════════════════════════════════════════
+# 12) FastAPI 의존성 함수
+# ════════════════════════════════════════════════
+
+def get_db_connection():
+    """
+    FastAPI 의존성으로 사용할 데이터베이스 연결 제공.
+    
+    Yields:
+        pyodbc.Connection: 데이터베이스 연결
+        
+    Example:
+        @app.get("/items")
+        def get_items(conn = Depends(get_db_connection)):
+            df = pd.read_sql("SELECT * FROM ITEM_MASTER", conn)
+            return df.to_dict('records')
+    """
+    with _connection_pool.get_connection() as conn:
+        yield conn

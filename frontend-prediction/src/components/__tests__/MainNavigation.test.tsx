@@ -41,13 +41,13 @@ describe("MainNavigation", () => {
     const user = userEvent.setup();
     const navs = screen.getAllByRole("tablist");
     const nav = navs[navs.length - 1];
-    await user.tab({ focusTrap: nav });
+    await user.tab();
     expect(document.activeElement).toHaveAttribute("aria-label", "첫번째 - First");
 
-    await user.tab({ focusTrap: nav });
+    await user.tab();
     expect(document.activeElement).toHaveAttribute("aria-label", "두번째 - Second");
 
-    await user.tab({ focusTrap: nav });
+    await user.tab();
     expect(document.activeElement).toHaveAttribute("aria-label", "세번째 - Third");
   });
 

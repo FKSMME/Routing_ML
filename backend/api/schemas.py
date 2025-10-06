@@ -227,6 +227,12 @@ class CandidateRouting(BaseModel):
     source_item_code: Optional[str] = Field(
         None, alias="ITEM_CD", description="추천이 계산된 대상 품목"
     )
+    feature_importance: Optional[Dict[str, float]] = Field(
+        None, description="Feature importance scores showing which attributes contributed to the match"
+    )
+    matched_features: Optional[List[str]] = Field(
+        None, description="List of features that matched between source and candidate items"
+    )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:
@@ -435,6 +441,9 @@ class CandidateSaveResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     detail: Optional[str] = None
+    version: Optional[str] = None
+    uptime_seconds: Optional[float] = None
+    timestamp: Optional[str] = None
 
 
 class WorkflowGraphNode(BaseModel):

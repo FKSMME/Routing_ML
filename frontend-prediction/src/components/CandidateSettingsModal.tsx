@@ -470,7 +470,7 @@ export function CandidateSettingsModal({
         )}
       </section>
 
-      {bucketKey ? (
+      {bucketKey && bucket ? (
         <footer className="candidate-settings__footer">
           <p>
             현재 품목: <strong>{bucket.itemCode}</strong>

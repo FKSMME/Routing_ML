@@ -42,23 +42,35 @@ interface RoutingCanvasProps {
   onProfileReady?: (controller: RoutingCanvasProfileController) => void;
 }
 
-const TimelineNodeComponent = memo(function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
+function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const { step, onRemove } = data;
   const violations = step.violations ?? [];
 
-  const handleRemove = useCallback(() => {
-    onRemove(step.id);
-  }, [onRemove, step.id]);
+  // 유사도 계산 (confidence 또는 similarity)
+  const similarity = step.confidence ?? step.similarity ?? null;
+  const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
 
   return (
     <div className="timeline-node">
       <header className="timeline-node__header">
-        <span className="timeline-node__title">
-          #{step.seq} · {step.processCode}
-        </span>
-        <button type="button" className="timeline-node__remove" onClick={handleRemove} aria-label={`공정 ${step.seq} 삭제`}>
-          <Trash2 size={14} />
-        </button>
+        <div className="timeline-node__title-group">
+          <span className="timeline-node__seq">#{step.seq}</span>
+          <span className="timeline-node__title">{step.processCode}</span>
+        </div>
+        <div className="timeline-node__actions">
+          {similarityPercent !== null && (
+            <span
+              className="timeline-node__similarity"
+              data-level={similarityPercent >= 90 ? "high" : similarityPercent >= 70 ? "medium" : "low"}
+              title={`유사도: ${similarityPercent}%`}
+            >
+              {similarityPercent}%
+            </span>
+          )}
+          <button type="button" className="timeline-node__remove" onClick={() => onRemove(step.id)}>
+            <Trash2 size={14} />
+          </button>
+        </div>
       </header>
       {violations.length > 0 ? (
         <div className="timeline-node__violations" data-testid={`timeline-node-violations-${step.id}`}>
@@ -78,18 +90,23 @@ const TimelineNodeComponent = memo(function TimelineNodeComponent({ data }: Node
       ) : null}
       {step.description ? <p className="timeline-node__desc">{step.description}</p> : null}
       <div className="timeline-node__meta">
-        <span>Setup {step.setupTime ?? "-"}</span>
-        <span>Run {step.runTime ?? "-"}</span>
-        <span>Wait {step.waitTime ?? "-"}</span>
+        <span className="timeline-node__meta-item">
+          <strong>Setup:</strong> {step.setupTime ?? "-"}분
+        </span>
+        <span className="timeline-node__meta-item">
+          <strong>Run:</strong> {step.runTime ?? "-"}분
+        </span>
+        <span className="timeline-node__meta-item">
+          <strong>Wait:</strong> {step.waitTime ?? "-"}분
+        </span>
       </div>
     </div>
   );
-});
+}
 
 const TimelineNode = memo(TimelineNodeComponent);
 TimelineNode.displayName = "TimelineNode";
 
-// Memoize nodeTypes to prevent re-renders
 const nodeTypes = { timeline: TimelineNode } as const;
 
 interface CanvasViewProps extends RoutingCanvasProps {
@@ -117,6 +134,7 @@ function RoutingCanvasView({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isReady, setIsReady] = useState(false);
   const profileControllerRef = useRef<RoutingCanvasProfileController | null>(null);
+  const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
 
   const ensureProfileController = useCallback(() => {
     if (profileControllerRef.current || !onProfileReady) {
@@ -233,7 +251,7 @@ function RoutingCanvasView({
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      setIsDraggingOver(false);
+      setDropPreviewIndex(null);
       const transfer = event.dataTransfer.getData("application/routing-operation");
       if (!transfer) {
         return;
@@ -260,22 +278,24 @@ function RoutingCanvasView({
     [insertOperation, timeline.length],
   );
 
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
-
-  const handleDragEnter = useCallback((event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setIsDraggingOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((event: DragEvent<HTMLDivElement>) => {
-    if (event.currentTarget === event.target) {
-      setIsDraggingOver(false);
-    }
-  }, []);
-
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
+
+    // 드롭 위치 미리보기 계산
+    const bounds = wrapperRef.current?.getBoundingClientRect();
+    if (bounds && instanceRef.current) {
+      const position = instanceRef.current.project({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+      const previewIndex = Math.max(0, Math.min(timeline.length, Math.round(position.x / NODE_GAP)));
+      setDropPreviewIndex(previewIndex);
+    }
+  }, [timeline.length]);
+
+  const handleDragLeave = useCallback(() => {
+    setDropPreviewIndex(null);
   }, []);
 
   const handleNodeDragStop = useCallback(
@@ -329,27 +349,29 @@ function RoutingCanvasView({
     }
   }, [autoFit, fitPadding, timeline.length, isReady, scheduleFrame, syncScrollToViewport]);
 
-  const canvasClassName = `${containerClassName}${isDraggingOver ? " drag-active" : ""}`;
-
   return (
     <div
-      className={canvasClassName}
+      className={containerClassName}
       ref={wrapperRef}
       onDrop={handleDrop}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       onScroll={handleScroll}
       data-testid="routing-canvas-scroll"
-      role="region"
-      aria-label="라우팅 타임라인 캔버스"
-      aria-describedby="routing-canvas-description"
     >
-      <div id="routing-canvas-description" className="sr-only">
-        공정 순서를 드래그하여 재배치하거나, 후보 패널에서 공정을 드래그하여 추가할 수 있습니다.
-        현재 {timeline.length}개의 공정이 있습니다.
-      </div>
       <div className="timeline-flow__canvas" style={{ width: canvasDimensions.width, height: canvasDimensions.height }}>
+        {/* 드롭 위치 미리보기 인디케이터 */}
+        {dropPreviewIndex !== null && (
+          <div
+            className="timeline-flow__drop-indicator"
+            style={{
+              left: `${dropPreviewIndex * NODE_GAP - 10}px`,
+              top: 0,
+              height: "100%",
+            }}
+            data-testid="drop-indicator"
+          />
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}

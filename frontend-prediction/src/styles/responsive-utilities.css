@@ -1,0 +1,303 @@
+/**
+ * Responsive Utility Classes
+ * Mobile-first approach
+ */
+
+/* ========================================
+   Container
+   ======================================== */
+.responsive-container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--container-padding);
+  padding-right: var(--container-padding);
+}
+
+.responsive-container--narrow {
+  max-width: var(--content-max-width);
+}
+
+/* ========================================
+   Grid Layouts
+   ======================================== */
+.responsive-grid {
+  display: grid;
+  gap: var(--grid-gap);
+  grid-template-columns: 1fr;
+}
+
+.responsive-grid--2-cols {
+  grid-template-columns: 1fr;
+}
+
+.responsive-grid--3-cols {
+  grid-template-columns: 1fr;
+}
+
+.responsive-grid--auto-fit {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+@media (min-width: 640px) {
+  .responsive-grid--2-cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-grid--3-cols {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid--3-cols {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ========================================
+   Flex Layouts
+   ======================================== */
+.responsive-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.responsive-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.responsive-split {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 768px) {
+  .responsive-split {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* ========================================
+   Touch Targets
+   ======================================== */
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  position: relative;
+}
+
+/* Expand touch area invisibly */
+.touch-target::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  bottom: -8px;
+  left: -8px;
+  z-index: -1;
+}
+
+/* ========================================
+   Visibility Utilities
+   ======================================== */
+.hidden-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hidden-mobile {
+    display: block;
+  }
+}
+
+.visible-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .visible-mobile {
+    display: none;
+  }
+}
+
+.hidden-tablet {
+  display: block;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hidden-tablet {
+    display: none;
+  }
+}
+
+.hidden-desktop {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .hidden-desktop {
+    display: none;
+  }
+}
+
+/* ========================================
+   Typography
+   ======================================== */
+.text-fluid {
+  font-size: clamp(var(--font-size-base), 4vw, var(--font-size-lg));
+}
+
+.heading-fluid-1 {
+  font-size: clamp(var(--font-size-2xl), 6vw, var(--font-size-4xl));
+  line-height: var(--line-height-tight);
+}
+
+.heading-fluid-2 {
+  font-size: clamp(var(--font-size-xl), 5vw, var(--font-size-3xl));
+  line-height: var(--line-height-tight);
+}
+
+.heading-fluid-3 {
+  font-size: clamp(var(--font-size-lg), 4vw, var(--font-size-2xl));
+  line-height: var(--line-height-normal);
+}
+
+/* ========================================
+   Spacing Utilities
+   ======================================== */
+.stack-sm > * + * {
+  margin-top: var(--spacing-sm);
+}
+
+.stack-md > * + * {
+  margin-top: var(--spacing-md);
+}
+
+.stack-lg > * + * {
+  margin-top: var(--spacing-lg);
+}
+
+/* ========================================
+   Aspect Ratios
+   ======================================== */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+
+/* ========================================
+   Overflow Handling
+   ======================================== */
+.scroll-horizontal {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+}
+
+.scroll-vertical {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hidden {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
+/* ========================================
+   Cards & Panels (Responsive)
+   ======================================== */
+.responsive-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 768px) {
+  .responsive-card {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* ========================================
+   Button Variants (Touch-friendly)
+   ======================================== */
+.btn-responsive {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  font-size: var(--font-size-base);
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  touch-action: manipulation; /* Prevent double-tap zoom */
+}
+
+@media (min-width: 768px) {
+  .btn-responsive {
+    padding: 0.75rem 1.5rem;
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* ========================================
+   Safe Area Insets (for notch devices)
+   ======================================== */
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-inset-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-inset-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+}

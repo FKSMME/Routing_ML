@@ -98,16 +98,17 @@ describe("ReferenceMatrixPanel", () => {
     const [seqHeader] = screen.getAllByTestId("reference-matrix-column-seq");
     const [codeHeader] = screen.getAllByTestId("reference-matrix-column-code");
 
+    const dataTransferData = new Map<string, string>();
     const dataTransfer = {
-      data: new Map<string, string>(),
+      data: dataTransferData,
       setData(key: string, value: string) {
-        this.data.set(key, value);
+        dataTransferData.set(key, value);
       },
       getData(key: string) {
-        return this.data.get(key) ?? "";
+        return dataTransferData.get(key) ?? "";
       },
       clearData() {
-        this.data.clear();
+        dataTransferData.clear();
       },
       dropEffect: "move",
       effectAllowed: "move",

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LogIn, UserPlus } from "lucide-react";
+import { ThemeToggle } from "../ThemeToggle";
 
 
 interface LoginPageProps {
@@ -81,6 +82,9 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="flex min-h-screen items-center justify-center surface-base p-6">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <CardShell
         className="w-full max-w-md"
         tone="soft"

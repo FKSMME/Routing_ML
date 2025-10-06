@@ -19,11 +19,34 @@ export default defineConfig({
     target: "es2020",
     minify: "esbuild",
     sourcemap: false,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom"],
-          "ui-vendor": ["lucide-react", "zustand"],
+        manualChunks: (id) => {
+          // React 코어
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom")) {
+            return "react-vendor";
+          }
+          // ReactFlow (큰 라이브러리)
+          if (id.includes("node_modules/reactflow") || id.includes("node_modules/@xyflow")) {
+            return "reactflow-vendor";
+          }
+          // UI 라이브러리
+          if (id.includes("node_modules/lucide-react") || id.includes("node_modules/zustand")) {
+            return "ui-vendor";
+          }
+          // D3, Recharts 등 차트 라이브러리
+          if (id.includes("node_modules/d3") || id.includes("node_modules/recharts")) {
+            return "chart-vendor";
+          }
+          // Anomaly Detection 컴포넌트 (lazy load용)
+          if (id.includes("/components/anomaly/")) {
+            return "anomaly-module";
+          }
+          // Blueprint 컴포넌트 (lazy load용)
+          if (id.includes("/components/blueprint/")) {
+            return "blueprint-module";
+          }
         },
       },
     },

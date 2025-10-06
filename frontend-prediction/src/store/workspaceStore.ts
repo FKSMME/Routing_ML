@@ -5,7 +5,6 @@ import { create } from "zustand";
 type WorkspaceSettingsPayload = any;
 type WorkspaceSettingsResponse = any;
 
-import { useRoutingStore } from "./routingStore";
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
   registerReferenceMatrixPersistence,
@@ -18,8 +17,9 @@ export type NavigationKey =
   | "master-data"
   | "routing"
   | "routing-matrix"
-  | "algorithm"
+  | "process-groups"
   | "data-output"
+  | "algorithm"
   | "training-status"
   | "options";
 
@@ -606,8 +606,8 @@ registerReferenceMatrixPersistence((columns) => {
 useRoutingStore.getState().hydrateReferenceMatrixColumns(useWorkspaceStore.getState().referenceMatrixColumns);
 
 useRoutingStore.subscribe(
-  (state) => state.erpRequired,
-  (erpRequired) => {
+  (state) => {
+    const erpRequired = state.erpRequired;
     useWorkspaceStore.setState((current) => ({
       erpInterfaceEnabled: erpRequired,
       workspaceOptions: {
@@ -618,12 +618,12 @@ useRoutingStore.subscribe(
             : { ...current.workspaceOptions.data, erpInterface: erpRequired },
       },
     }));
-  },
+  }
 );
 
 useRoutingStore.subscribe(
-  (state) => state.sourceItemCodes,
-  (codes) => {
+  (state) => {
+    const codes = state.sourceItemCodes;
     if (codes && codes.length > 0) {
       useWorkspaceStore.setState((current) => ({
         itemSearch: {
@@ -632,5 +632,5 @@ useRoutingStore.subscribe(
         },
       }));
     }
-  },
+  }
 );

@@ -123,7 +123,7 @@ function TreeNode({ node, activeId, onSelect, onToggle }: TreeNodeProps) {
             <p className="master-tree-status">Loading…</p>
           ) : node.children.length > 0 ? (
             <ul className="master-tree-children">
-              {node.children.map((child) => (
+              {node.children.map((child: TreeNodeState) => (
                 <TreeNode key={child.id} node={child} activeId={activeId} onSelect={onSelect} onToggle={onToggle} />
               ))}
             </ul>

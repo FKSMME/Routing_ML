@@ -84,6 +84,8 @@ export interface TimelineStep {
   metadata?: TimelineStepMetadata | null;
   positionX?: number;
   violations?: RuleViolation[];
+  confidence?: number | null;
+  similarity?: number | null;
 }
 
 export interface RoutingMatrixDefinition {
