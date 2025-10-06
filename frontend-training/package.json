@@ -14,17 +14,21 @@
     "test:playwright": "playwright test"
   },
   "dependencies": {
+    "@react-three/drei": "^9.105.6",
+    "@react-three/fiber": "^8.16.6",
     "@tanstack/react-query": "^5.20.0",
     "@xyflow/react": "^12.8.6",
     "axios": "^1.6.7",
     "dagre": "^0.8.5",
     "echarts": "^5.6.0",
     "echarts-for-react": "^3.0.2",
+    "gsap": "^3.13.0",
     "idb-keyval": "^6.2.1",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "reactflow": "^11.10.2",
+    "three": "^0.163.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

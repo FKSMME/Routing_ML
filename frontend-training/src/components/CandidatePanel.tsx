@@ -8,6 +8,7 @@ import { Activity, Database, Edit3, EyeOff, Plus, Search, Settings, ToggleLeft, 
 import type { DragEvent, MouseEvent } from "react";
 import { useMemo, useState } from "react";
 
+import { AnimatedCandidateCard } from "./AnimatedCandidateCard";
 import { CandidateSettingsModal } from "./CandidateSettingsModal";
 
 interface OperationBucket {
@@ -288,6 +289,7 @@ export function CandidatePanel() {
         <div className="candidate-list" role="list">
           {visibleOperations.map((item) => (
             <div
+              delay={index * 0.05}
               key={item.id}
               role="listitem"
               className={`candidate-block${item.source === "custom" ? " is-custom" : ""}`}
@@ -341,7 +343,7 @@ export function CandidatePanel() {
                 </button>
               </div>
               <p className="candidate-block__hint">드래그 또는 더블 클릭으로 추가</p>
-            </div>
+            </AnimatedCandidateCard>
           ))}
         </div>
       )}

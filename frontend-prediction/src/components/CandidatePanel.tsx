@@ -7,7 +7,7 @@ import {
 import { Activity, Database, Edit3, EyeOff, Plus, Search, Settings, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
-
+import { AnimatedCandidateCard } from "./AnimatedCandidateCard";
 import { CandidateSettingsModal } from "./CandidateSettingsModal";
 
 interface OperationBucket {
@@ -21,6 +21,8 @@ interface CandidateOperation {
   operation: OperationStep;
   source: "default" | "custom";
   entryId?: string;
+  itemCode: string;
+  candidateId: string | null;
 }
 
 export function CandidatePanel() {
@@ -45,6 +47,7 @@ export function CandidatePanel() {
   const processGroups = useRoutingStore((state) => state.processGroups);
   const activeProcessGroupId = useRoutingStore((state) => state.activeProcessGroupId);
   const setActiveProcessGroup = useRoutingStore((state) => state.setActiveProcessGroup);
+  const setSelectedCandidate = useRoutingStore((state) => state.setSelectedCandidate);
 
   const [filter, setFilter] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -95,12 +98,16 @@ export function CandidatePanel() {
         id: `default-${createRecommendationOperationKey(operation)}`,
         operation,
         source: "default" as const,
+        itemCode: bucket.itemCode,
+        candidateId: bucket.candidateId,
       }));
     const customOperations: CandidateOperation[] = bucketCustomEntries.map((entry) => ({
       id: `custom-${entry.id}`,
       operation: entry.operation,
       source: "custom" as const,
       entryId: entry.id,
+      itemCode: entry.itemCode,
+      candidateId: entry.candidateId,
     }));
     const combined = [...customOperations, ...defaultOperations];
     if (!keyword) {
@@ -130,6 +137,10 @@ export function CandidatePanel() {
     () => processGroups.find((group) => group.id === activeProcessGroupId) ?? null,
     [activeProcessGroupId, processGroups],
   );
+
+  const handleCardClick = (item: CandidateOperation) => () => {
+    setSelectedCandidate(item.itemCode);
+  };
 
   const handleDragStart = (operation: OperationStep) => (event: DragEvent<HTMLDivElement>) => {
     event.dataTransfer.effectAllowed = "copy";
@@ -287,12 +298,14 @@ export function CandidatePanel() {
         </div>
       ) : (
         <div className="candidate-list responsive-grid responsive-grid--auto-fit" role="list">
-          {visibleOperations.map((item) => (
-            <div
+          {visibleOperations.map((item, index) => (
+            <AnimatedCandidateCard
               key={item.id}
+              delay={index * 0.05}
               role="listitem"
               className={`candidate-block responsive-card touch-target${item.source === "custom" ? " is-custom" : ""}`}
               draggable
+              onClick={handleCardClick(item)}
               onDragStart={handleDragStart(item.operation)}
               onDoubleClick={handleDoubleClick(item.operation)}
               tabIndex={0}
@@ -342,7 +355,7 @@ export function CandidatePanel() {
                 </button>
               </div>
               <p className="candidate-block__hint">드래그 또는 더블 클릭으로 추가</p>
-            </div>
+            </AnimatedCandidateCard>
           ))}
         </div>
       )}

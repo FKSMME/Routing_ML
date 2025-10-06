@@ -150,7 +150,7 @@
 }
 
 /* 다크모드 CSS 변수 */
-.dark {
+html.dark {
   --primary: hsl(199 89% 48%);
   --primary-glow: hsl(199 89% 58%);
   --primary-foreground: hsl(0 0% 100%);
@@ -243,6 +243,17 @@
   content: "";
   position: absolute;
   inset: 0;
+/* Surface utility classes */
+.surface-base {
+  background-color: var(--background);
+  transition: background-color 0.3s ease;
+}
+
+.surface-card {
+  background-color: var(--card);
+  transition: background-color 0.3s ease;
+}
+
   padding: 1px;
   border-radius: inherit;
   background: var(--border-gradient);
@@ -506,8 +517,7 @@
 }
 
 .app-header {
-  position: sticky;
-  top: var(--nav-height);
+  position: relative; /* 스크롤 시 사라지도록 변경 */
   z-index: 40;
   padding: 0.85rem 1.5rem 1rem;
   background: linear-gradient(
@@ -566,9 +576,8 @@
 }
 
 .main-nav {
-  position: sticky;
-  top: 0;
-  z-index: 60;
+  position: relative; /* 스크롤 시 사라지도록 변경 */
+  z-index: 10; /* 명시적 z-index */
   padding: 0.85rem 1.5rem 1.15rem;
   background: linear-gradient(
     140deg,
@@ -612,7 +621,7 @@
   border: 1px solid color-mix(in hsl, var(--border) 80%, transparent);
   background: color-mix(in hsl, var(--surface-card) 95%, transparent);
   backdrop-filter: blur(8px);
-  color: var(--text-primary);
+  color: hsl(210 45% 20%); /* 강제 다크 색상 - 명확한 가독성 */
   transition: var(--transition-lift);
   cursor: pointer;
 }
@@ -625,7 +634,7 @@
 .main-nav-tab.is-active {
   border-color: var(--accent);
   background: color-mix(in hsl, var(--accent-soft) 35%, hsl(var(--surface-raised) / 0.88));
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 - 활성 상태 명확화 */
   transform: translateY(-2px);
   box-shadow: var(--shadow-elegant);
 }
@@ -652,7 +661,7 @@
 }
 
 .main-nav-tab.is-active .main-nav-label {
-  color: var(--nav-active);
+  color: hsl(195 100% 18%); /* 진한 청록색 - 활성 라벨 */
 }
 
 .main-nav-labels {
@@ -664,12 +673,11 @@
 
 .main-nav-label {
   font-weight: 600;
-  color: var(--text-heading);
+  color: hsl(210 45% 15%); /* 더 진한 색상 - 라벨 가독성 */
 }
 
 .main-nav-desc {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  display: none;
 }
 
 .menu-placeholder {
@@ -5074,22 +5082,7 @@
   --panel-padding: var(--spacing-lg);
 }
 
-.dark {
-  --primary: var(--primary-pastel);
-  --primary-glow: var(--primary-pastel-dark);
-  --secondary: var(--secondary-pastel);
-  --accent: var(--accent-pastel);
-  
-  --surface-base: var(--surface-base-light);
-  --surface-card: var(--surface-card-light);
-  --surface-menu: var(--surface-menu-light);
-  
-  --text-primary: var(--text-primary-light);
-  --text-muted: var(--text-muted-light);
-  
-  --shadow-glow: var(--shadow-glow-soft);
-  --shadow-hover: var(--shadow-hover-soft);
-}
+/* 다크모드 CSS는 상단 153번째 라인에 정의되어 있습니다 */
 
 .panel-card {
   min-height: var(--card-min-height);

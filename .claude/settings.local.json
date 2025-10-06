@@ -91,7 +91,22 @@
       "Bash(docker-compose:*)",
       "Bash(docker compose:*)",
       "Bash(/tmp/quality_test.sh:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(tar:*)",
+      "Bash(ip addr:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules node /tmp/capture.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules node /tmp/capture-with-login.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules node /tmp/capture-bypass-auth.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules node /tmp/check-both-frontends.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules node /tmp/quick-check.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 8s node /tmp/verify-both.js)",
+      "Bash(/workspaces/Routing_ML_4/scripts/verify-frontends.sh:*)",
+      "Bash(xargs:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-dark-mode.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 45s node /tmp/quick-dark-mode-test.js)",
+      "Bash(git config:*)",
+      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/dark-mode-verification.spec.ts --project=chromium --reporter=list)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,6 @@
 import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
-import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
 import { ParticleBackground } from "@components/ParticleBackground";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
@@ -14,52 +13,51 @@ import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayo
 import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
 import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
 import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
+import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
-// Routing groups management components removed - not needed in prediction-only mode
-// import { RoutingGroupControls } from "@components/RoutingGroupControls";
-// import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
-import { WorkflowGraphPanel } from "@components/WorkflowGraphPanel";
+import { RoutingExplanationPanel } from "@components/routing/RoutingExplanationPanel";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
+import { useTheme } from "@hooks/useTheme";
 import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-// 🔵 Prediction & Routing Creation Web Service
+// 🎨 All Navigation Items (Beautiful Design)
 const NAVIGATION_ITEMS = [
-  {
-    id: "master-data",
-    label: "기준정보 확인",
-    description: "Access 연결 · 트리/행렬 탐색 · 즐겨찾기 히스토리",
-    icon: <Database size={18} />,
-  },
   {
     id: "routing",
     label: "라우팅 생성",
-    description: "Drag&Drop 타임라인 · 후보 공정 카드 · SAVE 패널",
+    description: "Drag&Drop 타임라인 · 후보 공정 카드",
     icon: <Workflow size={18} />,
   },
   {
+    id: "master-data",
+    label: "기준정보",
+    description: "데이터 탐색 · 히스토리",
+    icon: <Database size={18} />,
+  },
+  {
     id: "routing-matrix",
-    label: "라우팅 조합 관리",
-    description: "라우팅 세트 · Variant 조합 편집",
+    label: "라우팅 조합",
+    description: "Variant 조합 편집",
     icon: <Table size={18} />,
   },
   {
     id: "process-groups",
-    label: "공정 그룹 관리",
-    description: "대체 경로 컬럼 · 후공정 고정값 구성",
+    label: "공정 그룹",
+    description: "대체 경로 관리",
     icon: <Layers size={18} />,
   },
   {
     id: "data-output",
-    label: "데이터 출력 설정",
-    description: "컬럼 매핑 매트릭스 · 미리보기 · 프로필 저장",
+    label: "데이터 출력",
+    description: "미리보기 · 내보내기",
     icon: <FileOutput size={18} />,
   },
 ];
@@ -137,11 +135,8 @@ export default function App() {
     setWorkspaceLayout(normalizedLayout);
   }, [layout, setWorkspaceLayout]);
 
-  // 🎨 Force dark mode for cyberpunk theme
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-    document.body.style.backgroundColor = '#0a0e1a';
-  }, []);
+  // 🎨 Theme management with toggle support
+  useTheme();
 
   const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
@@ -152,6 +147,12 @@ export default function App() {
     exportFormats: exportProfile.formats,
     withVisualization: exportProfile.withVisualization,
   });
+
+  // Get selected candidate for explanation panel
+  const selectedCandidateId = useRoutingStore((state) => state.selectedCandidateId);
+  const selectedCandidate = data?.items
+    ?.flatMap((item) => item.candidates ?? [])
+    .find((candidate) => candidate.CANDIDATE_ITEM_CD === selectedCandidateId) ?? null;
 
   const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
 
@@ -249,6 +250,7 @@ export default function App() {
           <>
             <TimelinePanel key={`timeline-${tabKey}`} />
             <VisualizationSummary metrics={data?.metrics} />
+            <RoutingExplanationPanel candidate={selectedCandidate} />
             <FeatureWeightPanel
               profiles={featureWeights.availableProfiles}
               selectedProfile={featureWeights.profile}
@@ -296,6 +298,7 @@ export default function App() {
           {/* <RoutingProductTabs /> */}
           <TimelinePanel />
           <VisualizationSummary metrics={data?.metrics} />
+          <RoutingExplanationPanel candidate={selectedCandidate} />
           <FeatureWeightPanel
             profiles={featureWeights.availableProfiles}
             selectedProfile={featureWeights.profile}
@@ -316,16 +319,11 @@ export default function App() {
 
   let workspace: JSX.Element;
   switch (activeMenu) {
+    case "routing":
+      workspace = routingContent;
+      break;
     case "master-data":
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
-      break;
-    case "routing":
-      workspace = (
-        <>
-          {routingContent}
-          <WorkflowGraphPanel />
-        </>
-      );
       break;
     case "routing-matrix":
       workspace = <RoutingMatrixWorkspace />;

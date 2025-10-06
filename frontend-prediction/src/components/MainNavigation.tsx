@@ -1,4 +1,5 @@
 ﻿import type { ReactNode } from "react";
+import { useMenuAnimation } from "@hooks/useGSAPAnimation";
 
 export interface NavigationItem {
   id: string;
@@ -14,8 +15,10 @@ interface MainNavigationProps {
 }
 
 export function MainNavigation({ items, activeId, onSelect }: MainNavigationProps) {
+  const menuRef = useMenuAnimation();
+
   return (
-    <nav className="main-nav" aria-label="주요 메뉴">
+    <nav ref={menuRef} className="main-nav" aria-label="주요 메뉴">
       <div className="main-nav-surface frosted-panel">
         <div className="main-nav-inner">
           <span className="main-nav-heading">운영 메뉴</span>
