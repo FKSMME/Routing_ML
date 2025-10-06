@@ -6,7 +6,7 @@ from typing import Dict
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
-from backend.api.database import get_session
+from backend.database import get_session
 from backend.api.services.data_quality_service import (
     DataQualityMetrics,
     DataQualityReport,

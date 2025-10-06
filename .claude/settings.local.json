@@ -80,7 +80,9 @@
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
       "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/console-error-collector.spec.ts --project=chromium --reporter=list)",
-      "Bash(service postgresql status:*)"
+      "Bash(service postgresql status:*)",
+      "Bash(time curl:*)",
+      "Bash(sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17)"
     ],
     "deny": [],
     "ask": []
