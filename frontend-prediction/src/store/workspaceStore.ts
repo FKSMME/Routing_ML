@@ -606,8 +606,8 @@ registerReferenceMatrixPersistence((columns) => {
 useRoutingStore.getState().hydrateReferenceMatrixColumns(useWorkspaceStore.getState().referenceMatrixColumns);
 
 useRoutingStore.subscribe(
-  (state) => state.erpRequired,
-  (erpRequired) => {
+  (state) => {
+    const erpRequired = state.erpRequired;
     useWorkspaceStore.setState((current) => ({
       erpInterfaceEnabled: erpRequired,
       workspaceOptions: {
@@ -618,12 +618,12 @@ useRoutingStore.subscribe(
             : { ...current.workspaceOptions.data, erpInterface: erpRequired },
       },
     }));
-  },
+  }
 );
 
 useRoutingStore.subscribe(
-  (state) => state.sourceItemCodes,
-  (codes) => {
+  (state) => {
+    const codes = state.sourceItemCodes;
     if (codes && codes.length > 0) {
       useWorkspaceStore.setState((current) => ({
         itemSearch: {
@@ -632,5 +632,5 @@ useRoutingStore.subscribe(
         },
       }));
     }
-  },
+  }
 );

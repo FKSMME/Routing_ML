@@ -1,4 +1,4 @@
-import { defineConfig, devices } from "./frontend/node_modules/@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 
@@ -29,7 +29,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testMatch: ["frontend/**/*.spec.ts", "frontend/**/*.spec.tsx"],
+      testMatch: ["**/*.spec.ts", "**/*.spec.tsx"],
       use: { ...devices["Desktop Chrome"] },
     },
     {

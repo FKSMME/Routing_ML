@@ -435,6 +435,9 @@ class CandidateSaveResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     detail: Optional[str] = None
+    version: Optional[str] = None
+    uptime_seconds: Optional[float] = None
+    timestamp: Optional[str] = None
 
 
 class WorkflowGraphNode(BaseModel):

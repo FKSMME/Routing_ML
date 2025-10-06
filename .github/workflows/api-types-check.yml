@@ -1,0 +1,111 @@
+name: API Types Check
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/api/**/*.py'
+      - 'backend/api/schemas.py'
+      - 'scripts/generate_api_types.sh'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/api/**/*.py'
+      - 'backend/api/schemas.py'
+
+jobs:
+  check-api-types:
+    name: Verify API Types are up-to-date
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'frontend-prediction/package-lock.json'
+
+      - name: Install Python dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install openapi-typescript
+        run: npm install -g openapi-typescript
+
+      - name: Generate OpenAPI schema
+        run: |
+          source venv/bin/activate
+          python << 'EOF'
+          from fastapi.openapi.utils import get_openapi
+          from backend.api.app import app
+          import json
+
+          schema = get_openapi(
+              title=app.title,
+              version=app.version,
+              openapi_version='3.1.0',
+              routes=app.routes
+          )
+
+          with open('backend/openapi.json', 'w', encoding='utf-8') as f:
+              json.dump(schema, f, indent=2, ensure_ascii=False)
+
+          print(f"✅ Generated schema with {len(schema['paths'])} endpoints")
+          EOF
+
+      - name: Generate TypeScript types
+        run: |
+          # Prediction Frontend
+          npx openapi-typescript backend/openapi.json \
+            --output frontend-prediction/src/types/api-generated.ts \
+            --path-params-as-types
+
+          # Training Frontend
+          npx openapi-typescript backend/openapi.json \
+            --output frontend-training/src/types/api-generated.ts \
+            --path-params-as-types
+
+          echo "✅ TypeScript types generated"
+
+      - name: Check for uncommitted changes
+        run: |
+          if git diff --exit-code frontend-prediction/src/types/api-generated.ts frontend-training/src/types/api-generated.ts backend/openapi.json; then
+            echo "✅ API types are up-to-date"
+          else
+            echo "❌ API types are out of sync!"
+            echo ""
+            echo "Please run locally and commit the changes:"
+            echo "  bash scripts/generate_api_types.sh"
+            echo "  git add backend/openapi.json frontend-*/src/types/api-generated.ts"
+            echo "  git commit -m 'chore: Update API types'"
+            echo ""
+            git diff frontend-prediction/src/types/api-generated.ts frontend-training/src/types/api-generated.ts
+            exit 1
+          fi
+
+      - name: Verify TypeScript compilation (Prediction)
+        working-directory: frontend-prediction
+        run: |
+          npm ci
+          npx tsc --noEmit
+          echo "✅ Prediction Frontend types are valid"
+
+      - name: Verify TypeScript compilation (Training)
+        working-directory: frontend-training
+        run: |
+          npm ci
+          npx tsc --noEmit
+          echo "✅ Training Frontend types are valid"

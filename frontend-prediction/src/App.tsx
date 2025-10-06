@@ -14,6 +14,7 @@ import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayo
 import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
 import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
 import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
+import ErrorBoundary from "@components/ErrorBoundary";
 // Routing groups management components removed - not needed in prediction-only mode
 // import { RoutingGroupControls } from "@components/RoutingGroupControls";
 // import { SaveInterfacePanel } from "@components/SaveInterfacePanel";
@@ -376,9 +377,11 @@ export default function App() {
         title={headerData.label}
         description={headerData.description}
       />
-      <div key={activeMenu} className="workspace-transition dust-effect">
-        {workspace}
-      </div>
+      <ErrorBoundary>
+        <div key={activeMenu} className="workspace-transition dust-effect">
+          {workspace}
+        </div>
+      </ErrorBoundary>
     </div>
   );
 }

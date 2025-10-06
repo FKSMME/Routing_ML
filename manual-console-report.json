@@ -1,0 +1,36 @@
+{
+  "totalErrors": 5,
+  "timestamp": "2025-10-05T23:19:25.181Z",
+  "errors": [
+    {
+      "page": "Prediction Home",
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "timestamp": "2025-10-05T23:19:16.890Z"
+    },
+    {
+      "page": "Prediction Home",
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "timestamp": "2025-10-05T23:19:16.896Z"
+    },
+    {
+      "page": "Prediction Home",
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "timestamp": "2025-10-05T23:19:16.897Z"
+    },
+    {
+      "page": "Training Home",
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "timestamp": "2025-10-05T23:19:21.602Z"
+    },
+    {
+      "page": "Training Home",
+      "type": "error",
+      "message": "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+      "timestamp": "2025-10-05T23:19:21.660Z"
+    }
+  ]
+}

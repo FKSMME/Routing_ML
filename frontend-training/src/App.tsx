@@ -10,6 +10,7 @@ import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWo
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
+import ErrorBoundary from "@components/ErrorBoundary";
 import { BarChart3, Menu, Route, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
@@ -142,9 +143,11 @@ export default function App() {
         title={headerData.label}
         description={headerData.description}
       />
-      <div key={activeMenu} className="workspace-transition dust-effect">
-        {workspace}
-      </div>
+      <ErrorBoundary>
+        <div key={activeMenu} className="workspace-transition dust-effect">
+          {workspace}
+        </div>
+      </ErrorBoundary>
     </div>
   );
 }

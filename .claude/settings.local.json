@@ -78,7 +78,8 @@
       "Bash(/dev/null sleep 2 echo \"모든 Node 프로세스 종료 완료\")",
       "Bash(npm:*)",
       "Bash(lsof:*)",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/console-error-collector.spec.ts --project=chromium --reporter=list)"
     ],
     "deny": [],
     "ask": []

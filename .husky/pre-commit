@@ -1,0 +1,34 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Pre-commit Hook: TypeScript 타입 체크 중..."
+
+# Prediction Frontend 타입 체크
+if git diff --cached --name-only | grep -q "^frontend-prediction/"; then
+  echo "📦 Prediction Frontend 변경 감지, 타입 체크 실행..."
+  cd frontend-prediction
+  npx tsc --noEmit
+  if [ $? -ne 0 ]; then
+    echo "❌ Prediction Frontend TypeScript 에러 발견!"
+    echo "수정 후 다시 커밋해주세요."
+    exit 1
+  fi
+  echo "✅ Prediction Frontend 타입 체크 통과"
+  cd ..
+fi
+
+# Training Frontend 타입 체크
+if git diff --cached --name-only | grep -q "^frontend-training/"; then
+  echo "📦 Training Frontend 변경 감지, 타입 체크 실행..."
+  cd frontend-training
+  npx tsc --noEmit
+  if [ $? -ne 0 ]; then
+    echo "❌ Training Frontend TypeScript 에러 발견!"
+    echo "수정 후 다시 커밋해주세요."
+    exit 1
+  fi
+  echo "✅ Training Frontend 타입 체크 통과"
+  cd ..
+fi
+
+echo "✅ Pre-commit Hook 완료!"

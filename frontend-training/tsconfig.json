@@ -23,8 +23,8 @@
       "@styles/*": ["styles/*"]
     }
   },
-  "include": ["src", "tests", "../tests/frontend"],
-  "exclude": ["node_modules", "dist", "build", "**/*.spec.ts", "**/*.test.ts"],
+  "include": ["src", "tests", "../tests/frontend-training"],
+  "exclude": ["node_modules", "dist", "build", "**/*.spec.ts", "**/*.test.ts", "../frontend", "../tests/frontend"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
 

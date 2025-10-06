@@ -1,0 +1,59 @@
+/* Dark Theme Override */
+:root.dark,
+html.dark {
+  --gradient-sky-start: 220 25% 15%;
+  --gradient-sky-mid: 220 20% 18%;
+  --gradient-sky-end: 220 25% 12%;
+  --gradient-start: hsl(220 25% 15%);
+  --gradient-mid: hsl(220 20% 18%);
+  --gradient-end: hsl(220 25% 12%);
+
+  --surface-base: 220 20% 12%;
+  --surface-raised: 220 18% 16%;
+  --surface: hsl(220 20% 12%);
+  --surface-card: hsl(220 18% 16%);
+  --surface-menu: hsl(220 20% 14%);
+  --surface-overlay: hsl(220 20% 18%);
+
+  --background: hsl(220 20% 12%);
+  --foreground: hsl(210 15% 90%);
+  --card: hsl(220 18% 16%);
+  --card-foreground: hsl(210 15% 90%);
+  --popover: hsl(220 18% 16%);
+  --popover-foreground: hsl(210 15% 90%);
+
+  --border: hsl(220 15% 25%);
+  --border-strong: hsl(220 15% 30%);
+
+  --text-heading: hsl(210 15% 95%);
+  --text-primary: hsl(210 15% 88%);
+  --text-muted: hsl(210 10% 55%);
+  --text-muted-strong: hsl(210 10% 65%);
+  --text-emphasis: hsl(210 15% 98%);
+
+  --nav-default: hsl(210 15% 75%);
+  --nav-hover: hsl(210 15% 95%);
+  --nav-active: hsl(195 100% 65%);
+
+  --input: hsl(220 15% 20%);
+
+  --shadow-resting: 0 8px 20px hsl(0 0% 0% / 0.4);
+  --shadow-hover: 0 12px 32px hsl(0 0% 0% / 0.5);
+  --shadow-focus: 0 0 0 3px hsl(188 82% 47% / 0.35);
+  --shadow-elegant: 0 10px 30px hsl(0 0% 0% / 0.6);
+  --shadow-glow: 0 0 40px hsl(195 100% 45% / 0.4);
+  --shadow-raised: 0 12px 28px hsl(0 0% 0% / 0.5);
+}
+
+/* Dark theme body background */
+:root.dark body,
+html.dark body {
+  background: linear-gradient(
+    135deg,
+    hsl(220 25% 15%),
+    hsl(220 20% 18%),
+    hsl(220 25% 12%)
+  );
+  background-attachment: fixed;
+  color: hsl(210 15% 90%);
+}

@@ -605,7 +605,7 @@ export const flushRoutingPersistence = async (
     const result: RoutingPersistenceFlushResult = {
       acceptedSnapshotIds,
       acceptedAuditIds,
-      updatedGroups: (response.updated_groups ?? []).map((group) => ({
+      updatedGroups: (response.updated_groups ?? []).map((group: any) => ({
         groupId: group.group_id,
         version: group.version,
         dirty: group.dirty,
