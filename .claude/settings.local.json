@@ -89,7 +89,9 @@
       "Bash(bash -c 'npm run build')",
       "Bash(docker:*)",
       "Bash(docker-compose:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(/tmp/quality_test.sh:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
