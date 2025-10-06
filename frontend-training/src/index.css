@@ -2850,6 +2850,86 @@
   color: var(--text-muted);
 }
 
+/* 신규: 타이틀 그룹 및 액션 스타일 */
+.timeline-node__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__seq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 0.4rem;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.timeline-node__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timeline-node__similarity {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.timeline-node__similarity[data-level="high"] {
+  background: color-mix(in oklch, #22c55e 20%, transparent);
+  color: #16a34a;
+}
+
+.timeline-node__similarity[data-level="medium"] {
+  background: color-mix(in oklch, #f59e0b 20%, transparent);
+  color: #d97706;
+}
+
+.timeline-node__similarity[data-level="low"] {
+  background: color-mix(in oklch, #ef4444 20%, transparent);
+  color: #dc2626;
+}
+
+.timeline-node__meta-item strong {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-right: 0.25rem;
+}
+
+/* 드롭 인디케이터 */
+.timeline-flow__drop-indicator {
+  position: absolute;
+  width: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-soft));
+  pointer-events: none;
+  z-index: 1000;
+  animation: pulse-drop 1s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes pulse-drop {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.5);
+  }
+}
+
 .timeline-footer {
   margin-top: 0.75rem;
   font-size: 0.75rem;

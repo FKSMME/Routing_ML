@@ -1,0 +1,53 @@
+# Routing ML v4 - Frontend Prediction Dockerfile
+# Node.js 18 + Vite + React
+
+# Stage 1: Build
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# 패키지 파일 복사 및 설치 (캐시 활용)
+COPY frontend-prediction/package.json frontend-prediction/package-lock.json ./
+RUN npm ci
+
+# 소스 코드 복사
+COPY frontend-prediction/ .
+
+# 빌드
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
+
+RUN npm run build
+
+# Stage 2: Production
+FROM nginx:alpine
+
+# 빌드된 파일 복사
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Nginx 설정 (SPA 라우팅 지원)
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://backend:8000; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_cache_bypass $http_upgrade; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget --quiet --tries=1 --spider http://localhost || exit 1
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

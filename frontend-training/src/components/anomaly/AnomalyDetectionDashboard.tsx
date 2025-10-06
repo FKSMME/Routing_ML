@@ -260,7 +260,7 @@ export const AnomalyDetectionDashboard: React.FC = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         .anomaly-detection-dashboard {
           padding: 2rem;
           max-width: 1400px;

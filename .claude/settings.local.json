@@ -82,7 +82,14 @@
       "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/console-error-collector.spec.ts --project=chromium --reporter=list)",
       "Bash(service postgresql status:*)",
       "Bash(time curl:*)",
-      "Bash(sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17)"
+      "Bash(sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17)",
+      "Read(//usr/lib/**)",
+      "Bash(odbcinst:*)",
+      "Bash(xargs -r kill -9)",
+      "Bash(bash -c 'npm run build')",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker compose:*)"
     ],
     "deny": [],
     "ask": []
