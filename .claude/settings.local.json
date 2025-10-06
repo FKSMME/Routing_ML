@@ -79,7 +79,8 @@
       "Bash(npm:*)",
       "Bash(lsof:*)",
       "Bash(xargs kill:*)",
-      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/console-error-collector.spec.ts --project=chromium --reporter=list)"
+      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=true npx playwright test tests/console-error-collector.spec.ts --project=chromium --reporter=list)",
+      "Bash(service postgresql status:*)"
     ],
     "deny": [],
     "ask": []

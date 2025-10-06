@@ -98,6 +98,140 @@
 4. 생명 주기: 200+100 → 300+150 증가
 5. 이동 속도:
    - 먼지: vx 0.8, vy 0.6 (느리게)
+
+---
+
+## Phase 1 범위 명확화 작업 (2025-10-06)
+
+### [2025-10-06 14:30] Task #9: Phase 1 MVP 범위 정의 완료 ✅
+
+**작업 내용**:
+- PRD.md 및 ROUTING_IMPROVEMENT_REQUIREMENTS.md 분석 완료
+- 현재 구현 상태 평가 (백엔드 82%, 프론트엔드 78%)
+- Phase 1 MVP 핵심 범위 정의
+
+**주요 결정 사항**:
+
+#### ✅ Phase 1 포함 기능 (Must-Have)
+1. **ML 기반 라우팅 예측** (F01)
+   - HNSW 벡터 검색 + 메타 앙상블
+   - 유사도 80%+ 달성 목표
+   - Top-K 후보 조회 (K=10)
+
+2. **워크플로우 블록 타임라인** (F02)
+   - ReactFlow 기반 가로 블록 시각화
+   - 드래그앤드롭 순서 변경
+   - 드롭 존 하이라이트 및 미리보기
+
+3. **기준정보 탐색** (F04)
+   - Access DB 읽기
+   - 트리/행렬 뷰
+   - 즐겨찾기 및 히스토리
+
+4. **자연어 검색** (F05)
+   - 온프레미스 NLP (룰 기반)
+   - 재질/치수/파트 타입 인식
+   - 신뢰도 70%+ 목표
+
+5. **다중 포맷 출력** (F06-F07)
+   - CSV, Excel, JSON 저장
+   - 클립보드 복사
+   - SAVE 버튼 드롭다운 UI
+
+6. **알고리즘 블루프린트 편집** (F08)
+   - ReactFlow 워크플로우 그래프
+   - 사이버펑크 스타일 100% 유지
+
+7. **라우팅 그룹 관리** (F10)
+   - CRUD + 버전 관리
+   - SQLite 저장소
+
+8. **Windows 인증 및 감사** (F13-F14)
+   - 도메인 ID/비밀번호
+   - API 호출 이력 JSON 로그
+
+9. **데이터 품질 대시보드** (F15)
+   - Grafana + Prometheus
+   - Quality Score 0-100
+
+#### ❌ Phase 2로 연기 (Should-Have)
+- ACCESS DB 저장 기능 (F16) - CSV 우선, ODBC 쓰기 권한 이슈
+- XML 출력 포맷 (F17) - 사용 빈도 낮음
+- TensorBoard Projector (F19) - 파워 유저 전용
+- 드래그 성능 60fps 최적화 (F21) - 30fps도 충분
+- PostgreSQL 전환 - Access DB로 충분, 마이그레이션 리스크
+
+#### ❌ Phase 3로 연기 (Could-Have)
+- ERP 연동 (F18) - 외부 시스템 협의 필요
+- Neo4j 그래프 (F20) - 고급 시각화
+- Screen Reader 접근성 (F22) - 장애인 사용자 없음
+- 모바일 최적화 - 데스크톱 우선
+
+**성공 기준**:
+
+| KPI | 목표치 |
+|-----|-------|
+| 예측 정확도 | 유사도 80%+ 달성 비율 ≥ 80% |
+| 응답 시간 | 단건 예측 ≤ 1분 |
+| 시스템 가용성 | 99% uptime |
+| 사용자 온보딩 | 5분 내 첫 예측 완료 |
+| 버그 밀도 | Critical 버그 0건 |
+| NPS | ≥ 60 |
+
+**타임라인 (4주)**:
+
+```
+Week 1 (긴급 개선)
+├─ Day 1-2: 워크플로우 블록 시각화 (ReactFlow)
+├─ Day 3: 드롭 존 하이라이트 구현
+├─ Day 4-5: SAVE 버튼 드롭다운 + CSS 표준화
+└─ Deliverable: 라우팅 생성 메뉴 핵심 UI 완성
+
+Week 2 (통합 및 안정화)
+├─ Day 1-2: E2E 테스트 작성 (Playwright)
+├─ Day 3: 데이터 품질 대시보드 배포
+├─ Day 4: 온보딩 가이드 최종 검토
+├─ Day 5: UAT 준비 (테스트 시나리오)
+└─ Deliverable: 테스트 완료 + 문서 완성
+
+Week 3 (파일럿 준비)
+├─ Day 1-2: 버그 수정 (Critical/High)
+├─ Day 3: Windows 인증 테스트 (도메인 연동)
+├─ Day 4: 감사 로그 검증
+├─ Day 5: 파일럿 환경 구축
+└─ Deliverable: 프로덕션 레디 빌드
+
+Week 4 (파일럿 실행)
+├─ Day 1: 파일럿 그룹 킥오프 (10명)
+├─ Day 2-3: 현장 지원 (ML Team on-site)
+├─ Day 4: 중간 피드백 수집
+├─ Day 5: Week 1 리뷰 미팅
+└─ Deliverable: 파일럿 Week 1 보고서
+```
+
+**주요 리스크**:
+
+| 리스크 | 확률 | 영향 | 완화 방안 |
+|-------|-----|-----|----------|
+| ReactFlow 성능 이슈 | 중간 | 높음 | 블록 30개 제한 |
+| Windows 인증 실패 | 높음 | 치명적 | IT 부서 사전 협의 |
+| HNSW 유사도 80% 미달성 | 중간 | 높음 | 가중치 튜닝 |
+| 파일럿 피드백 부정적 | 낮음 | 높음 | UAT 사전 테스트 |
+
+**산출물**:
+- ✅ [PHASE1_SCOPE_DEFINITION.md](PHASE1_SCOPE_DEFINITION.md) (5,500+ 라인)
+  - PRD 요구사항 분석 (FR-01~FR-13, NFR-01~NFR-06)
+  - 현재 구현 상태 평가
+  - MVP 핵심 사용자 스토리 4개
+  - 기능 우선순위 매트릭스 (MoSCoW, Kano)
+  - Phase 1 성공 기준 (정량/정성)
+  - Out-of-Scope 기능 정의
+  - 4주 타임라인 및 마일스톤
+  - 리스크 평가 및 완화 방안
+
+**다음 단계**:
+- ⏳ Task #10: 이상 탐지 알고리즘 구현
+- ⏳ Task #11: 주간 데이터 품질 리포트 자동화
    - 일반: vx 1.5, vy 1.2 (빠르게)
 6. 위로 떠오르는 효과: vy에 -0.3 추가
 7. 불투명도: 40% → 50% 증가
@@ -1109,4 +1243,111 @@ interface SaveButtonDropdownProps {
 - **추가 코드**: ~209줄
 - **생성 문서**: 1개
 
+
+
+---
+
+## Phase 1 개선 작업 계속 (2025-10-06)
+
+### [2025-10-06 15:00] Task #10: 이상 탐지 알고리즘 구현 완료 ✅
+
+**작업 내용**:
+- Isolation Forest 기반 이상 탐지 알고리즘 구현
+- API 엔드포인트 8개 추가
+- 프론트엔드 대시보드 컴포넌트 생성
+
+**주요 구현 사항**:
+
+#### 1. Backend 서비스 (`anomaly_detection_service.py`)
+- **Isolation Forest 모델**:
+  - scikit-learn IsolationForest 사용
+  - Contamination: 0.1 (예상 이상치 10%)
+  - N Estimators: 100개 트리
+  - StandardScaler로 피처 정규화
+
+- **피처 추출**:
+  - out_diameter, in_diameter, thickness
+  - length, width, height
+  - 6개 치수 피처 기반 이상치 탐지
+
+- **이상치 점수**:
+  - -1 ~ 1 범위 (낮을수록 이상)
+  - 임계값: -0.5 (조정 가능)
+  - 신뢰도 계산 (0-1)
+
+- **설명 생성**:
+  - z-score 기반 이상치 이유 설명
+  - "out_diameter=120.50 (매우 높음)" 형식
+  - 상위 2개 피처 자동 식별
+
+#### 2. API 엔드포인트 (`/api/anomaly/*`)
+1. `POST /api/anomaly/train` - 모델 학습
+   - contamination, n_estimators 파라미터
+   - 학습 통계 반환 (평균, 표준편차, 범위)
+
+2. `POST /api/anomaly/detect` - 이상치 탐지
+   - item_ids 필터링 지원 (전체/부분)
+   - threshold 조정 가능
+   - 이상치 목록 + 통계 반환
+
+3. `GET /api/anomaly/score/{item_id}` - 개별 품목 점수
+   - 특정 품목의 이상치 점수 조회
+   - 이상치가 아니면 404 반환
+
+4. `GET /api/anomaly/trends` - 추세 조회 (TODO)
+5. `GET /api/anomaly/config` - 설정 조회
+6. `PUT /api/anomaly/config` - 설정 업데이트
+7. `GET /api/anomaly/stats` - 전체 통계
+
+#### 3. 프론트엔드 대시보드 (`AnomalyDetectionDashboard.tsx`)
+- **통계 카드 4개**:
+  - 총 품목 수
+  - 이상치 수
+  - 이상치 비율 (%)
+  - 임계값
+
+- **제어 패널**:
+  - Contamination 슬라이더 (1%-50%)
+  - Threshold 슬라이더 (-1.0 ~ 1.0)
+  - 모델 학습 버튼
+  - 통계 갱신 버튼
+
+- **상위 10개 이상치 테이블**:
+  - 품목 코드
+  - 이상치 점수 (색상 구분: Critical/High/Medium)
+  - 이상치 이유
+
+- **모델 정보**:
+  - Contamination, N Estimators
+  - 사용 피처 목록
+  - 탐지 시간
+
+**기술 스택**:
+- Backend: scikit-learn 1.3+, pickle, numpy
+- API: FastAPI, Pydantic
+- Frontend: React 18, TypeScript, Axios
+- UI: CSS-in-JS (styled-jsx)
+
+**파일 변경사항**:
+- ✅ `backend/api/services/anomaly_detection_service.py` (450+ 라인)
+- ✅ `backend/api/routes/anomaly.py` (280+ 라인)
+- ✅ `backend/api/app.py` (anomaly_router 추가)
+- ✅ `frontend-training/src/components/anomaly/AnomalyDetectionDashboard.tsx` (580+ 라인)
+
+**API 사용 예시**:
+```bash
+# 1. 모델 학습
+curl -X POST "http://localhost:8000/api/anomaly/train?contamination=0.1&n_estimators=100"
+
+# 2. 이상치 탐지
+curl -X POST "http://localhost:8000/api/anomaly/detect?threshold=-0.5"
+
+# 3. 통계 조회
+curl -X GET "http://localhost:8000/api/anomaly/stats"
+```
+
+**완료 시각**: 2025-10-06 15:00 UTC
+
+**다음 단계**:
+- ⏳ Task #11: 주간 데이터 품질 리포트 자동화
 

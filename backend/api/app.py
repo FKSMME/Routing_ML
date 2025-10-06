@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
 from backend.api.routes.access import router as access_router
+from backend.api.routes.anomaly import router as anomaly_router
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(logs_router)
     app.include_router(bulk_upload_router)
     app.include_router(data_quality_router)
+    app.include_router(anomaly_router)
     app.include_router(database_config_router)
     app.include_router(items_router)
     app.include_router(onprem_nlp_router)
