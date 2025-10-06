@@ -1,0 +1,158 @@
+/**
+ * Responsive CSS Variables
+ * Mobile-first approach
+ */
+
+:root {
+  /* ========================================
+     Breakpoints (for JavaScript usage)
+     ======================================== */
+  --bp-mobile: 480px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1024px;
+  --bp-wide: 1440px;
+
+  /* ========================================
+     Spacing Scale (Mobile-first)
+     ======================================== */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 2.5rem;   /* 40px */
+  --spacing-3xl: 3rem;     /* 48px */
+
+  /* ========================================
+     Typography (Mobile-first)
+     ======================================== */
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+
+  /* Line Height */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+
+  /* Letter Spacing */
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.025em;
+
+  /* ========================================
+     Container & Layout
+     ======================================== */
+  --container-max-width: 1440px;
+  --container-padding: var(--spacing-md);   /* 16px on mobile */
+  --content-max-width: 800px;
+
+  /* Grid gaps */
+  --grid-gap: var(--spacing-md);
+  --grid-gap-lg: var(--spacing-lg);
+
+  /* ========================================
+     Touch Targets (Mobile-first)
+     ======================================== */
+  --touch-target-min: 44px;   /* iOS/Android 권장 최소 크기 */
+  --button-padding-x: 1rem;
+  --button-padding-y: 0.625rem;  /* ~10px */
+
+  /* ========================================
+     Border Radius
+     ======================================== */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-full: 9999px;
+
+  /* ========================================
+     Shadows (Mobile - lighter)
+     ======================================== */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.2);
+
+  /* ========================================
+     Z-Index Scale
+     ======================================== */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* ========================================
+     Transitions
+     ======================================== */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+}
+
+/* ========================================
+   Tablet (768px+)
+   ======================================== */
+@media (min-width: 768px) {
+  :root {
+    /* Larger spacing on tablet */
+    --spacing-lg: 2rem;      /* 32px */
+    --spacing-xl: 3rem;      /* 48px */
+    --spacing-2xl: 4rem;     /* 64px */
+    --spacing-3xl: 5rem;     /* 80px */
+
+    /* Container padding */
+    --container-padding: var(--spacing-lg);
+
+    /* Grid gaps */
+    --grid-gap: var(--spacing-lg);
+    --grid-gap-lg: var(--spacing-xl);
+
+    /* Shadows (slightly stronger) */
+    --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.18);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.22);
+  }
+}
+
+/* ========================================
+   Desktop (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
+  :root {
+    /* Even larger spacing on desktop */
+    --spacing-xl: 4rem;      /* 64px */
+    --spacing-2xl: 5rem;     /* 80px */
+    --spacing-3xl: 6rem;     /* 96px */
+
+    /* Container padding */
+    --container-padding: var(--spacing-xl);
+
+    /* Shadows (strongest) */
+    --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* ========================================
+   Dark Mode Adjustments
+   ======================================== */
+:root.dark {
+  /* Stronger shadows in dark mode for better contrast */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.7);
+}

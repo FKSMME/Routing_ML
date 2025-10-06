@@ -17,12 +17,14 @@ from backend.api.routes.access import router as access_router
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
+from backend.api.routes.data_quality import router as data_quality_router
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.drift import router as drift_router
 from backend.api.routes.health import router as health_router
 from backend.api.routes.items import router as items_router
 from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
+from backend.api.routes.onprem_nlp import router as onprem_nlp_router
 from backend.api.routes.prediction import router as prediction_router
 from backend.api.routes.routing import router as routing_router
 from backend.api.routes.rsl import router as rsl_router
@@ -49,8 +51,10 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(logs_router)
     app.include_router(bulk_upload_router)
+    app.include_router(data_quality_router)
     app.include_router(database_config_router)
     app.include_router(items_router)
+    app.include_router(onprem_nlp_router)
     app.include_router(prediction_router)
     app.include_router(workflow_router)
     app.include_router(trainer_router)

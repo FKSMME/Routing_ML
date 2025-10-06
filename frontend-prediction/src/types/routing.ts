@@ -48,6 +48,8 @@ export interface CandidateRouting {
   RANK: number;
   HAS_ROUTING?: string | null;
   PROCESS_COUNT?: number | null;
+  feature_importance?: Record<string, number> | null;
+  matched_features?: string[] | null;
   metadata?: Record<string, unknown>;
 }
 
