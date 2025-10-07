@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileCode, FolderOpen, Calendar, Weight, Code2, Function } from 'lucide-react';
+import { X, FileCode, FolderOpen, Calendar, Weight, Code2, Brackets } from 'lucide-react';
 
 interface FileInfo {
   name: string;
@@ -92,7 +92,7 @@ export function FilePropertyModal({ isOpen, onClose, fileInfo }: FilePropertyMod
           {fileInfo.functions && fileInfo.functions.length > 0 && (
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                <Function className="w-4 h-4" />
+                <Brackets className="w-4 h-4" />
                 함수 목록 ({fileInfo.functions.length})
               </h3>
               <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">

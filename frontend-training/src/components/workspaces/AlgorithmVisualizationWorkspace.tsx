@@ -10,6 +10,7 @@ import ReactFlow, {
   type ReactFlowInstance,
   Position,
 } from 'reactflow';
+import { FilePropertyModal } from '../modals/FilePropertyModal';
 
 interface PythonFile {
   id: string;
@@ -136,6 +137,8 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
 export const AlgorithmVisualizationWorkspace: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalFileInfo, setModalFileInfo] = useState<any>(null);
 
   const getFileTypeColor = (type: PythonFile['type']) => {
     switch (type) {
@@ -209,6 +212,37 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     }
   }, [flowNodes.length]);
 
+  const handleFileDoubleClick = (file: PythonFile) => {
+    // 데모 데이터로 파일 정보 표시
+    setModalFileInfo({
+      name: file.name,
+      path: file.path,
+      type: file.type,
+      size: '2.4 KB',
+      lastModified: '2025-10-07 14:30',
+      functions: [
+        'train_model',
+        'load_data',
+        'preprocess',
+        'evaluate_model',
+        'save_checkpoint',
+        'load_checkpoint'
+      ],
+      classes: [
+        'ModelTrainer',
+        'DataLoader',
+        'Preprocessor'
+      ],
+      imports: [
+        'import pandas as pd',
+        'import numpy as np',
+        'from sklearn.model_selection import train_test_split',
+        'import lightgbm as lgb'
+      ]
+    });
+    setIsModalOpen(true);
+  };
+
   return (
     <div
       className="algorithm-visualization-workspace flex w-full bg-slate-950"
@@ -235,6 +269,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
             <button
               key={file.id}
               onClick={() => handleFileSelect(file.id)}
+              onDoubleClick={() => handleFileDoubleClick(file)}
               className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200
                 ${
                   selectedFile === file.id
@@ -373,6 +408,13 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* File Property Modal */}
+      <FilePropertyModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        fileInfo={modalFileInfo}
+      />
     </div>
   );
 };

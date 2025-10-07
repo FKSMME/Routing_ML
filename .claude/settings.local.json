@@ -8,7 +8,22 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-tabbed-layout.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 45s node /tmp/verify-tabs-simple.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-5173-layout.js)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-layout.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-layout.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-file-double-click.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-file-modal-simple.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-modal-ok.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/test-modal-visible.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/check-modal-dom.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/simple-double-click-test.js)",
+      "Bash(lsof:*)",
+      "Bash(xargs -r kill -9)",
+      "Bash(ss:*)",
+      "Bash(venv-linux/bin/python:*)",
+      "Bash(npm run dev:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-5173-layout-final.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-5174-modal-final.js)",
+      "Bash(cat:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []
