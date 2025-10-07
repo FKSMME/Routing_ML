@@ -5,8 +5,7 @@ import { MainNavigation } from "@components/MainNavigation";
 import { ParticleBackground } from "@components/ParticleBackground";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
-import BallpitSimple from "@components/effects/BallpitSimple";
-import TestVisible from "@components/effects/TestVisible";
+import Ballpit from "@components/effects/Ballpit";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
@@ -218,28 +217,15 @@ export default function App() {
   // 인증 확인 중이면 로딩 표시
   if (authLoading) {
     return (
-      <>
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-          <BallpitSimple count={50} followCursor={true} />
-        </div>
-        <div className="flex min-h-screen items-center justify-center surface-base">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-        </div>
-      </>
+      <div className="flex min-h-screen items-center justify-center surface-base">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+      </div>
     );
   }
 
   // 인증되지 않은 경우 로그인 페이지 표시
   if (!isAuthenticated) {
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
-        <TestVisible />
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-          <BallpitSimple count={50} followCursor={true} />
-        </div>
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
-      </div>
-    );
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
   const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
@@ -300,9 +286,6 @@ export default function App() {
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
       <ParticleBackground />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-        <Ballpit count={100} followCursor={true} />
-      </div>
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (

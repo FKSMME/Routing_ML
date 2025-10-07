@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LogIn, UserPlus } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
+import Ballpit from "@components/effects/Ballpit";
 
 
 interface LoginPageProps {
@@ -81,12 +82,16 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center surface-base p-6">
-      <div className="absolute top-4 right-4">
+    <div className="flex min-h-screen items-center justify-center surface-base p-6" style={{ position: 'relative' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+        <Ballpit count={100} followCursor={true} />
+      </div>
+      <div className="absolute top-4 right-4" style={{ zIndex: 10 }}>
         <ThemeToggle />
       </div>
       <CardShell
         className="w-full max-w-md"
+        style={{ position: 'relative', zIndex: 1 }}
         tone="soft"
         padding="lg"
         innerClassName="space-y-6"

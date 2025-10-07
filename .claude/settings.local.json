@@ -31,7 +31,9 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-ballpit-effects.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/debug-ballpit.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-errors.js)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-ballpit.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-ballpit.js)",
+      "Bash(curl:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/check-test-box.js)"
     ],
     "deny": [],
     "ask": []
