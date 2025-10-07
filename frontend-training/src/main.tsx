@@ -2,12 +2,10 @@
 import "reactflow/dist/style.css";
 
 import { registerResponsiveLayout } from "@styles/responsive";
-import { applyTheme } from "@styles/theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-applyTheme();
 registerResponsiveLayout();
 
 const rootElement = document.getElementById("root") as HTMLElement;

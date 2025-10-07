@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-all-issues.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-responsive-layout.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /workspaces/Routing_ML_4/scripts/playwright-verify-template.js)"
     ],
     "deny": [],
     "ask": []

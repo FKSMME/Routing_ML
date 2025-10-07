@@ -4947,7 +4947,24 @@ html.dark {
 
 /* 적용 클래스 */
 .workspace-transition {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
   animation: subtleDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 반응형: 태블릿 이하 */
+@media (max-width: 768px) {
+  .workspace-transition {
+    padding: 0 1rem;
+  }
+}
+
+/* 반응형: 모바일 */
+@media (max-width: 480px) {
+  .workspace-transition {
+    padding: 0 0.75rem;
+  }
 }
 
 .panel-card-drop {

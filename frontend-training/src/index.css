@@ -4277,6 +4277,38 @@ html.dark {
   );
   opacity: 0.95;
 }
+
+.algorithm-visualization-workspace {
+  min-height: 600px;
+}
+
+.algorithm-visualization-workspace .algorithm-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in hsl, var(--surface-base) 98%, transparent);
+  border-left: 1px solid color-mix(in hsl, var(--border) 65%, transparent);
+  overflow: hidden;
+}
+
+.algorithm-visualization-workspace .algorithm-canvas::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in hsl, var(--surface) 24%, transparent) 0%,
+    color-mix(in hsl, var(--accent-strong) 18%, transparent) 55%,
+    color-mix(in hsl, var(--surface-card) 28%, transparent) 100%
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.algorithm-visualization-workspace .algorithm-canvas > * {
+  position: relative;
+  z-index: 1;
+}
 .chip-button--danger {
   border-color: color-mix(in hsl, var(--danger-strong) 65%, transparent);
   color: var(--danger-strong);
