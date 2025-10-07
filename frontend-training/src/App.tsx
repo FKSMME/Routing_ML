@@ -7,6 +7,7 @@ import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDraw
 import { LoginPage } from "@components/auth/LoginPage";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
+import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
@@ -86,15 +87,7 @@ export default function App() {
   let workspace: JSX.Element;
   switch (activeMenu) {
     case "algorithm":
-      workspace = (
-        <div className="workspace-container p-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground mb-2">알고리즘 블루프린트</h2>
-            <p className="text-muted">예측 알고리즘의 데이터 플로우를 시각화합니다</p>
-          </div>
-          <BlueprintGraphPanel />
-        </div>
-      );
+      workspace = <AlgorithmVisualizationWorkspace />;
       break;
     case "training-status":
       workspace = <TrainingStatusWorkspace />;

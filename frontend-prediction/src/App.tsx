@@ -13,6 +13,7 @@ import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayo
 import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
 import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
 import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
+import { MasterDataSimpleWorkspace } from "@components/workspaces/MasterDataSimpleWorkspace";
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -272,49 +273,10 @@ export default function App() {
   };
 
   const routingContent = (
-    <>
-      <RoutingProductTabs
-        renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
-        emptyState={renderRoutingWorkspace()}
-      />
-      <div className="routing-workspace-grid">
-        <aside className="routing-column routing-column--left">
-          {renderPredictionBanner()}
-          <PredictionControls
-            itemCodes={itemCodes}
-            onChangeItemCodes={updateItemCodes}
-            topK={topK}
-            onChangeTopK={updateTopK}
-            threshold={threshold}
-            onChangeThreshold={updateThreshold}
-            loading={isLoading || isFetching}
-            onSubmit={refetch}
-            errorMessage={predictionControlsError}
-          />
-          <ReferenceMatrixPanel />
-        </aside>
-
-        <section className="routing-column routing-column--center">
-          {/* <RoutingProductTabs /> */}
-          <TimelinePanel />
-          <VisualizationSummary metrics={data?.metrics} />
-          <RoutingExplanationPanel candidate={selectedCandidate} />
-          <FeatureWeightPanel
-            profiles={featureWeights.availableProfiles}
-            selectedProfile={featureWeights.profile}
-            onSelectProfile={setFeatureWeightProfile}
-            manualWeights={featureWeights.manualWeights}
-            onChangeManualWeight={setManualWeight}
-            onReset={resetManualWeights}
-          />
-          <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-        </section>
-
-        <aside className="routing-column routing-column--right">
-          <CandidatePanel />
-        </aside>
-      </div>
-    </>
+    <RoutingProductTabs
+      renderWorkspace={(tab) => renderRoutingWorkspace(tab)}
+      emptyState={renderRoutingWorkspace()}
+    />
   );
 
   let workspace: JSX.Element;
@@ -323,7 +285,7 @@ export default function App() {
       workspace = routingContent;
       break;
     case "master-data":
-      workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
+      workspace = <MasterDataSimpleWorkspace />;
       break;
     case "routing-matrix":
       workspace = <RoutingMatrixWorkspace />;

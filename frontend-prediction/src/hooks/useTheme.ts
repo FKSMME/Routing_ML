@@ -42,7 +42,8 @@ function saveTheme(theme: Theme): void {
 }
 
 /**
- * HTML 루트 요소에 테마 클래스 적용
+ * HTML 루트 요소에 테마 클래스 적용 + CSS 변수 강제 설정
+ * CSS cascade 문제로 인해 JavaScript로 직접 설정
  */
 function applyThemeToDOM(theme: Theme): void {
   if (typeof window === 'undefined') return;
@@ -51,11 +52,33 @@ function applyThemeToDOM(theme: Theme): void {
 
   if (theme === 'dark') {
     root.classList.add('dark');
+    // 다크 모드 CSS 변수 강제 적용
+    root.style.setProperty('--gradient-sky-start', '220 25% 12%');
+    root.style.setProperty('--gradient-sky-mid', '220 20% 16%');
+    root.style.setProperty('--gradient-sky-end', '220 18% 20%');
+    root.style.setProperty('--surface-raised', '220 15% 15%');
+    root.style.setProperty('--background', 'hsl(220 18% 10%)');
+    root.style.setProperty('--foreground', 'hsl(210 20% 85%)');
+    root.style.setProperty('--card', 'hsl(220 15% 15%)');
+    root.style.setProperty('--text-primary', 'hsl(210 20% 85%)');
+    root.style.setProperty('--text-muted', 'hsl(210 15% 55%)');
+    root.style.setProperty('--border', 'hsl(220 15% 25%)');
   } else {
     root.classList.remove('dark');
+    // 라이트 모드로 복원 (CSS 기본값 사용)
+    root.style.setProperty('--gradient-sky-start', '195 85% 72%');
+    root.style.setProperty('--gradient-sky-mid', '140 65% 75%');
+    root.style.setProperty('--gradient-sky-end', '195 45% 92%');
+    root.style.setProperty('--surface-raised', '0 0% 100%');
+    root.style.setProperty('--background', 'hsl(195 45% 98%)');
+    root.style.setProperty('--foreground', 'hsl(210 45% 20%)');
+    root.style.setProperty('--card', 'hsl(0 0% 100%)');
+    root.style.setProperty('--text-primary', 'hsl(210 45% 22%)');
+    root.style.setProperty('--text-muted', 'hsl(210 25% 45%)');
+    root.style.setProperty('--border', 'hsl(195 30% 85%)');
   }
 
-  // data-theme 속성도 설정 (CSS 변수용)
+  // data-theme 속성도 설정
   root.setAttribute('data-theme', theme);
 }
 

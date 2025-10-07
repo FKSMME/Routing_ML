@@ -243,20 +243,35 @@ export type WorkflowConfigResponse = any;
 // These are kept to prevent import errors but will throw or return empty data
 // ============================================================================
 
-export async function fetchMasterDataTree(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataTree(
+  query?: string,
+  parentType?: string,
+  parentId?: string
+): Promise<any> {
+  const params = new URLSearchParams();
+  if (query) params.append("query", query);
+  if (parentType) params.append("parent_type", parentType);
+  if (parentId) params.append("parent_id", parentId);
+
+  const response = await apiClient.get(`/api/master-data/tree?${params.toString()}`);
+  return response.data;
 }
 
-export async function fetchMasterDataItem(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataItem(itemCode: string): Promise<any> {
+  const response = await apiClient.get(`/api/master-data/item/${itemCode}`);
+  return response.data;
 }
 
-export async function fetchMasterDataLogs(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataLogs(): Promise<any> {
+  const response = await apiClient.get("/api/master-data/logs");
+  return response.data;
 }
 
-export async function downloadMasterDataLog(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function downloadMasterDataLog(logId: string): Promise<Blob> {
+  const response = await apiClient.get(`/api/master-data/logs/${logId}/download`, {
+    responseType: "blob",
+  });
+  return response.data;
 }
 
 export async function fetchWorkflowConfig(...args: any[]): Promise<any> {

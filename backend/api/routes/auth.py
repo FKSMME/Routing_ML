@@ -134,6 +134,21 @@ async def reject_user(
     return result
 
 
+@router.get("/admin/pending-users")
+async def get_pending_users(
+    admin: AuthenticatedUser = Depends(require_admin),
+) -> dict:
+    """대기 중인 사용자 목록 조회"""
+    try:
+        pending_users = auth_service.get_pending_users()
+        return {"users": pending_users, "count": len(pending_users)}
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch pending users: {str(exc)}"
+        ) from exc
+
+
 @router.post("/change-password", response_model=ChangePasswordResponse)
 async def change_password(
     payload: ChangePasswordRequest,

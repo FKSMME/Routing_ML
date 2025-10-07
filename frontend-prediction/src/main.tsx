@@ -1,4 +1,4 @@
-﻿import "./index.css";
+import "./index.css";
 import "reactflow/dist/style.css";
 
 import { registerResponsiveLayout } from "@styles/responsive";

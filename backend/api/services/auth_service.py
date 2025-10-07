@@ -137,6 +137,26 @@ class AuthService:
             )
             return self._to_status_response(user)
 
+    def get_pending_users(self) -> list[dict]:
+        """대기 중인 사용자 목록 조회"""
+        with session_scope() as session:
+            pending_users = (
+                session.query(UserAccount)
+                .filter(UserAccount.status == "pending")
+                .order_by(UserAccount.created_at.desc())
+                .all()
+            )
+            return [
+                {
+                    "username": user.username,
+                    "full_name": user.full_name,
+                    "email": user.email,
+                    "created_at": user.created_at.isoformat() if user.created_at else None,
+                    "status": user.status,
+                }
+                for user in pending_users
+            ]
+
     # ------------------------------------------------------------------
     # 로그인/토큰 발급
     # ------------------------------------------------------------------
