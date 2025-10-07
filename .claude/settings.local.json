@@ -23,7 +23,15 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-5173-layout-final.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-5174-modal-final.js)",
       "Bash(cat:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(node server.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 120s node /tmp/verify-all-effects.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-5174-only.js)",
+      "Bash(npm install:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/verify-ballpit-effects.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/debug-ballpit.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-errors.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-ballpit.js)"
     ],
     "deny": [],
     "ask": []
