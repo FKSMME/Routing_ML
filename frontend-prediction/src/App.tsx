@@ -14,6 +14,7 @@ import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace"
 import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
 import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
 import { MasterDataSimpleWorkspace } from "@components/workspaces/MasterDataSimpleWorkspace";
+import { RoutingTabbedWorkspace } from "@components/workspaces/RoutingTabbedWorkspace";
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -229,45 +230,24 @@ export default function App() {
   const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
     const tabKey = tab?.id ?? "default";
     return (
-      <RoutingWorkspaceLayout
-        left={
-          <>
-            {renderPredictionBanner()}
-            <PredictionControls
-              itemCodes={itemCodes}
-              onChangeItemCodes={updateItemCodes}
-              topK={topK}
-              onChangeTopK={updateTopK}
-              threshold={threshold}
-              onChangeThreshold={updateThreshold}
-              loading={isLoading || isFetching}
-              onSubmit={refetch}
-              errorMessage={predictionControlsError}
-            />
-            <ReferenceMatrixPanel key={`reference-${tabKey}`} />
-          </>
-        }
-        center={
-          <>
-            <TimelinePanel key={`timeline-${tabKey}`} />
-            <VisualizationSummary metrics={data?.metrics} />
-            <RoutingExplanationPanel candidate={selectedCandidate} />
-            <FeatureWeightPanel
-              profiles={featureWeights.availableProfiles}
-              selectedProfile={featureWeights.profile}
-              onSelectProfile={setFeatureWeightProfile}
-              manualWeights={featureWeights.manualWeights}
-              onChangeManualWeight={setManualWeight}
-              onReset={resetManualWeights}
-            />
-            <MetricsPanel metrics={data?.metrics} loading={isLoading || isFetching} />
-          </>
-        }
-        right={
-          <>
-            <CandidatePanel key={`candidates-${tabKey}`} />
-          </>
-        }
+      <RoutingTabbedWorkspace
+        itemCodes={itemCodes}
+        onChangeItemCodes={updateItemCodes}
+        topK={topK}
+        onChangeTopK={updateTopK}
+        threshold={threshold}
+        onChangeThreshold={updateThreshold}
+        loading={isLoading || isFetching}
+        onSubmit={refetch}
+        errorMessage={predictionControlsError}
+        data={data}
+        selectedCandidate={selectedCandidate}
+        featureWeights={featureWeights}
+        setFeatureWeightProfile={setFeatureWeightProfile}
+        setManualWeight={setManualWeight}
+        resetManualWeights={resetManualWeights}
+        renderPredictionBanner={renderPredictionBanner}
+        tabKey={tabKey}
       />
     );
   };

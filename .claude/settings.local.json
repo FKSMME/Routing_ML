@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-responsive-layout.js)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /workspaces/Routing_ML_4/scripts/playwright-verify-template.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /workspaces/Routing_ML_4/scripts/playwright-verify-template.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-current-layout.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-routing-workspace.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-tabbed-layout.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 45s node /tmp/verify-tabs-simple.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/verify-5173-layout.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-layout.js)"
     ],
     "deny": [],
     "ask": []
