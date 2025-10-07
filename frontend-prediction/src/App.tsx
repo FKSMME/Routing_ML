@@ -5,7 +5,6 @@ import { MainNavigation } from "@components/MainNavigation";
 import { ParticleBackground } from "@components/ParticleBackground";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
-import Ballpit from "@components/effects/Ballpit";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";

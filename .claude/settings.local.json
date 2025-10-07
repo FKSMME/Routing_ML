@@ -33,7 +33,10 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-errors.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/debug-ballpit.js)",
       "Bash(curl:*)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/check-test-box.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/check-test-box.js)",
+      "Read(//tmp/**)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 45s node /tmp/simple-canvas-check.js)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
