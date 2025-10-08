@@ -10,14 +10,26 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DB_TYPE=${DB_TYPE:-MSSQL}
-      - MSSQL_SERVER=${MSSQL_SERVER:-K3-DB.ksm.co.kr,1433}
-      - MSSQL_DATABASE=${MSSQL_DATABASE:-KsmErp}
-      - MSSQL_USER=${MSSQL_USER:-FKSM_BI}
-      - MSSQL_PASSWORD=${MSSQL_PASSWORD}
-      - MSSQL_ENCRYPT=${MSSQL_ENCRYPT:-False}
-      - MSSQL_TRUST_CERTIFICATE=${MSSQL_TRUST_CERTIFICATE:-True}
-      - ACCESS_DIR=${ACCESS_DIR:-/app/data/db}
+      # Security
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-secret-key-min-32-chars-long-change-in-production}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      # Database (SQLite for local, MSSQL for production)
+      - DB_TYPE=${DB_TYPE:-SQLITE}
+      - RSL_DATABASE_URL=${RSL_DATABASE_URL:-sqlite:///./data/rsl.db}
+      - ROUTING_GROUPS_DATABASE_URL=${ROUTING_GROUPS_DATABASE_URL:-sqlite:///./data/routing_groups.db}
+      # MSSQL Production (uncomment when needed)
+      # - DB_TYPE=MSSQL
+      # - MSSQL_SERVER=${MSSQL_SERVER:-K3-DB.ksm.co.kr,1433}
+      # - MSSQL_DATABASE=${MSSQL_DATABASE:-KsmErp}
+      # - MSSQL_USER=${MSSQL_USER:-FKSM_BI}
+      # - MSSQL_PASSWORD=${MSSQL_PASSWORD}
+      # - MSSQL_ENCRYPT=${MSSQL_ENCRYPT:-False}
+      # - MSSQL_TRUST_CERTIFICATE=${MSSQL_TRUST_CERTIFICATE:-True}
+      # Legacy Access DB (deprecated)
+      # - ACCESS_DIR=${ACCESS_DIR:-/app/data/db}
+      # Features
+      - ENABLE_CANDIDATE_PERSISTENCE=${ENABLE_CANDIDATE_PERSISTENCE:-false}
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
     volumes:
       - ./models:/app/models
       - ./reports:/app/reports

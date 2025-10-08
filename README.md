@@ -16,15 +16,38 @@
 - **Docs**: `docs/` — Stage별 보고서, 빠른 시작, 릴리스 노트, 아키텍처 다이어그램을 포함합니다.
 
 ## 빠른 시작
-자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요. 개발/운영 환경은 Python 3.12와 Node 20 이상을 기준으로 합니다. 사내 공유 드라이브(예: `\\fileserver\routing\ROUTING AUTO TEST.accdb`)에서 Access DB를 가져와 `deploy/docker/volumes/data/ROUTING AUTO TEST.accdb`에 복사한 뒤, 필요하면 `/mnt/data/routing_data`로 마운트하세요.
 
+### 로컬 개발 (SQLite - 권장)
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+# 1. 환경 설정
+cp .env.example .env
+# .env 파일에서 JWT_SECRET_KEY 변경 (필수!)
+
+# 2. Python 환경
+python -m venv venv-linux
+source venv-linux/bin/activate  # Windows: venv-linux\Scripts\activate
 pip install -r requirements.txt
-python -m backend.cli.train_model data/training_dataset.csv --name dev-local
-ACCESS_CONNECTION_STRING="..." uvicorn backend.run_api:app --host 0.0.0.0 --port 8000
+
+# 3. 백엔드 실행 (SQLite 기본)
+uvicorn backend.api.app:app --host 0.0.0.0 --port 8000 --reload
+
+# 4. 프론트엔드 실행 (별도 터미널)
+cd frontend-prediction && npm install && npm run dev  # Port 5173
+cd frontend-training && npm install && npm run dev    # Port 5174
+cd frontend-home && npm install && node server.js     # Port 3000
+
+# 5. 테스트 실행
+bash scripts/run_ci.sh
 ```
+
+### Docker Compose (프로덕션)
+```bash
+cp .env.example .env
+# .env 파일 편집 후 실행
+docker compose up -d --build
+```
+
+자세한 온보딩 절차는 [`docs/quickstart_guide.md`](docs/quickstart_guide.md)를 확인하세요.
 
 > **참고:** `backend/cli/train_model.py`는 `python -m backend.cli.train_model` 명령으로 실행하며, 기본 출력 경로는 `deliverables/models/`입니다. IDE나 PowerShell에서 모듈 경로 오류가 발생해도 동일한 명령을 사용하면 됩니다.
 

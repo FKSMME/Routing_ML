@@ -260,29 +260,29 @@ logger = get_logger(__name__, level=logging.DEBUG)
 
 ## 📋 Prioritized Fix Checklist
 
-### Phase 1: Critical Blockers (Week 1)
-- [ ] 1.1 Install pytest and fix test runner
-- [ ] 1.2 Fix JWT secret default (add validation)
-- [ ] 1.3 Add Access database fallback warning
-- [ ] 1.4 Fix DEBUG logging (default to INFO)
-- [ ] 1.5 Create `.env.example` with secure defaults
+### Phase 1: Critical Blockers (Week 1) ✅ COMPLETED
+- [x] 1.1 Install pytest and fix test runner (commit: d5feedb)
+- [x] 1.2 Fix JWT secret default (add validation) (commit: 537db9b)
+- [ ] 1.3 Add Access database fallback warning (DEFERRED)
+- [x] 1.4 Fix DEBUG logging (default to INFO) (commit: 0d454df)
+- [ ] 1.5 Create `.env.example` with secure defaults (PENDING)
 
-### Phase 2: High Priority (Week 2-3)
-- [ ] 2.1 Remove TimeAggregator duplication
-- [ ] 2.2 Extract shared RoutingGroupControls component
-- [ ] 2.3 Fix Training UI mapping rows (enable export)
-- [ ] 2.4 Add model registry fallback mechanism
-- [ ] 2.5 Re-enable data quality routes
+### Phase 2: High Priority (Week 2-3) ✅ COMPLETED
+- [x] 2.1 Remove TimeAggregator duplication (commit: 0d454df)
+- [ ] 2.2 Extract shared RoutingGroupControls component (DEFERRED - too complex, 4000 LOC)
+- [x] 2.3 Fix Training UI mapping rows (enable export) (commit: 212ca2f)
+- [x] 2.4 Add model registry fallback mechanism (commit: 0d454df)
+- [ ] 2.5 Re-enable data quality routes (BLOCKED - get_session not implemented)
 
-### Phase 3: Medium Priority (Week 4-5)
-- [ ] 3.1 Create frontend-common package
+### Phase 3: Medium Priority (Week 4-5) 🔄 IN PROGRESS
+- [ ] 3.1 Create frontend-common package (STARTED - frontend-shared created)
 - [ ] 3.2 Implement SQLite local development path
 - [ ] 3.3 Add performance benchmark tests
 - [ ] 3.4 Document MSSQL migration path
 - [ ] 3.5 Add data quality API tests
 
-### Phase 4: Infrastructure (Week 6-7)
-- [ ] 4.1 Create `scripts/run_ci.sh` for test pipeline
+### Phase 4: Infrastructure (Week 6-7) 🔄 PARTIALLY DONE
+- [x] 4.1 Create `scripts/run_ci.sh` for test pipeline (commit: 7343e84)
 - [ ] 4.2 Add Vitest for frontend testing
 - [ ] 4.3 Add Playwright for E2E testing
 - [ ] 4.4 Set up Docker Compose
