@@ -55,7 +55,17 @@
       "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test tests/e2e/login-flow.spec.ts --project=chromium --reporter=line)",
       "Bash(export PLAYWRIGHT_SKIP_WEB_SERVER=1)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 30s node /tmp/test-ballpit-loading.js)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 30s node /tmp/test-workspace-lazy-loading.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 30s node /tmp/test-workspace-lazy-loading.js)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add Algorithm Visualization workspace\n\n- Frontend: React Flow 노드 에디터 (좌측 파일 패널 + 우측 캔버스)\n- Backend: Python AST 파서 + FastAPI 엔드포인트 3개\n- Features: Dagre 자동 레이아웃, 드래그앤드롭, localStorage 위치 저장\n- UI: 개선된 노드 디자인 (gradient, glow effects)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(python -m pip:*)",
+      "Bash(python:*)",
+      "Bash(source:*)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python --version)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/pip list)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-algorithm-viz-integration.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/simple-algorithm-viz-test.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-with-login.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-flow-console.js)"
     ],
     "deny": [],
     "ask": []
