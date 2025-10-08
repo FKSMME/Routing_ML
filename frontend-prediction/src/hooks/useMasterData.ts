@@ -44,7 +44,7 @@ export interface UseMasterDataState {
   isMatrixLoading: boolean;
   isMetadataLoading: boolean;
   refreshLogs: () => void;
-  downloadLog: () => Promise<void>;
+  downloadLog: (logId?: string) => Promise<void>;
 }
 
 export interface MasterDataSearchMetadataChip {
@@ -104,7 +104,7 @@ export function useMasterData(): UseMasterDataState {
 
   const treeQuery = useQuery({
     queryKey: ["master-data-tree", debouncedSearch],
-    queryFn: async () => fetchMasterDataTree(debouncedSearch ? { query: debouncedSearch } : undefined),
+    queryFn: async () => fetchMasterDataTree(debouncedSearch || undefined),
     staleTime: 60_000,
   });
 
@@ -271,12 +271,12 @@ export function useMasterData(): UseMasterDataState {
 
   const logsQuery = useQuery({
     queryKey: ["master-data-logs"],
-    queryFn: () => fetchMasterDataLogs(5),
+    queryFn: () => fetchMasterDataLogs(),
     staleTime: 30_000,
   });
 
   const downloadMutation = useMutation({
-    mutationFn: () => downloadMasterDataLog(),
+    mutationFn: (logId: string) => downloadMasterDataLog(logId),
     onSuccess: () => {
       void postUiAudit({ action: "master_data.logs.download" });
     },
@@ -365,6 +365,9 @@ export function useMasterData(): UseMasterDataState {
       void logsQuery.refetch();
       void postUiAudit({ action: "master_data.logs.refresh" });
     },
-    downloadLog: () => downloadMutation.mutateAsync(),
+    downloadLog: async (logId?: string) => {
+      const targetLogId = logId ?? logsData.logs[0]?.timestamp ?? "latest";
+      await downloadMutation.mutateAsync(targetLogId);
+    },
   };
 }

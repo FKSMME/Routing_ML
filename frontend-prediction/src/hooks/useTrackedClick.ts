@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { analytics } from '@/lib/analytics';
+import { analytics } from '@lib/analytics';
 
 /**
  * Hook for tracking button clicks with analytics

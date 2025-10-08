@@ -36,7 +36,19 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 60s node /tmp/check-test-box.js)",
       "Read(//tmp/**)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 45s node /tmp/simple-canvas-check.js)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(tee:*)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/frontend-prediction/node_modules timeout 60s node /tmp/playwright-screenshot-test.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/frontend-prediction/node_modules timeout 45s node /tmp/simple-screenshot.js)",
+      "Bash(NODE_PATH=./node_modules timeout 30s node /tmp/capture-both-ports.js)",
+      "Bash(NODE_PATH=./node_modules timeout 30s node /tmp/capture-5174-only.js)",
+      "Bash(cd:*)",
+      "Bash(NODE_PATH=./node_modules timeout 40s node /tmp/check-console-errors.js)",
+      "Bash(timeout 180s npm run build)",
+      "Bash(npx lighthouse:*)",
+      "Bash(NODE_PATH=./node_modules timeout 60s node /tmp/performance-metrics.js)"
     ],
     "deny": [],
     "ask": []

@@ -34,7 +34,8 @@ interface ItemSearchState {
 
 interface FeatureProfileSummary {
   name: string;
-  description?: string;
+  description?: string | null;
+  weights?: Record<string, number>;
 }
 
 interface FeatureWeightState {
@@ -169,7 +170,8 @@ const toProfileSummary = (profiles: FeatureWeightsProfile[] | undefined): Featur
   }
   return profiles.map((profile) => ({
     name: profile.name,
-    description: profile.description ?? undefined,
+    description: profile.description ?? null,
+    weights: profile.weights,
   }));
 };
 

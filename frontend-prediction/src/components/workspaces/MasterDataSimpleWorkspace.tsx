@@ -26,7 +26,7 @@ export function MasterDataSimpleWorkspace() {
   const loadItemList = useCallback(async (searchQuery?: string) => {
     setIsLoadingList(true);
     try {
-      const response = await fetchMasterDataTree({ query: searchQuery });
+      const response = await fetchMasterDataTree(searchQuery);
       // Flatten all items from all groups
       const allItems: MasterDataTreeNode[] = [];
       const extractItems = (nodes: MasterDataTreeNode[]) => {
@@ -58,7 +58,7 @@ export function MasterDataSimpleWorkspace() {
       // Extract features from the first row (item master data)
       if (response.rows.length > 0) {
         const row = response.rows[0];
-        const featureList: ItemFeature[] = response.columns.map((col) => ({
+        const featureList: ItemFeature[] = response.columns.map((col: any) => ({
           label: col.label,
           value: row.values[col.key] ?? null,
           key: col.key,

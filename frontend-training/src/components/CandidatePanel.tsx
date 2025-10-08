@@ -287,8 +287,8 @@ export function CandidatePanel() {
         </div>
       ) : (
         <div className="candidate-list" role="list">
-          {visibleOperations.map((item) => (
-            <div
+          {visibleOperations.map((item, index) => (
+            <AnimatedCandidateCard
               delay={index * 0.05}
               key={item.id}
               role="listitem"

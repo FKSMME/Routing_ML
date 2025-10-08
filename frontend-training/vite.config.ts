@@ -31,6 +31,14 @@ export default defineConfig({
           if (id.includes("node_modules/reactflow") || id.includes("node_modules/@xyflow")) {
             return "reactflow-vendor";
           }
+          // Three.js + OGL (3D 효과, lazy loaded)
+          if (id.includes("node_modules/three") || id.includes("node_modules/ogl")) {
+            return "three-vendor";
+          }
+          // React Query
+          if (id.includes("node_modules/@tanstack/react-query")) {
+            return "query-vendor";
+          }
           // UI 라이브러리
           if (id.includes("node_modules/lucide-react") || id.includes("node_modules/zustand")) {
             return "ui-vendor";

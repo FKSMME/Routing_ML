@@ -152,9 +152,8 @@ export default function App() {
 
   // Get selected candidate for explanation panel
   const selectedCandidateId = useRoutingStore((state) => state.selectedCandidateId);
-  const selectedCandidate = data?.items
-    ?.flatMap((item) => item.candidates ?? [])
-    .find((candidate) => candidate.CANDIDATE_ITEM_CD === selectedCandidateId) ?? null;
+  const selectedCandidate = data?.candidates
+    ?.find((candidate) => candidate.CANDIDATE_ITEM_CD === selectedCandidateId) ?? null;
 
   const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
 
@@ -188,7 +187,7 @@ export default function App() {
     }
   }, [applyPredictionResponse, data]);
 
-  const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? null;
+  const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? undefined;
 
   // 인증 확인
   useEffect(() => {

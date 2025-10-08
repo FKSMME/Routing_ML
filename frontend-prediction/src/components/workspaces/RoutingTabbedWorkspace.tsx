@@ -12,8 +12,8 @@ import { CandidatePanel } from "../CandidatePanel";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls
-  itemCodes: string;
-  onChangeItemCodes: (value: string) => void;
+  itemCodes: string[];
+  onChangeItemCodes: (codes: string[]) => void;
   topK: number;
   onChangeTopK: (value: number) => void;
   threshold: number;
@@ -28,11 +28,11 @@ interface RoutingTabbedWorkspaceProps {
 
   // Feature weights
   featureWeights: {
-    availableProfiles: string[];
-    profile: string;
+    availableProfiles: { name: string; description?: string | null; weights?: Record<string, number> }[];
+    profile: string | null;
     manualWeights: Record<string, number>;
   };
-  setFeatureWeightProfile: (profile: string) => void;
+  setFeatureWeightProfile: (profile: string | null) => void;
   setManualWeight: (feature: string, weight: number) => void;
   resetManualWeights: () => void;
 

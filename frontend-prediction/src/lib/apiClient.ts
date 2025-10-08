@@ -253,22 +253,22 @@ export async function fetchMasterDataTree(
   if (parentType) params.append("parent_type", parentType);
   if (parentId) params.append("parent_id", parentId);
 
-  const response = await apiClient.get(`/api/master-data/tree?${params.toString()}`);
+  const response = await api.get(`/api/master-data/tree?${params.toString()}`);
   return response.data;
 }
 
 export async function fetchMasterDataItem(itemCode: string): Promise<any> {
-  const response = await apiClient.get(`/api/master-data/item/${itemCode}`);
+  const response = await api.get(`/api/master-data/item/${itemCode}`);
   return response.data;
 }
 
 export async function fetchMasterDataLogs(): Promise<any> {
-  const response = await apiClient.get("/api/master-data/logs");
+  const response = await api.get("/api/master-data/logs");
   return response.data;
 }
 
 export async function downloadMasterDataLog(logId: string): Promise<Blob> {
-  const response = await apiClient.get(`/api/master-data/logs/${logId}/download`, {
+  const response = await api.get(`/api/master-data/logs/${logId}/download`, {
     responseType: "blob",
   });
   return response.data;

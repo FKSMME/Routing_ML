@@ -1,4 +1,4 @@
-﻿import { fileURLToPath, URL } from "node:url";
+import { fileURLToPath, URL } from "node:url";
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -24,6 +24,8 @@ export default defineConfig({
         manualChunks: {
           "react-vendor": ["react", "react-dom"],
           "reactflow-vendor": ["reactflow"],
+          "three-vendor": ["three", "ogl"],
+          "query-vendor": ["@tanstack/react-query"],
           "ui-vendor": ["lucide-react", "zustand"],
         },
       },
@@ -64,4 +66,3 @@ export default defineConfig({
     },
   },
 });
-

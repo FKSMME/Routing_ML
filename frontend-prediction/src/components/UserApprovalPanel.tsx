@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, UserCheck, Clock, Shield } from 'lucide-react';
-import { apiClient } from '@/lib/apiClient';
+import apiClient from '@lib/apiClient';
 
 interface PendingUser {
   username: string;
