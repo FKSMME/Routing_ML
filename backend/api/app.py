@@ -19,7 +19,7 @@ from backend.api.routes.anomaly import router as anomaly_router  # ✅ PyODBC �
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
-from backend.api.routes.data_quality import router as data_quality_router
+# from backend.api.routes.data_quality import router as data_quality_router  # TODO: get_session 함수 미구현
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.drift import router as drift_router
 from backend.api.routes.health import router as health_router
@@ -54,7 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(logs_router)
     app.include_router(bulk_upload_router)
-    app.include_router(data_quality_router)
+    # app.include_router(data_quality_router)  # TODO: get_session 함수 미구현
     app.include_router(anomaly_router)  # ✅ PyODBC 리팩토링 완료
     # app.include_router(weekly_report_router)  # TODO: Fix database session dependency (future work)
     app.include_router(database_config_router)
