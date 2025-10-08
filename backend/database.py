@@ -1399,11 +1399,11 @@ atexit.register(cleanup_connections)
 
 def get_db_connection():
     """
-    FastAPI 의존성으로 사용할 데이터베이스 연결 제공.
-    
+    FastAPI 의존성으로 사용할 데이터베이스 연결 제공 (pyodbc).
+
     Yields:
         pyodbc.Connection: 데이터베이스 연결
-        
+
     Example:
         @app.get("/items")
         def get_items(conn = Depends(get_db_connection)):
@@ -1412,3 +1412,27 @@ def get_db_connection():
     """
     with _connection_pool.get_connection() as conn:
         yield conn
+
+
+def get_session():
+    """
+    FastAPI 의존성으로 사용할 SQLAlchemy Session 제공.
+
+    RSL 데이터베이스의 session factory를 사용합니다.
+
+    Yields:
+        sqlalchemy.orm.Session: SQLAlchemy 세션
+
+    Example:
+        @app.get("/data-quality/metrics")
+        async def get_metrics(session: Session = Depends(get_session)):
+            return await data_quality_service.get_metrics(session)
+    """
+    from backend.database_rsl import get_session_factory
+
+    session_factory = get_session_factory()
+    session = session_factory()
+    try:
+        yield session
+    finally:
+        session.close()
