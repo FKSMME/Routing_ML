@@ -299,6 +299,14 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
+      <div className="rainbow-balls-container">
+        <div className="rainbow-ball rainbow-ball-1"></div>
+        <div className="rainbow-ball rainbow-ball-2"></div>
+        <div className="rainbow-ball rainbow-ball-3"></div>
+        <div className="rainbow-ball rainbow-ball-4"></div>
+        <div className="rainbow-ball rainbow-ball-5"></div>
+        <div className="rainbow-ball rainbow-ball-6"></div>
+      </div>
       <ParticleBackground />
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
