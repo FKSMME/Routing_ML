@@ -75,9 +75,27 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = Field(default=3600, ge=300)
 
     jwt_secret_key: str = Field(
-        default="change-me",
-        description="JWT 서명을 위한 비밀 키",
+        default="INSECURE-CHANGE-ME-IN-PRODUCTION",
+        description="JWT 서명을 위한 비밀 키 (MUST be changed in production)",
     )
+
+    @validator("jwt_secret_key")
+    def validate_jwt_secret(cls, v):
+        """Reject insecure default JWT secrets."""
+        insecure_defaults = ["change-me", "INSECURE-CHANGE-ME-IN-PRODUCTION", "secret", ""]
+        if v.lower() in [s.lower() for s in insecure_defaults]:
+            raise ValueError(
+                "🚨 SECURITY ERROR: JWT secret key is using insecure default! "
+                "Set JWT_SECRET_KEY environment variable to a secure random value. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        if len(v) < 32:
+            raise ValueError(
+                f"🚨 SECURITY ERROR: JWT secret key too short ({len(v)} chars). "
+                "Must be at least 32 characters for security. "
+                "Generate secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        return v
     jwt_algorithm: str = Field(default="HS256")
     jwt_access_token_ttl_seconds: int = Field(default=3600, ge=300)
     jwt_cookie_name: str = Field(default="routing_ml_session")
