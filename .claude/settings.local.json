@@ -66,7 +66,17 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/simple-algorithm-viz-test.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-with-login.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-flow-console.js)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add visual enhancements - rainbow balls and transparency\n\n- Add 6 rainbow-colored floating balls to both frontends (5173, 5174)\n- Apply 20% transparency to all UI boxes (navigation + content cards)\n- Enhance 3000 homepage orbs (larger, more visible, rainbow colors)\n- Add comprehensive work logs (Part 1 & Part 2)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git checkout:*)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend -q)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add project diagnosis and JWT secret validation\n\n- Add comprehensive diagnosis document (DIAGNOSIS_AND_IMPROVEMENT_PLAN.md)\n- Add JWT secret validation (rejects insecure defaults)\n- Identify 10 critical failure scenarios\n- Prioritize fixes into 5-phase checklist\n- Document Linux environment compatibility\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/pip install pytest==7.4.3 pytest-asyncio==0.21.1 pytest-cov==4.1.0 pytest-mock==3.12.0 -q)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest --version)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend -v --collect-only)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -c \"import sys; sys.path.insert(0, ''''.''''); from tests.backend.api.test_master_data_tree import *\")"
     ],
     "deny": [],
     "ask": []
