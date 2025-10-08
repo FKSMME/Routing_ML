@@ -145,10 +145,17 @@ class ASTAnalyzer(ast.NodeVisitor):
             )
             self.classes.append(class_info)
 
-            # 클래스 내부 분석
+            # 🔥 클래스 내부 메소드를 개별 함수 노드로 추가
             previous_scope = self.current_scope
-            self.current_scope = node.name
-            self.generic_visit(node)
+            self.current_scope = f"{node.name}"
+
+            # 클래스 메소드를 순회하며 함수 노드로 추가
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef):
+                    self.visit_FunctionDef(item)
+                elif isinstance(item, ast.AsyncFunctionDef):
+                    self.visit_AsyncFunctionDef(item)
+
             self.current_scope = previous_scope
         except Exception as e:
             self.errors.append(f"클래스 {node.name} 분석 오류: {str(e)}")

@@ -10,7 +10,7 @@
 
 import { CardShell } from "@components/common/CardShell";
 import { DialogContainer } from "@components/common/DialogContainer";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, memo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -25,8 +25,11 @@ import ReactFlow, {
   useEdgesState,
   type NodeChange,
   type EdgeChange,
+  addEdge,
+  type Connection,
+  ConnectionMode,
 } from "reactflow";
-import { FileCode, FileText, Search, AlertCircle } from "lucide-react";
+import { FileCode, FileText, Search, AlertCircle, Info, RotateCcw } from "lucide-react";
 import axios from "axios";
 import dagre from "dagre";
 
@@ -91,10 +94,13 @@ interface FunctionNodeData {
   parameters?: string[];
   returnType?: string;
   docstring?: string;
+  sourceCode?: string;
+  lineStart?: number;
+  lineEnd?: number;
 }
 
-// 커스텀 함수 노드 컴포넌트
-function FunctionNode({ data }: NodeProps<FunctionNodeData>) {
+// 커스텀 함수 노드 컴포넌트 (성능 최적화)
+const FunctionNode = memo(({ data }: NodeProps<FunctionNodeData>) => {
   const isFunction = data.type === "function";
 
   return (
@@ -120,25 +126,25 @@ function FunctionNode({ data }: NodeProps<FunctionNodeData>) {
               <FileText size={16} className="text-green-400" />
             </div>
           )}
-          <span className="text-xs font-bold uppercase tracking-wide text-accent-soft">
+          <span className="text-xs font-bold uppercase tracking-wide text-sky-200">
             {data.type}
           </span>
         </div>
       </div>
-      <h3 className="mt-3 text-base font-bold text-accent-strong">{data.label}</h3>
-      <p className="mt-1 text-xs italic text-muted/80">from {data.fileName}</p>
+      <h3 className="mt-3 text-base font-bold text-white">{data.label}</h3>
+      <p className="mt-1 text-xs italic text-slate-300">from {data.fileName}</p>
 
       {data.parameters && data.parameters.length > 0 ? (
         <div className="mt-3 rounded-lg bg-slate-900/50 px-3 py-2">
-          <span className="text-xs font-semibold text-accent-soft">Params:</span>
+          <span className="text-xs font-semibold text-sky-300">Params:</span>
           <div className="mt-1 space-y-1">
             {data.parameters.slice(0, 2).map((param, idx) => (
-              <div key={idx} className="truncate text-xs text-muted">
+              <div key={idx} className="truncate text-xs text-slate-200">
                 • {param}
               </div>
             ))}
             {data.parameters.length > 2 && (
-              <div className="text-xs text-muted/60">+{data.parameters.length - 2} more</div>
+              <div className="text-xs text-slate-400">+{data.parameters.length - 2} more</div>
             )}
           </div>
         </div>
@@ -146,13 +152,15 @@ function FunctionNode({ data }: NodeProps<FunctionNodeData>) {
 
       {data.returnType ? (
         <div className="mt-2 rounded-lg bg-slate-900/50 px-3 py-2">
-          <span className="text-xs font-semibold text-accent-soft">Returns: </span>
+          <span className="text-xs font-semibold text-sky-300">Returns: </span>
           <span className="text-xs text-emerald-300">{data.returnType}</span>
         </div>
       ) : null}
     </div>
   );
-}
+});
+
+FunctionNode.displayName = "FunctionNode";
 
 const nodeTypes: NodeTypes = {
   function: FunctionNode,
@@ -250,10 +258,17 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 export function AlgorithmVisualizationWorkspace() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [nodeSearchQuery, setNodeSearchQuery] = useState("");
   const [nodes, setNodes, onNodesChange] = useNodesState<FunctionNodeData>(INITIAL_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INITIAL_EDGES);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isDetailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [edgeContextMenu, setEdgeContextMenu] = useState<{
+    edgeId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // API 상태
   const [files, setFiles] = useState<PythonFile[]>([]);
@@ -296,6 +311,34 @@ export function AlgorithmVisualizationWorkspace() {
       localStorage.setItem(`node-positions-${selectedFileId}`, JSON.stringify(positions));
     }
   }, [nodes, selectedFileId]);
+
+  // 노드 검색 - 검색어에 맞는 노드 강조
+  useEffect(() => {
+    if (!nodeSearchQuery) {
+      // 검색어 없으면 모든 노드 기본 스타일
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          style: { ...node.style, opacity: 1 },
+        }))
+      );
+      return;
+    }
+
+    const query = nodeSearchQuery.toLowerCase();
+    setNodes((nds) =>
+      nds.map((node) => {
+        const matches = node.data.label.toLowerCase().includes(query);
+        return {
+          ...node,
+          style: {
+            ...node.style,
+            opacity: matches ? 1 : 0.3,
+          },
+        };
+      })
+    );
+  }, [nodeSearchQuery, setNodes]);
 
   // 필터링된 파일 목록
   const filteredFiles = files.filter((file) =>
@@ -348,6 +391,23 @@ export function AlgorithmVisualizationWorkspace() {
     }
   }, []);
 
+  // 와이어 연결 핸들러
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      const newEdge: Edge = {
+        id: `${connection.source}-${connection.target}`,
+        source: connection.source!,
+        target: connection.target!,
+        type: "smoothstep",
+        animated: true,
+        label: "custom",
+        style: { stroke: "#38bdf8", strokeWidth: 2 },
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
+    [setEdges]
+  );
+
   // 노드 더블클릭 핸들러
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: Node<FunctionNodeData>) => {
@@ -356,6 +416,56 @@ export function AlgorithmVisualizationWorkspace() {
     },
     []
   );
+
+  // 소스코드 복사 핸들러
+  const handleCopyCode = useCallback(() => {
+    if (selectedNode?.data.sourceCode) {
+      navigator.clipboard.writeText(selectedNode.data.sourceCode);
+      // TODO: 복사 완료 토스트 메시지
+    }
+  }, [selectedNode]);
+
+  // 레이아웃 리셋 핸들러
+  const handleResetLayout = useCallback(() => {
+    if (selectedFileId) {
+      // localStorage에서 저장된 위치 삭제
+      localStorage.removeItem(`node-positions-${selectedFileId}`);
+      // Dagre 레이아웃 재적용
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+    }
+  }, [selectedFileId, nodes, edges, setNodes, setEdges]);
+
+  // 엣지 우클릭 핸들러
+  const handleEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault();
+      setEdgeContextMenu({
+        edgeId: edge.id,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    []
+  );
+
+  // 엣지 삭제 핸들러
+  const handleDeleteEdge = useCallback(() => {
+    if (edgeContextMenu) {
+      setEdges((eds) => eds.filter((e) => e.id !== edgeContextMenu.edgeId));
+      setEdgeContextMenu(null);
+    }
+  }, [edgeContextMenu, setEdges]);
+
+  // 컨텍스트 메뉴 닫기
+  useEffect(() => {
+    const handleClick = () => setEdgeContextMenu(null);
+    if (edgeContextMenu) {
+      document.addEventListener("click", handleClick);
+      return () => document.removeEventListener("click", handleClick);
+    }
+  }, [edgeContextMenu]);
 
   // 선택된 노드 찾기
   const selectedNode = nodes.find((node) => node.id === selectedNodeId);
@@ -460,6 +570,10 @@ export function AlgorithmVisualizationWorkspace() {
             onNodeDoubleClick={handleNodeDoubleClick}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onConnect={handleConnect}
+            onEdgeContextMenu={handleEdgeContextMenu}
+            connectionMode={ConnectionMode.Loose}
+            deleteKeyCode="Delete"
             fitView
             className="rounded-3xl"
           >
@@ -469,14 +583,104 @@ export function AlgorithmVisualizationWorkspace() {
           </ReactFlow>
         </ReactFlowProvider>
 
+        {/* 엣지 컨텍스트 메뉴 */}
+        {edgeContextMenu && (
+          <div
+            className="fixed z-50 rounded-lg border border-soft bg-slate-900/95 shadow-xl backdrop-blur-sm"
+            style={{
+              left: edgeContextMenu.x,
+              top: edgeContextMenu.y,
+            }}
+          >
+            <button
+              type="button"
+              onClick={handleDeleteEdge}
+              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-300 hover:bg-red-500/20 rounded-lg transition"
+            >
+              <span>🗑️</span>
+              <span>연결 삭제</span>
+            </button>
+          </div>
+        )}
+
         {/* 상단 툴바 */}
         <div className="absolute left-4 top-4 z-10 flex gap-3 rounded-xl border border-soft bg-slate-900/80 px-4 py-2 backdrop-blur-sm">
-          <span className="text-sm text-muted">
+          <span className="text-sm text-slate-300 min-w-[200px]">
             {selectedFileId
-              ? `현재 파일: ${MOCK_FILES.find((f) => f.id === selectedFileId)?.name ?? "없음"}`
+              ? `현재 파일: ${files.find((f) => f.id === selectedFileId)?.name ?? "없음"}`
               : "파일을 선택하세요"}
           </span>
+          <div className="relative">
+            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="노드 검색..."
+              value={nodeSearchQuery}
+              onChange={(e) => setNodeSearchQuery(e.target.value)}
+              className="w-48 rounded-lg bg-slate-800/80 pl-7 pr-3 py-1 text-xs text-slate-200 placeholder-slate-500 border border-slate-700 focus:border-sky-500 focus:outline-none"
+            />
+          </div>
+          <div className="text-xs text-slate-400">
+            노드: {nodes.length} | 엣지: {edges.length}
+          </div>
+          <button
+            type="button"
+            onClick={handleResetLayout}
+            className="rounded-lg bg-slate-800/80 p-1.5 text-slate-300 hover:bg-slate-700 hover:text-orange-300 transition"
+            title="레이아웃 리셋"
+            disabled={!selectedFileId}
+          >
+            <RotateCcw size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowHelp(!showHelp)}
+            className="rounded-lg bg-slate-800/80 p-1.5 text-slate-300 hover:bg-slate-700 hover:text-sky-300 transition"
+            title="단축키 도움말"
+          >
+            <Info size={14} />
+          </button>
         </div>
+
+        {/* 도움말 패널 */}
+        {showHelp && (
+          <div className="absolute right-4 top-20 z-10 rounded-xl border border-soft bg-slate-900/95 p-4 backdrop-blur-sm w-80">
+            <h3 className="text-sm font-bold text-white mb-3">키보드 단축키</h3>
+            <div className="space-y-2 text-xs text-slate-300">
+              <div className="flex justify-between">
+                <span className="text-slate-400">드래그</span>
+                <span>노드 이동</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">더블클릭</span>
+                <span>함수 상세정보</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">포트 드래그</span>
+                <span>노드 연결</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Delete</span>
+                <span>선택 항목 삭제</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Ctrl + 휠</span>
+                <span>줌 인/아웃</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Space + 드래그</span>
+                <span>캔버스 이동</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHelp(false)}
+              className="mt-3 w-full btn-secondary text-xs"
+            >
+              닫기
+            </button>
+          </div>
+        )}
       </section>
 
       {/* 노드 상세 정보 다이얼로그 */}
@@ -548,17 +752,24 @@ export function AlgorithmVisualizationWorkspace() {
 
             <section className="space-y-3">
               <h3 className="text-lg font-semibold text-accent-strong">소스 코드</h3>
-              <div className="rounded-lg bg-slate-950 p-4">
-                <code className="block overflow-x-auto text-xs text-slate-300">
-                  {`# TODO: 실제 소스 코드를 여기에 표시
-def ${selectedNode.data.label}(${selectedNode.data.parameters?.join(", ") ?? ""}):
-    """함수 구현 내용"""
-    pass`}
-                </code>
+              <div className="rounded-lg bg-slate-950 p-4 max-h-96 overflow-y-auto">
+                <pre className="block overflow-x-auto text-xs text-slate-300 font-mono">
+                  {selectedNode.data.sourceCode ||
+                    `# 소스 코드를 불러올 수 없습니다.\n# Line ${selectedNode.data.lineStart}-${selectedNode.data.lineEnd}`}
+                </pre>
               </div>
-              <button type="button" className="btn-secondary w-full">
-                코드로 이동 (VS Code)
-              </button>
+              <div className="flex gap-2">
+                <button type="button" className="btn-secondary flex-1" disabled>
+                  코드로 이동 (Line {selectedNode.data.lineStart})
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="btn-secondary flex-1 hover:bg-sky-600"
+                >
+                  복사
+                </button>
+              </div>
             </section>
           </div>
 

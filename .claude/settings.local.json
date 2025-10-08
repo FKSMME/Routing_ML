@@ -65,7 +65,8 @@
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-algorithm-viz-integration.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/simple-algorithm-viz-test.js)",
       "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/test-with-login.js)",
-      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-flow-console.js)"
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 90s node /tmp/check-react-flow-console.js)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

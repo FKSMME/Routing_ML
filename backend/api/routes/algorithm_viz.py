@@ -152,12 +152,25 @@ async def analyze_file(
         if analysis.errors:
             logger.warning(f"파일 분석 중 오류 발생: {file_path_obj.name}, 오류: {analysis.errors}")
 
+        # 소스 파일 읽기
+        source_lines = []
+        try:
+            with open(file_path_obj, "r", encoding="utf-8") as f:
+                source_lines = f.readlines()
+        except Exception as e:
+            logger.error(f"소스 파일 읽기 실패: {str(e)}")
+
         # 노드 생성
         nodes: list[NodeData] = []
         y_offset = 100
 
         # 함수 노드
         for idx, func in enumerate(analysis.functions):
+            # 소스 코드 추출 (line_start-1 부터 line_end 까지, 0-indexed)
+            source_code = ""
+            if source_lines and func.line_start > 0 and func.line_end <= len(source_lines):
+                source_code = "".join(source_lines[func.line_start - 1 : func.line_end])
+
             nodes.append(
                 NodeData(
                     id=f"func-{func.name}",
@@ -174,12 +187,18 @@ async def analyze_file(
                         "isAsync": func.is_async,
                         "lineStart": func.line_start,
                         "lineEnd": func.line_end,
+                        "sourceCode": source_code,
                     },
                 )
             )
 
         # 클래스 노드
         for idx, cls in enumerate(analysis.classes):
+            # 클래스 소스 코드 추출
+            source_code = ""
+            if source_lines and cls.line_start > 0 and cls.line_end <= len(source_lines):
+                source_code = "".join(source_lines[cls.line_start - 1 : cls.line_end])
+
             nodes.append(
                 NodeData(
                     id=f"class-{cls.name}",
@@ -195,6 +214,7 @@ async def analyze_file(
                         "decorators": cls.decorators,
                         "lineStart": cls.line_start,
                         "lineEnd": cls.line_end,
+                        "sourceCode": source_code,
                     },
                 )
             )
