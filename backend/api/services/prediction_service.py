@@ -187,7 +187,14 @@ class PredictionService:
         self._model_root: Optional[Path] = None
 
     def _resolve_model_reference(self) -> Path:
-        """Determine the manifest or directory to load the model from."""
+        """Determine the manifest or directory to load the model from.
+
+        Fallback strategy:
+        1. Environment override (MODEL_DIRECTORY_OVERRIDE)
+        2. Active version from registry
+        3. Default directory (models/default)
+        4. RuntimeError with helpful message
+        """
 
         override = self.settings.model_directory
         if override is not None:
@@ -198,11 +205,22 @@ class PredictionService:
             fallback_dir = Path(__file__).resolve().parents[3] / "models" / "default"
             if fallback_dir.exists():
                 logger.warning(
-                    "활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: %s",
+                    "⚠️  활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: %s",
                     fallback_dir,
                 )
                 return fallback_dir
-            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
+
+            # Enhanced error message with actionable steps
+            raise RuntimeError(
+                "🚨 모델 레지스트리에 활성화된 버전이 없고, 기본 디렉토리도 존재하지 않습니다.\n\n"
+                f"해결 방법:\n"
+                f"1. 모델 학습: python -m backend.cli.train_model\n"
+                f"2. 기본 디렉토리 생성: mkdir -p {fallback_dir}\n"
+                f"3. 환경 변수 설정: MODEL_DIRECTORY_OVERRIDE=/path/to/model\n"
+                f"4. 레지스트리 확인: sqlite3 {self._model_registry_path}\n\n"
+                f"현재 레지스트리 경로: {self._model_registry_path}\n"
+                f"기대 디렉토리: {fallback_dir}"
+            )
 
         manifest_path = Path(active_version.manifest_path).expanduser().resolve(strict=False)
         if manifest_path.suffix.lower() == ".json":
