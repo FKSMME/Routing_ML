@@ -48,7 +48,14 @@
       "Bash(NODE_PATH=./node_modules timeout 40s node /tmp/check-console-errors.js)",
       "Bash(timeout 180s npm run build)",
       "Bash(npx lighthouse:*)",
-      "Bash(NODE_PATH=./node_modules timeout 60s node /tmp/performance-metrics.js)"
+      "Bash(NODE_PATH=./node_modules timeout 60s node /tmp/performance-metrics.js)",
+      "Bash(git add:*)",
+      "Bash(npx playwright:*)",
+      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test tests/e2e/login-flow.spec.ts --reporter=line)",
+      "Bash(PLAYWRIGHT_SKIP_WEB_SERVER=1 npx playwright test tests/e2e/login-flow.spec.ts --project=chromium --reporter=line)",
+      "Bash(export PLAYWRIGHT_SKIP_WEB_SERVER=1)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 30s node /tmp/test-ballpit-loading.js)",
+      "Bash(NODE_PATH=/workspaces/Routing_ML_4/node_modules timeout 30s node /tmp/test-workspace-lazy-loading.js)"
     ],
     "deny": [],
     "ask": []

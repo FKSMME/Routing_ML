@@ -10,11 +10,14 @@ import { PredictionControls } from "@components/PredictionControls";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
 import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
-import { DataOutputWorkspace } from "@components/workspaces/DataOutputWorkspace";
-import { ProcessGroupsWorkspace } from "@components/workspaces/ProcessGroupsWorkspace";
-import { RoutingMatrixWorkspace } from "@components/workspaces/RoutingMatrixWorkspace";
-import { MasterDataSimpleWorkspace } from "@components/workspaces/MasterDataSimpleWorkspace";
-import { RoutingTabbedWorkspace } from "@components/workspaces/RoutingTabbedWorkspace";
+// 🚀 Workspace lazy loading (코드 분할)
+import { lazy } from "react";
+const DataOutputWorkspace = lazy(() => import("@components/workspaces/DataOutputWorkspace").then(m => ({ default: m.DataOutputWorkspace })));
+const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/ProcessGroupsWorkspace").then(m => ({ default: m.ProcessGroupsWorkspace })));
+const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
+const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
+const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
+const AlgorithmVisualizationWorkspace = lazy(() => import("@components/workspaces/AlgorithmVisualizationWorkspace").then(m => ({ default: m.AlgorithmVisualizationWorkspace })));
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -26,9 +29,9 @@ import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { useTheme } from "@hooks/useTheme";
-import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
+import { Database, FileOutput, Layers, Menu, Table, Workflow, GitBranch } from "lucide-react";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
 // 🎨 All Navigation Items (Beautiful Design)
 const NAVIGATION_ITEMS = [
@@ -61,6 +64,12 @@ const NAVIGATION_ITEMS = [
     label: "데이터 출력",
     description: "미리보기 · 내보내기",
     icon: <FileOutput size={18} />,
+  },
+  {
+    id: "algorithm-viz",
+    label: "알고리즘 시각화",
+    description: "Python 코드 노드 뷰",
+    icon: <GitBranch size={18} />,
   },
 ];
 
@@ -229,25 +238,27 @@ export default function App() {
   const renderRoutingWorkspace = (tab?: RoutingProductTab) => {
     const tabKey = tab?.id ?? "default";
     return (
-      <RoutingTabbedWorkspace
-        itemCodes={itemCodes}
-        onChangeItemCodes={updateItemCodes}
-        topK={topK}
-        onChangeTopK={updateTopK}
-        threshold={threshold}
-        onChangeThreshold={updateThreshold}
-        loading={isLoading || isFetching}
-        onSubmit={refetch}
-        errorMessage={predictionControlsError}
-        data={data}
-        selectedCandidate={selectedCandidate}
-        featureWeights={featureWeights}
-        setFeatureWeightProfile={setFeatureWeightProfile}
-        setManualWeight={setManualWeight}
-        resetManualWeights={resetManualWeights}
-        renderPredictionBanner={renderPredictionBanner}
-        tabKey={tabKey}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-muted">로딩 중...</div></div>}>
+        <RoutingTabbedWorkspace
+          itemCodes={itemCodes}
+          onChangeItemCodes={updateItemCodes}
+          topK={topK}
+          onChangeTopK={updateTopK}
+          threshold={threshold}
+          onChangeThreshold={updateThreshold}
+          loading={isLoading || isFetching}
+          onSubmit={refetch}
+          errorMessage={predictionControlsError}
+          data={data}
+          selectedCandidate={selectedCandidate}
+          featureWeights={featureWeights}
+          setFeatureWeightProfile={setFeatureWeightProfile}
+          setManualWeight={setManualWeight}
+          resetManualWeights={resetManualWeights}
+          renderPredictionBanner={renderPredictionBanner}
+          tabKey={tabKey}
+        />
+      </Suspense>
     );
   };
 
@@ -259,21 +270,26 @@ export default function App() {
   );
 
   let workspace: JSX.Element;
+  const loadingFallback = <div className="flex items-center justify-center h-full"><div className="text-muted">워크스페이스 로딩 중...</div></div>;
+
   switch (activeMenu) {
     case "routing":
       workspace = routingContent;
       break;
     case "master-data":
-      workspace = <MasterDataSimpleWorkspace />;
+      workspace = <Suspense fallback={loadingFallback}><MasterDataSimpleWorkspace /></Suspense>;
       break;
     case "routing-matrix":
-      workspace = <RoutingMatrixWorkspace />;
+      workspace = <Suspense fallback={loadingFallback}><RoutingMatrixWorkspace /></Suspense>;
       break;
     case "process-groups":
-      workspace = <ProcessGroupsWorkspace />;
+      workspace = <Suspense fallback={loadingFallback}><ProcessGroupsWorkspace /></Suspense>;
       break;
     case "data-output":
-      workspace = <DataOutputWorkspace />;
+      workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
+      break;
+    case "algorithm-viz":
+      workspace = <Suspense fallback={loadingFallback}><AlgorithmVisualizationWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

@@ -20,6 +20,7 @@ export type NavigationKey =
   | "process-groups"
   | "data-output"
   | "algorithm"
+  | "algorithm-viz"
   | "training-status"
   | "options";
 

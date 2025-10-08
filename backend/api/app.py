@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
 from backend.api.routes.access import router as access_router
+from backend.api.routes.algorithm_viz import router as algorithm_viz_router
 from backend.api.routes.anomaly import router as anomaly_router  # ✅ PyODBC 리팩토링 완료
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
@@ -70,6 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(master_data_router)
     app.include_router(access_router)
     app.include_router(rsl_router)
+    app.include_router(algorithm_viz_router)
 
     get_logger("api.app").info("FastAPI 애플리케이션 초기화 완료")
     return app
