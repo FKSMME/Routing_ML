@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
@@ -67,7 +68,7 @@ def _ensure_stream_encoding() -> None:
 def get_logger(
     name: str = "routing_ml",
     *,
-    level: int = logging.DEBUG,
+    level: int | None = None,
     log_to_file: bool = True,
     log_dir: Union[str, Path] = "logs",
     max_bytes: int = 10 * 1024 * 1024,
@@ -79,7 +80,21 @@ def get_logger(
     - 콘솔/파일 핸들러를 각각 1회만 등록한다.
     - JSON 포맷 옵션을 지원한다.
     - 로그 파일은 일자별 회전(RotatingFileHandler)로 관리한다.
+    - 기본 로그 레벨은 환경 변수 LOG_LEVEL로 제어 가능 (기본: INFO)
+      유효한 값: DEBUG, INFO, WARNING, ERROR, CRITICAL
     """
+
+    # 환경 변수에서 로그 레벨 결정 (기본: INFO, 프로덕션 권장)
+    if level is None:
+        log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+        level_map = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL,
+        }
+        level = level_map.get(log_level_str, logging.INFO)
 
     logger = logging.getLogger(name)
     if getattr(logger, "_routing_ml_configured", False):
