@@ -9,12 +9,13 @@ import Ballpit from "@components/effects/Ballpit";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
+import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings } from "lucide-react";
+import { BarChart3, Menu, Route, Settings, Brain } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
 
@@ -31,6 +32,12 @@ const NAVIGATION_ITEMS = [
     label: "학습 데이터 현황",
     description: "모델 버전 카드 · TensorBoard · 피처 토글",
     icon: <BarChart3 size={18} />,
+  },
+  {
+    id: "model-training",
+    label: "모델 학습",
+    description: "새 모델 학습 · 학습 상태 모니터링 · 모델 배포",
+    icon: <Brain size={18} />,
   },
   {
     id: "options",
@@ -106,6 +113,9 @@ export default function App() {
       break;
     case "training-status":
       workspace = <TrainingStatusWorkspace />;
+      break;
+    case "model-training":
+      workspace = <ModelTrainingPanel />;
       break;
     case "options":
       workspace = <OptionsWorkspace />;

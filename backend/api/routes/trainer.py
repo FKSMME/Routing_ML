@@ -67,22 +67,44 @@ async def get_training_status(
     return TrainingStatusModel(**status_payload)
 
 
-@router.post("/run", status_code=status.HTTP_403_FORBIDDEN)
+@router.post("/run", status_code=status.HTTP_202_ACCEPTED)
 async def run_training(
     payload: TrainingRequest,
     current_user: AuthenticatedUser = Depends(require_auth),
-) -> None:
-    del payload
-    detail = (
-        "API에서 직접 학습을 실행할 수 없습니다. "
-        "Windows 작업 스케줄러 혹은 PowerShell에서 `python scripts/train_build_index.py --dataset <path> "
-        "--save-dir <dir>` 명령을 호출하도록 구성해 주세요."
+) -> TrainingStatusModel:
+    """모델 학습을 시작합니다."""
+    logger.info(
+        "모델 학습 시작 요청",
+        extra={
+            "username": current_user.username,
+            "version_label": payload.version_label,
+            "dry_run": payload.dry_run,
+        },
     )
-    logger.warning(
-        "윈도우 스케줄러 경유 없이 학습 실행 시도",
-        extra={"username": current_user.username},
-    )
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
+
+    try:
+        result = training_service.start_training(
+            version_label=payload.version_label,
+            projector_metadata=payload.projector_metadata or [],
+            requested_by=current_user.username,
+            dry_run=payload.dry_run,
+        )
+
+        logger.info(
+            "모델 학습 시작됨",
+            extra={"job_id": result.get("job_id"), "username": current_user.username},
+        )
+
+        return TrainingStatusModel(**result)
+    except Exception as exc:
+        logger.error(
+            "모델 학습 시작 실패",
+            extra={"username": current_user.username, "error": str(exc)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"학습 시작 실패: {str(exc)}",
+        )
 
 
 @router.get("/versions", response_model=List[ModelVersionModel])

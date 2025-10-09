@@ -20,6 +20,7 @@ export type NavigationKey =
   | "algorithm"
   | "data-output"
   | "training-status"
+  | "model-training"
   | "options";
 
 type ExportDestination = "local" | "clipboard" | "server";
