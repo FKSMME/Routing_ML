@@ -417,6 +417,9 @@ export function AlgorithmVisualizationWorkspace() {
     []
   );
 
+  // 선택된 노드 찾기 (callbacks에서 사용되므로 먼저 선언)
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId);
+
   // 소스코드 복사 핸들러
   const handleCopyCode = useCallback(() => {
     if (selectedNode?.data.sourceCode) {
@@ -466,9 +469,6 @@ export function AlgorithmVisualizationWorkspace() {
       return () => document.removeEventListener("click", handleClick);
     }
   }, [edgeContextMenu]);
-
-  // 선택된 노드 찾기
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId);
 
   return (
     <div className="flex h-full gap-6" role="region" aria-label="알고리즘 시각화 워크스페이스">
