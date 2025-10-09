@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 
@@ -49,7 +49,8 @@ class RoutingStep(BaseModel):
         default=None, description="추가 파라미터(JSON)"
     )
 
-    @validator("process_code")
+    @field_validator("process_code")
+    @classmethod
     def _normalize_process_code(cls, value: str) -> str:  # noqa: D401, N805
         cleaned = value.strip()
         if not cleaned:
@@ -74,39 +75,39 @@ class RoutingGroupBase(BaseModel):
         default=None, description="추가 메타데이터"
     )
 
-    @validator("group_name")
+    @field_validator("group_name")
+    @classmethod
     def _normalize_group_name(cls, value: str) -> str:  # noqa: D401, N805
         cleaned = " ".join(value.split())
         if len(cleaned) < 2:
             raise ValueError("group_name은 2자 이상이어야 합니다")
         return cleaned
 
-    @validator("item_codes", each_item=True)
-    def _normalize_item_code(cls, value: str) -> str:  # noqa: D401, N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("item_codes에는 빈 문자열을 포함할 수 없습니다")
-        return cleaned
+    @field_validator("item_codes")
+    @classmethod
+    def _normalize_item_code(cls, value: List[str]) -> List[str]:  # noqa: D401, N805
+        return [item.strip() for item in value if item.strip()]
 
-    @root_validator
-    def _deduplicate_item_codes(cls, values: Dict[str, Any]) -> Dict[str, Any]:  # noqa: D401, N805
-        item_codes = values.get("item_codes") or []
+    @model_validator(mode="after")
+    def _deduplicate_item_codes(self) -> "RoutingGroupBase":  # noqa: D401
+        # Deduplicate item_codes (case-insensitive)
         seen: List[str] = []
         normalized: List[str] = []
-        for code in item_codes:
+        for code in self.item_codes:
             lowered = code.lower()
             if lowered in seen:
                 continue
             seen.append(lowered)
             normalized.append(code)
-        values["item_codes"] = normalized
-        steps: List[RoutingStep] = values.get("steps") or []
+        self.item_codes = normalized
+
+        # Validate unique seq values in steps
         seen_seq: set[int] = set()
-        for step in steps:
+        for step in self.steps:
             if step.seq in seen_seq:
                 raise ValueError("steps 내 seq 값은 고유해야 합니다")
             seen_seq.add(step.seq)
-        return values
+        return self
 
 
 class RoutingGroupCreate(RoutingGroupBase):
@@ -135,7 +136,8 @@ class RoutingGroupUpdate(BaseModel):
         ..., ge=1, description="현재 저장된 그룹 버전(낙관적 잠금)"
     )
 
-    @validator("group_name")
+    @field_validator("group_name")
+    @classmethod
     def _normalize_group_name(cls, value: Optional[str]) -> Optional[str]:  # noqa: D401, N805
         if value is None:
             return value
@@ -144,34 +146,35 @@ class RoutingGroupUpdate(BaseModel):
             raise ValueError("group_name은 2자 이상이어야 합니다")
         return cleaned
 
-    @validator("item_codes", each_item=True)
-    def _normalize_item_code(cls, value: str) -> str:  # noqa: D401, N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("item_codes에는 빈 문자열을 포함할 수 없습니다")
-        return cleaned
+    @field_validator("item_codes")
+    @classmethod
+    def _normalize_item_code(cls, value: Optional[List[str]]) -> Optional[List[str]]:  # noqa: D401, N805
+        if value is None:
+            return value
+        return [item.strip() for item in value if item.strip()]
 
-    @root_validator
-    def _deduplicate_and_validate(cls, values: Dict[str, Any]) -> Dict[str, Any]:  # noqa: D401, N805
-        item_codes = values.get("item_codes")
-        if item_codes is not None:
+    @model_validator(mode="after")
+    def _deduplicate_and_validate(self) -> "RoutingGroupUpdate":  # noqa: D401
+        # Deduplicate item_codes if provided
+        if self.item_codes is not None:
             seen: List[str] = []
             normalized: List[str] = []
-            for code in item_codes:
+            for code in self.item_codes:
                 lowered = code.lower()
                 if lowered in seen:
                     continue
                 seen.append(lowered)
                 normalized.append(code)
-            values["item_codes"] = normalized
-        steps: Optional[List[RoutingStep]] = values.get("steps")
-        if steps is not None:
+            self.item_codes = normalized
+
+        # Validate unique seq values in steps if provided
+        if self.steps is not None:
             seen_seq: set[int] = set()
-            for step in steps:
+            for step in self.steps:
                 if step.seq in seen_seq:
                     raise ValueError("steps 내 seq 값은 고유해야 합니다")
                 seen_seq.add(step.seq)
-        return values
+        return self
 
 
 class RoutingGroupResponse(BaseModel):

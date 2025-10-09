@@ -81,7 +81,8 @@ class Settings(BaseSettings):
         description="JWT 서명을 위한 비밀 키 (MUST be changed in production)",
     )
 
-    @validator("jwt_secret_key")
+    @field_validator("jwt_secret_key")
+    @classmethod
     def validate_jwt_secret(cls, v):
         """Reject insecure default JWT secrets."""
         insecure_defaults = ["change-me", "INSECURE-CHANGE-ME-IN-PRODUCTION", "secret", ""]
@@ -123,25 +124,28 @@ class Settings(BaseSettings):
         description="레거시 모델 경로"
     )
 
-    @validator(
+    @field_validator(
         "model_directory",
         "candidate_store_dir",
         "audit_log_dir",
         "model_registry_path",
         "workflow_code_dir",
-        pre=True,
+        mode="before",
     )
+    @classmethod
     def _expand_path(cls, value: Optional[Path | str]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return Path(value).expanduser().resolve()
 
-    @validator("candidate_store_dir", "audit_log_dir", "workflow_code_dir")
+    @field_validator("candidate_store_dir", "audit_log_dir", "workflow_code_dir")
+    @classmethod
     def _ensure_dir(cls, value: Path) -> Path:  # noqa: N805
         value.mkdir(parents=True, exist_ok=True)
         return value
 
-    @validator("rsl_database_url", "routing_groups_database_url")
+    @field_validator("rsl_database_url", "routing_groups_database_url")
+    @classmethod
     def _prepare_sqlite_path(cls, value: str) -> str:  # noqa: N805
         if value.startswith("sqlite:///"):
             path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
@@ -150,13 +154,15 @@ class Settings(BaseSettings):
         return value
 
 
-    @validator("model_directory", always=True)
+    @field_validator("model_directory")
+    @classmethod
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return value
 
-    @validator("model_directory")
+    @field_validator("model_directory")
+    @classmethod
     def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
         try:
             if value.exists():
