@@ -23,7 +23,7 @@ def audit_test_client(
     """Provide a FastAPI client configured with an isolated audit log directory."""
 
     log_dir = tmp_path / "audit"
-    monkeypatch.setenv("ROUTING_ML_AUDIT_LOG_DIR", str(log_dir))
+    monkeypatch.setenv("AUDIT_LOG_DIR", str(log_dir))
     get_settings.cache_clear()  # type: ignore[attr-defined]
 
     audit_module = importlib.import_module("backend.api.routes.audit")
@@ -33,6 +33,9 @@ def audit_test_client(
     audit_module = importlib.reload(audit_module)
     importlib.reload(workspace_module)
     app_module = importlib.reload(app_module)
+
+    # Update audit module's settings to use the test-specific audit_log_dir
+    audit_module.settings = get_settings()
 
     client = TestClient(app_module.create_app())
 
