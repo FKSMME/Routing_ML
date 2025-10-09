@@ -90,7 +90,7 @@ class AnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    this.track('button_click', event);
+    this.track('button_click', event as unknown as Record<string, unknown>);
   }
 
   /**
@@ -104,7 +104,7 @@ class AnalyticsService {
       timestamp: new Date().toISOString(),
     };
 
-    this.track('feature_usage', event);
+    this.track('feature_usage', event as unknown as Record<string, unknown>);
   }
 
   /**

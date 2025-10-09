@@ -5,13 +5,17 @@ import { MainNavigation } from "@components/MainNavigation";
 import { ParticleBackground } from "@components/ParticleBackground";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
+import Ballpit from "@components/effects/Ballpit";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
+import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
+import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
+import { useTheme } from "@hooks/useTheme";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings } from "lucide-react";
+import { BarChart3, Menu, Route, Settings, Brain } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
 
@@ -30,6 +34,12 @@ const NAVIGATION_ITEMS = [
     icon: <BarChart3 size={18} />,
   },
   {
+    id: "model-training",
+    label: "모델 학습",
+    description: "새 모델 학습 · 학습 상태 모니터링 · 모델 배포",
+    icon: <Brain size={18} />,
+  },
+  {
     id: "options",
     label: "시스템 옵션",
     description: "표준편차 · 유사 품목 규칙 · ERP/Access 설정",
@@ -39,6 +49,7 @@ const NAVIGATION_ITEMS = [
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
+  useTheme();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const checkAuth = useAuthStore((state) => state.checkAuth);
@@ -71,33 +82,40 @@ export default function App() {
   // 인증 확인 중이면 로딩 표시
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center surface-base">
-        <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-      </div>
+      <>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+          <Ballpit count={100} followCursor={true} />
+        </div>
+        <div className="flex min-h-screen items-center justify-center surface-base">
+          <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+        </div>
+      </>
     );
   }
 
   // 인증되지 않은 경우 로그인 페이지 표시
   if (!isAuthenticated) {
-    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+          <Ballpit count={100} followCursor={true} />
+        </div>
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+      </>
+    );
   }
 
   // Training workspace
   let workspace: JSX.Element;
   switch (activeMenu) {
     case "algorithm":
-      workspace = (
-        <div className="workspace-container p-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground mb-2">알고리즘 블루프린트</h2>
-            <p className="text-muted">예측 알고리즘의 데이터 플로우를 시각화합니다</p>
-          </div>
-          <BlueprintGraphPanel />
-        </div>
-      );
+      workspace = <AlgorithmVisualizationWorkspace />;
       break;
     case "training-status":
       workspace = <TrainingStatusWorkspace />;
+      break;
+    case "model-training":
+      workspace = <ModelTrainingPanel />;
       break;
     case "options":
       workspace = <OptionsWorkspace />;
@@ -110,7 +128,18 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
+      <div className="rainbow-balls-container">
+        <div className="rainbow-ball rainbow-ball-1"></div>
+        <div className="rainbow-ball rainbow-ball-2"></div>
+        <div className="rainbow-ball rainbow-ball-3"></div>
+        <div className="rainbow-ball rainbow-ball-4"></div>
+        <div className="rainbow-ball rainbow-ball-5"></div>
+        <div className="rainbow-ball rainbow-ball-6"></div>
+      </div>
       <ParticleBackground />
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
+        <Ballpit count={100} followCursor={true} />
+      </div>
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (

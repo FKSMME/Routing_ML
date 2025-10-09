@@ -71,12 +71,15 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
 
     client = TestClient(create_app())
 
-    # Register, approve, and authenticate a test user.
+    # Register, approve, and authenticate a test user with unique username
+    import uuid
+    unique_username = f"qa_user_{uuid.uuid4().hex[:8]}"
+
     auth_service.register(
-        RegisterRequest(username="qa_user", password="Secret123!", display_name="QA User")
+        RegisterRequest(username=unique_username, password="Secret123!", display_name="QA User")
     )
-    auth_service.approve_user("qa_user", make_admin=True)
-    token = auth_service.login(LoginRequest(username="qa_user", password="Secret123!"), "testclient").token
+    auth_service.approve_user(unique_username, make_admin=True)
+    token = auth_service.login(LoginRequest(username=unique_username, password="Secret123!"), "testclient").token
 
     headers = {"Authorization": f"Bearer {token}"}
 

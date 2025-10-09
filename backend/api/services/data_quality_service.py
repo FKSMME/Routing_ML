@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
-from backend.api.database import get_session
+from backend.database import get_session
 from backend.models.items import Item
 from common.logger import get_logger
 

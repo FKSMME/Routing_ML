@@ -1,4 +1,5 @@
 ﻿import { FormEvent, useEffect, useState } from "react";
+import { usePurchaseOrderItems } from "@hooks/usePurchaseOrderItems";
 
 interface PredictionControlsProps {
   itemCodes: string[];
@@ -30,6 +31,8 @@ export function PredictionControls({
   errorMessage,
 }: PredictionControlsProps) {
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
+  const { items: purchaseItems, isLoading: isPurchaseLoading } = usePurchaseOrderItems();
+  const [selectedPurchaseItem, setSelectedPurchaseItem] = useState("");
 
   useEffect(() => {
     setInputValue(itemCodes.join("\n"));
@@ -42,8 +45,45 @@ export function PredictionControls({
     onSubmit();
   };
 
+  const handlePurchaseItemSelect = (itemCode: string) => {
+    if (!itemCode) return;
+
+    // Add selected item to textarea (if not already present)
+    const currentCodes = splitItemCodes(inputValue);
+    if (!currentCodes.includes(itemCode)) {
+      const newValue = inputValue ? `${inputValue}\n${itemCode}` : itemCode;
+      setInputValue(newValue);
+    }
+
+    // Reset dropdown
+    setSelectedPurchaseItem("");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="panel-card interactive-card space-y-4 prediction-panel">
+      {/* Purchase Order Items Dropdown */}
+      <div className="space-y-2">
+        <label className="text-xs font-semibold text-accent-strong">생산 접수 품목</label>
+        <select
+          value={selectedPurchaseItem}
+          onChange={(e) => handlePurchaseItemSelect(e.target.value)}
+          className="input-field"
+          disabled={isPurchaseLoading}
+        >
+          <option value="">
+            {isPurchaseLoading ? "로딩 중..." : "품목을 선택하여 추가..."}
+          </option>
+          {purchaseItems.map((item) => (
+            <option key={item.ITEM_CD} value={item.ITEM_CD}>
+              {item.ITEM_CD} - {item.PO_NO} ({item.PO_DATE})
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted">
+          생산 접수된 품목을 선택하면 아래 입력창에 자동으로 추가됩니다.
+        </p>
+      </div>
+
       <div className="space-y-2">
         <label className="text-xs font-semibold text-accent-strong">품목 코드 목록</label>
         <textarea

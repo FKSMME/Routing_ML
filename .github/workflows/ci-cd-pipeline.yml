@@ -1,0 +1,619 @@
+name: Routing ML - CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # =============================================================================
+  # BACKEND JOBS
+  # =============================================================================
+
+  backend-lint:
+    name: Backend - Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unixodbc unixodbc-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 mypy black isort
+
+      - name: Run Black (code formatting)
+        run: black --check backend/ common/
+
+      - name: Run isort (import sorting)
+        run: isort --check-only backend/ common/
+
+      - name: Run Flake8 (linting)
+        run: flake8 backend/ common/ --max-line-length=120 --extend-ignore=E203,W503
+
+      - name: Run MyPy (type checking)
+        run: mypy backend/ common/ --ignore-missing-imports
+        continue-on-error: true  # Non-blocking for now
+
+  backend-test:
+    name: Backend - Unit & Integration Tests
+    runs-on: ubuntu-latest
+    needs: backend-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unixodbc unixodbc-dev
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-mock
+
+      - name: Run pytest
+        env:
+          JWT_SECRET_KEY: test-key-min-32-chars-long-do-not-use-prod
+          LOG_LEVEL: INFO
+          LOG_FORMAT: json
+        run: |
+          pytest tests/backend \
+            -v \
+            --tb=short \
+            --cov=backend \
+            --cov=common \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --junitxml=pytest-report.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: |
+            pytest-report.xml
+            htmlcov/
+
+      - name: Fail if coverage below threshold
+        run: |
+          coverage report --fail-under=70
+
+  backend-security-scan:
+    name: Backend - Security Scan
+    runs-on: ubuntu-latest
+    needs: backend-lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install safety bandit
+
+      - name: Run Safety (dependency vulnerability scan)
+        run: safety check --json || true
+
+      - name: Run Bandit (security linting)
+        run: bandit -r backend/ common/ -f json -o bandit-report.json || true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-security-reports
+          path: |
+            bandit-report.json
+
+  # =============================================================================
+  # FRONTEND JOBS - PREDICTION
+  # =============================================================================
+
+  frontend-prediction-lint:
+    name: Frontend Prediction - Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-prediction
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-prediction/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+  frontend-prediction-test:
+    name: Frontend Prediction - Unit Tests
+    runs-on: ubuntu-latest
+    needs: frontend-prediction-lint
+    defaults:
+      run:
+        working-directory: frontend-prediction
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-prediction/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Vitest
+        run: npm test -- --run --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./frontend-prediction/coverage/lcov.info
+          flags: frontend-prediction
+          name: frontend-prediction-coverage
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-prediction-test-results
+          path: frontend-prediction/coverage/
+
+  frontend-prediction-e2e:
+    name: Frontend Prediction - E2E Tests
+    runs-on: ubuntu-latest
+    needs: frontend-prediction-test
+    defaults:
+      run:
+        working-directory: frontend-prediction
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-prediction/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend-prediction/playwright-report/
+          retention-days: 7
+
+  frontend-prediction-build:
+    name: Frontend Prediction - Build
+    runs-on: ubuntu-latest
+    needs: frontend-prediction-lint
+    defaults:
+      run:
+        working-directory: frontend-prediction
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-prediction/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Analyze bundle size
+        run: |
+          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          du -sh dist/ >> $GITHUB_STEP_SUMMARY
+          find dist/ -name "*.js" -exec du -h {} + | sort -rh | head -10 >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-prediction-build
+          path: frontend-prediction/dist/
+          retention-days: 7
+
+  # =============================================================================
+  # FRONTEND JOBS - TRAINING
+  # =============================================================================
+
+  frontend-training-lint:
+    name: Frontend Training - Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-training
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-training/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+  frontend-training-build:
+    name: Frontend Training - Build
+    runs-on: ubuntu-latest
+    needs: frontend-training-lint
+    defaults:
+      run:
+        working-directory: frontend-training
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend-training/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-training-build
+          path: frontend-training/dist/
+          retention-days: 7
+
+  # =============================================================================
+  # DOCKER BUILD & PUSH
+  # =============================================================================
+
+  docker-build:
+    name: Docker - Build & Push Images
+    runs-on: ubuntu-latest
+    needs:
+      - backend-test
+      - frontend-prediction-build
+      - frontend-training-build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-backend
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend Prediction image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-prediction
+          file: ./frontend-prediction/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-frontend-prediction
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend Training image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend-training
+          file: ./frontend-training/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-frontend-training
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =============================================================================
+  # DEPLOYMENT JOBS
+  # =============================================================================
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.routing-ml.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $STAGING_HOST >> ~/.ssh/known_hosts
+
+          ssh $STAGING_USER@$STAGING_HOST << 'EOF'
+            cd /opt/routing-ml
+            docker-compose pull
+            docker-compose up -d --no-deps --build
+            docker-compose exec -T backend python -m alembic upgrade head
+          EOF
+
+      - name: Run smoke tests
+        run: |
+          sleep 30  # Wait for services to start
+          curl -f https://staging.routing-ml.example.com/api/health || exit 1
+          curl -f https://staging.routing-ml.example.com/ || exit 1
+
+      - name: Notify deployment
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Staging deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 Staging deployment *${{ job.status }}*\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://routing-ml.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to production server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $PROD_HOST >> ~/.ssh/known_hosts
+
+          ssh $PROD_USER@$PROD_HOST << 'EOF'
+            cd /opt/routing-ml
+
+            # Backup current deployment
+            docker-compose exec -T backend pg_dump -U routing_ml > backup-$(date +%Y%m%d-%H%M%S).sql
+
+            # Pull new images
+            docker-compose pull
+
+            # Rolling update (zero-downtime)
+            docker-compose up -d --no-deps --scale backend=2 backend
+            sleep 10
+            docker-compose up -d --no-deps --scale backend=1 backend
+
+            # Update frontends
+            docker-compose up -d --no-deps frontend-prediction frontend-training
+
+            # Run migrations
+            docker-compose exec -T backend python -m alembic upgrade head
+          EOF
+
+      - name: Run smoke tests
+        run: |
+          sleep 30
+          curl -f https://routing-ml.example.com/api/health || exit 1
+          curl -f https://routing-ml.example.com/metrics || exit 1
+
+      - name: Notify deployment
+        if: always()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Production deployment ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 Production deployment *${{ job.status }}*\nCommit: ${{ github.sha }}\nBranch: ${{ github.ref_name }}\nURL: https://routing-ml.example.com"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # =============================================================================
+  # MONITORING & REPORTING
+  # =============================================================================
+
+  regression-report:
+    name: Generate Regression Report
+    runs-on: ubuntu-latest
+    needs:
+      - backend-test
+      - frontend-prediction-test
+      - frontend-prediction-e2e
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate summary report
+        run: |
+          echo "# 🧪 Test Summary Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Backend Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- Status: ${{ needs.backend-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Frontend Prediction" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.frontend-prediction-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E Tests: ${{ needs.frontend-prediction-e2e.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "View detailed reports in artifacts 📦" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync(process.env.GITHUB_STEP_SUMMARY, 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

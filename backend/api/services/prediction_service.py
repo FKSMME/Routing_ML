@@ -163,91 +163,8 @@ class JsonArtifactCache:
             self._mtimes.pop(resolved, None)
 
 
-class TimeAggregator:
-    """공정 시간 합계를 계산하는 헬퍼."""
-
-    def __init__(self) -> None:
-        self._time_columns = {
-            "setup_time": ["SETUP_TIME", "ACT_SETUP_TIME"],
-            "run_time": ["MACH_WORKED_HOURS", "ACT_RUN_TIME", "RUN_TIME", "RUN_TIME_QTY"],
-            "queue_time": ["QUEUE_TIME"],
-            "wait_time": ["WAIT_TIME", "IDLE_TIME"],
-            "move_time": ["MOVE_TIME"],
-        }
-
-    def summarize(
-        self,
-        operations: List[Dict[str, Any]],
-        *,
-        include_breakdown: bool = False,
-    ) -> Dict[str, Any]:
-        normalized = [self._normalize(row) for row in operations if row]
-        totals = {key: 0.0 for key in self._time_columns.keys()}
-        breakdown_records: List[Dict[str, Any]] = []
-
-        for row in normalized:
-            entry_values: Dict[str, float] = {}
-            for key, columns in self._time_columns.items():
-                value = self._value_from(row, columns)
-                totals[key] += value
-                entry_values[key] = value
-
-            total_time = sum(entry_values.values())
-            breakdown_records.append(
-                {
-                    "proc_seq": self._extract_proc_seq(row),
-                    "setup_time": entry_values["setup_time"],
-                    "run_time": entry_values["run_time"],
-                    "queue_time": entry_values["queue_time"],
-                    "wait_time": entry_values["wait_time"],
-                    "move_time": entry_values["move_time"],
-                    "total_time": total_time,
-                }
-            )
-
-        totals["lead_time"] = sum(totals.values())
-
-        return {
-            "totals": totals,
-            "process_count": len(normalized),
-            "breakdown": breakdown_records if include_breakdown else [],
-        }
-
-    @staticmethod
-    def _normalize(row: Dict[str, Any]) -> Dict[str, Any]:
-        return {str(key).upper(): value for key, value in row.items()}
-
-    @staticmethod
-    def _to_float(value: Any) -> float:
-        if value is None:
-            return 0.0
-        if isinstance(value, (int, float)):
-            return float(value)
-        try:
-            return float(str(value).strip())
-        except (TypeError, ValueError):  # pragma: no cover - 방어
-            return 0.0
-
-    def _value_from(self, row: Dict[str, Any], columns: List[str]) -> float:
-        for column in columns:
-            upper = column.upper()
-            if upper in row and row[upper] not in (None, ""):
-                return self._to_float(row[upper])
-            lower = upper.lower()
-            if lower in row and row[lower] not in (None, ""):
-                return self._to_float(row[lower])
-        return 0.0
-
-    @staticmethod
-    def _extract_proc_seq(row: Dict[str, Any]) -> Optional[int]:
-        for key in ("PROC_SEQ", "SEQ", "STEP", "ORDER"):
-            if key in row and row[key] not in (None, ""):
-                try:
-                    return int(float(row[key]))
-                except (TypeError, ValueError):  # pragma: no cover - 방어
-                    continue
-        return None
-
+# TimeAggregator는 backend/api/services/time_aggregator.py에서 import됨 (line 54)
+# Polars 기반 고성능 구현을 사용하여 대용량 공정 집계 성능 최적화
 
 
 class PredictionService:
@@ -270,7 +187,14 @@ class PredictionService:
         self._model_root: Optional[Path] = None
 
     def _resolve_model_reference(self) -> Path:
-        """Determine the manifest or directory to load the model from."""
+        """Determine the manifest or directory to load the model from.
+
+        Fallback strategy:
+        1. Environment override (MODEL_DIRECTORY_OVERRIDE)
+        2. Active version from registry
+        3. Default directory (models/default)
+        4. RuntimeError with helpful message
+        """
 
         override = self.settings.model_directory
         if override is not None:
@@ -281,11 +205,22 @@ class PredictionService:
             fallback_dir = Path(__file__).resolve().parents[3] / "models" / "default"
             if fallback_dir.exists():
                 logger.warning(
-                    "활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: %s",
+                    "⚠️  활성화된 모델 버전이 없어 기본 디렉토리를 사용합니다: %s",
                     fallback_dir,
                 )
                 return fallback_dir
-            raise RuntimeError("활성화된 모델 버전이 레지스트리에 없습니다")
+
+            # Enhanced error message with actionable steps
+            raise RuntimeError(
+                "🚨 모델 레지스트리에 활성화된 버전이 없고, 기본 디렉토리도 존재하지 않습니다.\n\n"
+                f"해결 방법:\n"
+                f"1. 모델 학습: python -m backend.cli.train_model\n"
+                f"2. 기본 디렉토리 생성: mkdir -p {fallback_dir}\n"
+                f"3. 환경 변수 설정: MODEL_DIRECTORY_OVERRIDE=/path/to/model\n"
+                f"4. 레지스트리 확인: sqlite3 {self._model_registry_path}\n\n"
+                f"현재 레지스트리 경로: {self._model_registry_path}\n"
+                f"기대 디렉토리: {fallback_dir}"
+            )
 
         manifest_path = Path(active_version.manifest_path).expanduser().resolve(strict=False)
         if manifest_path.suffix.lower() == ".json":

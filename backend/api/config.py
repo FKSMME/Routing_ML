@@ -5,17 +5,19 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """환경 변수 기반 설정."""
 
-    class Config:
-        env_prefix = ""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "allow"
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
 
     model_directory: Optional[Path] = Field(
         default=None,
@@ -75,9 +77,28 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = Field(default=3600, ge=300)
 
     jwt_secret_key: str = Field(
-        default="change-me",
-        description="JWT 서명을 위한 비밀 키",
+        default="INSECURE-CHANGE-ME-IN-PRODUCTION",
+        description="JWT 서명을 위한 비밀 키 (MUST be changed in production)",
     )
+
+    @field_validator("jwt_secret_key")
+    @classmethod
+    def validate_jwt_secret(cls, v):
+        """Reject insecure default JWT secrets."""
+        insecure_defaults = ["change-me", "INSECURE-CHANGE-ME-IN-PRODUCTION", "secret", ""]
+        if v.lower() in [s.lower() for s in insecure_defaults]:
+            raise ValueError(
+                "🚨 SECURITY ERROR: JWT secret key is using insecure default! "
+                "Set JWT_SECRET_KEY environment variable to a secure random value. "
+                "Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        if len(v) < 32:
+            raise ValueError(
+                f"🚨 SECURITY ERROR: JWT secret key too short ({len(v)} chars). "
+                "Must be at least 32 characters for security. "
+                "Generate secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+        return v
     jwt_algorithm: str = Field(default="HS256")
     jwt_access_token_ttl_seconds: int = Field(default=3600, ge=300)
     jwt_cookie_name: str = Field(default="routing_ml_session")
@@ -103,25 +124,28 @@ class Settings(BaseSettings):
         description="레거시 모델 경로"
     )
 
-    @validator(
+    @field_validator(
         "model_directory",
         "candidate_store_dir",
         "audit_log_dir",
         "model_registry_path",
         "workflow_code_dir",
-        pre=True,
+        mode="before",
     )
+    @classmethod
     def _expand_path(cls, value: Optional[Path | str]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return Path(value).expanduser().resolve()
 
-    @validator("candidate_store_dir", "audit_log_dir", "workflow_code_dir")
+    @field_validator("candidate_store_dir", "audit_log_dir", "workflow_code_dir")
+    @classmethod
     def _ensure_dir(cls, value: Path) -> Path:  # noqa: N805
         value.mkdir(parents=True, exist_ok=True)
         return value
 
-    @validator("rsl_database_url", "routing_groups_database_url")
+    @field_validator("rsl_database_url", "routing_groups_database_url")
+    @classmethod
     def _prepare_sqlite_path(cls, value: str) -> str:  # noqa: N805
         if value.startswith("sqlite:///"):
             path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
@@ -130,13 +154,15 @@ class Settings(BaseSettings):
         return value
 
 
-    @validator("model_directory", always=True)
+    @field_validator("model_directory")
+    @classmethod
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return value
 
-    @validator("model_directory")
+    @field_validator("model_directory")
+    @classmethod
     def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
         try:
             if value.exists():

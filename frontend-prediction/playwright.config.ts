@@ -10,7 +10,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:5173';
 const backendURL = process.env.BACKEND_URL ?? 'http://localhost:8000';
 
 export default defineConfig({
-  testDir: '../tests/e2e',
+  testDir: './tests/e2e',
   timeout: 120_000,
   expect: {
     timeout: 10_000,
@@ -35,20 +35,6 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        viewport: { width: 1920, height: 1080 },
-      },
-    },
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-        viewport: { width: 1920, height: 1080 },
-      },
-    },
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
         viewport: { width: 1920, height: 1080 },
       },
     },

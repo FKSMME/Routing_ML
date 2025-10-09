@@ -3,7 +3,7 @@ import type { MasterDataConnectionStatus, MasterDataLogEntry } from "@app-types/
 interface MasterDataInfoPanelProps {
   connection: MasterDataConnectionStatus;
   logs: MasterDataLogEntry[];
-  onDownloadLog: () => void;
+  onDownloadLog: (logId?: string) => void | Promise<void>;
   onRefresh?: () => void;
   onOpenConnection?: () => void;
 }
@@ -55,7 +55,7 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
                 Refresh
               </button>
             ) : null}
-            <button type="button" className="btn-secondary flex-1" onClick={onDownloadLog}>
+            <button type="button" className="btn-secondary flex-1" onClick={() => void onDownloadLog()}>
               Download log
             </button>
           </div>

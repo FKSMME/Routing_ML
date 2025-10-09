@@ -237,7 +237,7 @@ function RoutingCanvasView({
       setIsReady(true);
       ensureProfileController();
       if (autoFit) {
-        instance.fitView({ padding: fitPadding, duration: 200 });
+        instance.fitView({ padding: fitPadding, duration: 200, maxZoom: 0.8 });
         scheduleFrame(() => {
           const viewport = instance.getViewport();
           viewportRef.current = viewport;
@@ -338,7 +338,7 @@ function RoutingCanvasView({
 
   useEffect(() => {
     if (autoFit && isReady && instanceRef.current) {
-      instanceRef.current.fitView({ padding: fitPadding, duration: 200 });
+      instanceRef.current.fitView({ padding: fitPadding, duration: 200, maxZoom: 0.8 });
       scheduleFrame(() => {
         const viewport = instanceRef.current?.getViewport();
         if (viewport) {
@@ -385,7 +385,9 @@ function RoutingCanvasView({
           nodesConnectable={false}
           elementsSelectable
           proOptions={{ hideAttribution: true }}
-          fitView
+          defaultViewport={{ x: 0, y: 50, zoom: 0.8 }}
+          minZoom={0.5}
+          maxZoom={1.5}
           className="timeline-flow__reactflow"
           style={{ width: "100%", height: "100%" }}
         >

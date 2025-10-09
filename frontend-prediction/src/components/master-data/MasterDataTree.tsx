@@ -178,11 +178,11 @@ export function MasterDataTree({ nodes, query, activeId, onSelect }: MasterDataT
     async (node: TreeNodeState) => {
       updateNode(node.id, (current) => ({ ...current, isLoading: true }));
       try {
-        const response = await fetchMasterDataTree({
-          query: normalizedQuery || undefined,
-          parentId: node.id,
-          parentType: node.type,
-        });
+        const response = await fetchMasterDataTree(
+          normalizedQuery || undefined,
+          node.type,
+          node.id
+        );
         const childStates = createStateNodes(response.nodes);
         updateNode(node.id, (current) => ({
           ...current,

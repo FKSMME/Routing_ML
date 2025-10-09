@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CandidateRouting } from "@/types/routing";
+import type { CandidateRouting } from "@app-types/routing";
 import { RoutingExplanationPanel } from "./RoutingExplanationPanel";
 import "./RoutingExplanationPanel.css";
 

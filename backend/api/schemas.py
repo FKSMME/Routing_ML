@@ -211,8 +211,7 @@ class OperationStep(BaseModel):
     op_draw_no: Optional[str] = Field(None, alias="OP_DRAW_NO")
     mtmg_numb: Optional[str] = Field(None, alias="MTMG_NUMB")
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 class CandidateRouting(BaseModel):
@@ -235,8 +234,7 @@ class CandidateRouting(BaseModel):
     )
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 class RoutingSummary(BaseModel):
@@ -250,8 +248,7 @@ class RoutingSummary(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.utcnow)
     operations: List[OperationStep] = Field(default_factory=list)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 class PredictionResponse(BaseModel):
@@ -716,8 +713,7 @@ class RslStepModel(BaseModel):
     updated_at: datetime
     rules: List[RslRuleRefModel] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class RslStepCreate(BaseModel):
@@ -763,8 +759,7 @@ class RslGroupModel(BaseModel):
     updated_at: datetime
     steps: List[RslStepModel] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class RslGroupCreate(BaseModel):

@@ -75,12 +75,16 @@ def routing_api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[st
 
     client = TestClient(create_app())
 
+    # Use unique username to avoid registration conflicts
+    import uuid
+    unique_username = f"snapshot_user_{uuid.uuid4().hex[:8]}"
+
     auth_service.register(
-        RegisterRequest(username="snapshot_user", password="Secret123!", display_name="Snapshot QA"),
+        RegisterRequest(username=unique_username, password="Secret123!", display_name="Snapshot QA"),
     )
-    auth_service.approve_user("snapshot_user", make_admin=True)
+    auth_service.approve_user(unique_username, make_admin=True)
     token = auth_service.login(
-        LoginRequest(username="snapshot_user", password="Secret123!"),
+        LoginRequest(username=unique_username, password="Secret123!"),
         "testclient",
     ).token
 

@@ -1690,76 +1690,7 @@ def predict_items_with_ml_optimized(
             })
 
 
-
-    raw_candidates_df = (
-        pd.concat(raw_candidate_frames, ignore_index=True)
-        if raw_candidate_frames
-        else pd.DataFrame()
-    )
-
-
-    raw_candidates_df = (
-        pd.concat(raw_candidate_frames, ignore_index=True)
-        if raw_candidate_frames
-        else pd.DataFrame()
-    )
-
-    if not raw_candidates_df.empty:
-        raw_candidates_df = raw_candidates_df.sort_values(
-            ['ITEM_CD', 'SIMILARITY_SCORE'], ascending=[True, False]
-        )
-
-        for _, cand_row in raw_candidates_df.iterrows():
-            item_cd = cand_row.get('ITEM_CD')
-            candidate_item = cand_row.get('CANDIDATE_ITEM_CD')
-            similarity = float(cand_row.get('SIMILARITY_SCORE', 0.0))
-
-            if not item_cd or not candidate_item:
-                continue
-
-            if per_item_counts[item_cd] >= MAX_ROUTING_VARIANTS:
-                continue
-
-            routing = routing_cache.get(candidate_item)
-            if routing is None or routing.empty:
-                continue
-
-            signature = build_routing_signature(routing)
-            priority = 'primary' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'fallback'
-            candidate_index = per_item_counts[item_cd] + 1
-            candidate_id = f"{item_cd}_C{candidate_index:02d}"
-
-            normalized = normalize_routing_frame(
-                item_cd,
-                candidate_id,
-                routing,
-                similarity=similarity,
-                reference_item=candidate_item,
-                priority=priority,
-                signature=signature,
-            )
-
-            if normalized.empty:
-                continue
-
-            composed_frames.append(normalized)
-            per_item_counts[item_cd] += 1
-
-            process_count = len(normalized)
-            summary_text = f"공정 {process_count}개 / 유사도 {similarity:.2f}"
-            enhanced_candidates.append({
-                'ITEM_CD': item_cd,
-                'CANDIDATE_ITEM_CD': candidate_item,
-                'SIMILARITY_SCORE': similarity,
-                'ROUTING_SIGNATURE': signature,
-                'ROUTING_SUMMARY': summary_text,
-                'PRIORITY': priority,
-                'SIMILARITY_TIER': 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW',
-                'HAS_ROUTING': '✓ 있음',
-                'PROCESS_COUNT': process_count,
-            })
-
-
+    # Duplicate code removed (P0-2 fix): Lines 1694-1760 were identical copy of 1637-1691
     final_routing_df = (
         pd.concat(composed_frames, ignore_index=True)
         if composed_frames

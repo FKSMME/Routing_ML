@@ -1,0 +1,69 @@
+/**
+ * Dark Mode Theme Variables
+ * Tailwind와 독립적으로 로드되어 다크 모드 CSS 변수 적용
+ */
+
+html.dark {
+  /* 다크모드 primary colors */
+  --primary: hsl(199 89% 48%);
+  --primary-glow: hsl(199 89% 58%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(271 81% 56%);
+  --secondary-foreground: hsl(0 0% 100%);
+
+  /* 다크모드 그라디언트 */
+  --gradient-sky-start: 220 25% 12%;
+  --gradient-sky-mid: 220 20% 16%;
+  --gradient-sky-end: 220 18% 20%;
+  --gradient-start: hsl(220 25% 12%);
+  --gradient-mid: hsl(220 20% 16%);
+  --gradient-end: hsl(220 18% 20%);
+
+  /* 다크모드 서피스 */
+  --surface-base: 220 18% 10%;
+  --surface-raised: 220 15% 15%;
+  --surface: hsl(220 18% 10%);
+  --surface-card: hsl(220 15% 15%);
+  --surface-menu: hsl(220 18% 13%);
+  --surface-overlay: hsl(220 15% 18%);
+  --surface-weak: color-mix(in hsl, var(--surface) 85%, transparent);
+  --surface-strong: color-mix(in hsl, var(--surface-card) 90%, transparent);
+
+  /* 다크모드 배경 및 텍스트 */
+  --background: hsl(220 18% 10%);
+  --foreground: hsl(210 20% 85%);
+  --card: hsl(220 15% 15%);
+  --card-foreground: hsl(210 20% 85%);
+  --popover: hsl(220 15% 15%);
+  --popover-foreground: hsl(210 20% 85%);
+
+  /* 다크모드 보더 */
+  --border: hsl(220 15% 25%);
+  --border-strong: hsl(220 15% 30%);
+
+  /* 다크모드 액센트 */
+  --accent: hsl(199 89% 48%);
+  --accent-hover: hsl(199 89% 58%);
+  --accent-soft: hsl(199 70% 35%);
+  --accent-strong: hsl(199 89% 58%);
+
+  /* 다크모드 위험 색상 */
+  --danger-soft: hsl(0 70% 25%);
+  --danger-strong: hsl(0 84.2% 60.2%);
+
+  /* 다크모드 텍스트 */
+  --text-heading: hsl(210 20% 92%);
+  --text-primary: hsl(210 20% 85%);
+  --text-muted: hsl(210 15% 55%);
+  --text-muted-strong: hsl(210 20% 65%);
+  --text-emphasis: hsl(210 20% 95%);
+
+  /* 다크모드 네비게이션 */
+  --nav-default: hsl(210 20% 70%);
+  --nav-hover: hsl(210 20% 85%);
+  --nav-active: hsl(199 89% 58%);
+
+  /* 다크모드 입력 */
+  --input: hsl(220 15% 20%);
+  --ring: hsl(199 89% 48%);
+}

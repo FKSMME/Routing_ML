@@ -1,6 +1,6 @@
-﻿import { LogOut } from "lucide-react";
+﻿import { LogOut, Home } from "lucide-react";
 import { useAuthStore } from "@store/authStore";
-import { DarkModeToggle } from "./DarkModeToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { AnimatedLogo3D } from "./AnimatedLogo3D";
 
 interface HeaderProps {
@@ -36,7 +36,15 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
             <p className="text-sm font-medium text-foreground">{displayName || username}</p>
             <p className="text-xs text-muted">{username}</p>
           </div>
-          <DarkModeToggle />
+          <ThemeToggle />
+          <a
+            href="http://localhost:3000"
+            className="btn-secondary flex items-center gap-2"
+            title="홈으로"
+          >
+            <Home size={16} />
+            <span>홈</span>
+          </a>
           <button onClick={onRefresh} disabled={loading} className="btn-primary">
             {loading ? "새로고침 중..." : "새로 고침"}
           </button>

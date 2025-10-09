@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import { bypassAuth } from './helpers/auth';
 
 const FRONTENDS = [
-  { name: 'Prediction', url: 'http://localhost:5174' },
-  { name: 'Training', url: 'http://localhost:5175' }
+  { name: 'Prediction', url: 'http://localhost:5173' },
+  { name: 'Training', url: 'http://localhost:5174' }
 ];
 
 test.describe('다크모드/라이트모드 전환 테스트', () => {

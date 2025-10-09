@@ -1228,8 +1228,24 @@ def fetch_purchase_order_items() -> pd.DataFrame:
         pd.DataFrame: 발주 품목 목록 (ITEM_CD, PO_NO, PO_DATE, QTY 등)
     """
     if VIEW_PURCHASE_ORDER is None:
-        logger.warning("[DB] BI_PUR_PO_VIEW는 MSSQL 모드에서만 사용 가능합니다")
-        return pd.DataFrame()
+        logger.warning("[DB] BI_PUR_PO_VIEW는 MSSQL 모드에서만 사용 가능합니다 - 데모 데이터 반환")
+        # 데모 모드: 생산 접수된 품목 샘플 반환
+        from datetime import datetime, timedelta
+        demo_items = []
+        base_date = datetime.now() - timedelta(days=7)
+
+        for i, item_cd in enumerate(['ITEM-001', 'ITEM-002', 'ITEM-003', 'ITEM-004', 'ITEM-005']):
+            demo_items.append({
+                'ITEM_CD': item_cd,
+                'PO_NO': f'PO-2024-{1000+i:04d}',
+                'PO_DATE': (base_date + timedelta(days=i)).strftime('%Y-%m-%d'),
+                'QTY': (i + 1) * 100,
+                'UNIT_PRICE': 50000 + (i * 10000),
+                'VENDOR_CD': f'V{i+1:03d}',
+                'VENDOR_NM': f'공급업체{i+1}'
+            })
+
+        return pd.DataFrame(demo_items)
 
     query = f"""
         SELECT DISTINCT
@@ -1383,11 +1399,11 @@ atexit.register(cleanup_connections)
 
 def get_db_connection():
     """
-    FastAPI 의존성으로 사용할 데이터베이스 연결 제공.
-    
+    FastAPI 의존성으로 사용할 데이터베이스 연결 제공 (pyodbc).
+
     Yields:
         pyodbc.Connection: 데이터베이스 연결
-        
+
     Example:
         @app.get("/items")
         def get_items(conn = Depends(get_db_connection)):
@@ -1396,3 +1412,27 @@ def get_db_connection():
     """
     with _connection_pool.get_connection() as conn:
         yield conn
+
+
+def get_session():
+    """
+    FastAPI 의존성으로 사용할 SQLAlchemy Session 제공.
+
+    RSL 데이터베이스의 session factory를 사용합니다.
+
+    Yields:
+        sqlalchemy.orm.Session: SQLAlchemy 세션
+
+    Example:
+        @app.get("/data-quality/metrics")
+        async def get_metrics(session: Session = Depends(get_session)):
+            return await data_quality_service.get_metrics(session)
+    """
+    from backend.database_rsl import get_session_factory
+
+    session_factory = get_session_factory()
+    session = session_factory()
+    try:
+        yield session
+    finally:
+        session.close()
