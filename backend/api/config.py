@@ -5,17 +5,19 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """환경 변수 기반 설정."""
 
-    class Config:
-        env_prefix = ""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "allow"
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
 
     model_directory: Optional[Path] = Field(
         default=None,
