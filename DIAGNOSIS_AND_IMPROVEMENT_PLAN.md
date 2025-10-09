@@ -282,11 +282,11 @@ logger = get_logger(__name__, level=logging.DEBUG)
 - [x] 3.4 Document MSSQL migration path (docs/MSSQL_MIGRATION.md)
 - [x] 3.5 Data quality routes verified active (backend/api/app.py:22,57)
 
-### Phase 4: Infrastructure (Week 6-7) 🔄 PARTIALLY DONE
+### Phase 4: Infrastructure (Week 6-7) 🔄 IN PROGRESS
 - [x] 4.1 Create `scripts/run_ci.sh` for test pipeline (commit: 7343e84)
 - [ ] 4.2 Add Vitest for frontend testing
 - [ ] 4.3 Add Playwright for E2E testing
-- [ ] 4.4 Set up Docker Compose
+- [x] 4.4 Set up Docker Compose (docs/DOCKER_DEPLOYMENT.md - 650 lines)
 - [ ] 4.5 Implement JSON structured logging
 
 ### Phase 5: Monitoring & Security (Week 8)
