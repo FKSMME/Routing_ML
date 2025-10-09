@@ -14,6 +14,10 @@ import ReactFlow, {
   ConnectionMode,
   Handle,
   type NodeProps,
+  applyNodeChanges,
+  applyEdgeChanges,
+  type NodeChange,
+  type EdgeChange,
 } from 'reactflow';
 import { FilePropertyModal } from '../modals/FilePropertyModal';
 import axios from 'axios';
@@ -123,6 +127,40 @@ interface FileFlowDefinition {
 }
 
 const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
+  'train_model.py': {
+    summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
+    steps: [
+      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'Access · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
+      { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
+      { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
+      { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
+      { id: 'export', label: '모델 아티팩트 저장', position: { x: 700, y: 0 }, description: '모델 가중치와 메타데이터를 S3/로컬에 저장합니다.' },
+    ],
+    edges: [
+      { source: 'data-ingest', target: 'feature-build', label: '데이터프레임' },
+      { source: 'data-ingest', target: 'normalize', label: '스케일링 입력' },
+      { source: 'feature-build', target: 'train', label: '피처 세트' },
+      { source: 'normalize', target: 'train', label: '정규화 값' },
+      { source: 'train', target: 'export', label: '학습 결과' },
+    ],
+  },
+  'trainer_ml.py': {
+    summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
+    steps: [
+      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'Access · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
+      { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
+      { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
+      { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
+      { id: 'export', label: '모델 아티팩트 저장', position: { x: 700, y: 0 }, description: '모델 가중치와 메타데이터를 S3/로컬에 저장합니다.' },
+    ],
+    edges: [
+      { source: 'data-ingest', target: 'feature-build', label: '데이터프레임' },
+      { source: 'data-ingest', target: 'normalize', label: '스케일링 입력' },
+      { source: 'feature-build', target: 'train', label: '피처 세트' },
+      { source: 'normalize', target: 'train', label: '정규화 값' },
+      { source: 'train', target: 'export', label: '학습 결과' },
+    ],
+  },
   '1': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
@@ -257,11 +295,80 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
   const [modalFileInfo, setModalFileInfo] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'static' | 'dynamic'>('static'); // 'static' = Rainbow Balls, 'dynamic' = Real AST
+  const [viewMode, setViewMode] = useState<'static' | 'dynamic' | 'summary'>('static'); // 'static' = Rainbow Balls, 'dynamic' = Real AST
 
-  // Load Python files from API
+  // Load Python files from API or use hardcoded list for Rainbow mode
   useEffect(() => {
     const fetchFiles = async () => {
+      // Rainbow mode: Show only the 6 hardcoded files
+      if (viewMode === 'static') {
+        const hardcodedFiles: PythonFile[] = [
+          {
+            id: 'trainer_ml',
+            name: 'trainer_ml.py',
+            path: 'backend/trainer_ml.py',
+            full_path: '/workspaces/Routing_ML_4/backend/trainer_ml.py',
+            size: 58301,
+            functions: 32,
+            classes: 0,
+            type: 'training',
+          },
+          {
+            id: 'training_service',
+            name: 'training_service.py',
+            path: 'backend/api/services/training_service.py',
+            full_path: '/workspaces/Routing_ML_4/backend/api/services/training_service.py',
+            size: 25600,
+            functions: 17,
+            classes: 0,
+            type: 'training',
+          },
+          {
+            id: 'predictor_ml',
+            name: 'predictor_ml.py',
+            path: 'backend/predictor_ml.py',
+            full_path: '/workspaces/Routing_ML_4/backend/predictor_ml.py',
+            size: 77278,
+            functions: 51,
+            classes: 0,
+            type: 'prediction',
+          },
+          {
+            id: 'prediction_service',
+            name: 'prediction_service.py',
+            path: 'backend/api/services/prediction_service.py',
+            full_path: '/workspaces/Routing_ML_4/backend/api/services/prediction_service.py',
+            size: 42100,
+            functions: 56,
+            classes: 0,
+            type: 'prediction',
+          },
+          {
+            id: 'database',
+            name: 'database.py',
+            path: 'backend/database.py',
+            full_path: '/workspaces/Routing_ML_4/backend/database.py',
+            size: 49880,
+            functions: 54,
+            classes: 0,
+            type: 'common',
+          },
+          {
+            id: 'feature_weights',
+            name: 'feature_weights.py',
+            path: 'backend/feature_weights.py',
+            full_path: '/workspaces/Routing_ML_4/backend/feature_weights.py',
+            size: 27911,
+            functions: 24,
+            classes: 0,
+            type: 'common',
+          },
+        ];
+        setPythonFiles(hardcodedFiles);
+        return;
+      }
+
+      // AST Analysis and Summary modes: Load from API
       try {
         const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/files`, {
           params: {
@@ -276,7 +383,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     };
 
     fetchFiles();
-  }, []);
+  }, [viewMode]);
 
   // Analyze file and create nodes/edges
   const handleAnalyze = useCallback(async () => {
@@ -437,7 +544,12 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
   }, [searchQuery]);
 
   // Static mode: Use FLOW_LIBRARY for rainbow balls animation
-  const flowDefinition = selectedFileId ? FLOW_LIBRARY[selectedFileId] : undefined;
+  const flowDefinition = useMemo(() => {
+    if (!selectedFile) return undefined;
+
+    // Try filename first, then ID
+    return FLOW_LIBRARY[selectedFile.name] || FLOW_LIBRARY[selectedFile.id] || undefined;
+  }, [selectedFile]);
 
   const staticNodes = useMemo<Node[]>(() => {
     if (viewMode !== 'static' || !flowDefinition) return [];
@@ -497,11 +609,17 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     setSelectedFile(file);
     setSelectedFileId(file.id);
 
+    // Clear dynamic nodes when switching files
+    if (viewMode === 'dynamic') {
+      setNodes([]);
+      setEdges([]);
+    }
+
     // In static mode, show nodes immediately
     if (viewMode === 'static') {
       setTimeout(() => {
         reactFlowInstance?.fitView({ padding: 0.2 });
-      }, 0);
+      }, 100);
     }
   };
 
@@ -625,6 +743,66 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
               >
                 🔬 AST Analysis
               </button>
+              <button
+                onClick={async () => {
+                  setViewMode('summary');
+                  setIsAnalyzing(true);
+                  try {
+                    const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/summary`);
+                    const apiNodes: Node[] = response.data.nodes;
+                    const apiEdges: Edge[] = response.data.edges;
+
+                    const summaryNodes: Node[] = apiNodes.map((node: any) => ({
+                      id: node.id,
+                      type: 'default',
+                      position: node.position,
+                      data: { label: node.data.label, description: node.data.description },
+                      style: {
+                        background: node.data.category === 'training'
+                          ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
+                          : node.data.category === 'prediction'
+                          ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                          : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                        border: '2px solid rgba(148, 163, 184, 0.3)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        color: '#e2e8f0',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        minWidth: '180px',
+                      },
+                    }));
+
+                    const summaryEdges: Edge[] = apiEdges.map((edge: any) => ({
+                      id: edge.id,
+                      source: edge.source,
+                      target: edge.target,
+                      label: edge.label,
+                      animated: true,
+                      style: { stroke: '#38bdf8', strokeWidth: 2 },
+                    }));
+
+                    setNodes(summaryNodes);
+                    setEdges(summaryEdges);
+
+                    setTimeout(() => {
+                      reactFlowInstance?.fitView({ padding: 0.3 });
+                    }, 100);
+                  } catch (error) {
+                    console.error('Failed to load project summary:', error);
+                    alert('프로젝트 Summary 로드 실패');
+                  } finally {
+                    setIsAnalyzing(false);
+                  }
+                }}
+                className={`px-3 py-1 text-xs rounded transition-all ${
+                  viewMode === 'summary'
+                    ? 'bg-purple-500/30 text-purple-300 font-semibold'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                📊 Summary
+              </button>
             </div>
           </div>
 
@@ -686,39 +864,28 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
 
         {/* 캔버스 영역 */}
         <div className="canvas-container flex-1 relative bg-gradient-to-br from-slate-950 to-slate-900">
-          {(viewMode === 'static' && staticNodes.length > 0) || (viewMode === 'dynamic' && nodes.length > 0) ? (
+          {(viewMode === 'static' && staticNodes.length > 0) || ((viewMode === 'dynamic' || viewMode === 'summary') && nodes.length > 0) ? (
             <ReactFlowProvider>
               <ReactFlow
                 nodes={viewMode === 'static' ? staticNodes : nodes}
                 edges={viewMode === 'static' ? staticEdges : edges}
-                onNodesChange={(changes) => {
-                  setNodes((nds) => {
-                    const newNodes = [...nds];
-                    changes.forEach((change) => {
-                      if (change.type === 'position' && change.position) {
-                        const nodeIndex = newNodes.findIndex((n) => n.id === change.id);
-                        if (nodeIndex !== -1) {
-                          newNodes[nodeIndex] = {
-                            ...newNodes[nodeIndex],
-                            position: change.position,
-                          };
-                        }
-                      }
-                    });
-                    return newNodes;
-                  });
-                }}
-                onEdgesChange={(changes) => {
-                  setEdges((eds) => {
-                    return eds.filter((edge) => {
-                      const removeChange = changes.find(
-                        (c) => c.type === 'remove' && c.id === edge.id
-                      );
-                      return !removeChange;
-                    });
-                  });
-                }}
-                onConnect={handleConnect}
+                onNodesChange={
+                  viewMode === 'dynamic'
+                    ? useCallback(
+                        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+                        []
+                      )
+                    : undefined
+                }
+                onEdgesChange={
+                  viewMode === 'dynamic'
+                    ? useCallback(
+                        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+                        []
+                      )
+                    : undefined
+                }
+                onConnect={viewMode === 'dynamic' ? handleConnect : undefined}
                 onNodeDoubleClick={handleNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 connectionMode={ConnectionMode.Loose}

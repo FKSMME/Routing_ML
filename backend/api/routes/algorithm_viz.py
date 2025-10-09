@@ -126,6 +126,162 @@ async def get_python_files(
         raise HTTPException(status_code=500, detail=f"파일 목록 조회 실패: {str(e)}")
 
 
+@router.get("/summary", response_model=AnalysisResponse)
+async def get_project_summary() -> AnalysisResponse:
+    """
+    전체 프로젝트의 파일 간 관계를 요약하여 반환합니다.
+
+    Returns:
+        프로젝트 전체 구조를 나타내는 노드/엣지
+    """
+    try:
+        # 주요 파일들의 관계 정의 (하드코딩)
+        nodes: list[NodeData] = []
+        edges: list[EdgeData] = []
+
+        # Training 파이프라인 노드들
+        nodes.append(NodeData(
+            id="trainer_ml",
+            type="module",
+            position={"x": 100, "y": 100},
+            data={
+                "label": "trainer_ml.py",
+                "type": "module",
+                "description": "모델 학습 메인 모듈 (32 functions)",
+                "category": "training"
+            }
+        ))
+
+        nodes.append(NodeData(
+            id="training_service",
+            type="module",
+            position={"x": 400, "y": 100},
+            data={
+                "label": "training_service.py",
+                "type": "module",
+                "description": "학습 서비스 API (17 functions)",
+                "category": "training"
+            }
+        ))
+
+        # Prediction 파이프라인 노드들
+        nodes.append(NodeData(
+            id="predictor_ml",
+            type="module",
+            position={"x": 100, "y": 300},
+            data={
+                "label": "predictor_ml.py",
+                "type": "module",
+                "description": "예측 메인 모듈 (51 functions)",
+                "category": "prediction"
+            }
+        ))
+
+        nodes.append(NodeData(
+            id="prediction_service",
+            type="module",
+            position={"x": 400, "y": 300},
+            data={
+                "label": "prediction_service.py",
+                "type": "module",
+                "description": "예측 서비스 API (56 functions)",
+                "category": "prediction"
+            }
+        ))
+
+        # 공통 모듈들
+        nodes.append(NodeData(
+            id="database",
+            type="module",
+            position={"x": 700, "y": 200},
+            data={
+                "label": "database.py",
+                "type": "module",
+                "description": "데이터베이스 연결/쿼리 (54 functions)",
+                "category": "common"
+            }
+        ))
+
+        nodes.append(NodeData(
+            id="feature_weights",
+            type="module",
+            position={"x": 250, "y": 500},
+            data={
+                "label": "feature_weights.py",
+                "type": "module",
+                "description": "피처 중요도 분석 (24 functions)",
+                "category": "common"
+            }
+        ))
+
+        # 엣지 (파일 간 관계)
+        edges.append(EdgeData(
+            id="trainer-training_service",
+            source="trainer_ml",
+            target="training_service",
+            label="API 호출",
+            animated=True
+        ))
+
+        edges.append(EdgeData(
+            id="predictor-prediction_service",
+            source="predictor_ml",
+            target="prediction_service",
+            label="API 호출",
+            animated=True
+        ))
+
+        edges.append(EdgeData(
+            id="training_service-database",
+            source="training_service",
+            target="database",
+            label="DB 조회",
+            animated=True
+        ))
+
+        edges.append(EdgeData(
+            id="prediction_service-database",
+            source="prediction_service",
+            target="database",
+            label="DB 조회",
+            animated=True
+        ))
+
+        edges.append(EdgeData(
+            id="trainer-feature_weights",
+            source="trainer_ml",
+            target="feature_weights",
+            label="피처 분석",
+            animated=True
+        ))
+
+        edges.append(EdgeData(
+            id="predictor-feature_weights",
+            source="predictor_ml",
+            target="feature_weights",
+            label="피처 사용",
+            animated=True
+        ))
+
+        return AnalysisResponse(
+            file_path="PROJECT_SUMMARY",
+            nodes=nodes,
+            edges=edges,
+            raw_analysis=FileAnalysis(
+                file_path="PROJECT_SUMMARY",
+                functions=[],
+                classes=[],
+                calls=[],
+                imports=[],
+                errors=[]
+            )
+        )
+
+    except Exception as e:
+        logger.error(f"프로젝트 요약 생성 오류: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"프로젝트 요약 생성 실패: {str(e)}")
+
+
 @router.get("/analyze", response_model=AnalysisResponse)
 async def analyze_file(
     file_path: str = Query(..., description="분석할 Python 파일 절대 경로")
