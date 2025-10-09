@@ -1,26 +1,4 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  LinearProgress,
-  Alert,
-  Chip,
-  Stack,
-  Divider,
-  FormControlLabel,
-  Switch,
-} from '@mui/material';
-import {
-  PlayArrow as PlayIcon,
-  Refresh as RefreshIcon,
-  CheckCircle as SuccessIcon,
-  Error as ErrorIcon,
-  Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface TrainingStatus {
@@ -78,174 +56,171 @@ export const ModelTrainingPanel: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'success';
+        return 'bg-green-500 text-white';
       case 'running':
-        return 'primary';
+        return 'bg-blue-500 text-white';
       case 'failed':
-        return 'error';
+        return 'bg-red-500 text-white';
       default:
-        return 'default';
+        return 'bg-gray-500 text-white';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <SuccessIcon />;
-      case 'running':
-        return <ScheduleIcon />;
-      case 'failed':
-        return <ErrorIcon />;
-      default:
-        return null;
-    }
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     fetchStatus();
   }, []);
 
   return (
-    <Card sx={{ maxWidth: 800, mx: 'auto', my: 3 }}>
-      <CardContent>
-        <Typography variant="h5" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          🤖 모델 학습
-        </Typography>
-        <Divider sx={{ my: 2 }} />
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            🤖 모델 학습
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            새로운 라우팅 모델을 학습하고 배포합니다
+          </p>
+        </div>
+
+        <hr className="my-4 border-gray-200 dark:border-gray-700" />
 
         {/* Training Controls */}
-        <Stack spacing={2}>
-          <TextField
-            label="모델 버전 이름 (선택사항)"
-            placeholder="v2.0.0 또는 비워두면 자동 생성"
-            value={versionLabel}
-            onChange={(e) => setVersionLabel(e.target.value)}
-            fullWidth
-            size="small"
-          />
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              모델 버전 이름 (선택사항)
+            </label>
+            <input
+              type="text"
+              placeholder="v2.0.0 또는 비워두면 자동 생성"
+              value={versionLabel}
+              onChange={(e) => setVersionLabel(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={dryRun}
-                onChange={(e) => setDryRun(e.target.checked)}
-              />
-            }
-            label="테스트 모드 (Dry Run)"
-          />
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="dry-run"
+              checked={dryRun}
+              onChange={(e) => setDryRun(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="dry-run" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+              테스트 모드 (Dry Run)
+            </label>
+          </div>
 
-          <Stack direction="row" spacing={2}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<PlayIcon />}
+          <div className="flex gap-2">
+            <button
               onClick={startTraining}
               disabled={loading || status?.status === 'running'}
-              fullWidth
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700
+                disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {loading ? '시작 중...' : '학습 시작'}
-            </Button>
+              {loading ? '시작 중...' : '▶ 학습 시작'}
+            </button>
 
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
+            <button
               onClick={fetchStatus}
               disabled={loading}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md
+                hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
-              상태 갱신
-            </Button>
-          </Stack>
+              🔄 상태 갱신
+            </button>
+          </div>
 
           {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+            </div>
           )}
-        </Stack>
+        </div>
 
         {/* Training Status */}
         {status && (
-          <Box sx={{ mt: 3 }}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              학습 상태
-            </Typography>
+          <div className="mt-6 space-y-4">
+            <hr className="my-4 border-gray-200 dark:border-gray-700" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">학습 상태</h3>
 
-            <Stack spacing={2}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Chip
-                  label={status.status}
-                  color={getStatusColor(status.status) as any}
-                  icon={getStatusIcon(status.status)}
-                  size="small"
-                />
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(status.status)}`}>
+                  {status.status}
+                </span>
                 {status.job_id && (
-                  <Typography variant="caption" color="text.secondary">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     Job ID: {status.job_id}
-                  </Typography>
+                  </span>
                 )}
-              </Box>
+              </div>
 
               {status.progress > 0 && (
-                <Box>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    진행률: {status.progress}%
-                  </Typography>
-                  <LinearProgress variant="determinate" value={status.progress} />
-                </Box>
+                <div>
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span>진행률</span>
+                    <span>{status.progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${status.progress}%` }}
+                    />
+                  </div>
+                </div>
               )}
 
               {status.message && (
-                <Alert severity="info">{status.message}</Alert>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">{status.message}</p>
+                </div>
               )}
 
               {status.started_at && (
-                <Typography variant="body2" color="text.secondary">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   시작: {new Date(status.started_at).toLocaleString('ko-KR')}
-                </Typography>
+                </p>
               )}
 
               {status.finished_at && (
-                <Typography variant="body2" color="text.secondary">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   완료: {new Date(status.finished_at).toLocaleString('ko-KR')}
-                </Typography>
+                </p>
               )}
 
               {status.version_path && (
-                <Alert severity="success">
-                  모델 저장 위치: {status.version_path}
-                </Alert>
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                  <p className="text-sm text-green-800 dark:text-green-300">
+                    ✅ 모델 저장 위치: {status.version_path}
+                  </p>
+                </div>
               )}
 
               {Object.keys(status.metrics).length > 0 && (
-                <Box>
-                  <Typography variant="body2" fontWeight="bold" gutterBottom>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     학습 메트릭:
-                  </Typography>
-                  <Box
-                    sx={{
-                      bgcolor: 'background.paper',
-                      p: 1,
-                      borderRadius: 1,
-                      fontFamily: 'monospace',
-                      fontSize: '0.875rem',
-                    }}
-                  >
-                    <pre>{JSON.stringify(status.metrics, null, 2)}</pre>
-                  </Box>
-                </Box>
+                  </p>
+                  <pre className="bg-gray-50 dark:bg-gray-900 p-3 rounded-md text-xs overflow-x-auto">
+                    {JSON.stringify(status.metrics, null, 2)}
+                  </pre>
+                </div>
               )}
-            </Stack>
-          </Box>
+            </div>
+          </div>
         )}
 
         {/* Usage Instructions */}
-        <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            💡 <strong>사용 방법:</strong>
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            <strong>💡 사용 방법:</strong>
             <br />
             1. 모델 버전 이름을 입력하거나 비워두면 타임스탬프로 자동 생성됩니다
             <br />
@@ -254,9 +229,9 @@ export const ModelTrainingPanel: React.FC = () => {
             3. '학습 시작' 버튼을 클릭하여 새 모델을 학습합니다
             <br />
             4. 학습이 완료되면 자동으로 활성화되어 예측 API에서 사용됩니다
-          </Typography>
-        </Box>
-      </CardContent>
-    </Card>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
