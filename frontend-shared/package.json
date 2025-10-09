@@ -1,0 +1,22 @@
+{
+  "name": "@routing-ml/shared",
+  "version": "1.0.0",
+  "description": "Shared components and utilities for Routing ML frontends",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "axios": "^1.6.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.55",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  }
+}

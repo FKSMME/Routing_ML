@@ -26,6 +26,7 @@ from backend.api.routes.health import router as health_router
 from backend.api.routes.items import router as items_router
 from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
+from backend.api.routes.metrics import router as metrics_router
 from backend.api.routes.onprem_nlp import router as onprem_nlp_router
 from backend.api.routes.prediction import router as prediction_router
 from backend.api.routes.routing import router as routing_router
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health_router)
+    app.include_router(metrics_router)  # Prometheus metrics
     app.include_router(drift_router)
     app.include_router(auth_router)
     app.include_router(logs_router)
