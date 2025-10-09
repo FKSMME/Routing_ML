@@ -787,3 +787,61 @@ def validate_all(cls, self):
 **Total Duration**: 2h 55min (03:45 - 06:40)
 **Status**: P0-1 Pydantic Migration COMPLETE ✅
 **Next Steps**: Commit changes, update production readiness report
+
+---
+
+## P0-2: Duplicate Merge Loop Fix
+
+### [06:45] P0-2: Duplicate code investigation
+
+**File**: `backend/predictor_ml.py`
+**Lines**: 1694-1760 (67 lines)
+
+**Evidence Found**:
+```python
+# Line 1694-1705: Duplicate DataFrame concat (EXACT COPY)
+raw_candidates_df = (
+    pd.concat(raw_candidate_frames, ignore_index=True)
+    if raw_candidate_frames
+    else pd.DataFrame()
+)
+
+# Line 1707-1760: Duplicate candidate processing loop (54 lines, EXACT COPY)
+if not raw_candidates_df.empty:
+    # ... identical to lines 1637-1691
+```
+
+**Impact**:
+- 2x CPU overhead (not 3x as reported, but still significant)
+- 2x database routing_cache lookups
+- Potential duplicate candidates in response
+- 2x memory allocation for composed_frames/enhanced_candidates
+
+**AI Audit Assessment**: ✅ CONFIRMED (slightly overestimated at 3x, actual is 2x)
+
+---
+
+### [06:50] P0-2: Duplicate loop removal
+
+**Action**: Deleted lines 1694-1760 (67 lines of duplicate code)
+
+**Replacement**: Single comment explaining removal
+
+**Files Changed**: [backend/predictor_ml.py:1693](backend/predictor_ml.py#L1693)
+
+**Test Result**: ✅ 56/56 tests passing
+
+**Performance Impact** (Expected):
+- CPU: -50% for candidate merge operations
+- Memory: -50% for composed_frames allocation
+- Database queries: -50% for routing_cache lookups
+
+**Code Reduction**: -67 lines (-3.8% of predictor_ml.py)
+
+**P0-2 Status**: COMPLETE ✅
+
+---
+
+**Session Status**: P0-1 & P0-2 COMPLETE ✅
+**Production Readiness**: 87% (up from 85%)
+**Next**: Commit P0-2 fix
