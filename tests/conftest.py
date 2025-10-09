@@ -2,9 +2,11 @@ import os
 import sys
 from pathlib import Path
 
+# Get repo root for model directory configuration
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.append(str(REPO_ROOT))
+
+# DO NOT add REPO_ROOT to sys.path - this causes numpy import errors
+# pytest --import-mode=importlib handles imports correctly without it
 
 # Set test environment variables before importing config
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-pytest-only-do-not-use-in-production-min-32-chars-long"

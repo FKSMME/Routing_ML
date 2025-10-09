@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, memo } from 'react';
 import { FileCode, Play, Save, RotateCcw } from 'lucide-react';
 import ReactFlow, {
   Background,
@@ -9,24 +9,105 @@ import ReactFlow, {
   type Node,
   type ReactFlowInstance,
   Position,
+  addEdge,
+  Connection,
+  ConnectionMode,
+  Handle,
+  type NodeProps,
 } from 'reactflow';
 import { FilePropertyModal } from '../modals/FilePropertyModal';
+import axios from 'axios';
+import dagre from 'dagre';
 
 interface PythonFile {
   id: string;
   name: string;
   path: string;
+  full_path?: string;
   type: 'training' | 'prediction' | 'preprocessing' | 'utility';
+  functions?: number;
+  classes?: number;
 }
 
-const PYTHON_FILES: PythonFile[] = [
-  { id: '1', name: 'train_model.py', path: 'backend/training/train_model.py', type: 'training' },
-  { id: '2', name: 'prediction.py', path: 'backend/api/prediction.py', type: 'prediction' },
-  { id: '3', name: 'preprocessing.py', path: 'backend/data/preprocessing.py', type: 'preprocessing' },
-  { id: '4', name: 'feature_engineering.py', path: 'backend/data/feature_engineering.py', type: 'preprocessing' },
-  { id: '5', name: 'model_utils.py', path: 'backend/utils/model_utils.py', type: 'utility' },
-  { id: '6', name: 'data_loader.py', path: 'backend/data/data_loader.py', type: 'utility' },
-];
+interface FunctionNodeData {
+  label: string;
+  type: 'function' | 'class' | 'method';
+  params?: string[];
+  returns?: string;
+  docstring?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  sourceCode?: string;
+}
+
+interface APINode {
+  id: string;
+  label: string;
+  type: 'function' | 'class' | 'method';
+  params: string[];
+  returns: string;
+  docstring: string;
+  lineStart: number;
+  lineEnd: number;
+  sourceCode: string;
+}
+
+interface APIEdge {
+  source: string;
+  target: string;
+  label?: string;
+}
+
+const API_BASE_URL = 'http://localhost:8000';
+
+// 커스텀 노드 컴포넌트
+const FunctionNode = memo(({ data }: NodeProps<FunctionNodeData>) => {
+  const isClass = data.type === 'class';
+  const isMethod = data.type === 'method';
+
+  return (
+    <div
+      className={`px-4 py-3 rounded-xl border-2 shadow-lg min-w-[200px] max-w-[280px]
+        ${isClass
+          ? 'bg-gradient-to-br from-emerald-900/90 to-emerald-950/90 border-emerald-500/50'
+          : 'bg-gradient-to-br from-blue-900/90 to-blue-950/90 border-blue-500/50'}`}
+    >
+      <Handle type="target" position={Position.Left} className="w-3 h-3 bg-sky-400" />
+
+      <div className="space-y-1">
+        <div className={`text-sm font-bold ${isClass ? 'text-emerald-200' : 'text-blue-200'}`}>
+          {isMethod && <span className="text-xs mr-1">📎</span>}
+          {data.label}
+        </div>
+
+        {data.params && data.params.length > 0 && (
+          <div className="text-xs text-slate-300 space-y-0.5">
+            {data.params.map((param, idx) => (
+              <div key={idx} className="truncate">
+                <span className="text-sky-300">• </span>
+                {param}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {data.returns && (
+          <div className="text-xs text-slate-400 mt-1">
+            → {data.returns}
+          </div>
+        )}
+      </div>
+
+      <Handle type="source" position={Position.Right} className="w-3 h-3 bg-sky-400" />
+    </div>
+  );
+});
+
+FunctionNode.displayName = 'FunctionNode';
+
+const nodeTypes = {
+  functionNode: FunctionNode,
+};
 
 type FlowStep = {
   id: string;
@@ -134,33 +215,233 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   },
 };
 
+// Dagre 레이아웃 함수
+const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({ rankdir: 'LR', ranksep: 150, nodesep: 80 });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: 240, height: 100 });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - 120,
+        y: nodeWithPosition.y - 50,
+      },
+    };
+  });
+
+  return { nodes: layoutedNodes, edges };
+};
+
 export const AlgorithmVisualizationWorkspace: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  // State
+  const [pythonFiles, setPythonFiles] = useState<PythonFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<PythonFile | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null); // For static mode
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalFileInfo, setModalFileInfo] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'static' | 'dynamic'>('static'); // 'static' = Rainbow Balls, 'dynamic' = Real AST
 
-  const getFileTypeColor = (type: PythonFile['type']) => {
-    switch (type) {
-      case 'training':
-        return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
-      case 'prediction':
-        return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-      case 'preprocessing':
-        return 'bg-purple-500/10 border-purple-500/30 text-purple-400';
-      case 'utility':
-        return 'bg-amber-500/10 border-amber-500/30 text-amber-400';
-      default:
-        return 'bg-slate-500/10 border-slate-500/30 text-slate-400';
+  // Load Python files from API
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/files`, {
+          params: {
+            directory: 'backend',
+            include_training: true,
+          },
+        });
+        setPythonFiles(response.data);
+      } catch (error) {
+        console.error('Failed to fetch Python files:', error);
+      }
+    };
+
+    fetchFiles();
+  }, []);
+
+  // Analyze file and create nodes/edges
+  const handleAnalyze = useCallback(async () => {
+    if (!selectedFile) return;
+
+    setIsAnalyzing(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/analyze`, {
+        params: {
+          file_path: selectedFile.full_path || selectedFile.path,
+        },
+      });
+
+      console.log('API Response:', response.data);
+
+      // API already returns nodes in React Flow format
+      const apiNodes: Node[] = response.data.nodes;
+      const apiEdges: Edge[] = response.data.edges;
+
+      if (!apiNodes || apiNodes.length === 0) {
+        alert('이 파일에는 분석할 함수나 클래스가 없습니다.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Convert to our custom node type
+      const flowNodes: Node<FunctionNodeData>[] = apiNodes.map((node: any) => ({
+        id: node.id,
+        type: 'functionNode',
+        position: node.position || { x: 0, y: 0 },
+        data: {
+          label: node.data.label,
+          type: node.data.type,
+          params: node.data.parameters || [],
+          returns: node.data.returnType,
+          docstring: node.data.docstring,
+          lineStart: node.data.lineStart,
+          lineEnd: node.data.lineEnd,
+          sourceCode: node.data.sourceCode,
+        },
+      }));
+
+      // API edges are already in correct format
+      const flowEdges: Edge[] = apiEdges.map((edge: any) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        label: edge.label,
+        type: 'smoothstep',
+        animated: edge.animated || true,
+        style: { stroke: '#38bdf8', strokeWidth: 2 },
+      }));
+
+      console.log(`Created ${flowNodes.length} nodes and ${flowEdges.length} edges`);
+
+      // Apply dagre layout
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        flowNodes,
+        flowEdges
+      );
+
+      // Check if there's saved layout in localStorage
+      const savedLayout = localStorage.getItem(`layout-${selectedFile.path}`);
+      if (savedLayout) {
+        try {
+          const savedPositions = JSON.parse(savedLayout);
+          layoutedNodes.forEach((node) => {
+            if (savedPositions[node.id]) {
+              node.position = savedPositions[node.id];
+            }
+          });
+        } catch (e) {
+          console.warn('Failed to load saved layout:', e);
+        }
+      }
+
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+
+      setTimeout(() => {
+        reactFlowInstance?.fitView({ padding: 0.2 });
+      }, 100);
+    } catch (error: any) {
+      console.error('Failed to analyze file:', error);
+      alert(`파일 분석 중 오류가 발생했습니다: ${error.message}`);
+    } finally {
+      setIsAnalyzing(false);
     }
-  };
+  }, [selectedFile, reactFlowInstance]);
 
-  const flowDefinition = selectedFile ? FLOW_LIBRARY[selectedFile] : undefined;
+  // Save layout to localStorage
+  const handleSaveLayout = useCallback(() => {
+    if (!selectedFile || nodes.length === 0) return;
 
-  const flowNodes = useMemo<Node[]>(() => {
-    if (!flowDefinition) {
-      return [];
+    const positions: Record<string, { x: number; y: number }> = {};
+    nodes.forEach((node) => {
+      positions[node.id] = node.position;
+    });
+
+    localStorage.setItem(`layout-${selectedFile.path}`, JSON.stringify(positions));
+    alert('레이아웃이 저장되었습니다.');
+  }, [selectedFile, nodes]);
+
+  // Reset layout to dagre default
+  const handleResetLayout = useCallback(() => {
+    if (!selectedFile || nodes.length === 0) return;
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+
+    // Remove saved layout
+    localStorage.removeItem(`layout-${selectedFile.path}`);
+
+    setTimeout(() => {
+      reactFlowInstance?.fitView({ padding: 0.2 });
+    }, 0);
+  }, [selectedFile, nodes, edges, reactFlowInstance]);
+
+  // Handle node connection
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      const newEdge: Edge = {
+        id: `${connection.source}-${connection.target}`,
+        source: connection.source!,
+        target: connection.target!,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: '#38bdf8', strokeWidth: 2 },
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
+    []
+  );
+
+  // Node search filter
+  useEffect(() => {
+    if (!searchQuery || nodes.length === 0) {
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          style: { ...node.style, opacity: 1 },
+        }))
+      );
+      return;
     }
+
+    const query = searchQuery.toLowerCase();
+    setNodes((nds) =>
+      nds.map((node) => {
+        const matches = node.data.label.toLowerCase().includes(query);
+        return {
+          ...node,
+          style: { ...node.style, opacity: matches ? 1 : 0.3 },
+        };
+      })
+    );
+  }, [searchQuery]);
+
+  // Static mode: Use FLOW_LIBRARY for rainbow balls animation
+  const flowDefinition = selectedFileId ? FLOW_LIBRARY[selectedFileId] : undefined;
+
+  const staticNodes = useMemo<Node[]>(() => {
+    if (viewMode !== 'static' || !flowDefinition) return [];
+
     return flowDefinition.steps.map((step) => ({
       id: step.id,
       data: { label: step.label },
@@ -178,12 +459,11 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
         boxShadow: '0 10px 25px rgba(15, 23, 42, 0.35)',
       },
     }));
-  }, [flowDefinition]);
+  }, [viewMode, flowDefinition]);
 
-  const flowEdges = useMemo<Edge[]>(() => {
-    if (!flowDefinition) {
-      return [];
-    }
+  const staticEdges = useMemo<Edge[]>(() => {
+    if (viewMode !== 'static' || !flowDefinition) return [];
+
     return flowDefinition.edges.map((edge) => ({
       id: `${edge.source}-${edge.target}`,
       source: edge.source,
@@ -191,57 +471,61 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
       label: edge.label,
       animated: true,
       style: { strokeWidth: 2, stroke: '#38bdf8' },
-      labelBgPadding: [6, 3],
+      labelBgPadding: [6, 3] as [number, number],
       labelBgBorderRadius: 8,
       labelBgStyle: { fill: 'rgba(8, 47, 73, 0.85)', stroke: 'rgba(125, 211, 252, 0.45)' },
       labelStyle: { fill: '#bae6fd', fontSize: 11, fontWeight: 600 },
     }));
-  }, [flowDefinition]);
+  }, [viewMode, flowDefinition]);
 
-  const handleFileSelect = (fileId: string) => {
-    setSelectedFile(fileId);
-    setTimeout(() => {
-      reactFlowInstance?.fitView({ padding: 0.2 });
-    }, 0);
+  const getFileTypeColor = (type: PythonFile['type']) => {
+    switch (type) {
+      case 'training':
+        return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
+      case 'prediction':
+        return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+      case 'preprocessing':
+        return 'bg-purple-500/10 border-purple-500/30 text-purple-400';
+      case 'utility':
+        return 'bg-amber-500/10 border-amber-500/30 text-amber-400';
+      default:
+        return 'bg-slate-500/10 border-slate-500/30 text-slate-400';
+    }
+  };
+
+  const handleFileSelect = (file: PythonFile) => {
+    setSelectedFile(file);
+    setSelectedFileId(file.id);
+
+    // In static mode, show nodes immediately
+    if (viewMode === 'static') {
+      setTimeout(() => {
+        reactFlowInstance?.fitView({ padding: 0.2 });
+      }, 0);
+    }
   };
 
   const handleInit = useCallback((instance: ReactFlowInstance) => {
     setReactFlowInstance(instance);
-    if (flowNodes.length > 0) {
-      instance.fitView({ padding: 0.2, duration: 300 });
-    }
-  }, [flowNodes.length]);
+  }, []);
 
-  const handleFileDoubleClick = (file: PythonFile) => {
-    // 데모 데이터로 파일 정보 표시
-    setModalFileInfo({
-      name: file.name,
-      path: file.path,
-      type: file.type,
-      size: '2.4 KB',
-      lastModified: '2025-10-07 14:30',
-      functions: [
-        'train_model',
-        'load_data',
-        'preprocess',
-        'evaluate_model',
-        'save_checkpoint',
-        'load_checkpoint'
-      ],
-      classes: [
-        'ModelTrainer',
-        'DataLoader',
-        'Preprocessor'
-      ],
-      imports: [
-        'import pandas as pd',
-        'import numpy as np',
-        'from sklearn.model_selection import train_test_split',
-        'import lightgbm as lgb'
-      ]
-    });
-    setIsModalOpen(true);
-  };
+  // Handle node double click to show source code
+  const handleNodeDoubleClick = useCallback(
+    (_event: React.MouseEvent, node: Node<FunctionNodeData>) => {
+      setModalFileInfo({
+        name: node.data.label,
+        sourceCode: node.data.sourceCode || '// Source code not available',
+        type: node.data.type,
+        params: node.data.params,
+        returns: node.data.returns,
+        docstring: node.data.docstring,
+        lineStart: node.data.lineStart,
+        lineEnd: node.data.lineEnd,
+      });
+      setIsModalOpen(true);
+    },
+    []
+  );
 
   return (
     <div
@@ -254,25 +538,18 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
             <FileCode className="w-4 h-4" />
-            Python Files
+            Python Files ({pythonFiles.length})
           </h3>
-          <input
-            type="text"
-            placeholder="Search files..."
-            className="w-full px-3 py-2 text-sm bg-slate-800/50 border border-slate-700/50 rounded-lg
-                     text-slate-300 placeholder-slate-500 focus:outline-none focus:border-blue-500/50"
-          />
         </div>
 
         <div className="space-y-2">
-          {PYTHON_FILES.map((file) => (
+          {pythonFiles.map((file) => (
             <button
               key={file.id}
-              onClick={() => handleFileSelect(file.id)}
-              onDoubleClick={() => handleFileDoubleClick(file)}
+              onClick={() => handleFileSelect(file)}
               className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200
                 ${
-                  selectedFile === file.id
+                  selectedFile?.id === file.id
                     ? 'bg-blue-500/20 border-blue-500/50 shadow-lg shadow-blue-500/20'
                     : `${getFileTypeColor(file.type)} hover:bg-opacity-20`
                 }`}
@@ -281,7 +558,9 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
                 <FileCode className="w-4 h-4 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{file.name}</div>
-                  <div className="text-xs text-slate-500 truncate">{file.path}</div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {file.functions}f {file.classes}c
+                  </div>
                 </div>
               </div>
             </button>
@@ -314,34 +593,89 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
       <div className="algorithm-canvas flex-1 flex flex-col bg-slate-950/50">
         {/* 툴바 */}
         <div className="toolbar flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/30">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <h3 className="text-sm font-semibold text-slate-300">
-              {selectedFile
-                ? PYTHON_FILES.find((f) => f.id === selectedFile)?.name
-                : 'Select a file to visualize'}
+              {selectedFile ? selectedFile.name : 'Select a file to visualize'}
             </h3>
+            {(nodes.length > 0 || staticNodes.length > 0) && (
+              <div className="text-xs text-slate-500">
+                {viewMode === 'static' ? staticNodes.length : nodes.length} nodes •{' '}
+                {viewMode === 'static' ? staticEdges.length : edges.length} edges
+              </div>
+            )}
+            {/* Mode Toggle */}
+            <div className="flex gap-1 bg-slate-800/50 border border-slate-700/50 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('static')}
+                className={`px-3 py-1 text-xs rounded transition-all ${
+                  viewMode === 'static'
+                    ? 'bg-blue-500/30 text-blue-300 font-semibold'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                🌈 Rainbow
+              </button>
+              <button
+                onClick={() => setViewMode('dynamic')}
+                className={`px-3 py-1 text-xs rounded transition-all ${
+                  viewMode === 'dynamic'
+                    ? 'bg-emerald-500/30 text-emerald-300 font-semibold'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                🔬 AST Analysis
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search nodes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1.5 text-sm bg-slate-800/50 border border-slate-700/50 rounded-lg
+                       text-slate-300 placeholder-slate-500 focus:outline-none focus:border-blue-500/50 w-48"
+            />
+            {viewMode === 'dynamic' && (
+              <button
+                onClick={handleAnalyze}
+                disabled={!selectedFile || isAnalyzing}
+                className={`px-3 py-1.5 text-sm border rounded-lg transition-colors flex items-center gap-2
+                  ${
+                    selectedFile && !isAnalyzing
+                      ? 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-300'
+                      : 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
+                  }`}
+                title="Run AST analysis on selected Python file"
+              >
+                <Play className="w-4 h-4" />
+                {isAnalyzing ? 'Analyzing...' : 'Analyze'}
+              </button>
+            )}
             <button
-              className="px-3 py-1.5 text-sm bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50
-                       rounded-lg text-slate-300 transition-colors flex items-center gap-2"
-              title="Run analysis"
-            >
-              <Play className="w-4 h-4" />
-              Analyze
-            </button>
-            <button
-              className="px-3 py-1.5 text-sm bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50
-                       rounded-lg text-blue-400 transition-colors flex items-center gap-2"
+              onClick={handleSaveLayout}
+              disabled={nodes.length === 0}
+              className={`px-3 py-1.5 text-sm border rounded-lg transition-colors flex items-center gap-2
+                ${
+                  nodes.length > 0
+                    ? 'bg-blue-500/20 hover:bg-blue-500/30 border-blue-500/50 text-blue-400'
+                    : 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
+                }`}
               title="Save layout"
             >
               <Save className="w-4 h-4" />
               Save
             </button>
             <button
-              className="px-3 py-1.5 text-sm bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50
-                       rounded-lg text-slate-300 transition-colors flex items-center gap-2"
+              onClick={handleResetLayout}
+              disabled={nodes.length === 0}
+              className={`px-3 py-1.5 text-sm border rounded-lg transition-colors flex items-center gap-2
+                ${
+                  nodes.length > 0
+                    ? 'bg-slate-800/50 hover:bg-slate-700/50 border-slate-700/50 text-slate-300'
+                    : 'bg-slate-800/50 border-slate-700/50 text-slate-500 cursor-not-allowed'
+                }`}
               title="Reset layout"
             >
               <RotateCcw className="w-4 h-4" />
@@ -352,11 +686,42 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
 
         {/* 캔버스 영역 */}
         <div className="canvas-container flex-1 relative bg-gradient-to-br from-slate-950 to-slate-900">
-          {selectedFile && flowDefinition ? (
+          {(viewMode === 'static' && staticNodes.length > 0) || (viewMode === 'dynamic' && nodes.length > 0) ? (
             <ReactFlowProvider>
               <ReactFlow
-                nodes={flowNodes}
-                edges={flowEdges}
+                nodes={viewMode === 'static' ? staticNodes : nodes}
+                edges={viewMode === 'static' ? staticEdges : edges}
+                onNodesChange={(changes) => {
+                  setNodes((nds) => {
+                    const newNodes = [...nds];
+                    changes.forEach((change) => {
+                      if (change.type === 'position' && change.position) {
+                        const nodeIndex = newNodes.findIndex((n) => n.id === change.id);
+                        if (nodeIndex !== -1) {
+                          newNodes[nodeIndex] = {
+                            ...newNodes[nodeIndex],
+                            position: change.position,
+                          };
+                        }
+                      }
+                    });
+                    return newNodes;
+                  });
+                }}
+                onEdgesChange={(changes) => {
+                  setEdges((eds) => {
+                    return eds.filter((edge) => {
+                      const removeChange = changes.find(
+                        (c) => c.type === 'remove' && c.id === edge.id
+                      );
+                      return !removeChange;
+                    });
+                  });
+                }}
+                onConnect={handleConnect}
+                onNodeDoubleClick={handleNodeDoubleClick}
+                nodeTypes={nodeTypes}
+                connectionMode={ConnectionMode.Loose}
                 fitView
                 className="h-full"
                 onInit={handleInit}
@@ -370,27 +735,25 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-slate-500">
                 <FileCode className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                <p className="text-lg font-medium mb-2">No File Selected</p>
-                <p className="text-sm">Select a Python file from the left panel to visualize its algorithm flow</p>
+                <p className="text-lg font-medium mb-2">
+                  {viewMode === 'static'
+                    ? (selectedFile ? 'Rainbow Flow Chart' : 'No File Selected')
+                    : (selectedFile ? 'Click "Analyze" to visualize' : 'No File Selected')}
+                </p>
+                <p className="text-sm">
+                  {viewMode === 'static'
+                    ? 'Select a Python file from the left panel to see the flow chart'
+                    : selectedFile
+                    ? 'Click the Analyze button to parse the Python file and generate nodes'
+                    : 'Select a Python file from the left panel to get started'}
+                </p>
               </div>
             </div>
           )}
-
-          {/* 그리드 배경 (픽셀 라인) */}
-          <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{
-              backgroundImage: `
-                linear-gradient(to right, rgb(148 163 184) 1px, transparent 1px),
-                linear-gradient(to bottom, rgb(148 163 184) 1px, transparent 1px)
-              `,
-              backgroundSize: '20px 20px',
-            }}
-          />
         </div>
 
         <div className="border-t border-slate-800/60 bg-slate-900/40 px-6 py-4 text-sm text-slate-300">
-          {selectedFile && flowDefinition ? (
+          {viewMode === 'static' && selectedFileId && flowDefinition ? (
             <>
               <div className="font-semibold text-slate-200 mb-2">파이프라인 요약</div>
               <p className="text-slate-400 text-sm mb-3">{flowDefinition.summary}</p>
@@ -403,8 +766,30 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
                 ))}
               </div>
             </>
+          ) : viewMode === 'dynamic' && nodes.length > 0 ? (
+            <>
+              <div className="font-semibold text-slate-200 mb-2">Keyboard Shortcuts</div>
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4 text-xs text-slate-400">
+                <div>
+                  <span className="text-sky-300">Drag</span> - Move nodes
+                </div>
+                <div>
+                  <span className="text-sky-300">Double Click</span> - View source
+                </div>
+                <div>
+                  <span className="text-sky-300">Port Drag</span> - Connect nodes
+                </div>
+                <div>
+                  <span className="text-sky-300">Delete</span> - Remove edge
+                </div>
+              </div>
+            </>
           ) : (
-            <p className="text-slate-400">좌측에서 Python 파일을 선택하면 파이프라인 요약과 노드 흐름이 표시됩니다.</p>
+            <p className="text-slate-400">
+              {viewMode === 'static'
+                ? '좌측에서 Python 파일을 선택하면 파이프라인 요약과 노드 흐름이 표시됩니다.'
+                : '좌측에서 Python 파일을 선택하고 Analyze 버튼을 클릭하여 함수/클래스 노드를 생성하세요.'}
+            </p>
           )}
         </div>
       </div>

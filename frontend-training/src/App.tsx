@@ -5,7 +5,6 @@ import { MainNavigation } from "@components/MainNavigation";
 import { ParticleBackground } from "@components/ParticleBackground";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
-import Ballpit from "@components/effects/Ballpit";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
@@ -82,27 +81,15 @@ export default function App() {
   // 인증 확인 중이면 로딩 표시
   if (authLoading) {
     return (
-      <>
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-          <Ballpit count={100} followCursor={true} />
-        </div>
-        <div className="flex min-h-screen items-center justify-center surface-base">
-          <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-        </div>
-      </>
+      <div className="flex min-h-screen items-center justify-center surface-base">
+        <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+      </div>
     );
   }
 
   // 인증되지 않은 경우 로그인 페이지 표시
   if (!isAuthenticated) {
-    return (
-      <>
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-          <Ballpit count={100} followCursor={true} />
-        </div>
-        <LoginPage onLoginSuccess={handleLoginSuccess} />
-      </>
-    );
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
 
   // Training workspace
@@ -137,9 +124,6 @@ export default function App() {
         <div className="rainbow-ball rainbow-ball-6"></div>
       </div>
       <ParticleBackground />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-        <Ballpit count={100} followCursor={true} />
-      </div>
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (

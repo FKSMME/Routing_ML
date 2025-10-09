@@ -28,7 +28,7 @@ source venv-linux/bin/activate
 # 3. 백엔드 시작
 echo -e "${YELLOW}🔧 Backend API 시작...${NC}"
 cd /workspaces/Routing_ML_4
-nohup python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload > /tmp/backend.log 2>&1 &
+nohup python -m uvicorn backend.api.app:app --host 0.0.0.0 --port 8000 --reload > /tmp/backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}   ✅ Backend started (PID: $BACKEND_PID)${NC}"
 echo "      URL: http://localhost:8000"
