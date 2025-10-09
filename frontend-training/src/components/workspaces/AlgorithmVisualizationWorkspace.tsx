@@ -285,7 +285,7 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
 
 export const AlgorithmVisualizationWorkspace: React.FC = () => {
   // State
-  const [pythonFiles, setPythonFiles] = useState<PythonFile[]>([]);
+  const [allPythonFiles, setAllPythonFiles] = useState<PythonFile[]>([]); // All files from API
   const [selectedFile, setSelectedFile] = useState<PythonFile | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null); // For static mode
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -297,78 +297,9 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'static' | 'dynamic' | 'summary'>('static'); // 'static' = Rainbow Balls, 'dynamic' = Real AST
 
-  // Load Python files from API or use hardcoded list for Rainbow mode
+  // Load Python files from API on mount
   useEffect(() => {
     const fetchFiles = async () => {
-      // Rainbow mode: Show only the 6 hardcoded files
-      if (viewMode === 'static') {
-        const hardcodedFiles: PythonFile[] = [
-          {
-            id: 'trainer_ml',
-            name: 'trainer_ml.py',
-            path: 'backend/trainer_ml.py',
-            full_path: '/workspaces/Routing_ML_4/backend/trainer_ml.py',
-            size: 58301,
-            functions: 32,
-            classes: 0,
-            type: 'training',
-          },
-          {
-            id: 'training_service',
-            name: 'training_service.py',
-            path: 'backend/api/services/training_service.py',
-            full_path: '/workspaces/Routing_ML_4/backend/api/services/training_service.py',
-            size: 25600,
-            functions: 17,
-            classes: 0,
-            type: 'training',
-          },
-          {
-            id: 'predictor_ml',
-            name: 'predictor_ml.py',
-            path: 'backend/predictor_ml.py',
-            full_path: '/workspaces/Routing_ML_4/backend/predictor_ml.py',
-            size: 77278,
-            functions: 51,
-            classes: 0,
-            type: 'prediction',
-          },
-          {
-            id: 'prediction_service',
-            name: 'prediction_service.py',
-            path: 'backend/api/services/prediction_service.py',
-            full_path: '/workspaces/Routing_ML_4/backend/api/services/prediction_service.py',
-            size: 42100,
-            functions: 56,
-            classes: 0,
-            type: 'prediction',
-          },
-          {
-            id: 'database',
-            name: 'database.py',
-            path: 'backend/database.py',
-            full_path: '/workspaces/Routing_ML_4/backend/database.py',
-            size: 49880,
-            functions: 54,
-            classes: 0,
-            type: 'common',
-          },
-          {
-            id: 'feature_weights',
-            name: 'feature_weights.py',
-            path: 'backend/feature_weights.py',
-            full_path: '/workspaces/Routing_ML_4/backend/feature_weights.py',
-            size: 27911,
-            functions: 24,
-            classes: 0,
-            type: 'common',
-          },
-        ];
-        setPythonFiles(hardcodedFiles);
-        return;
-      }
-
-      // AST Analysis and Summary modes: Load from API
       try {
         const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/files`, {
           params: {
@@ -376,14 +307,86 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
             include_training: true,
           },
         });
-        setPythonFiles(response.data);
+        setAllPythonFiles(response.data);
       } catch (error) {
         console.error('Failed to fetch Python files:', error);
       }
     };
 
     fetchFiles();
-  }, [viewMode]);
+  }, []);
+
+  // Compute displayed files based on viewMode (using useMemo instead of useEffect)
+  const displayedFiles = useMemo(() => {
+    // Rainbow mode: Show only the 6 hardcoded files
+    if (viewMode === 'static') {
+      return [
+        {
+          id: 'trainer_ml',
+          name: 'trainer_ml.py',
+          path: 'backend/trainer_ml.py',
+          full_path: '/workspaces/Routing_ML_4/backend/trainer_ml.py',
+          size: 58301,
+          functions: 32,
+          classes: 0,
+          type: 'training' as const,
+        },
+        {
+          id: 'training_service',
+          name: 'training_service.py',
+          path: 'backend/api/services/training_service.py',
+          full_path: '/workspaces/Routing_ML_4/backend/api/services/training_service.py',
+          size: 25600,
+          functions: 17,
+          classes: 0,
+          type: 'training' as const,
+        },
+        {
+          id: 'predictor_ml',
+          name: 'predictor_ml.py',
+          path: 'backend/predictor_ml.py',
+          full_path: '/workspaces/Routing_ML_4/backend/predictor_ml.py',
+          size: 77278,
+          functions: 51,
+          classes: 0,
+          type: 'prediction' as const,
+        },
+        {
+          id: 'prediction_service',
+          name: 'prediction_service.py',
+          path: 'backend/api/services/prediction_service.py',
+          full_path: '/workspaces/Routing_ML_4/backend/api/services/prediction_service.py',
+          size: 42100,
+          functions: 56,
+          classes: 0,
+          type: 'prediction' as const,
+        },
+        {
+          id: 'database',
+          name: 'database.py',
+          path: 'backend/database.py',
+          full_path: '/workspaces/Routing_ML_4/backend/database.py',
+          size: 49880,
+          functions: 54,
+          classes: 0,
+          type: 'common' as const,
+        },
+        {
+          id: 'feature_weights',
+          name: 'feature_weights.py',
+          path: 'backend/feature_weights.py',
+          full_path: '/workspaces/Routing_ML_4/backend/feature_weights.py',
+          size: 27911,
+          functions: 24,
+          classes: 0,
+          type: 'common' as const,
+        },
+      ];
+    } else {
+      // AST Analysis and Summary modes: Use all files from API
+      return allPythonFiles;
+    }
+  }, [viewMode, allPythonFiles]);
 
   // Analyze file and create nodes/edges
   const handleAnalyze = useCallback(async () => {
@@ -534,14 +537,14 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     const query = searchQuery.toLowerCase();
     setNodes((nds) =>
       nds.map((node) => {
-        const matches = node.data.label.toLowerCase().includes(query);
+        const matches = node.data.label?.toLowerCase().includes(query);
         return {
           ...node,
           style: { ...node.style, opacity: matches ? 1 : 0.3 },
         };
       })
     );
-  }, [searchQuery]);
+  }, [searchQuery, nodes.length]);
 
   // Static mode: Use FLOW_LIBRARY for rainbow balls animation
   const flowDefinition = useMemo(() => {
@@ -645,6 +648,71 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     []
   );
 
+  // Handle node changes for dynamic mode
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    []
+  );
+
+  // Handle edge changes for dynamic mode
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+
+  // Handle summary mode
+  const handleSummaryMode = useCallback(async () => {
+    setViewMode('summary');
+    setIsAnalyzing(true);
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/summary`);
+      const apiNodes: Node[] = response.data.nodes;
+      const apiEdges: Edge[] = response.data.edges;
+
+      const summaryNodes: Node[] = apiNodes.map((node: any) => ({
+        id: node.id,
+        type: 'default',
+        position: node.position,
+        data: { label: node.data.label, description: node.data.description },
+        style: {
+          background: node.data.category === 'training'
+            ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
+            : node.data.category === 'prediction'
+            ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+            : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+          border: '2px solid rgba(148, 163, 184, 0.3)',
+          borderRadius: '12px',
+          padding: '16px',
+          color: '#e2e8f0',
+          fontSize: '13px',
+          fontWeight: 600,
+          minWidth: '180px',
+        },
+      }));
+
+      const summaryEdges: Edge[] = apiEdges.map((edge: any) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        label: edge.label,
+        animated: true,
+        style: { stroke: '#38bdf8', strokeWidth: 2 },
+      }));
+
+      setNodes(summaryNodes);
+      setEdges(summaryEdges);
+
+      setTimeout(() => {
+        reactFlowInstance?.fitView({ padding: 0.3 });
+      }, 100);
+    } catch (error) {
+      console.error('Failed to load project summary:', error);
+      alert('프로젝트 Summary 로드 실패');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [reactFlowInstance]);
+
   return (
     <div
       className="algorithm-visualization-workspace flex w-full bg-slate-950"
@@ -656,12 +724,12 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
         <div className="mb-4">
           <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
             <FileCode className="w-4 h-4" />
-            Python Files ({pythonFiles.length})
+            Python Files ({displayedFiles.length})
           </h3>
         </div>
 
         <div className="space-y-2">
-          {pythonFiles.map((file) => (
+          {displayedFiles.map((file) => (
             <button
               key={file.id}
               onClick={() => handleFileSelect(file)}
@@ -744,57 +812,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
                 🔬 AST Analysis
               </button>
               <button
-                onClick={async () => {
-                  setViewMode('summary');
-                  setIsAnalyzing(true);
-                  try {
-                    const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/summary`);
-                    const apiNodes: Node[] = response.data.nodes;
-                    const apiEdges: Edge[] = response.data.edges;
-
-                    const summaryNodes: Node[] = apiNodes.map((node: any) => ({
-                      id: node.id,
-                      type: 'default',
-                      position: node.position,
-                      data: { label: node.data.label, description: node.data.description },
-                      style: {
-                        background: node.data.category === 'training'
-                          ? 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)'
-                          : node.data.category === 'prediction'
-                          ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                          : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                        border: '2px solid rgba(148, 163, 184, 0.3)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        color: '#e2e8f0',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        minWidth: '180px',
-                      },
-                    }));
-
-                    const summaryEdges: Edge[] = apiEdges.map((edge: any) => ({
-                      id: edge.id,
-                      source: edge.source,
-                      target: edge.target,
-                      label: edge.label,
-                      animated: true,
-                      style: { stroke: '#38bdf8', strokeWidth: 2 },
-                    }));
-
-                    setNodes(summaryNodes);
-                    setEdges(summaryEdges);
-
-                    setTimeout(() => {
-                      reactFlowInstance?.fitView({ padding: 0.3 });
-                    }, 100);
-                  } catch (error) {
-                    console.error('Failed to load project summary:', error);
-                    alert('프로젝트 Summary 로드 실패');
-                  } finally {
-                    setIsAnalyzing(false);
-                  }
-                }}
+                onClick={handleSummaryMode}
                 className={`px-3 py-1 text-xs rounded transition-all ${
                   viewMode === 'summary'
                     ? 'bg-purple-500/30 text-purple-300 font-semibold'
@@ -869,22 +887,8 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
               <ReactFlow
                 nodes={viewMode === 'static' ? staticNodes : nodes}
                 edges={viewMode === 'static' ? staticEdges : edges}
-                onNodesChange={
-                  viewMode === 'dynamic'
-                    ? useCallback(
-                        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
-                        []
-                      )
-                    : undefined
-                }
-                onEdgesChange={
-                  viewMode === 'dynamic'
-                    ? useCallback(
-                        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-                        []
-                      )
-                    : undefined
-                }
+                onNodesChange={viewMode === 'dynamic' ? handleNodesChange : undefined}
+                onEdgesChange={viewMode === 'dynamic' ? handleEdgesChange : undefined}
                 onConnect={viewMode === 'dynamic' ? handleConnect : undefined}
                 onNodeDoubleClick={handleNodeDoubleClick}
                 nodeTypes={nodeTypes}
