@@ -30,7 +30,7 @@ async def get_master_data_tree(
     parent_id: str | None = Query(None, description="상위 노드 식별자"),
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> MasterDataTreeResponse:
-    """Access 기준정보 트리 구조를 반환한다."""
+    """기준정보 트리를 반환한다 (주요 데이터소스: MSSQL, 필요 시 Access 폴백)."""
 
     try:
         data = master_data_service.get_tree(query=query, parent_type=parent_type, parent_id=parent_id)
@@ -53,7 +53,7 @@ async def get_master_data_item(
     item_code: str,
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> MasterDataItemResponse:
-    """특정 품목의 Access 행렬 데이터를 반환한다."""
+    """특정 품목의 기준정보 행렬을 반환한다 (MSSQL 기본, Access 폴백 지원)."""
 
     try:
         data = master_data_service.get_item_matrix(item_code)

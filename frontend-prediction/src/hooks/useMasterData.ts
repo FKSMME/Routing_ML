@@ -5,16 +5,14 @@ import type {
   MasterDataTreeNode,
 } from "@app-types/masterData";
 import {
-  // type AccessMetadataResponse,
   downloadMasterDataLog,
-  fetchAccessMetadata,
   fetchMasterDataItem,
   fetchMasterDataLogs,
   fetchMasterDataTree,
+  fetchMssqlMetadata,
   postUiAudit,
+  type DataSourceMetadataResponse,
 } from "@lib/apiClient";
-
-type AccessMetadataResponse = any;
 import { MASTER_DATA_MOCK } from "@lib/masterDataMock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -35,11 +33,11 @@ export interface UseMasterDataState {
   matrixRows: MasterDataItemResponse["rows"];
   logs: MasterDataLogsResponse["logs"];
   connectionStatus: MasterDataConnectionStatus;
-  accessMetadata: AccessMetadataResponse | null;
+  dataSourceMetadata: DataSourceMetadataResponse | null;
   searchMetadataChips: MasterDataSearchMetadataChip[];
   searchItem: (itemCode: string) => Promise<MasterDataItemResponse | null>;
   isSearchLoading: boolean;
-  inspectAccessSource: (params: { path?: string | null; table?: string | null }) => void;
+  inspectDataSource: (params: { path?: string | null; table?: string | null }) => void;
   isTreeLoading: boolean;
   isMatrixLoading: boolean;
   isMetadataLoading: boolean;
@@ -118,7 +116,7 @@ export function useMasterData(): UseMasterDataState {
       if (metadataSelection.path) {
         params.path = metadataSelection.path;
       }
-      return fetchAccessMetadata(Object.keys(params).length > 0 ? params : undefined);
+      return fetchMssqlMetadata(Object.keys(params).length > 0 ? params : undefined);
     },
     staleTime: 300_000,
     placeholderData: (previousData) => previousData,
@@ -256,12 +254,12 @@ export function useMasterData(): UseMasterDataState {
         setSearchMetadataChips([]);
         lastSearchedItemRef.current = null;
         if (isAxiosError(error) && error.response?.status === 404) {
-          throw new Error(`Item ${trimmed} was not found in Access master data.`);
+          throw new Error(`Item ${trimmed} was not found in MSSQL master data.`);
         }
         if (error instanceof Error) {
           throw error;
         }
-        throw new Error("Failed to search Access master data.");
+        throw new Error("Failed to search MSSQL master data.");
       } finally {
         setIsSearchLoading(false);
       }
@@ -320,15 +318,15 @@ export function useMasterData(): UseMasterDataState {
     last_sync: null,
   };
 
-  const accessMetadata = metadataQuery.data ?? null;
+  const dataSourceMetadata = metadataQuery.data ?? null;
 
-  const inspectAccessSource = useCallback(
+  const inspectDataSource = useCallback(
     (params: { path?: string | null; table?: string | null }) => {
       const tableValue = params.table?.trim() || undefined;
       const pathValue = params.path?.trim() || undefined;
       setMetadataSelection({ table: tableValue, path: pathValue });
       void postUiAudit({
-        action: "master_data.access.inspect",
+        action: "master_data.datasource.inspect",
         payload: {
           table: tableValue ?? null,
           path: pathValue ?? null,
@@ -353,11 +351,11 @@ export function useMasterData(): UseMasterDataState {
     matrixRows,
     logs: logsData.logs ?? [],
     connectionStatus,
-    accessMetadata,
+    dataSourceMetadata,
     searchMetadataChips,
     searchItem,
     isSearchLoading,
-    inspectAccessSource,
+    inspectDataSource,
     isTreeLoading: treeQuery.isFetching,
     isMatrixLoading: itemQuery.isFetching,
     isMetadataLoading: metadataQuery.isFetching,

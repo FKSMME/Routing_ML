@@ -2233,6 +2233,9 @@ html.dark {
 
 /* Routing workspace layout */
 .routing-workspace {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
   gap: var(--layout-column-gap);
@@ -2261,6 +2264,9 @@ html.dark {
 }
 
 @media (max-width: 1280px) {
+  .routing-workspace {
+    padding: 0 1.25rem;
+  }
   .routing-workspace__grid {
     grid-template-columns: minmax(220px, 0.2fr) minmax(0, 0.6fr) minmax(240px, 0.2fr);
   }
@@ -2270,6 +2276,9 @@ html.dark {
 }
 
 @media (max-width: 1024px) {
+  .routing-workspace {
+    padding: 0 1rem;
+  }
   .routing-workspace__grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -5015,7 +5024,22 @@ html.dark {
 
 /* 적용 클래스 */
 .workspace-transition {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: 0 1.5rem;
   animation: subtleDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media (max-width: 768px) {
+  .workspace-transition {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace-transition {
+    padding: 0 0.75rem;
+  }
 }
 
 .panel-card-drop {

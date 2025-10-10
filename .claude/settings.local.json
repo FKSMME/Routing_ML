@@ -25,7 +25,14 @@
       "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend -q --tb=line)",
       "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend/performance/test_time_aggregator_benchmark.py::TestTimeAggregatorPerformance::test_polars_aggregator_correctness -v --tb=short -k \"10000\")",
       "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest \"tests/backend/performance/test_time_aggregator_benchmark.py::TestTimeAggregatorPerformance::test_polars_aggregator_correctness[10000]\" -v --tb=short)",
-      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend/performance/test_time_aggregator_benchmark.py -v --tb=short)"
+      "Bash(/workspaces/Routing_ML_4/venv-linux/bin/python -m pytest tests/backend/performance/test_time_aggregator_benchmark.py -v --tb=short)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(git rm:*)",
+      "Bash(kill:*)",
+      "Bash(curl:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

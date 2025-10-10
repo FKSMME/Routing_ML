@@ -1,17 +1,14 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
 import {
-  // type AccessMetadataResponse,
-  fetchAccessMetadata,
+  fetchMssqlMetadata,
   fetchWorkflowConfig,
   fetchWorkspaceSettings,
   postUiAudit,
-  testAccessConnection,
-  // type WorkspaceSettingsResponse,
+  testMssqlConnection,
+  type DataSourceMetadataResponse,
+  type WorkspaceSettingsResponse,
 } from "@lib/apiClient";
-
-type AccessMetadataResponse = any;
-type WorkspaceSettingsResponse = any;
 import { useWorkspaceStore, type WorkspaceColumnMappingRow } from "@store/workspaceStore";
 import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -215,7 +212,7 @@ export function OptionsWorkspace() {
   const columnMappings = workspaceOptions.data.columnMappings;
   const [availableTables, setAvailableTables] = useState<string[]>([]);
   const [testedPath, setTestedPath] = useState<string>("");
-  const [metadataPreview, setMetadataPreview] = useState<AccessMetadataResponse | null>(null);
+  const [metadataPreview, setMetadataPreview] = useState<DataSourceMetadataResponse | null>(null);
   const [metadataLoading, setMetadataLoading] = useState<boolean>(false);
   const [metadataError, setMetadataError] = useState<string>("");
   const [testing, setTesting] = useState<boolean>(false);
@@ -490,10 +487,10 @@ export function OptionsWorkspace() {
     }
   };
 
-  const handleTestAccess = async () => {
+  const handleTestConnection = async () => {
     const trimmedPath = accessPath.trim();
     if (!trimmedPath) {
-      setTestMessage("Enter an Access database path.");
+      setTestMessage("Enter an MSSQL server address.");
       return;
     }
     try {
@@ -501,7 +498,7 @@ export function OptionsWorkspace() {
       setTestMessage("");
       setMetadataPreview(null);
       setMetadataError("");
-      const response = await testAccessConnection({ path: trimmedPath, table: accessTable ? accessTable.trim() : undefined });
+      const response = await testMssqlConnection({ path: trimmedPath, table: accessTable ? accessTable.trim() : undefined });
       setTestedPath(response.ok ? trimmedPath : "");
       const tables = response.table_profiles ?? [];
       setAvailableTables(tables);
@@ -529,7 +526,7 @@ export function OptionsWorkspace() {
       });
     } catch (error: unknown) {
       const detail = (error as ErrorWithDetail).response?.data?.detail;
-      setTestMessage(detail ?? "Access connection test failed.");
+      setTestMessage(detail ?? "MSSQL connection test failed.");
       setTestedPath("");
       setAvailableTables([]);
     } finally {
@@ -550,14 +547,14 @@ export function OptionsWorkspace() {
     async function loadMetadata() {
       try {
         setMetadataLoading(true);
-        const response = await fetchAccessMetadata({ table: accessTable, path: trimmedPath });
+        const response = await fetchMssqlMetadata({ table: accessTable, path: trimmedPath });
         if (cancelled) return;
         setMetadataPreview(response);
         setMetadataError("");
       } catch {
         if (!cancelled) {
           setMetadataPreview(null);
-          setMetadataError("Failed to load Access metadata.");
+          setMetadataError("Failed to load MSSQL metadata.");
         }
       } finally {
         if (!cancelled) {
@@ -577,10 +574,10 @@ export function OptionsWorkspace() {
 
   const standardValid = standardOptions.length > 0;
   const similarityValid = similarityOptions.length > 0;
-  const trimmedAccessPath = accessPath.trim();
-  const accessPathValid = Boolean(trimmedAccessPath);
-  const accessPathVerified = accessPathValid && testedPath === trimmedAccessPath;
-  const accessTableValid = !accessPathValid || Boolean(accessTable.trim());
+  const trimmedServerAddress = accessPath.trim();
+  const isServerProvided = Boolean(trimmedServerAddress);
+  const isServerVerified = isServerProvided && testedPath === trimmedServerAddress;
+  const isViewProvided = !isServerProvided || Boolean(accessTable.trim());
   const mappingHasErrors = mappingDiagnostics.rowErrors.size > 0;
 
   return (
@@ -757,8 +754,8 @@ export function OptionsWorkspace() {
       <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
-            <h2 className="panel-title">Access Connection & ERP Interface</h2>
-            <p className="panel-subtitle">Validate Access paths and interface options.</p>
+            <h2 className="panel-title">MSSQL Connection & ERP Interface</h2>
+            <p className="panel-subtitle">Validate MSSQL endpoints and interface options.</p>
           </div>
         </header>
         <div className="option-grid">
@@ -776,7 +773,7 @@ export function OptionsWorkspace() {
           </div>
           <div className="options-access">
             <label>
-              <span>Access database path</span>
+              <span>MSSQL server address</span>
               <input
                 type="text"
                 value={accessPath}
@@ -788,11 +785,11 @@ export function OptionsWorkspace() {
                   setMetadataError("");
                   setAvailableTables([]);
                 }}
-                placeholder="\\\\Share\\Routing\\ROUTING.accdb"
+                placeholder="K3-DB.ksm.co.kr,1433"
               />
             </label>
             <label>
-              <span>Access table</span>
+              <span>MSSQL view</span>
               <input
                 type="text"
                 value={accessTable}
@@ -803,11 +800,11 @@ export function OptionsWorkspace() {
                   setMetadataPreview(null);
                   setMetadataError("");
                 }}
-                list="access-table-options"
-                placeholder="dbo_BI_ITEM_INFO_VIEW"
+                list="datasource-view-options"
+                placeholder="dbo.BI_ITEM_INFO_VIEW"
               />
               {availableTables.length > 0 ? (
-                <datalist id="access-table-options">
+                <datalist id="datasource-view-options">
                   {availableTables.map((table) => (
                     <option key={table} value={table} />
                   ))}
@@ -815,7 +812,7 @@ export function OptionsWorkspace() {
               ) : null}
             </label>
             <div className="options-access__actions">
-              <button type="button" onClick={handleTestAccess} disabled={testing || !accessPath.trim()} className="btn-secondary">
+              <button type="button" onClick={handleTestConnection} disabled={testing || !accessPath.trim()} className="btn-secondary">
                 {testing ? "Testing..." : "Test connection"}
               </button>
             </div>
@@ -853,26 +850,26 @@ export function OptionsWorkspace() {
                 </ul>
               </div>
             ) : null}
-            <div className={`option-hint${accessPathValid && accessPathVerified && accessTableValid ? " is-success" : " is-warning"}`} role="status" aria-live="polite">
-              {accessPathValid ? (
-                accessPathVerified ? (
-                  accessTableValid ? (
+            <div className={`option-hint${isServerProvided && isServerVerified && isViewProvided ? " is-success" : " is-warning"}`} role="status" aria-live="polite">
+              {isServerProvided ? (
+                isServerVerified ? (
+                  isViewProvided ? (
                     <span>
-                      <Check size={14} /> Access path verified{accessTable ? ` with table ${accessTable}` : ""}.
+                      <Check size={14} /> MSSQL server recorded{accessTable ? ` with view ${accessTable}` : ""}.
                     </span>
                   ) : (
                     <span>
-                      <AlertTriangle size={14} /> Provide a table name for the verified path.
+                      <AlertTriangle size={14} /> Provide a view name for the verified server.
                     </span>
                   )
                 ) : (
                   <span>
-                    <AlertTriangle size={14} /> Test the connection to verify this path.
+                    <AlertTriangle size={14} /> Test the connection to verify this server.
                   </span>
                 )
               ) : (
                 <span>
-                  <AlertTriangle size={14} /> Enter an Access database path to enable validation.
+                  <AlertTriangle size={14} /> Enter an MSSQL server address to enable validation.
                 </span>
               )}
             </div>

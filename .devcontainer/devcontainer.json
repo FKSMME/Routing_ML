@@ -18,19 +18,21 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"Anthropic.claude-code"
+				"Anthropic.claude-code",
+				"ms-azuretools.vscode-containers"
 			]
 		}
-	}
+	},
+	"containerEnv": {
+		"NODE_EXTRA_CA_CERTS": "/usr/local/share/ca-certificates/ksm-chain.crt"
+	},
+	"postCreateCommand": "sudo mkdir -p /usr/local/share/ca-certificates && sudo cp /workspaces/Routing_ML_4/certs/ksm-root.pem /usr/local/share/ca-certificates/ksm-root.crt && sudo cp /workspaces/Routing_ML_4/certs/ksm-intermediate.pem /usr/local/share/ca-certificates/ksm-intermediate.crt && sudo cp /workspaces/Routing_ML_4/certs/corp-chain.pem /usr/local/share/ca-certificates/ksm-chain.crt && sudo update-ca-certificates",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [5173, 5174, 8000],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "python --version",
+	"forwardPorts": [3000, 5173, 5174, 8000],
 
 	// Configure tool-specific properties.
 	// "customizations": {},

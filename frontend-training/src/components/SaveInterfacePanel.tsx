@@ -36,7 +36,7 @@ const CHANNELS: Array<{
   {
     key: "interface",
     label: "ERP Interface",
-    description: "ERP/Access 연계를 트리거해 후속 프로세스를 실행합니다.",
+    description: "ERP/MSSQL 연계를 트리거해 후속 프로세스를 실행합니다.",
     icon: <Settings size={18} />,
     controlId: ROUTING_SAVE_CONTROL_IDS.interface,
   },

@@ -247,11 +247,11 @@
   },
   "data_source": {
     "access_path": "routing_data/ROUTING AUTO TEST.accdb",
-    "default_table": "dbo_BI_ITEM_INFO_VIEW",
+    "default_table": "dbo.BI_ITEM_INFO_VIEW",
     "backup_paths": [],
     "table_profiles": [
       {
-        "name": "dbo_BI_ITEM_INFO_VIEW",
+        "name": "dbo.BI_ITEM_INFO_VIEW",
         "label": "품목 마스터",
         "role": "features",
         "required": true,
@@ -263,7 +263,7 @@
         ]
       },
       {
-        "name": "dbo_BI_ROUTING_VIEW",
+        "name": "dbo.BI_ROUTING_VIEW",
         "label": "라우팅 기준",
         "role": "routing",
         "required": true,
@@ -276,7 +276,7 @@
         ]
       },
       {
-        "name": "dbo_BI_WORK_ORDER_RESULTS",
+        "name": "dbo.BI_WORK_ORDER_RESULTS",
         "label": "실적 로그",
         "role": "results",
         "required": false,

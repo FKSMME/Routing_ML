@@ -912,17 +912,19 @@ __all__ = [
     "RslImportRequest",
     "RslImportResult",
     "RslExportBundle",
+    "DataSourceMetadataColumn",
+    "DataSourceMetadataResponse",
 ]
 
-class AccessMetadataColumn(BaseModel):
+class DataSourceMetadataColumn(BaseModel):
     name: str
     type: str
     nullable: Optional[bool] = True
 
 
-class AccessMetadataResponse(BaseModel):
+class DataSourceMetadataResponse(BaseModel):
     table: str
-    columns: List[AccessMetadataColumn]
+    columns: List[DataSourceMetadataColumn]
     path: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -1045,4 +1047,3 @@ class BulkUploadResponse(BaseModel):
 
 
 MasterDataTreeNode.update_forward_refs()
-

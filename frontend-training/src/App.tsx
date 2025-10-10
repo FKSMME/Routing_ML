@@ -41,7 +41,7 @@ const NAVIGATION_ITEMS = [
   {
     id: "options",
     label: "시스템 옵션",
-    description: "표준편차 · 유사 품목 규칙 · ERP/Access 설정",
+    description: "표준편차 · 유사 품목 규칙 · ERP/MSSQL 설정",
     icon: <Settings size={18} />,
   },
 ];

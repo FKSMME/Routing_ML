@@ -1076,12 +1076,12 @@ export const openApiSchema = {
         }
       }
     },
-    "/api/access/connection/test": {
+    "/api/datasource/connection/test": {
       "post": {
         "tags": [
           "workspace"
         ],
-        "summary": "Test Access Connection",
+        "summary": "Test MSSQL Connection",
         "operationId": "test_access_connection_api_access_connection_test_post",
         "parameters": [
           {
@@ -1098,7 +1098,7 @@ export const openApiSchema = {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AccessConnectionRequest"
+                "$ref": "#/components/schemas/DataSourceConnectionRequest"
               }
             }
           },
@@ -1110,7 +1110,7 @@ export const openApiSchema = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessConnectionResponse"
+                  "$ref": "#/components/schemas/DataSourceConnectionResponse"
                 }
               }
             }
@@ -1624,32 +1624,32 @@ export const openApiSchema = {
         }
       }
     },
-    "/api/access/metadata": {
+    "/api/datasource/metadata": {
       "get": {
         "tags": [
           "access"
         ],
-        "summary": "Fetch Access Metadata",
+        "summary": "Fetch MSSQL Metadata",
         "operationId": "fetch_access_metadata_api_access_metadata_get",
         "parameters": [
           {
-            "description": "Access table name to inspect",
+            "description": "MSSQL view name to inspect",
             "required": false,
             "schema": {
               "type": "string",
               "title": "Table",
-              "description": "Access table name to inspect"
+              "description": "MSSQL view name to inspect"
             },
             "name": "table",
             "in": "query"
           },
           {
-            "description": "Absolute path to the Access database",
+            "description": "MSSQL server address",
             "required": false,
             "schema": {
               "type": "string",
               "title": "Path",
-              "description": "Absolute path to the Access database"
+              "description": "MSSQL server address"
             },
             "name": "path",
             "in": "query"
@@ -1670,7 +1670,7 @@ export const openApiSchema = {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessMetadataResponse"
+                  "$ref": "#/components/schemas/DataSourceMetadataResponse"
                 }
               }
             }
@@ -2615,25 +2615,25 @@ export const openApiSchema = {
   },
   "components": {
     "schemas": {
-      "AccessConnectionRequest": {
+      "DataSourceConnectionRequest": {
         "properties": {
           "path": {
             "type": "string",
             "format": "path",
-            "title": "Path"
+            "title": "Server"
           },
           "table": {
             "type": "string",
-            "title": "Table"
+            "title": "View"
           }
         },
         "type": "object",
         "required": [
           "path"
         ],
-        "title": "AccessConnectionRequest"
+        "title": "DataSourceConnectionRequest"
       },
-      "AccessConnectionResponse": {
+      "DataSourceConnectionResponse": {
         "properties": {
           "ok": {
             "type": "boolean",
@@ -2669,9 +2669,9 @@ export const openApiSchema = {
           "message",
           "path_hash"
         ],
-        "title": "AccessConnectionResponse"
+        "title": "DataSourceConnectionResponse"
       },
-      "AccessMetadataColumn": {
+      "DataSourceMetadataColumn": {
         "properties": {
           "name": {
             "type": "string",
@@ -2692,9 +2692,9 @@ export const openApiSchema = {
           "name",
           "type"
         ],
-        "title": "AccessMetadataColumn"
+        "title": "DataSourceMetadataColumn"
       },
-      "AccessMetadataResponse": {
+      "DataSourceMetadataResponse": {
         "properties": {
           "table": {
             "type": "string",
@@ -2702,14 +2702,14 @@ export const openApiSchema = {
           },
           "columns": {
             "items": {
-              "$ref": "#/components/schemas/AccessMetadataColumn"
+              "$ref": "#/components/schemas/DataSourceMetadataColumn"
             },
             "type": "array",
             "title": "Columns"
           },
           "path": {
             "type": "string",
-            "title": "Path"
+            "title": "Server"
           },
           "updated_at": {
             "type": "string",
@@ -2721,7 +2721,7 @@ export const openApiSchema = {
           "table",
           "columns"
         ],
-        "title": "AccessMetadataResponse"
+        "title": "DataSourceMetadataResponse"
       },
       "AdminApproveRequest": {
         "properties": {
@@ -3015,7 +3015,7 @@ export const openApiSchema = {
         "properties": {
           "access_path": {
             "type": "string",
-            "title": "Access Path"
+            "title": "MSSQL Server"
           },
           "default_table": {
             "type": "string",
@@ -3080,7 +3080,7 @@ export const openApiSchema = {
         "properties": {
           "access_path": {
             "type": "string",
-            "title": "Access Path"
+            "title": "MSSQL Server"
           },
           "default_table": {
             "type": "string",

@@ -344,19 +344,19 @@ class DataSourceConfig:
     """Access/테이블/컬럼 구성을 UI에서 조정 가능하도록 저장."""
 
     access_path: str = "routing_data/ROUTING AUTO TEST.accdb"
-    default_table: str = "dbo_BI_ITEM_INFO_VIEW"
+    default_table: str = "dbo.BI_ITEM_INFO_VIEW"
     backup_paths: List[str] = field(default_factory=list)
     table_profiles: List[Dict[str, Any]] = field(
         default_factory=lambda: [
             {
-                "name": "dbo_BI_ITEM_INFO_VIEW",
+                "name": "dbo.BI_ITEM_INFO_VIEW",
                 "label": "품목 마스터",
                 "role": "features",
                 "required": True,
                 "columns": ["ITEM_CD", "ITEM_NM", "ITEM_TYPE", "RAW_MATL_KIND"],
             },
             {
-                "name": "dbo_BI_ROUTING_VIEW",
+                "name": "dbo.BI_ROUTING_VIEW",
                 "label": "라우팅 기준",
                 "role": "routing",
                 "required": True,
@@ -369,7 +369,7 @@ class DataSourceConfig:
                 ],
             },
             {
-                "name": "dbo_BI_WORK_ORDER_RESULTS",
+                "name": "dbo.BI_WORK_ORDER_RESULTS",
                 "label": "실적 로그",
                 "role": "results",
                 "required": False,
@@ -441,7 +441,7 @@ class DataSourceConfig:
             switches = cls().blueprint_switches
         instance = cls(
             access_path=data.get("access_path", "routing_data/ROUTING AUTO TEST.accdb"),
-            default_table=data.get("default_table", "dbo_BI_ITEM_INFO_VIEW"),
+            default_table=data.get("default_table", "dbo.BI_ITEM_INFO_VIEW"),
             backup_paths=data.get("backup_paths", []),
             table_profiles=data.get("table_profiles", cls().table_profiles),
             column_overrides={k: list(v) for k, v in data.get("column_overrides", {}).items()},
