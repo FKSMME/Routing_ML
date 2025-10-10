@@ -19,7 +19,14 @@ from backend.demo_data import (
 )
 
 import pandas as pd
-import pyodbc
+
+# pyodbc를 optional로 import (ODBC 라이브러리가 없을 때 대비)
+try:
+    import pyodbc
+    PYODBC_AVAILABLE = True
+except ImportError:
+    pyodbc = None
+    PYODBC_AVAILABLE = False
 
 from common.logger import get_logger
 from backend.constants import TRAIN_FEATURES
@@ -164,25 +171,49 @@ def _latest_db(path: Path | str) -> Path:
 # ════════════════════════════════════════════════
 # 2) 기본 연결 함수
 # ════════════════════════════════════════════════
-def _create_mssql_connection() -> pyodbc.Connection:
+def _create_mssql_connection():
     """MSSQL 서버 연결 생성"""
+    if not PYODBC_AVAILABLE:
+        raise ImportError("pyodbc is not available. Please install ODBC drivers.")
+
+    # FreeTDS 드라이버 우선 시도, 없으면 ODBC Driver 17 사용
+    available_drivers = pyodbc.drivers()
+
+    if "FreeTDS" in available_drivers:
+        driver_name = "FreeTDS"
+    elif "ODBC Driver 17 for SQL Server" in available_drivers:
+        driver_name = "ODBC Driver 17 for SQL Server"
+    elif "ODBC Driver 18 for SQL Server" in available_drivers:
+        driver_name = "ODBC Driver 18 for SQL Server"
+    else:
+        raise ConnectionError(f"No suitable ODBC driver found. Available: {available_drivers}")
+
     conn_str = (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+        f"DRIVER={{{driver_name}}};"
         f"SERVER={MSSQL_CONFIG['server']};"
         f"DATABASE={MSSQL_CONFIG['database']};"
         f"UID={MSSQL_CONFIG['user']};"
         f"PWD={MSSQL_CONFIG['password']};"
-        f"Encrypt={'yes' if MSSQL_CONFIG['encrypt'] else 'no'};"
-        f"TrustServerCertificate={'yes' if MSSQL_CONFIG['trust_certificate'] else 'no'};"
     )
+
+    # FreeTDS는 Encrypt/TrustServerCertificate 옵션 불필요
+    if driver_name != "FreeTDS":
+        conn_str += (
+            f"Encrypt={'yes' if MSSQL_CONFIG['encrypt'] else 'no'};"
+            f"TrustServerCertificate={'yes' if MSSQL_CONFIG['trust_certificate'] else 'no'};"
+        )
+
     try:
-        logger.debug(f"MSSQL 연결 시도: {MSSQL_CONFIG['server']}/{MSSQL_CONFIG['database']}")
+        logger.info(f"MSSQL 연결 시도 (Driver: {driver_name}): {MSSQL_CONFIG['server']}/{MSSQL_CONFIG['database']}")
         return pyodbc.connect(conn_str, timeout=10)
     except pyodbc.Error as exc:
-        raise ConnectionError(f"MSSQL DB 연결 실패: {exc}") from exc
+        raise ConnectionError(f"MSSQL DB 연결 실패 (Driver: {driver_name}): {exc}") from exc
 
-def _create_access_connection() -> pyodbc.Connection:
+def _create_access_connection():
     """Access DB 연결 생성"""
+    if not PYODBC_AVAILABLE:
+        raise ImportError("pyodbc is not available. Please install ODBC drivers.")
+
     db_path = _latest_db(ACCESS_DIR)
     conn_str = (
         r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};"

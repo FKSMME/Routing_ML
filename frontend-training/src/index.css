@@ -4636,7 +4636,7 @@ html.dark {
 /* 워크스페이스 컨테이너 */
 .workspace-container {
   padding: var(--spacing-xl);
-  max-width: 1800px;
+  max-width: var(--layout-max-width); /* 통일된 너비: 1400px */
   margin: 0 auto;
 }
 

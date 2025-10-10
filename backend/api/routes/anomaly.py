@@ -1,7 +1,13 @@
 """이상 탐지 API 엔드포인트 - PyODBC 버전."""
 from typing import List, Optional
 
-import pyodbc
+try:
+    import pyodbc
+    PYODBC_AVAILABLE = True
+except ImportError:
+    pyodbc = None
+    PYODBC_AVAILABLE = False
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.database import get_db_connection

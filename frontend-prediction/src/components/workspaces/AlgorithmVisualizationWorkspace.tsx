@@ -301,6 +301,37 @@ export function AlgorithmVisualizationWorkspace() {
     loadFiles();
   }, []);
 
+  // 초기 로드 시 프로젝트 요약 (6개 레인보우 노드) 로드
+  useEffect(() => {
+    const loadProjectSummary = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/summary`);
+        const { nodes: apiNodes, edges: apiEdges } = response.data;
+
+        // API 응답을 React Flow 형식으로 변환
+        const flowNodes = apiNodes.map((node: any) => ({
+          ...node,
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+        }));
+
+        // Dagre 레이아웃 적용
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+          flowNodes,
+          apiEdges
+        );
+
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+        console.log("✅ 프로젝트 요약 로드 완료: 6개 노드");
+      } catch (err) {
+        console.error("Failed to load project summary:", err);
+        // INITIAL_NODES는 폴백으로 유지
+      }
+    };
+    loadProjectSummary();
+  }, [setNodes, setEdges]);
+
   // 노드 위치 localStorage 저장
   useEffect(() => {
     if (selectedFileId && nodes.length > 0) {
