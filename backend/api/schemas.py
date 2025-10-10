@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+import math
 
 from typing_extensions import Literal
 
@@ -11,6 +12,19 @@ from pydantic import BaseModel, Field, validator
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 
 ensure_forward_ref_compat()
+
+
+def nan_to_none(value: Any) -> Any:
+    """Convert NaN/nan values to None for Pydantic validation."""
+    if value is None:
+        return None
+    # Check for float NaN
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    # Check for string 'nan'
+    if isinstance(value, str) and value.lower() == 'nan':
+        return None
+    return value
 
 
 class LoginRequest(BaseModel):
@@ -212,6 +226,18 @@ class OperationStep(BaseModel):
     mtmg_numb: Optional[str] = Field(None, alias="MTMG_NUMB")
 
     model_config = {"populate_by_name": True}
+
+    # NaN을 None으로 변환하는 validator (모든 Optional[str] 필드에 적용)
+    _convert_nan_fields = validator(
+        'inside_flag', 'job_cd', 'job_nm', 'res_cd', 'res_dis', 'time_unit',
+        'run_time_unit', 'batch_oper', 'bp_cd', 'cust_nm', 'cur_cd', 'tax_type',
+        'milestone_flg', 'insp_flg', 'rout_order', 'valid_from_dt', 'valid_to_dt',
+        'view_remark', 'rout_doc', 'doc_inside', 'doc_no', 'nc_program',
+        'nc_program_writer', 'nc_writer_nm', 'nc_write_date', 'nc_reviewer',
+        'nc_reviewer_nm', 'nc_review_dt', 'raw_matl_size', 'jaw_size', 'validity',
+        'program_remark', 'op_draw_no', 'mtmg_numb',
+        pre=True, allow_reuse=True
+    )(nan_to_none)
 
 
 class CandidateRouting(BaseModel):

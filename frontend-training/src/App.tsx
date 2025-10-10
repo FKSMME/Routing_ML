@@ -9,7 +9,6 @@ import Ballpit from "@components/effects/Ballpit";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
-import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useWorkspaceStore } from "@store/workspaceStore";
@@ -115,7 +114,7 @@ export default function App() {
       workspace = <TrainingStatusWorkspace />;
       break;
     case "model-training":
-      workspace = <ModelTrainingPanel />;
+      workspace = <BlueprintGraphPanel />;
       break;
     case "options":
       workspace = <OptionsWorkspace />;
