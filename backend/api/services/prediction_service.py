@@ -113,6 +113,26 @@ class ManifestLoader:
             self._mtimes[manifest_path] = mtime
             return dict(self._cache[manifest_path])
 
+    def invalidate(self, model_dir: Optional[Path] = None) -> None:
+        """
+        캐시를 즉시 무효화합니다.
+
+        Args:
+            model_dir: 특정 디렉토리 캐시만 삭제 (None이면 전체 삭제)
+        """
+        with self._lock:
+            if model_dir is None:
+                # 전체 캐시 삭제
+                self._cache.clear()
+                self._mtimes.clear()
+                logger.info("Manifest 캐시 전체 무효화")
+            else:
+                # 특정 경로만 삭제
+                manifest_path = model_dir / "manifest.json"
+                self._cache.pop(manifest_path, None)
+                self._mtimes.pop(manifest_path, None)
+                logger.info(f"Manifest 캐시 무효화: {manifest_path}")
+
 
 
 class JsonArtifactCache:

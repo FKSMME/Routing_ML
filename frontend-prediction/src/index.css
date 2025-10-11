@@ -4614,10 +4614,10 @@ html.dark {
    레이아웃 표준화
    ========================================== */
 
-/* 워크스페이스 컨테이너 - 제목줄과 동일한 너비 */
+/* 워크스페이스 컨테이너 */
 .workspace-container {
   padding: var(--spacing-xl);
-  max-width: var(--layout-max-width); /* 헤더와 동일하게 1400px */
+  max-width: var(--layout-max-width); /* 통일된 너비: 1400px */
   margin: 0 auto;
 }
 

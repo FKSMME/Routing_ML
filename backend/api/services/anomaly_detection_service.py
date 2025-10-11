@@ -104,7 +104,7 @@ class AnomalyDetectionService:
         logger.info("이상 탐지 모델 학습 시작")
 
         try:
-            # 데이터 로드 (dbo.BI_ITEM_INFO_VIEW 사용)
+            # 데이터 로드 (dbo_BI_ITEM_INFO_VIEW 사용)
             query = """
                 SELECT
                     ITEM_CD,
@@ -114,7 +114,7 @@ class AnomalyDetectionService:
                     length,
                     width,
                     height
-                FROM dbo.BI_ITEM_INFO_VIEW
+                FROM dbo_BI_ITEM_INFO_VIEW
                 WHERE out_diameter IS NOT NULL
                     OR in_diameter IS NOT NULL
                     OR thickness IS NOT NULL
@@ -210,7 +210,7 @@ class AnomalyDetectionService:
                     length,
                     width,
                     height
-                FROM dbo.BI_ITEM_INFO_VIEW
+                FROM dbo_BI_ITEM_INFO_VIEW
                 WHERE 1=1
             """
 

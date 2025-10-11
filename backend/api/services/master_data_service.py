@@ -67,11 +67,7 @@ ACCESS_FILE_SUFFIXES = {".accdb", ".mdb"}
 
 
 class MasterDataService:
-    """Master data 조회/가공 서비스.
-
-    기본 데이터소스는 MSSQL이며, 환경 설정에 따라 레거시 Access 파일을
-    읽어들이는 폴백 경로도 지원한다.
-    """
+    """Access 기준정보 데이터를 조회하는 서비스."""
 
     def __init__(self, cache_ttl_seconds: int = 300) -> None:
         self._cache_ttl = cache_ttl_seconds
@@ -355,14 +351,6 @@ class MasterDataService:
         }
 
     def _detect_connection_status(self) -> Dict[str, Optional[str]]:
-        if database.DB_TYPE.upper() == "MSSQL":  # type: ignore[attr-defined]
-            server = database.MSSQL_CONFIG.get("server")  # type: ignore[attr-defined]
-            status = "connected" if server else "disconnected"
-            return {
-                "status": status,
-                "path": server or "-",
-                "last_sync": "env" if server else None,
-            }
         try:
             latest = database._latest_db(database.ACCESS_DIR)  # type: ignore[attr-defined]
             stat = latest.stat()
@@ -406,7 +394,7 @@ class MasterDataService:
         return None
 
     def validate_access_path(self, candidate: Union[str, Path]) -> Path:
-        """Legacy Access 폴백용 경로 검증."""
+        """Ensure the provided path points to an Access database file."""
 
         path = Path(candidate).expanduser()
         suffix = path.suffix.lower()
@@ -453,64 +441,6 @@ class MasterDataService:
         return unique_tables
 
     @staticmethod
-    def _normalize_mssql_table_name(table: str) -> str:
-        stripped = table.strip()
-        if not stripped:
-            return stripped
-        if "." in stripped:
-            schema, name = stripped.split(".", 1)
-            schema = schema or "dbo"
-            return f"{schema}.{name}"
-        return f"dbo.{stripped}"
-
-    @staticmethod
-    def _introspect_mssql_columns(table: str) -> List[Dict[str, Any]]:
-        try:
-            import pyodbc  # type: ignore
-        except ImportError as exc:
-            raise RuntimeError("pyodbc is not available") from exc
-
-        schema, name = table.split(".", 1) if "." in table else ("dbo", table)
-        connection = database._create_connection()  # type: ignore[attr-defined]
-        try:
-            cursor = connection.cursor()
-            cursor.execute(
-                """
-                SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
-                FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
-                ORDER BY ORDINAL_POSITION
-                """,
-                (schema, name),
-            )
-            columns: List[Dict[str, Any]] = []
-            for row in cursor.fetchall():
-                column_name = getattr(row, "COLUMN_NAME", None)
-                if not column_name:
-                    continue
-                data_type = getattr(row, "DATA_TYPE", "nvarchar")
-                nullable_flag = getattr(row, "IS_NULLABLE", None)
-                if nullable_flag is None:
-                    nullable = True
-                elif isinstance(nullable_flag, str):
-                    nullable = nullable_flag.upper() != "NO"
-                else:
-                    nullable = bool(nullable_flag)
-                columns.append(
-                    {
-                        "name": str(column_name),
-                        "type": str(data_type),
-                        "nullable": nullable,
-                    }
-                )
-            return columns
-        finally:
-            try:
-                connection.close()
-            except Exception:
-                pass
-
-    @staticmethod
     def _introspect_access_columns(path: Path, table: str) -> List[Dict[str, Any]]:
         try:
             import pyodbc  # type: ignore
@@ -555,39 +485,26 @@ class MasterDataService:
         except Exception:
             return []
 
-
     def get_access_metadata(self, table: Optional[str] = None, path: Optional[str] = None) -> Dict[str, Any]:
-        """Inspect MSSQL metadata (with optional legacy Access fallback)."""
+        """Inspect Access metadata using the provided path/table or fallbacks."""
 
         workspace_path, workspace_table = self._workspace_access_config()
-        default_table = getattr(database, "VIEW_ITEM_MASTER", "dbo.BI_ITEM_INFO_VIEW")
-        candidate_table = table or workspace_table or default_table
-        table_name = candidate_table.strip() if isinstance(candidate_table, str) else default_table
+        candidate_table = table or workspace_table or getattr(database, "VIEW_ITEM_MASTER", "dbo_BI_ITEM_INFO_VIEW")
+        table_name = candidate_table.strip() if isinstance(candidate_table, str) else getattr(database, "VIEW_ITEM_MASTER", "dbo_BI_ITEM_INFO_VIEW")
+
+        resolved_path = self._resolve_access_path(path) or self._resolve_access_path(workspace_path)
+        if resolved_path is None:
+            try:
+                resolved_path = database._latest_db(database.ACCESS_DIR)  # type: ignore[attr-defined]
+            except Exception:
+                resolved_path = None
 
         columns: List[Dict[str, Any]] = []
-        source_path: Optional[str] = None
-
-        if database.DB_TYPE.upper() == "MSSQL":  # type: ignore[attr-defined]
-            normalized_table = self._normalize_mssql_table_name(table_name)
-            table_name = normalized_table
-            source_path = database.MSSQL_CONFIG.get("server")  # type: ignore[attr-defined]
+        if resolved_path is not None and table_name:
             try:
-                columns = self._introspect_mssql_columns(normalized_table)
+                columns = self._introspect_access_columns(resolved_path, table_name)
             except Exception:
                 columns = []
-        else:
-            resolved_path = self._resolve_access_path(path) or self._resolve_access_path(workspace_path)
-            if resolved_path is None:
-                try:
-                    resolved_path = database._latest_db(database.ACCESS_DIR)  # type: ignore[attr-defined]
-                except Exception:
-                    resolved_path = None
-            if resolved_path is not None and table_name:
-                source_path = str(resolved_path)
-                try:
-                    columns = self._introspect_access_columns(resolved_path, table_name)
-                except Exception:
-                    columns = []
 
         if not columns:
             type_map = {
@@ -623,7 +540,7 @@ class MasterDataService:
         return {
             "table": table_name,
             "columns": columns,
-            "path": source_path,
+            "path": str(resolved_path) if resolved_path else None,
             "updated_at": datetime.utcnow().isoformat(),
         }
 

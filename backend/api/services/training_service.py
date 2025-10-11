@@ -12,6 +12,7 @@ import pandas as pd
 
 from backend.api.config import get_settings
 from backend.api.services.master_data_service import ACCESS_FILE_SUFFIXES, MasterDataService
+from backend.api.services.model_metrics import evaluate_training_dataset, save_model_metrics
 from backend.maintenance.model_registry import list_versions, register_version
 from common.config_store import (
     DataSourceConfig,
@@ -446,12 +447,17 @@ class TrainingService:
 
             dataset = self._load_dataset(data_cfg)
             sample_count = len(dataset)
+
+            # 데이터셋 통계 수집
+            dataset_stats = evaluate_training_dataset(dataset)
+
             metrics.update(
                 {
                     "samples": sample_count,
                     "dataset_path": str(getattr(data_cfg, "access_path", "")),
                     "version_name": resolved_version,
                     "dry_run": dry_run,
+                    "dataset_stats": dataset_stats,
                 }
             )
             self._update_status(
@@ -497,11 +503,29 @@ class TrainingService:
             )
 
             if not dry_run:
+                # training_metrics.json 저장 (학습 프로세스 메트릭)
                 metrics_path = version_directory / "training_metrics.json"
                 metrics_path.write_text(
                     json.dumps(metrics, ensure_ascii=False, indent=2),
                     encoding="utf-8",
                 )
+
+                # metrics.json 저장 (모델 품질 메트릭)
+                # Note: 실제 accuracy는 학습 완료 후 평가 데이터로 계산 필요
+                model_quality_metrics = {
+                    "training_samples": sample_count,
+                    "dataset_stats": dataset_stats,
+                    "training_duration_sec": metrics.get("duration_sec", 0),
+                    "note": "Model quality metrics (accuracy, precision) require evaluation dataset",
+                }
+                try:
+                    save_model_metrics(
+                        version_directory,
+                        model_quality_metrics,
+                        overwrite=True,
+                    )
+                except Exception as metric_exc:
+                    logger.warning(f"모델 메트릭 저장 실패 (non-critical): {metric_exc}")
 
             time_profiles_enabled = bool(
                 getattr(trainer_cfg, "time_profiles_enabled", False)

@@ -75,7 +75,7 @@ describe("MasterDataMatrixPanel", () => {
     expect(screen.queryByText(/showing 1 of 2 rows/i)).not.toBeNull();
   });
 
-  it("marks MSSQL headers as sticky", () => {
+  it("marks Access headers as sticky", () => {
     render(<MasterDataMatrix columns={baseColumns} rows={baseRows} />);
 
     const headerCell = screen.getByRole("columnheader", { name: "Item" });

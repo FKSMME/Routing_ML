@@ -226,7 +226,7 @@ export function CandidatePanel() {
             {erpRequired ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
             <span>{erpRequired ? "ON" : "OFF"}</span>
           </button>
-          <p className="candidate-summary__hint">INTERFACE 저장과 MSSQL 연동은 ERP ON 시에만 가능합니다.</p>
+          <p className="candidate-summary__hint">INTERFACE 저장과 Access 연동은 ERP ON 시에만 가능합니다.</p>
         </div>
         <div className="candidate-summary__item candidate-summary__item--group">
           <span className="candidate-summary__label">공정 그룹</span>

@@ -39,7 +39,7 @@ export function MasterDataSearchPanel({
       if (submissionError instanceof Error) {
         setError(submissionError.message);
       } else {
-        setError("Failed to fetch item data from MSSQL.");
+        setError("Failed to fetch item data from Access.");
       }
     }
   };
@@ -72,14 +72,14 @@ export function MasterDataSearchPanel({
           />
           {onSubmit ? (
             <button type="submit" className="btn-secondary" disabled={!canSubmit || isSearching}>
-              {isSearching ? "Searching…" : "Search MSSQL"}
+              {isSearching ? "Searching…" : "Search Access"}
             </button>
           ) : null}
         </div>
       </form>
       <p className="text-xs text-muted">Supports partial match and AND/OR keywords.</p>
       {hasChips ? (
-        <ul className="master-search__chips" aria-label="MSSQL metadata summary">
+        <ul className="master-search__chips" aria-label="Access metadata summary">
           {metadataChips!.map((chip) => (
             <li key={chip.key} className="master-search__chip">
               <span className="master-search__chip-label">{chip.label}</span>

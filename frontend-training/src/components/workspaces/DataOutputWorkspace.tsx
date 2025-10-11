@@ -362,7 +362,7 @@ export function DataOutputWorkspace() {
       { value: "TXT", label: "Text (TXT)", enabled: exportCfg?.enable_txt ?? false },
       { value: "JSON", label: "JSON", enabled: exportCfg?.enable_json ?? false },
       { value: "PARQUET", label: "Parquet", enabled: exportCfg?.enable_parquet ?? false },
-      { value: "ACCESS", label: "MSSQL (ERP)", enabled: exportCfg?.erp_interface_enabled ?? false },
+      { value: "ACCESS", label: "MS Access (ERP)", enabled: exportCfg?.erp_interface_enabled ?? false },
       { value: "XML", label: "XML", enabled: true },
     ];
     const enabled = options.filter((option) => option.enabled);

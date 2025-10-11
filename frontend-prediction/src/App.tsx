@@ -17,6 +17,7 @@ const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/Process
 const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
+const AlgorithmVisualizationWorkspace = lazy(() => import("@components/workspaces/AlgorithmVisualizationWorkspace").then(m => ({ default: m.AlgorithmVisualizationWorkspace })));
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -63,6 +64,12 @@ const NAVIGATION_ITEMS = [
     label: "데이터 출력",
     description: "미리보기 · 내보내기",
     icon: <FileOutput size={18} />,
+  },
+  {
+    id: "algorithm-viz",
+    label: "알고리즘 시각화",
+    description: "Python 코드 노드 뷰",
+    icon: <GitBranch size={18} />,
   },
 ];
 
@@ -280,6 +287,9 @@ export default function App() {
       break;
     case "data-output":
       workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
+      break;
+    case "algorithm-viz":
+      workspace = <Suspense fallback={loadingFallback}><AlgorithmVisualizationWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

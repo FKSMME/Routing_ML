@@ -200,33 +200,6 @@ export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
   return response.data;
 }
 
-export interface DataSourceConnectionRequest {
-  path: string;
-  table?: string | null;
-}
-
-export interface DataSourceConnectionResponse {
-  ok: boolean;
-  message: string;
-  path_hash: string;
-  table_profiles: string[];
-  elapsed_ms?: number | null;
-  verified_table?: string | null;
-}
-
-export interface DataSourceMetadataColumn {
-  name: string;
-  type: string;
-  nullable?: boolean;
-}
-
-export interface DataSourceMetadataResponse {
-  table: string;
-  columns: DataSourceMetadataColumn[];
-  path?: string | null;
-  updated_at?: string | null;
-}
-
 export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
   const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
     "/training/features",
@@ -261,6 +234,7 @@ export async function runTraining(payload: TrainingRequestPayload): Promise<Trai
 // ============================================================================
 
 export type WorkspaceSettingsResponse = any;
+export type AccessMetadataResponse = any;
 export type OutputProfileColumn = any;
 export type WorkflowConfigResponse = any;
 
@@ -346,27 +320,13 @@ export async function triggerRoutingInterface(...args: any[]): Promise<any> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
-export async function testMssqlConnection(payload: DataSourceConnectionRequest): Promise<DataSourceConnectionResponse> {
-  const response = await api.post<DataSourceConnectionResponse>("/workspace/access/connection/test", {
-    path: payload.path,
-    table: payload.table ?? null,
-  });
-  return response.data;
+export async function testAccessConnection(...args: any[]): Promise<any> {
+  throw new Error("Access connection API removed - feature not available");
 }
 
-export async function fetchMssqlMetadata(params?: { table?: string; path?: string }): Promise<DataSourceMetadataResponse> {
-  const response = await api.get<DataSourceMetadataResponse>("/access/metadata", {
-    params: {
-      table: params?.table,
-      path: params?.path,
-    },
-  });
-  return response.data;
+export async function fetchAccessMetadata(...args: any[]): Promise<any> {
+  throw new Error("Access metadata API removed - feature not available");
 }
-
-// Deprecated aliases for backward compatibility
-export const testAccessConnection = testMssqlConnection;
-export const fetchAccessMetadata = fetchMssqlMetadata;
 
 export async function fetchOutputProfiles(...args: any[]): Promise<any> {
   return [];

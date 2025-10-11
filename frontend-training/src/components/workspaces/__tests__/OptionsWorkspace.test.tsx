@@ -17,8 +17,8 @@ vi.mock("@lib/apiClient", () => {
     options: {
       standard: ["zscore"],
       similarity: ["cosine", "profile"],
-      access_path: "K3-DB.ksm.co.kr,1433",
-      access_table: "dbo.BI_ROUTING_VIEW",
+      access_path: "\\\\Server\\Routing\\ROUTING.accdb",
+      access_table: "dbo_ROUTING",
       erp_interface: false,
       column_mappings: [
         {
@@ -28,17 +28,17 @@ vi.mock("@lib/apiClient", () => {
         },
       ],
     },
-    access: { path: "K3-DB.ksm.co.kr,1433", table: "dbo.BI_ROUTING_VIEW" },
+    access: { path: "\\\\Server\\Routing\\ROUTING.accdb", table: "dbo_ROUTING" },
     metadata: null,
   };
 
   return {
     fetchWorkspaceSettings: vi.fn().mockResolvedValue(defaultResponse),
     fetchWorkflowConfig: vi.fn().mockResolvedValue({ graph: { nodes: [] } }),
-    fetchMssqlMetadata: vi.fn(),
+    fetchAccessMetadata: vi.fn(),
     postUiAudit: vi.fn().mockResolvedValue(undefined),
     saveWorkspaceSettings: vi.fn().mockResolvedValue(defaultResponse),
-    testMssqlConnection: vi.fn(),
+    testAccessConnection: vi.fn(),
   };
 });
 

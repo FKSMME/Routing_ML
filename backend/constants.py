@@ -99,7 +99,7 @@ ROUTING_OUTPUT_COLS: list[str] = [
     # ── 기본 메타 및 식별자
     "ITEM_CD", "CANDIDATE_ID", "ROUTING_SIGNATURE", "PRIORITY", "SIMILARITY_TIER",
 
-# ── (Legacy) Access 7.1 공정 컬럼
+    # ── Access 7.1 공정 컬럼
     "PROC_SEQ", "INSIDE_FLAG",
     "dbo_BI_ROUTING_VIEW_JOB_CD", "JOB_NM",
     "RES_CD", "RES_DIS", "TIME_UNIT",

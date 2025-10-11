@@ -22,8 +22,8 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
       <section className="panel-card interactive-card">
         <header className="panel-header">
           <div>
-            <h2 className="panel-title">MSSQL Connection</h2>
-            <p className="panel-subtitle">Server endpoint & last configuration status</p>
+            <h2 className="panel-title">Access Connection</h2>
+            <p className="panel-subtitle">ODBC path and last synchronization status</p>
           </div>
           <span className={statusClass} aria-label={statusLabel} />
         </header>
@@ -33,7 +33,7 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
             <dd>{statusLabel}</dd>
           </div>
           <div>
-            <dt>Server</dt>
+            <dt>Path</dt>
             <dd className="truncate" title={connection.path}>
               {connection.path || "-"}
             </dd>

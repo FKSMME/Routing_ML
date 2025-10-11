@@ -3,13 +3,19 @@ import { X, FileCode, FolderOpen, Calendar, Weight, Code2, Brackets } from 'luci
 
 interface FileInfo {
   name: string;
-  path: string;
+  path?: string;
   type: string;
   size?: string;
   lastModified?: string;
   functions?: string[];
   classes?: string[];
   imports?: string[];
+  sourceCode?: string;
+  params?: string[];
+  returns?: string;
+  docstring?: string;
+  lineStart?: number;
+  lineEnd?: number;
 }
 
 interface FilePropertyModalProps {
@@ -154,8 +160,44 @@ export function FilePropertyModal({ isOpen, onClose, fileInfo }: FilePropertyMod
             </div>
           )}
 
+          {/* Source Code */}
+          {fileInfo.sourceCode && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                <Code2 className="w-4 h-4" />
+                소스 코드 {fileInfo.lineStart && `(Lines ${fileInfo.lineStart}-${fileInfo.lineEnd})`}
+              </h3>
+              {fileInfo.docstring && (
+                <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-blue-200 whitespace-pre-wrap">{fileInfo.docstring}</p>
+                </div>
+              )}
+              {fileInfo.params && fileInfo.params.length > 0 && (
+                <div className="bg-slate-800/30 rounded-lg p-3 mb-3">
+                  <p className="text-xs font-semibold text-slate-400 mb-2">Parameters:</p>
+                  <div className="space-y-1">
+                    {fileInfo.params.map((param, idx) => (
+                      <div key={idx} className="text-xs font-mono text-sky-300">• {param}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {fileInfo.returns && (
+                <div className="bg-slate-800/30 rounded-lg p-3 mb-3">
+                  <p className="text-xs font-semibold text-slate-400 mb-1">Returns:</p>
+                  <div className="text-xs font-mono text-emerald-300">{fileInfo.returns}</div>
+                </div>
+              )}
+              <div className="bg-slate-950 rounded-lg p-4 border border-slate-700/50 overflow-x-auto max-h-96">
+                <pre className="text-xs text-slate-300 font-mono leading-relaxed whitespace-pre">
+                  {fileInfo.sourceCode}
+                </pre>
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
-          {!fileInfo.functions?.length && !fileInfo.classes?.length && !fileInfo.imports?.length && (
+          {!fileInfo.functions?.length && !fileInfo.classes?.length && !fileInfo.imports?.length && !fileInfo.sourceCode && (
             <div className="text-center py-8 text-slate-500">
               <Code2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm">파일 분석 정보가 없습니다</p>
