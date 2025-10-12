@@ -21,13 +21,21 @@
 				"Anthropic.claude-code"
 			]
 		}
-	}
+	},
+
+	// 환경 변수 추가
+	"remoteEnv": {
+		"NODE_EXTRA_CA_CERTS": "/workspaces/Routing_ML_4/certs/ca-bundle.pem",
+		"SSL_CERT_FILE": "/workspaces/Routing_ML_4/certs/ca-bundle.pem",
+		"REQUESTS_CA_BUNDLE": "/workspaces/Routing_ML_4/certs/ca-bundle.pem",
+		"CURL_CA_BUNDLE": "/workspaces/Routing_ML_4/certs/ca-bundle.pem"
+	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [5173, 5174, 8000],
+	"forwardPorts": [5173, 5174, 8000]
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "python --version",

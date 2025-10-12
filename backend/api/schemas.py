@@ -888,16 +888,17 @@ __all__ = [
     "RslExportBundle",
 ]
 
-class AccessMetadataColumn(BaseModel):
+class DatabaseMetadataColumn(BaseModel):
     name: str
     type: str
     nullable: Optional[bool] = True
 
 
-class AccessMetadataResponse(BaseModel):
+class DatabaseMetadataResponse(BaseModel):
     table: str
-    columns: List[AccessMetadataColumn]
-    path: Optional[str] = None
+    columns: List[DatabaseMetadataColumn]
+    server: Optional[str] = None
+    database: Optional[str] = None
     updated_at: Optional[str] = None
 
 
@@ -1019,4 +1020,3 @@ class BulkUploadResponse(BaseModel):
 
 
 MasterDataTreeNode.update_forward_refs()
-

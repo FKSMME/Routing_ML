@@ -80,6 +80,25 @@ export function RoutingTabbedWorkspace({
             errorMessage={errorMessage}
           />
           <ReferenceMatrixPanel key={`reference-${tabKey}`} />
+
+          {/* 시각화 섹션 통합 */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Eye size={18} />
+              <span>시각화</span>
+            </h3>
+            <TimelinePanel key={`timeline-${tabKey}`} />
+            <VisualizationSummary metrics={data?.metrics} />
+          </div>
+
+          {/* 후보목록 섹션 통합 */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <ListChecks size={18} />
+              <span>후보목록</span>
+            </h3>
+            <CandidatePanel key={`candidates-${tabKey}`} />
+          </div>
         </div>
       ),
     },
@@ -99,27 +118,6 @@ export function RoutingTabbedWorkspace({
           />
           <MetricsPanel metrics={data?.metrics} loading={loading} />
           <RoutingExplanationPanel candidate={selectedCandidate} />
-        </div>
-      ),
-    },
-    {
-      id: "visualization",
-      label: "시각화",
-      icon: <Eye size={18} />,
-      content: (
-        <div className="routing-tab-content">
-          <TimelinePanel key={`timeline-${tabKey}`} />
-          <VisualizationSummary metrics={data?.metrics} />
-        </div>
-      ),
-    },
-    {
-      id: "candidates",
-      label: "후보목록",
-      icon: <ListChecks size={18} />,
-      content: (
-        <div className="routing-tab-content">
-          <CandidatePanel key={`candidates-${tabKey}`} />
         </div>
       ),
     },

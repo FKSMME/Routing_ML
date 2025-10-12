@@ -105,8 +105,7 @@ class Settings(BaseSettings):
     jwt_cookie_secure: bool = Field(default=False)
 
     # Database connection settings (from environment)
-    access_connection_string: Optional[str] = Field(default=None, description="MS Access DB 연결 문자열")
-    db_type: str = Field(default="ACCESS", description="데이터베이스 타입 (ACCESS, MSSQL)")
+    db_type: str = Field(default="MSSQL", description="데이터베이스 타입 (현재는 MSSQL만 지원)")
     mssql_server: Optional[str] = Field(default=None, description="MSSQL 서버 주소")
     mssql_database: Optional[str] = Field(default=None, description="MSSQL 데이터베이스명")
     mssql_user: Optional[str] = Field(default=None, description="MSSQL 사용자명")

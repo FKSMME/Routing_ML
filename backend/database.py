@@ -39,11 +39,10 @@ _DEMO_MODE = demo_mode_enabled()
 # 0) 경로 · 뷰 상수 (먼저 정의)
 # ════════════════════════════════════════════════
 BASE_DIR   = Path(__file__).resolve().parents[1]     # e.g., machine/
-ACCESS_DIR = BASE_DIR / "routing_data"               # Access DB 폴더
 
 # DB 타입 선택 (환경 변수로 제어)
 import os
-DB_TYPE = os.getenv("DB_TYPE", "ACCESS")  # ACCESS or MSSQL
+DB_TYPE = os.getenv("DB_TYPE", "MSSQL").upper()  # MSSQL only
 
 # MSSQL 연결 정보
 MSSQL_CONFIG = {
@@ -55,17 +54,11 @@ MSSQL_CONFIG = {
     "trust_certificate": os.getenv("MSSQL_TRUST_CERTIFICATE", "True").lower() == "true",
 }
 
-# 뷰 이름 (MSSQL은 dbo. 스키마 사용, Access는 dbo_ 접두사)
-if DB_TYPE == "MSSQL":
-    VIEW_ITEM_MASTER = "dbo.BI_ITEM_INFO_VIEW"
-    VIEW_ROUTING     = "dbo.BI_ROUTING_HIS_VIEW"
-    VIEW_WORK_RESULT = "dbo.BI_WORK_ORDER_RESULTS"
-    VIEW_PURCHASE_ORDER = "dbo.BI_PUR_PO_VIEW"
-else:
-    VIEW_ITEM_MASTER = "dbo_BI_ITEM_INFO_VIEW"
-    VIEW_ROUTING     = "dbo_BI_ROUTING_VIEW"
-    VIEW_WORK_RESULT = "dbo_BI_WORK_ORDER_RESULTS"
-    VIEW_PURCHASE_ORDER = None  # Access DB에는 없음
+# 뷰 이름 (MSSQL은 dbo. 스키마 사용)
+VIEW_ITEM_MASTER = "dbo.BI_ITEM_INFO_VIEW"
+VIEW_ROUTING     = "dbo.BI_ROUTING_HIS_VIEW"
+VIEW_WORK_RESULT = "dbo.BI_WORK_ORDER_RESULTS"
+VIEW_PURCHASE_ORDER = "dbo.BI_PUR_PO_VIEW"
 
 # 제한된 컬럼 목록 (SELECT * 방지)
 ITEM_MASTER_EXTRA_COLUMNS: List[str] = [
@@ -150,26 +143,7 @@ WORK_RESULT_VIEW_COLUMNS: Tuple[str, ...] = (
 )
 
 # ════════════════════════════════════════════════
-# 1) "가장 최근 Access DB" 경로 계산
-# ════════════════════════════════════════════════
-def _latest_db(path: Path | str) -> Path:
-    """<routing_data> 안에서 최신 *.accdb / *.mdb 파일 반환"""
-    p = Path(path).expanduser()
-    if not p.exists():
-        raise FileNotFoundError(f"폴더가 존재하지 않습니다 ➔ {p}")
-    files = sorted(
-        list(p.glob("*.accdb")) + list(p.glob("*.mdb")),
-        key=lambda f: f.stat().st_mtime,
-        reverse=True,
-    )
-    if not files:
-        raise FileNotFoundError(f"*.accdb / *.mdb 파일을 찾지 못했습니다 ➔ {p}")
-    latest = files[0]
-    logger.debug("[DB] 최신 Access 선택: %s", latest.name)
-    return latest
-
-# ════════════════════════════════════════════════
-# 2) 기본 연결 함수
+# 1) 기본 연결 함수
 # ════════════════════════════════════════════════
 def _create_mssql_connection():
     """MSSQL 서버 연결 생성"""
@@ -203,33 +177,22 @@ def _create_mssql_connection():
             f"TrustServerCertificate={'yes' if MSSQL_CONFIG['trust_certificate'] else 'no'};"
         )
 
-    try:
-        logger.info(f"MSSQL 연결 시도 (Driver: {driver_name}): {MSSQL_CONFIG['server']}/{MSSQL_CONFIG['database']}")
-        return pyodbc.connect(conn_str, timeout=10)
-    except pyodbc.Error as exc:
-        raise ConnectionError(f"MSSQL DB 연결 실패 (Driver: {driver_name}): {exc}") from exc
-
-def _create_access_connection():
-    """Access DB 연결 생성"""
-    if not PYODBC_AVAILABLE:
-        raise ImportError("pyodbc is not available. Please install ODBC drivers.")
-
-    db_path = _latest_db(ACCESS_DIR)
-    conn_str = (
-        r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};"
-        fr"DBQ={db_path}"
+    logger.info(
+        "MSSQL 연결 시도 (Driver: %s): %s/%s",
+        driver_name,
+        MSSQL_CONFIG["server"],
+        MSSQL_CONFIG["database"],
     )
     try:
         return pyodbc.connect(conn_str, timeout=10)
     except pyodbc.Error as exc:
-        raise ConnectionError(f"Access DB 연결 실패: {exc}") from exc
+        raise ConnectionError(f"MSSQL DB 연결 실패 (Driver: {driver_name}): {exc}") from exc
 
 def _create_connection() -> pyodbc.Connection:
-    """새로운 데이터베이스 연결 생성 (DB_TYPE에 따라 자동 선택)"""
-    if DB_TYPE == "MSSQL":
-        return _create_mssql_connection()
-    else:
-        return _create_access_connection()
+    """새로운 데이터베이스 연결 생성 (현재는 MSSQL만 지원)"""
+    if DB_TYPE != "MSSQL":
+        raise RuntimeError(f"Unsupported DB_TYPE '{DB_TYPE}'. Only MSSQL is supported.")
+    return _create_mssql_connection()
 
 def _connect() -> pyodbc.Connection:
     """데이터베이스에 연결 (기존 호환성)"""
@@ -451,26 +414,27 @@ def validate_system_requirements():
     except ImportError as e:
         issues.append(f"필수 라이브러리 누락: {e}")
     
-    # 2. Access 드라이버 확인
+    # 2. SQL Server ODBC 드라이버 확인
     try:
         drivers = pyodbc.drivers()
-        access_drivers = [d for d in drivers if 'Access' in d]
-        if not access_drivers:
-            issues.append("Microsoft Access ODBC 드라이버를 찾을 수 없습니다")
+        sqlserver_drivers = [
+            d for d in drivers if "SQL Server" in d or d == "FreeTDS"
+        ]
+        if not sqlserver_drivers:
+            issues.append("MSSQL ODBC 드라이버를 찾을 수 없습니다 (예: ODBC Driver 17/18 for SQL Server)")
         else:
-            logger.info(f"발견된 Access 드라이버: {access_drivers}")
+            logger.info("발견된 SQL Server 드라이버: %s", sqlserver_drivers)
     except Exception as e:
         issues.append(f"ODBC 드라이버 확인 실패: {e}")
-    
-    # 3. 데이터베이스 경로 확인
+
+    # 3. MSSQL 연결 확인
     try:
-        db_path = _latest_db(ACCESS_DIR)
-        if not db_path.exists():
-            issues.append(f"데이터베이스 파일 없음: {db_path}")
-        else:
-            logger.info(f"데이터베이스 파일 확인: {db_path}")
+        with _create_mssql_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
     except Exception as e:
-        issues.append(f"데이터베이스 경로 확인 실패: {e}")
+        issues.append(f"MSSQL 연결 실패: {e}")
     
     if issues:
         for issue in issues:
@@ -1092,33 +1056,48 @@ def test_connection() -> bool:
 def get_database_info() -> Dict[str, Any]:
     """데이터베이스 정보 조회"""
     try:
-        db_path = _latest_db(ACCESS_DIR)
         with _connect() as conn:
             cursor = conn.cursor()
-            
-            # 테이블 정보 조회
-            tables_info = {}
+            cursor.execute("SELECT @@SERVERNAME")
+            server_name = cursor.fetchone()[0] if cursor.description else MSSQL_CONFIG["server"]
+
+            cursor.execute("SELECT DB_NAME()")
+            database_name = cursor.fetchone()[0] if cursor.description else MSSQL_CONFIG["database"]
+
+            cursor.execute(
+                """
+                SELECT
+                    CAST(SUM(size) * 8.0 / 1024 AS DECIMAL(18,2)) AS size_mb
+                FROM sys.database_files
+                """
+            )
+            size_row = cursor.fetchone()
+            database_size_mb = float(size_row[0]) if size_row and size_row[0] is not None else 0.0
+
+            tables_info: Dict[str, Any] = {}
             for view_name in [VIEW_ITEM_MASTER, VIEW_ROUTING, VIEW_WORK_RESULT]:
                 try:
                     cursor.execute(f"SELECT COUNT(*) FROM {view_name}")
-                    count = cursor.fetchone()[0]
-                    tables_info[view_name] = count
+                    count_row = cursor.fetchone()
+                    tables_info[view_name] = int(count_row[0]) if count_row else 0
                 except Exception as e:
                     tables_info[view_name] = f"조회 실패: {e}"
-            
+
             return {
-                'database_path': str(db_path),
-                'database_size_mb': round(db_path.stat().st_size / 1024 / 1024, 2),
-                'tables_info': tables_info,
-                'connection_status': '정상'
+                "connection_status": "정상",
+                "server": server_name,
+                "database": database_name,
+                "database_size_mb": float(database_size_mb),
+                "tables_info": tables_info,
             }
     except Exception as exc:
         logger.error("[DB] 데이터베이스 정보 조회 실패: %s", exc)
         return {
-            'connection_status': f'오류: {exc}',
-            'database_path': '알 수 없음',
-            'database_size_mb': 0,
-            'tables_info': {}
+            "connection_status": f"오류: {exc}",
+            "server": MSSQL_CONFIG["server"],
+            "database": MSSQL_CONFIG["database"],
+            "database_size_mb": 0.0,
+            "tables_info": {},
         }
 
 # ════════════════════════════════════════════════
