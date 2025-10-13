@@ -88,7 +88,18 @@
       "Bash(tail:*)",
       "Bash(done)",
       "Bash(do echo -n \"Port $port: \")",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(sudo apt-key:*)",
+      "Read(//usr/lib/**)",
+      "Bash(sudo tee:*)",
+      "Bash(sudo apt-get update:*)",
+      "Bash(sudo DEBIAN_FRONTEND=noninteractive apt-get install:*)",
+      "Bash(sudo ACCEPT_EULA=Y DEBIAN_FRONTEND=noninteractive apt-get install:*)",
+      "Bash(wget:*)",
+      "Bash(sudo ACCEPT_EULA=Y dpkg:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(sudo apt --fix-broken install -y)",
+      "Bash(odbcinst:*)"
     ],
     "deny": [],
     "ask": []
