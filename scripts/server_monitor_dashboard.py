@@ -214,7 +214,7 @@ class MonitorApp:
         self.root = tk.Tk()
         self.root.title("Routing ML v4 - Service Monitor")
         self.root.configure(bg="#0d1117")
-        self.root.geometry("800x600")
+        self.root.geometry("1000x650")
         self.root.resizable(False, False)
 
         # Header with gradient effect
@@ -268,7 +268,43 @@ class MonitorApp:
             pady=8,
             command=self._start_services,
         )
-        start_btn.pack(side="left")
+        start_btn.pack(side="left", padx=(0, 10))
+
+        # STOP_ALL button
+        stop_btn = tk.Button(
+            action_frame,
+            text="■ Stop All Services",
+            font=("Segoe UI", 10, "bold"),
+            fg="#ffffff",
+            bg="#da3633",
+            activebackground="#f85149",
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=8,
+            command=self._stop_services,
+        )
+        stop_btn.pack(side="left", padx=(0, 10))
+
+        # Clear cache button
+        cache_btn = tk.Button(
+            action_frame,
+            text="🗑️ Clear Vite Cache",
+            font=("Segoe UI", 10),
+            fg="#c9d1d9",
+            bg="#21262d",
+            activebackground="#30363d",
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=8,
+            command=self._clear_cache,
+        )
+        cache_btn.pack(side="left")
 
         # Service cards grid
         grid = tk.Frame(self.root, bg="#0d1117")
@@ -347,6 +383,88 @@ class MonitorApp:
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror("Error", f"Failed to start services:\n{e}")
+
+    def _stop_services(self) -> None:
+        """모든 서비스를 종료합니다 (Node.js, Python 프로세스)."""
+        import subprocess
+        from tkinter import messagebox
+
+        try:
+            # Kill all node processes (frontend services)
+            subprocess.run(
+                ["taskkill", "/F", "/IM", "node.exe"],
+                capture_output=True,
+                text=True
+            )
+
+            # Kill all Python processes running uvicorn (backend services)
+            subprocess.run(
+                ["taskkill", "/F", "/FI", "IMAGENAME eq python.exe", "/FI", "WINDOWTITLE eq *uvicorn*"],
+                capture_output=True,
+                text=True
+            )
+
+            messagebox.showinfo(
+                "Services Stopped",
+                "All Node.js and Python backend services have been terminated.\n\nYou may need to close CMD windows manually."
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to stop services:\n{e}")
+
+    def _clear_cache(self) -> None:
+        """Vite 캐시 및 node_modules/.vite 폴더를 삭제합니다."""
+        import os
+        import shutil
+        from tkinter import messagebox
+
+        folders_to_check = [
+            "frontend-home",
+            "frontend-prediction",
+            "frontend-training"
+        ]
+
+        deleted_count = 0
+        errors = []
+
+        for folder_name in folders_to_check:
+            folder_path = os.path.join(self.selected_folder, folder_name)
+
+            if not os.path.exists(folder_path):
+                continue
+
+            # Clear node_modules/.vite
+            vite_cache = os.path.join(folder_path, "node_modules", ".vite")
+            if os.path.exists(vite_cache):
+                try:
+                    shutil.rmtree(vite_cache)
+                    deleted_count += 1
+                except Exception as e:
+                    errors.append(f"{folder_name}: {e}")
+
+            # Clear .vite directory (if it exists at project root)
+            vite_dir = os.path.join(folder_path, ".vite")
+            if os.path.exists(vite_dir):
+                try:
+                    shutil.rmtree(vite_dir)
+                    deleted_count += 1
+                except Exception as e:
+                    errors.append(f"{folder_name}/.vite: {e}")
+
+        if errors:
+            messagebox.showwarning(
+                "Cache Cleared with Errors",
+                f"Cleared {deleted_count} cache folder(s).\n\nErrors:\n" + "\n".join(errors)
+            )
+        elif deleted_count > 0:
+            messagebox.showinfo(
+                "Cache Cleared",
+                f"Successfully cleared {deleted_count} Vite cache folder(s).\n\nRestart services to apply changes."
+            )
+        else:
+            messagebox.showinfo(
+                "No Cache Found",
+                "No Vite cache folders were found to delete."
+            )
 
     def _poll_loop(self) -> None:
         while True:
