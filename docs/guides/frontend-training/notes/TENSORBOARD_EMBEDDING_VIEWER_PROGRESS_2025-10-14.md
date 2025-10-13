@@ -198,6 +198,84 @@ interface PointCloudProps {
 - ✅ 카메라 거리 제한으로 UX 개선
 - ✅ Props 기반 커스터마이징 지원
 
+---
+
+## 8. 3D 컨트롤 패널 추가 (2025-10-14)
+
+### 8.1 작업 목표
+- 실시간으로 3D 시각화를 조정할 수 있는 UI 컨트롤 추가
+- 포인트 크기, 투명도, 그리드 표시 등을 인터랙티브하게 제어
+
+### 8.2 구현된 기능
+
+**1. 컨트롤 패널 토글 버튼**
+- Canvas 우측 상단에 설정 아이콘 버튼 배치
+- 클릭 시 컨트롤 패널 토글 (showControls state)
+- 반투명 배경, 백드롭 블러, 그림자 효과
+
+**2. 포인트 크기 슬라이더**
+- Range input: 0.1 ~ 1.0 (step 0.05)
+- 실시간 값 표시 (2자리 소수)
+- Indigo accent 색상
+
+**3. 포인트 투명도 슬라이더**
+- Range input: 0.1 ~ 1.0 (step 0.05)
+- 퍼센트 표시 (0-100%)
+- 실시간 opacity 업데이트
+
+**4. 그리드 토글 스위치**
+- iOS 스타일 toggle switch
+- 그리드 표시/숨김 제어
+- 애니메이션 전환 효과
+
+**5. 기본값 초기화 버튼**
+- 모든 설정을 기본값으로 복원
+  - pointSize: 0.25
+  - pointOpacity: 0.9
+  - showGrid: true
+
+### 8.3 UI 디자인
+```typescript
+// 컨트롤 패널 위치: absolute top-3 right-3 z-10
+// 패널 크기: w-72 (288px)
+// 배경: bg-white/95 backdrop-blur (반투명 + 블러)
+// 그림자: shadow-xl
+// 다크모드 지원: dark:bg-slate-800/95
+```
+
+**컨트롤 항목**:
+1. **포인트 크기** - range slider + 실시간 값 표시
+2. **포인트 투명도** - range slider + 퍼센트 표시
+3. **그리드 표시** - toggle switch
+4. **초기화** - reset button
+
+### 8.4 State 관리
+```typescript
+const [pointSize, setPointSize] = useState(0.25);
+const [pointOpacity, setPointOpacity] = useState(0.9);
+const [showGrid, setShowGrid] = useState(true);
+const [showControls, setShowControls] = useState(false);
+```
+
+### 8.5 코드 위치
+- **Line 437-440**: State 선언
+- **Line 693**: PointCloud에 props 전달
+- **Line 707-789**: 컨트롤 패널 UI
+  - Line 708-717: 토글 버튼
+  - Line 719-788: 컨트롤 패널 (조건부 렌더링)
+  - Line 724-738: 포인트 크기 슬라이더
+  - Line 741-755: 투명도 슬라이더
+  - Line 758-773: 그리드 토글
+  - Line 776-786: 초기화 버튼
+
+### 8.6 타임라인
+| 시간 | 작업 내용 |
+|------|----------|
+| 16:50 | 사용자 요청: 도트 크기 및 환경 설정 컨트롤 추가 |
+| 16:55 | State 추가 및 PointCloud props 전달 |
+| 17:00 | 컨트롤 패널 UI 구현 완료 |
+| 17:05 | 빌드 테스트 통과 확인 |
+
 ### 6.6 Phase 2 완료 사항
 
 **구현된 기능**:

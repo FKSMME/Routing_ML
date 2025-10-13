@@ -435,7 +435,9 @@ export const TensorboardEmbeddingPanel = () => {
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3d');
   const [pointSize, setPointSize] = useState(0.25);
+  const [pointOpacity, setPointOpacity] = useState(0.9);
   const [showGrid, setShowGrid] = useState(true);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     void initialize();
@@ -688,7 +690,7 @@ export const TensorboardEmbeddingPanel = () => {
                   )}
 
                   {/* Point cloud */}
-                  <PointCloud pointSize={pointSize} />
+                  <PointCloud pointSize={pointSize} pointOpacity={pointOpacity} />
 
                   {/* Controls */}
                   <OrbitControls
@@ -700,6 +702,92 @@ export const TensorboardEmbeddingPanel = () => {
                     autoRotate={false}
                   />
                 </Canvas>
+
+                {/* 3D Visualization Controls */}
+                <div className="absolute top-3 right-3 z-10">
+                  <button
+                    type="button"
+                    className="rounded-lg bg-white/90 p-2 text-slate-700 shadow-lg backdrop-blur transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-200 dark:hover:bg-slate-800"
+                    onClick={() => setShowControls(!showControls)}
+                    title="3D 설정"
+                  >
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                  </button>
+
+                  {showControls && (
+                    <div className="absolute right-0 top-12 w-72 rounded-lg border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-800/95">
+                      <h4 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">3D 시각화 설정</h4>
+
+                      {/* Point Size Control */}
+                      <div className="mb-4">
+                        <label className="mb-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                          <span>포인트 크기</span>
+                          <span className="font-mono text-indigo-600 dark:text-indigo-400">{pointSize.toFixed(2)}</span>
+                        </label>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={pointSize}
+                          onChange={(e) => setPointSize(Number(e.target.value))}
+                          className="w-full accent-indigo-600"
+                        />
+                      </div>
+
+                      {/* Point Opacity Control */}
+                      <div className="mb-4">
+                        <label className="mb-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+                          <span>포인트 투명도</span>
+                          <span className="font-mono text-indigo-600 dark:text-indigo-400">{(pointOpacity * 100).toFixed(0)}%</span>
+                        </label>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={pointOpacity}
+                          onChange={(e) => setPointOpacity(Number(e.target.value))}
+                          className="w-full accent-indigo-600"
+                        />
+                      </div>
+
+                      {/* Grid Toggle */}
+                      <div className="mb-3 flex items-center justify-between">
+                        <label className="text-xs text-slate-600 dark:text-slate-300">그리드 표시</label>
+                        <button
+                          type="button"
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
+                            showGrid ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
+                          }`}
+                          onClick={() => setShowGrid(!showGrid)}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                              showGrid ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Reset Button */}
+                      <button
+                        type="button"
+                        className="mt-3 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+                        onClick={() => {
+                          setPointSize(0.25);
+                          setPointOpacity(0.9);
+                          setShowGrid(true);
+                        }}
+                      >
+                        기본값으로 초기화
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {loadingPoints ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm font-medium text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
                     임베딩 데이터를 불러오는 중입니다...
