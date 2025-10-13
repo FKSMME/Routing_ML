@@ -1,5 +1,5 @@
 import { useRoutingStore } from "@store/routingStore";
-import { useCallback, useEffect, useMemo, useState, useId } from "react";
+import { useCallback, useEffect, useMemo, useState, useId, type DragEvent } from "react";
 
 import { RoutingCanvas, type RoutingCanvasProps } from "./RoutingCanvas";
 
@@ -12,8 +12,10 @@ interface RecommendationsTabProps extends RoutingCanvasProps {
 export function RecommendationsTab({ initialView = "timeline", ...canvasProps }: RecommendationsTabProps) {
   const activeProductId = useRoutingStore((state) => state.activeProductId);
   const recommendations = useRoutingStore((state) => state.recommendations);
+  const insertOperation = useRoutingStore((state) => state.insertOperation);
 
   const [view, setView] = useState<ViewMode>(initialView);
+  const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
   const baseId = useId();
 
   const activeBucket = useMemo(
@@ -36,6 +38,52 @@ export function RecommendationsTab({ initialView = "timeline", ...canvasProps }:
     }
     setView(mode);
   }, [hasRecommendations]);
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setDropPreviewIndex(null);
+      const transfer = event.dataTransfer.getData("application/routing-operation");
+      if (!transfer) {
+        return;
+      }
+      try {
+        const payload = JSON.parse(transfer);
+        if (!payload?.operation) {
+          return;
+        }
+        // Calculate drop position based on mouse position
+        const target = event.currentTarget;
+        const rect = target.getBoundingClientRect();
+        const y = event.clientY - rect.top;
+        const itemHeight = 80; // Approximate height of each recommendation item
+        const dropIndex = Math.max(0, Math.min(operations.length, Math.floor(y / itemHeight)));
+        insertOperation(payload, dropIndex);
+      } catch (error) {
+        console.warn("Failed to parse drag payload", error);
+      }
+    },
+    [insertOperation, operations.length],
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      // Calculate drop preview position
+      const target = event.currentTarget;
+      const rect = target.getBoundingClientRect();
+      const y = event.clientY - rect.top;
+      const itemHeight = 80;
+      const previewIndex = Math.max(0, Math.min(operations.length, Math.floor(y / itemHeight)));
+      setDropPreviewIndex(previewIndex);
+    },
+    [operations.length],
+  );
+
+  const handleDragLeave = useCallback(() => {
+    setDropPreviewIndex(null);
+  }, []);
 
   const timelineTabId = `${baseId}-timeline-tab`;
   const recommendationsTabId = `${baseId}-recommendations-tab`;
@@ -84,6 +132,9 @@ export function RecommendationsTab({ initialView = "timeline", ...canvasProps }:
             aria-labelledby={recommendationsTabId}
             className="timeline-recommendations"
             data-testid="recommendations-panel"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
           >
             <div className="timeline-recommendations__summary">
               <span>
@@ -92,26 +143,48 @@ export function RecommendationsTab({ initialView = "timeline", ...canvasProps }:
               {activeBucket?.candidateId ? <span>Candidate {activeBucket.candidateId}</span> : null}
             </div>
             {operations.length === 0 ? (
-              <div className="timeline-placeholder">No recommendations available.</div>
+              <div className="timeline-placeholder">No recommendations available. Drag candidate blocks here to add them.</div>
             ) : (
-              <ol className="timeline-recommendations__list" data-testid="recommendations-list">
-                {operations.map((operation) => (
-                  <li
-                    key={`${operation.PROC_SEQ}-${operation.PROC_CD}`}
-                    className="timeline-recommendations__item"
-                  >
-                    <span className="timeline-recommendations__seq">#{operation.PROC_SEQ}</span>
-                    <div>
-                      <p className="timeline-recommendations__code">{operation.PROC_CD}</p>
-                      <p className="text-xs text-muted">{operation.PROC_DESC ?? "-"}</p>
+              <ol className="timeline-recommendations__list" data-testid="recommendations-list" style={{ position: "relative" }}>
+                {operations.map((operation, index) => {
+                  const key = `${operation.PROC_SEQ}-${operation.PROC_CD}`;
+                  return (
+                    <div key={key} style={{ display: "contents" }}>
+                      {dropPreviewIndex === index && (
+                        <li className="timeline-recommendations__drop-indicator">
+                          <div style={{
+                            height: "4px",
+                            backgroundColor: "#5b76d8",
+                            borderRadius: "2px",
+                            margin: "8px 0"
+                          }} />
+                        </li>
+                      )}
+                      <li className="timeline-recommendations__item">
+                        <span className="timeline-recommendations__seq">#{operation.PROC_SEQ}</span>
+                        <div>
+                          <p className="timeline-recommendations__code">{operation.PROC_CD}</p>
+                          <p className="text-xs text-muted">{operation.PROC_DESC ?? "-"}</p>
+                        </div>
+                        <div className="timeline-recommendations__metrics">
+                          <span>Setup {operation.SETUP_TIME ?? "-"}</span>
+                          <span>Run {operation.RUN_TIME ?? "-"}</span>
+                          <span>Wait {operation.WAIT_TIME ?? "-"}</span>
+                        </div>
+                      </li>
                     </div>
-                    <div className="timeline-recommendations__metrics">
-                      <span>Setup {operation.SETUP_TIME ?? "-"}</span>
-                      <span>Run {operation.RUN_TIME ?? "-"}</span>
-                      <span>Wait {operation.WAIT_TIME ?? "-"}</span>
-                    </div>
+                  );
+                })}
+                {dropPreviewIndex === operations.length && (
+                  <li className="timeline-recommendations__drop-indicator" key="drop-end">
+                    <div style={{
+                      height: "4px",
+                      backgroundColor: "#5b76d8",
+                      borderRadius: "2px",
+                      margin: "8px 0"
+                    }} />
                   </li>
-                ))}
+                )}
               </ol>
             )}
           </div>

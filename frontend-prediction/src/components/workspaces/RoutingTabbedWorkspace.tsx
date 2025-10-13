@@ -9,6 +9,7 @@ import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
 import { CandidatePanel } from "../CandidatePanel";
+import { RoutingGroupControls } from "../RoutingGroupControls";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls
@@ -68,7 +69,7 @@ export function RoutingTabbedWorkspace({
       content: (
         <div className="routing-unified-workspace" style={{ display: 'flex', width: '100%', minHeight: '800px', gap: '1rem' }}>
           {/* 좌측: 제어판 (20%) */}
-          <div className="control-section" style={{ flex: '0 0 20%', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="control-section" style={{ flex: '0 0 20%', minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }}>
             {renderPredictionBanner?.()}
             <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
               <h3 className="text-lg font-semibold mb-4 text-slate-200">제어판</h3>
@@ -86,6 +87,9 @@ export function RoutingTabbedWorkspace({
             </div>
             <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
               <ReferenceMatrixPanel key={`reference-${tabKey}`} />
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+              <RoutingGroupControls variant="embedded" />
             </div>
           </div>
 

@@ -380,7 +380,7 @@ function RoutingCanvasView({
           onMove={handleMove}
           onNodeDragStop={handleNodeDragStop}
           nodesDraggable
-          nodesConnectable={false}
+          nodesConnectable={true}
           elementsSelectable
           proOptions={{ hideAttribution: true }}
           defaultViewport={{ x: 0, y: 50, zoom: 0.8 }}
