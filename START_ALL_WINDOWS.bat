@@ -11,13 +11,13 @@ echo ========================================================================
 echo.
 echo 시작할 서비스:
 echo   [Backend]
-echo   - Training Service:    http://localhost:8001  (API Docs: /docs)
-echo   - Prediction Service:  http://localhost:8002  (API Docs: /docs)
+echo   - Main Backend API:    http://localhost:8000  (API Docs: /docs)
+echo   - Network Access:      http://10.204.2.28:8000
 echo.
 echo   [Frontend]
-echo   - Home Dashboard:      http://localhost:3000
-echo   - Prediction UI:       http://localhost:5173
-echo   - Training UI:         http://localhost:5174
+echo   - Home Dashboard:      http://localhost:3000  (Network: http://10.204.2.28:3000)
+echo   - Prediction UI:       http://localhost:5173  (Network: http://10.204.2.28:5173)
+echo   - Training UI:         http://localhost:5174  (Network: http://10.204.2.28:5174)
 echo.
 echo ========================================================================
 echo.
@@ -59,36 +59,37 @@ REM 로그 디렉토리 생성
 if not exist "logs" mkdir logs
 
 echo.
-echo [1/5] Backend Training Service 시작 중... (포트 8001)
-start "🔧 Training Service (Port 8001)" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.api.training_app:app --host 0.0.0.0 --port 8001 --reload"
-timeout /t 3 /nobreak >nul
+echo [1/4] Backend Main Service 시작 중... (포트 8000)
+start "Backend-Main-8000" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.api.app:app --host 0.0.0.0 --port 8000 --reload"
+timeout /t 5 /nobreak >nul
 
-echo [2/5] Backend Prediction Service 시작 중... (포트 8002)
-start "🎯 Prediction Service (Port 8002)" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.api.prediction_app:app --host 0.0.0.0 --port 8002 --reload"
-timeout /t 3 /nobreak >nul
-
-echo [3/5] Frontend Home Dashboard 시작 중... (포트 3000)
-start "🏠 Home Dashboard (Port 3000)" cmd /k "cd frontend-home && node server.js"
+echo [2/4] Frontend Home Dashboard 시작 중... (포트 3000)
+start "Frontend-Home-3000" cmd /k "cd frontend-home && node server.js"
 timeout /t 2 /nobreak >nul
 
-echo [4/5] Frontend Prediction UI 시작 중... (포트 5173)
-start "🎯 Prediction Frontend (Port 5173)" cmd /k "cd frontend-prediction && npm run dev"
+echo [3/4] Frontend Prediction UI 시작 중... (포트 5173)
+start "Frontend-Prediction-5173" cmd /k "cd frontend-prediction && npm run dev"
 timeout /t 2 /nobreak >nul
 
-echo [5/5] Frontend Training UI 시작 중... (포트 5174)
-start "🔧 Training Frontend (Port 5174)" cmd /k "cd frontend-training && npm run dev"
+echo [4/4] Frontend Training UI 시작 중... (포트 5174)
+start "Frontend-Training-5174" cmd /k "cd frontend-training && npm run dev"
 
 echo.
 echo ========================================================================
 echo   ✅ 모든 서비스가 시작되었습니다!
 echo ========================================================================
 echo.
-echo 접속 주소:
-echo   📊 홈 대시보드:     http://localhost:3000
-echo   🎯 라우팅 생성:     http://localhost:5173
-echo   🔧 모델 학습:       http://localhost:5174
-echo   📡 Training API:    http://localhost:8001/docs
-echo   📡 Prediction API:  http://localhost:8002/docs
+echo 로컬 접속 주소:
+echo   홈 대시보드:     http://localhost:3000
+echo   라우팅 생성:     http://localhost:5173
+echo   모델 학습:       http://localhost:5174
+echo   Backend API:     http://localhost:8000/docs
+echo.
+echo 내부망 접속 주소 (다른 PC에서):
+echo   홈 대시보드:     http://10.204.2.28:3000
+echo   라우팅 생성:     http://10.204.2.28:5173
+echo   모델 학습:       http://10.204.2.28:5174
+echo   Backend API:     http://10.204.2.28:8000/docs
 echo.
 echo 서비스 중지: 각 콘솔 창을 닫거나 Ctrl+C를 누르세요
 echo.
