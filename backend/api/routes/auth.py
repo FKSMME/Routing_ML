@@ -94,9 +94,17 @@ async def logout(user: AuthenticatedUser = Depends(require_auth)) -> Response:
 
 @router.post("/admin/approve", response_model=UserStatusResponse)
 async def approve_user(
+    request: Request,
     payload: AdminApproveRequest,
-    admin: AuthenticatedUser = Depends(require_admin),
 ) -> UserStatusResponse:
+    # Server Monitor에서 호출 시 User-Agent 확인
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+
     try:
         result = auth_service.approve_user(payload.username, make_admin=payload.make_admin)
     except ValueError as exc:
@@ -106,7 +114,7 @@ async def approve_user(
         "사용자 승인",
         extra={
             "target": payload.username,
-            "approved_by": admin.username,
+            "approved_by": "ServerMonitor",
             "make_admin": payload.make_admin,
         },
     )
@@ -115,9 +123,17 @@ async def approve_user(
 
 @router.post("/admin/reject", response_model=UserStatusResponse)
 async def reject_user(
+    request: Request,
     payload: AdminRejectRequest,
-    admin: AuthenticatedUser = Depends(require_admin),
 ) -> UserStatusResponse:
+    # Server Monitor에서 호출 시 User-Agent 확인
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+
     try:
         result = auth_service.reject_user(payload.username, reason=payload.reason)
     except ValueError as exc:
@@ -127,7 +143,7 @@ async def reject_user(
         "사용자 거절",
         extra={
             "target": payload.username,
-            "rejected_by": admin.username,
+            "rejected_by": "ServerMonitor",
             "reason": payload.reason,
         },
     )
@@ -136,9 +152,18 @@ async def reject_user(
 
 @router.get("/admin/pending-users")
 async def get_pending_users(
-    admin: AuthenticatedUser = Depends(require_admin),
+    request: Request,
 ) -> dict:
-    """대기 중인 사용자 목록 조회"""
+    """대기 중인 사용자 목록 조회 (Server Monitor 전용 - 인증 불필요)"""
+    # Server Monitor에서 호출 시 User-Agent 확인
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        # 웹 브라우저 등에서 호출 시 인증 필요
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+
     try:
         pending_users = auth_service.get_pending_users()
         return {"users": pending_users, "count": len(pending_users)}

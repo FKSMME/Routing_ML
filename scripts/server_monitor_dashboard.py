@@ -232,7 +232,16 @@ class MonitorApp:
         )
         header.pack(pady=15)
 
-        # Tab control
+        # Tab control with explicit styling
+        style = ttk.Style()
+        style.theme_use('clam')
+        style.configure('TNotebook', background='#0d1117', borderwidth=0)
+        style.configure('TNotebook.Tab', background='#21262d', foreground='#c9d1d9',
+                       padding=[20, 10], font=('Segoe UI', 10))
+        style.map('TNotebook.Tab',
+                 background=[('selected', '#238636')],
+                 foreground=[('selected', '#ffffff')])
+
         tab_control = ttk.Notebook(self.root)
 
         # Service Monitor Tab
