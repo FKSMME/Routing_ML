@@ -14,7 +14,19 @@ def ensure_forward_ref_compat() -> None:
     monkey-patch :func:`pydantic.typing.evaluate_forwardref` to supply the new
     keyword-only argument while keeping backwards compatibility for older
     Python versions.
+
+    NOTE: This patch is only needed for Pydantic v1. For Pydantic v2, this is a no-op.
     """
+
+    # Check Pydantic version - if v2, skip patching
+    try:
+        import pydantic
+        pydantic_version = tuple(int(x) for x in pydantic.__version__.split('.')[:2])
+        if pydantic_version >= (2, 0):
+            # Pydantic v2 doesn't need this patch
+            return
+    except Exception:
+        return
 
     try:
         import typing
