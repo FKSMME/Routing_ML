@@ -18,6 +18,7 @@ from backend.api.routes.anomaly import router as anomaly_router  # âœ… PyODBC ë¦
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
+from backend.api.routes.dashboard import router as dashboard_router
 from backend.api.routes.data_quality import router as data_quality_router
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.drift import router as drift_router
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(health_router)
     app.include_router(metrics_router)  # Prometheus metrics
+    app.include_router(dashboard_router)  # Dashboard metrics
     app.include_router(drift_router)
     app.include_router(auth_router)
     app.include_router(logs_router)
