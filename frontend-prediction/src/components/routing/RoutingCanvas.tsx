@@ -196,14 +196,12 @@ function RoutingCanvasView({
 
   const canvasDimensions = useMemo(() => {
     if (flowNodes.length === 0) {
-      return { width: 1024, height: 320 };
+      return { height: 320 };
     }
 
-    const maxX = flowNodes.reduce((acc, node) => Math.max(acc, node.position.x), 0);
     const maxY = flowNodes.reduce((acc, node) => Math.max(acc, node.position.y), 0);
 
     return {
-      width: Math.max(1024, maxX + NODE_GAP * 2),
       height: Math.max(320, maxY + NODE_GAP * 1.5),
     };
   }, [flowNodes]);
@@ -359,7 +357,7 @@ function RoutingCanvasView({
       onScroll={handleScroll}
       data-testid="routing-canvas-scroll"
     >
-      <div className="timeline-flow__canvas" style={{ width: canvasDimensions.width, height: canvasDimensions.height }}>
+      <div className="timeline-flow__canvas" style={{ width: "100%", height: canvasDimensions.height }}>
         {/* 드롭 위치 미리보기 인디케이터 */}
         {dropPreviewIndex !== null && (
           <div
