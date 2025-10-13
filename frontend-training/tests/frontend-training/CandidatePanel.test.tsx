@@ -52,6 +52,9 @@ const CUSTOM_OPERATION: OperationStep = {
 const createMockState = () => {
   const state: any = {
     activeProductId: "ITEM-1",
+    processGroups: [],
+    activeProcessGroupId: null,
+    setActiveProcessGroup: vi.fn(),
     recommendations: [
       {
         itemCode: "ITEM-1",

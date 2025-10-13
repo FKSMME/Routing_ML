@@ -10,6 +10,7 @@ import { useRoutingStore } from "@store/routingStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const fetchWorkspaceSettingsMock = vi.hoisted(() => vi.fn());
+const fetchWorkflowConfigMock = vi.hoisted(() => vi.fn());
 const createRoutingGroupMock = vi.hoisted(() => vi.fn());
 const fetchRoutingGroupMock = vi.hoisted(() => vi.fn());
 const listRoutingGroupsMock = vi.hoisted(() => vi.fn());
@@ -28,6 +29,7 @@ const saveRoutingSelectorMock = vi.hoisted(() =>
 vi.mock("@lib/apiClient", () => ({
   __esModule: true,
   fetchWorkspaceSettings: fetchWorkspaceSettingsMock,
+  fetchWorkflowConfig: fetchWorkflowConfigMock,
   createRoutingGroup: createRoutingGroupMock,
   fetchRoutingGroup: fetchRoutingGroupMock,
   listRoutingGroups: listRoutingGroupsMock,
@@ -160,6 +162,65 @@ describe("ERP disabled routing save evidence capture", () => {
     fetchWorkspaceSettingsMock.mockResolvedValue({
       options: { erp_interface: false },
       export: { erp_interface_enabled: false },
+    });
+    fetchWorkflowConfigMock.mockResolvedValue({
+      graph: { nodes: [], edges: [], design_refs: [], last_saved: deterministicTimestamp },
+      trainer: { similarity_threshold: 0.8, trim_std_enabled: true, trim_lower_percent: 0.05, trim_upper_percent: 0.95 },
+      predictor: {
+        similarity_high_threshold: 0.85,
+        max_routing_variants: 5,
+        trim_std_enabled: true,
+        trim_lower_percent: 0.05,
+        trim_upper_percent: 0.95,
+      },
+      sql: {
+        output_columns: [],
+        column_aliases: {},
+        available_columns: [],
+        profiles: [],
+        active_profile: null,
+        exclusive_column_groups: [],
+        key_columns: [],
+        training_output_mapping: {},
+      },
+      data_source: {
+        offline_dataset_path: null,
+        default_table: "dbo.BI_ITEM_INFO_VIEW",
+        backup_paths: [],
+        table_profiles: [],
+        column_overrides: {},
+        allow_gui_override: true,
+        shading_palette: {},
+        blueprint_switches: [],
+        version_hint: null,
+      },
+      export: {
+        enable_cache_save: false,
+        enable_excel: true,
+        enable_csv: true,
+        enable_txt: false,
+        enable_parquet: false,
+        enable_json: true,
+        enable_database_export: false,
+        database_target_table: "dbo.ROUTING_MASTER",
+        erp_interface_enabled: false,
+        erp_protocol: null,
+        erp_endpoint: null,
+        default_encoding: "utf-8",
+        export_directory: "/tmp",
+        compress_on_save: false,
+      },
+      visualization: {
+        tensorboard_projector_dir: "",
+        projector_enabled: false,
+        projector_metadata_columns: [],
+        neo4j_enabled: false,
+        neo4j_browser_url: null,
+        neo4j_workspace: null,
+        publish_service_enabled: false,
+        publish_notes: null,
+      },
+      updated_at: deterministicTimestamp,
     });
     createRoutingGroupMock.mockResolvedValue({
       group_id: "grp-erp-off-001",

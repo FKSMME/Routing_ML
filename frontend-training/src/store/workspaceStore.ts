@@ -12,7 +12,7 @@ import {
   useRoutingStore,
 } from "./routingStore";
 
-export type LayoutMode = "desktop" | "tablet" | "mobile";
+export type LayoutMode = "desktop";
 export type NavigationKey =
   | "master-data"
   | "routing"

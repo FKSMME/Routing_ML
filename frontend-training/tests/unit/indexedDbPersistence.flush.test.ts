@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { indexedDB as fakeIndexedDB, IDBKeyRange as FakeIDBKeyRange } from "fake-indexeddb";
 
 const stores = new Map<string, Map<string, unknown>>();
 
@@ -66,7 +67,10 @@ describe("routing persistence flush", () => {
     stores.clear();
     vi.useFakeTimers();
     ensureCrypto();
-    Object.assign(globalThis, { indexedDB: {} });
+    Object.assign(globalThis, {
+      indexedDB: fakeIndexedDB,
+      IDBKeyRange: FakeIDBKeyRange,
+    });
     Object.defineProperty(globalThis, "navigator", {
       configurable: true,
       value: { onLine: true },
@@ -82,6 +86,7 @@ describe("routing persistence flush", () => {
     await vi.runAllTimersAsync();
     vi.useRealTimers();
     delete (globalThis as Record<string, unknown>).indexedDB;
+    delete (globalThis as Record<string, unknown>).IDBKeyRange;
     delete (globalThis as Record<string, unknown>).navigator;
     delete (globalThis as Record<string, unknown>).crypto;
   });

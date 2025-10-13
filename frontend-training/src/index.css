@@ -528,32 +528,9 @@ html.dark {
   color: var(--text-heading);
 }
 
-@media (max-width: 960px) {
-  .hero-banner {
-    margin: 1.5rem 1.25rem 1rem;
-    padding: clamp(2rem, 6vw, 3rem);
-  }
 
-  .hero-banner__stats {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
-}
 
-@media (max-width: 640px) {
-  .hero-banner {
-    margin: 1.25rem 1rem 0.5rem;
-    padding: 2rem;
-  }
 
-  .hero-banner__actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .hero-banner__cta {
-    width: 100%;
-  }
-}
 
 .app-header {
   position: relative; /* 스크롤 시 사라지도록 변경 */
@@ -794,29 +771,9 @@ html.dark {
   text-align: center;
 }
 
-@media (max-width: 1024px) {
-  .main-nav-inner {
-    padding: 0.75rem 1.5rem;
-  }
-  .main-nav-tabs {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
-}
 
-@media (max-width: 768px) {
-  .main-nav-inner {
-    padding: 0.65rem 1.25rem;
-    gap: 0.65rem;
-  }
-  .main-nav-tabs {
-    overflow-x: auto;
-    display: flex;
-    gap: 0.5rem;
-  }
-  .main-nav-tab {
-    min-width: 220px;
-  }
-}
+
+
 
 .app-main {
   flex: 1;
@@ -1361,51 +1318,13 @@ html.dark {
   text-align: center;
 }
 
-@media (max-width: 1440px) {
-  .app-main {
-    grid-template-columns: 280px 1fr 320px;
-  }
-}
 
-@media (max-width: 1280px) {
-  .app-main {
-    grid-template-columns: 260px 1fr;
-  }
-}
 
-@media (max-width: 1024px) {
-  .app-main {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.25rem;
-  }
-  .header-content {
-    padding: 1.25rem 1.5rem;
-  }
-  .main-nav-inner {
-    padding: 0.75rem 1.5rem;
-  }
-  .main-nav-tabs {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
-}
 
-@media (max-width: 768px) {
-  .main-nav-inner {
-    padding: 0.65rem 1.25rem;
-    gap: 0.65rem;
-  }
-  .main-nav-tabs {
-    overflow-x: auto;
-    display: flex;
-    gap: 0.5rem;
-  }
-  .main-nav-tab {
-    min-width: 220px;
-  }
-  .app-main {
-    padding: 1.25rem;
-  }
-}
+
+
+
+
 
 
 .master-data-grid {
@@ -1664,28 +1583,11 @@ html.dark {
   color: var(--text-primary);
 }
 
-@media (max-width: 1280px) {
-  .master-data-grid {
-    grid-template-columns: 260px 1fr;
-  }
-}
 
-@media (max-width: 1024px) {
-  .master-data-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.25rem;
-    padding: 1.75rem 1.5rem;
-  }
-  .master-column {
-    width: 100%;
-  }
-}
 
-@media (max-width: 768px) {
-  .master-data-grid {
-    padding: 1.25rem;
-  }
-}
+
+
+
 
 .master-tree-label {
   display: block;
@@ -2023,16 +1925,7 @@ html.dark {
   color: var(--text-muted);
 }
 
-@media (max-width: 1024px) {
-  .timeline-status__meta {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .candidate-operation__meta,
-  .timeline-step__metrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+
 
 .routing-group-controls {
   display: flex;
@@ -2260,23 +2153,9 @@ html.dark {
   height: 100%;
 }
 
-@media (max-width: 1280px) {
-  .routing-workspace__grid {
-    grid-template-columns: minmax(220px, 0.2fr) minmax(0, 0.6fr) minmax(240px, 0.2fr);
-  }
-  .routing-workspace__column--right {
-    order: 3;
-  }
-}
 
-@media (max-width: 1024px) {
-  .routing-workspace__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .routing-workspace__column {
-    order: initial;
-  }
-}
+
+
 
 /* Product tabs */
 .routing-tabs__container {
@@ -3201,11 +3080,7 @@ html.dark {
   gap: 0.75rem;
 }
 
-@media (max-width: 960px) {
-  .prediction-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
+
 
 .timeline-placeholder {
   padding: 1rem;
@@ -4701,17 +4576,9 @@ html.dark {
   gap: var(--spacing-lg);
 }
 
-@media (max-width: 1024px) {
-  .grid-3, .grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 
-@media (max-width: 768px) {
-  .grid-2, .grid-3, .grid-4 {
-    grid-template-columns: 1fr;
-  }
-}
+
+
 
 /* 카드 표준 */
 .card-standard {
@@ -5277,13 +5144,7 @@ html.dark {
   gap: var(--card-gap);
 }
 
-@media (max-width: 1024px) {
-  :root {
-    --card-padding: var(--spacing-md);
-    --card-margin-bottom: var(--spacing-md);
-    --card-gap: var(--spacing-md);
-  }
-}
+
 
 .panel-card:hover,
 .surface-card:hover,
