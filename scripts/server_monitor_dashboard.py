@@ -205,9 +205,11 @@ class MonitorApp:
     def __init__(self, services: Tuple[Service, ...]) -> None:
         import os
         import subprocess
+        from tkinter import filedialog
 
         self.services = services
         self.queue: Queue[Tuple[str, str, str]] = Queue()
+        self.selected_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         self.root = tk.Tk()
         self.root.title("Routing ML v4 - Service Monitor")
@@ -232,6 +234,24 @@ class MonitorApp:
         action_frame = tk.Frame(self.root, bg="#0d1117")
         action_frame.pack(fill="x", padx=20, pady=(0, 10))
 
+        # Select folder button
+        folder_btn = tk.Button(
+            action_frame,
+            text="📁 Select Project Folder",
+            font=("Segoe UI", 10),
+            fg="#c9d1d9",
+            bg="#21262d",
+            activebackground="#30363d",
+            activeforeground="#ffffff",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            padx=20,
+            pady=8,
+            command=self._select_folder,
+        )
+        folder_btn.pack(side="left", padx=(0, 10))
+
         # START_ALL button
         start_btn = tk.Button(
             action_frame,
@@ -246,31 +266,9 @@ class MonitorApp:
             cursor="hand2",
             padx=20,
             pady=8,
-            command=lambda: subprocess.Popen(
-                ["cmd", "/c", "start", "cmd", "/k", "START_ALL_WINDOWS.bat"],
-                cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                shell=True
-            ),
+            command=self._start_services,
         )
-        start_btn.pack(side="left", padx=(0, 10))
-
-        # Open folder button
-        folder_btn = tk.Button(
-            action_frame,
-            text="📁 Open Project Folder",
-            font=("Segoe UI", 10),
-            fg="#c9d1d9",
-            bg="#21262d",
-            activebackground="#30363d",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
-            cursor="hand2",
-            padx=20,
-            pady=8,
-            command=lambda: os.startfile(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-        )
-        folder_btn.pack(side="left")
+        start_btn.pack(side="left")
 
         # Service cards grid
         grid = tk.Frame(self.root, bg="#0d1117")
@@ -301,6 +299,54 @@ class MonitorApp:
         self.root.after(200, self._drain_queue)
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
+
+    def _select_folder(self) -> None:
+        """폴더 선택 다이얼로그를 열어 프로젝트 폴더를 선택합니다."""
+        from tkinter import filedialog
+        import os
+
+        folder = filedialog.askdirectory(
+            title="Select Routing ML Project Folder",
+            initialdir=self.selected_folder,
+        )
+
+        if folder:
+            self.selected_folder = folder
+            # 선택한 폴더에 START_ALL_WINDOWS.bat이 있는지 확인
+            bat_file = os.path.join(folder, "START_ALL_WINDOWS.bat")
+            if os.path.exists(bat_file):
+                self.root.title(f"Routing ML v4 - Service Monitor [{os.path.basename(folder)}]")
+            else:
+                from tkinter import messagebox
+                messagebox.showwarning(
+                    "Warning",
+                    f"START_ALL_WINDOWS.bat not found in:\n{folder}\n\nPlease select the correct project folder."
+                )
+
+    def _start_services(self) -> None:
+        """선택된 폴더에서 START_ALL_WINDOWS.bat을 실행합니다."""
+        import os
+        import subprocess
+
+        bat_file = os.path.join(self.selected_folder, "START_ALL_WINDOWS.bat")
+
+        if not os.path.exists(bat_file):
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Error",
+                f"START_ALL_WINDOWS.bat not found in:\n{self.selected_folder}\n\nPlease select the project folder first."
+            )
+            return
+
+        try:
+            subprocess.Popen(
+                ["cmd", "/c", "start", "cmd", "/k", "START_ALL_WINDOWS.bat"],
+                cwd=self.selected_folder,
+                shell=True
+            )
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to start services:\n{e}")
 
     def _poll_loop(self) -> None:
         while True:
