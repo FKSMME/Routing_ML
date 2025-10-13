@@ -18,6 +18,7 @@ import ReactFlow, {
   type NodeChange,
   type EdgeChange,
 } from 'reactflow';
+import { FilePropertyModal } from '../modals/FilePropertyModal';
 import axios from 'axios';
 import dagre from 'dagre';
 
@@ -289,6 +290,8 @@ export function AlgorithmVisualizationWorkspace() {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalFileInfo, setModalFileInfo] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'static' | 'dynamic' | 'summary'>('static'); // 'static' = Rainbow Balls, 'dynamic' = Real AST
@@ -627,6 +630,24 @@ export function AlgorithmVisualizationWorkspace() {
     setReactFlowInstance(instance);
   }, []);
 
+  // Handle node double click to show source code
+  const handleNodeDoubleClick = useCallback(
+    (_event: React.MouseEvent, node: Node<FunctionNodeData>) => {
+      setModalFileInfo({
+        name: node.data.label,
+        sourceCode: node.data.sourceCode || '// Source code not available',
+        type: node.data.type,
+        params: node.data.params,
+        returns: node.data.returns,
+        docstring: node.data.docstring,
+        lineStart: node.data.lineStart,
+        lineEnd: node.data.lineEnd,
+      });
+      setIsModalOpen(true);
+    },
+    []
+  );
+
   // Handle node changes for dynamic mode
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -869,6 +890,7 @@ export function AlgorithmVisualizationWorkspace() {
                 onNodesChange={viewMode === 'dynamic' ? handleNodesChange : undefined}
                 onEdgesChange={viewMode === 'dynamic' ? handleEdgesChange : undefined}
                 onConnect={viewMode === 'dynamic' ? handleConnect : undefined}
+                onNodeDoubleClick={handleNodeDoubleClick}
                 nodeTypes={nodeTypes}
                 connectionMode={ConnectionMode.Loose}
                 fitView
@@ -941,6 +963,13 @@ export function AlgorithmVisualizationWorkspace() {
           )}
         </div>
       </div>
+
+      {/* File Property Modal */}
+      <FilePropertyModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        fileInfo={modalFileInfo}
+      />
     </div>
   );
 }
