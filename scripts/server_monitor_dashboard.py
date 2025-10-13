@@ -268,9 +268,7 @@ class MonitorApp:
             cursor="hand2",
             padx=20,
             pady=8,
-            command=lambda: subprocess.Popen(
-                f'explorer "{os.path.dirname(os.path.dirname(os.path.abspath(__file__)))}"'
-            ),
+            command=lambda: os.startfile(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         )
         folder_btn.pack(side="left")
 
