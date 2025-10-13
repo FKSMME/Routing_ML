@@ -9,7 +9,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
-from backend.api.routes.access import router as access_router
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.blueprint import router as blueprint_router
@@ -51,7 +50,6 @@ def create_prediction_app() -> FastAPI:
     app.include_router(routing_groups_router)
     app.include_router(workflow_router)
     app.include_router(rsl_router)
-    app.include_router(access_router)
     app.include_router(audit_router)
 
     get_logger("api.prediction_app").info("라우팅 생성 서비스 초기화 완료")
