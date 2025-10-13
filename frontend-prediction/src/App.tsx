@@ -17,7 +17,6 @@ const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/Process
 const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
-const AlgorithmVisualizationWorkspace = lazy(() => import("@components/workspaces/AlgorithmVisualizationWorkspace").then(m => ({ default: m.AlgorithmVisualizationWorkspace })));
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -29,7 +28,7 @@ import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { useTheme } from "@hooks/useTheme";
-import { Database, FileOutput, Layers, Menu, Table, Workflow, GitBranch } from "lucide-react";
+import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
 import axios from "axios";
 import { useEffect, useState, Suspense } from "react";
 
@@ -58,12 +57,6 @@ const NAVIGATION_ITEMS = [
     label: "공정 그룹",
     description: "대체 경로 관리",
     icon: <Layers size={18} />,
-  },
-  {
-    id: "algorithm-viz",
-    label: "알고리즘 시각화",
-    description: "Python 코드 노드 뷰",
-    icon: <GitBranch size={18} />,
   },
   {
     id: "data-output",
@@ -287,9 +280,6 @@ export default function App() {
       break;
     case "data-output":
       workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
-      break;
-    case "algorithm-viz":
-      workspace = <Suspense fallback={loadingFallback}><AlgorithmVisualizationWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
