@@ -246,7 +246,6 @@
     }
   },
   "data_source": {
-    "access_path": "routing_data/ROUTING AUTO TEST.accdb",
     "default_table": "dbo_BI_ITEM_INFO_VIEW",
     "backup_paths": [],
     "table_profiles": [
@@ -323,7 +322,8 @@
         "accent": "oklch(0.64 0.06 235)"
       }
     ],
-    "version_hint": "access-config-v1"
+    "version_hint": "access-config-v1",
+    "offline_dataset_path": "routing_data/ROUTING AUTO TEST.accdb"
   },
   "export": {
     "enable_cache_save": false,

@@ -467,6 +467,8 @@ class ExportFormatConfig:
     enable_txt: bool = True
     enable_parquet: bool = True
     enable_json: bool = True
+    enable_database_export: bool = False
+    database_target_table: str = "dbo.ROUTING_MASTER"
     erp_interface_enabled: bool = False
     erp_protocol: Optional[str] = None
     erp_endpoint: Optional[str] = None
@@ -482,6 +484,8 @@ class ExportFormatConfig:
             "enable_txt": self.enable_txt,
             "enable_parquet": self.enable_parquet,
             "enable_json": self.enable_json,
+            "enable_database_export": self.enable_database_export,
+            "database_target_table": self.database_target_table,
             "erp_interface_enabled": self.erp_interface_enabled,
             "erp_protocol": self.erp_protocol,
             "erp_endpoint": self.erp_endpoint,
@@ -501,6 +505,13 @@ class ExportFormatConfig:
             enable_txt=bool(data.get("enable_txt", True)),
             enable_parquet=bool(data.get("enable_parquet", True)),
             enable_json=bool(data.get("enable_json", True)),
+            enable_database_export=bool(
+                data.get("enable_database_export", data.get("enable_access", False))
+            ),
+            database_target_table=data.get(
+                "database_target_table",
+                data.get("access_table_name", "dbo.ROUTING_MASTER"),
+            ),
             erp_interface_enabled=bool(data.get("erp_interface_enabled", False)),
             erp_protocol=data.get("erp_protocol"),
             erp_endpoint=data.get("erp_endpoint"),

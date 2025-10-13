@@ -3,7 +3,6 @@ import { FileCode, Play, Save, RotateCcw } from 'lucide-react';
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   ReactFlowProvider,
   type Edge,
   type Node,
@@ -466,8 +465,9 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
 
+      // Auto-scale to fit canvas width with minimal padding
       setTimeout(() => {
-        reactFlowInstance?.fitView({ padding: 0.2 });
+        reactFlowInstance?.fitView({ padding: 0.05 });
       }, 100);
     } catch (error: any) {
       console.error('Failed to analyze file:', error);
@@ -716,8 +716,8 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
   return (
     <div
       className="algorithm-visualization-workspace flex w-full bg-slate-950"
-      style={{ height: 'calc(100vh - 150px)', minHeight: '600px' }}
-      data-version="v3"
+      style={{ height: 'calc(100vh - 100px)', minHeight: '700px' }}
+      data-version="v3.1"
     >
       {/* 좌측 패널: 파일 목록 (20% 너비) */}
       <div className="file-panel w-1/5 min-w-[250px] border-r border-slate-700/50 bg-slate-900/50 p-4 overflow-y-auto flex-shrink-0">
@@ -897,7 +897,6 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
                 className="h-full"
                 onInit={handleInit}
               >
-                <MiniMap pannable zoomable style={{ background: 'rgba(15, 23, 42, 0.75)' }} />
                 <Controls position="bottom-right" />
                 <Background gap={24} color="#1e293b" />
               </ReactFlow>

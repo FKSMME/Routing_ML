@@ -3010,7 +3010,7 @@
       },
       "DataSourceConfigModel": {
         "properties": {
-          "access_path": {
+          "offline_dataset_path": {
             "type": "string",
             "title": "Access Path"
           },
@@ -3068,14 +3068,14 @@
         },
         "type": "object",
         "required": [
-          "access_path",
+          "offline_dataset_path",
           "default_table"
         ],
         "title": "DataSourceConfigModel"
       },
       "DataSourceConfigPatch": {
         "properties": {
-          "access_path": {
+          "offline_dataset_path": {
             "type": "string",
             "title": "Access Path"
           },

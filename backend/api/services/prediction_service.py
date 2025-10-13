@@ -1400,20 +1400,19 @@ class PredictionService:
             xml_path = export_dir / f"routing_operations_{timestamp}.xml"
             _safe_export(lambda: self._write_xml_export(routing_records, candidate_records, xml_path, encoding), xml_path)
 
-        if "access" in requested and export_cfg.enable_access and export_cfg.access_db_path:
+        if "database" in requested and export_cfg.enable_database_export and export_cfg.database_target_table:
             try:
-                inserted_count = self._write_access_export(
+                inserted_count = self._write_database_export(
                     routing_records,
-                    export_cfg.access_db_path,
-                    export_cfg.access_table_name
+                    export_cfg.database_target_table,
                 )
-                access_info = f"{export_cfg.access_db_path}::{export_cfg.access_table_name} ({inserted_count} rows)"
-                exported_paths.append(access_info)
-                logger.info("ACCESS 데이터베이스 저장 완료: %s", access_info)
+                target_info = f"{export_cfg.database_target_table} ({inserted_count} rows)"
+                exported_paths.append(target_info)
+                logger.info("MSSQL 테이블 저장 완료: %s", target_info)
             except Exception as exc:
-                logger.warning("ACCESS 데이터베이스 저장 실패: %s", exc)
+                logger.warning("MSSQL 테이블 저장 실패: %s", exc)
                 export_errors.append(
-                    {"path": export_cfg.access_db_path or "unknown", "error": f"{exc.__class__.__name__}: {exc}"}
+                    {"table": export_cfg.database_target_table or "unknown", "error": f"{exc.__class__.__name__}: {exc}"}
                 )
 
         if export_cfg.compress_on_save and exported_paths:
@@ -1481,64 +1480,40 @@ class PredictionService:
 
         xml_path.write_bytes(pretty_xml)
 
-    def _write_access_export(
+    def _write_database_export(
         self,
         routing_records: List[Dict[str, Any]],
-        access_db_path: str,
-        table_name: str = "ROUTING_MASTER"
+        target_table: str,
     ) -> int:
-        """ACCESS 데이터베이스에 라우팅 데이터 저장."""
-        try:
-            import pyodbc
-        except ImportError:
-            logger.error("pyodbc 모듈이 설치되지 않았습니다. 'pip install pyodbc'로 설치하세요.")
-            raise RuntimeError("pyodbc 모듈이 필요합니다")
+        """MSSQL 데이터베이스에 라우팅 데이터를 저장한다."""
 
         if not routing_records:
             return 0
 
-        # ODBC 연결 문자열
-        conn_str = (
-            f"DRIVER={{Microsoft Access Driver (*.mdb, *.accdb)}};"
-            f"DBQ={access_db_path};"
-            "ExtendedAnsiSQL=1;"
-        )
+        sample_record = routing_records[0]
+        columns = [col for col, value in sample_record.items() if value is not None]
+        if not columns:
+            return 0
 
-        inserted_count = 0
+        normalized_table = ".".join(f"[{part.strip('[]')}]" for part in target_table.split(".") if part)
+        placeholders = ", ".join(["?"] * len(columns))
+        column_names = ", ".join(f"[{col}]" for col in columns)
+        insert_query = f"INSERT INTO {normalized_table} ({column_names}) VALUES ({placeholders})"
 
+        payload_rows = [[record.get(col) for col in columns] for record in routing_records]
+
+        conn = database._create_connection()
         try:
-            conn = pyodbc.connect(conn_str)
             cursor = conn.cursor()
-
-            # 첫 번째 레코드로부터 컬럼 확인
-            sample_record = routing_records[0]
-            columns = [col for col in sample_record.keys() if sample_record.get(col) is not None]
-
-            # INSERT 쿼리 준비
-            placeholders = ", ".join(["?"] * len(columns))
-            column_names = ", ".join(f"[{col}]" for col in columns)
-            insert_query = f"INSERT INTO [{table_name}] ({column_names}) VALUES ({placeholders})"
-
-            # 배치 삽입
-            for record in routing_records:
-                values = [record.get(col) for col in columns]
-                try:
-                    cursor.execute(insert_query, values)
-                    inserted_count += 1
-                except pyodbc.IntegrityError as exc:
-                    # 중복 키 오류 무시
-                    logger.debug("중복 레코드 건너뛰기: %s", exc)
-                    continue
-
+            cursor.executemany(insert_query, payload_rows)
             conn.commit()
-            cursor.close()
-            conn.close()
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
-            return inserted_count
-
-        except pyodbc.Error as exc:
-            logger.error("ACCESS 데이터베이스 저장 실패: %s", exc)
-            raise RuntimeError(f"ACCESS 데이터베이스 오류: {exc}")
+        return len(payload_rows)
 
     def prepare_visualization_snapshot(
         self,

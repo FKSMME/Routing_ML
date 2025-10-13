@@ -32,8 +32,7 @@ from backend.api.schemas import (
 from backend.api.security import require_auth
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
 
-# Access 파일 확장자 정의
-ACCESS_FILE_SUFFIXES = {".mdb", ".accdb"}
+OFFLINE_DATASET_SUFFIXES = {".csv", ".parquet"}
 from backend.trainer_ml import apply_trainer_runtime_config
 from common.config_store import (
     DataSourceConfig,
@@ -85,7 +84,7 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
             training_output_mapping=sql_cfg.training_output_mapping,
         ),
         data_source=DataSourceConfigModel(
-            access_path=data_source_cfg.access_path,
+            offline_dataset_path=data_source_cfg.offline_dataset_path,
             default_table=data_source_cfg.default_table,
             backup_paths=data_source_cfg.backup_paths,
             table_profiles=[
@@ -348,15 +347,19 @@ async def patch_workflow_graph(
 
     if payload.data_source is not None:
         data_cfg = DataSourceConfig.from_dict(working_snapshot.get("data_source", {}))
-        if payload.data_source.access_path is not None:
-            access_path = payload.data_source.access_path.strip()
-            allowed_suffixes = sorted(ACCESS_FILE_SUFFIXES)
-            if Path(access_path).suffix.lower() not in ACCESS_FILE_SUFFIXES:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Access 데이터베이스 파일({', '.join(allowed_suffixes)})만 허용됩니다.",
-                )
-            data_cfg.access_path = access_path
+        if payload.data_source.offline_dataset_path is not None:
+            dataset_path = payload.data_source.offline_dataset_path.strip()
+            if dataset_path:
+                suffix = Path(dataset_path).suffix.lower()
+                allowed_suffixes = sorted(OFFLINE_DATASET_SUFFIXES)
+                if suffix and suffix not in OFFLINE_DATASET_SUFFIXES:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"오프라인 데이터셋은 {', '.join(allowed_suffixes)} 형식만 허용됩니다.",
+                    )
+                data_cfg.offline_dataset_path = dataset_path
+            else:
+                data_cfg.offline_dataset_path = None
         if payload.data_source.default_table is not None:
             data_cfg.default_table = payload.data_source.default_table
         if payload.data_source.backup_paths is not None:
@@ -389,7 +392,7 @@ async def patch_workflow_graph(
                 "데이터 소스 설정 업데이트",
                 {
                     "username": current_user.username,
-                    "access_path": data_cfg.access_path,
+                    "offline_dataset_path": data_cfg.offline_dataset_path,
                     "default_table": data_cfg.default_table,
                 },
             )
@@ -404,6 +407,8 @@ async def patch_workflow_graph(
             "enable_txt",
             "enable_parquet",
             "enable_json",
+            "enable_database_export",
+            "database_target_table",
             "erp_interface_enabled",
             "erp_protocol",
             "erp_endpoint",
@@ -530,14 +535,14 @@ async def patch_workflow_graph(
     data_source_payload = payload_dict.get("data_source")
     if isinstance(data_source_payload, dict):
         data_source_summary: dict[str, object] = {}
-        access_path = data_source_payload.get("access_path")
-        if isinstance(access_path, str):
-            access_path_name = Path(access_path).name or Path(access_path).stem or ""
-            if not access_path_name:
-                access_path_name = access_path.split("/")[-1].split("\\")[-1]
-            hashed_path = hashlib.sha256(access_path.encode("utf-8")).hexdigest()[:12]
-            data_source_summary["access_path_name"] = access_path_name
-            data_source_summary["access_path_hash"] = hashed_path
+        dataset_path = data_source_payload.get("offline_dataset_path")
+        if isinstance(dataset_path, str) and dataset_path.strip():
+            dataset_name = Path(dataset_path).name or Path(dataset_path).stem or ""
+            if not dataset_name:
+                dataset_name = dataset_path.split("/")[-1].split("\\")[-1]
+            hashed_path = hashlib.sha256(dataset_path.encode("utf-8")).hexdigest()[:12]
+            data_source_summary["offline_dataset_name"] = dataset_name
+            data_source_summary["offline_dataset_hash"] = hashed_path
         if "default_table" in data_source_payload:
             data_source_summary["default_table"] = data_source_payload.get("default_table")
         if "backup_paths" in data_source_payload:

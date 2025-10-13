@@ -518,9 +518,8 @@ class ExportConfigModel(BaseModel):
     enable_parquet: bool = True
     enable_json: bool = True
     enable_xml: bool = True
-    enable_access: bool = False
-    access_db_path: Optional[str] = None
-    access_table_name: str = "ROUTING_MASTER"
+    enable_database_export: bool = False
+    database_target_table: Optional[str] = None
     erp_interface_enabled: bool = False
     erp_protocol: Optional[str] = None
     erp_endpoint: Optional[str] = None
@@ -632,7 +631,7 @@ class BlueprintTogglePatch(BaseModel):
 
 
 class DataSourceConfigPatch(BaseModel):
-    access_path: Optional[str] = None
+    offline_dataset_path: Optional[str] = None
     default_table: Optional[str] = None
     backup_paths: Optional[List[str]] = None
     table_profiles: Optional[List[DataSourceTableProfileModel]] = None
@@ -649,9 +648,8 @@ class ExportConfigPatch(BaseModel):
     enable_parquet: Optional[bool] = None
     enable_json: Optional[bool] = None
     enable_xml: Optional[bool] = None
-    enable_access: Optional[bool] = None
-    access_db_path: Optional[str] = None
-    access_table_name: Optional[str] = None
+    enable_database_export: Optional[bool] = None
+    database_target_table: Optional[str] = None
     erp_interface_enabled: Optional[bool] = None
     erp_protocol: Optional[str] = None
     erp_endpoint: Optional[str] = None
