@@ -1,14 +1,16 @@
 import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import {
+  createOutputProfile,
   generateOutputPreview,
   // type OutputProfileColumn,
   postUiAudit,
   saveWorkspaceSettings,
+  type CreateOutputProfilePayload,
 } from "@lib/apiClient";
 
 type OutputProfileColumn = any;
-import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload } from "lucide-react";
+import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { TabContainer, type Tab } from "@components/TabContainer";
 
@@ -154,6 +156,14 @@ export function DataOutputWorkspace() {
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [dirty, setDirty] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
+
+  // New Profile Modal State
+  const [showNewProfileModal, setShowNewProfileModal] = useState<boolean>(false);
+  const [newProfileName, setNewProfileName] = useState<string>("");
+  const [newProfileDescription, setNewProfileDescription] = useState<string>("");
+  const [newProfileFormat, setNewProfileFormat] = useState<string>("CSV");
+  const [creatingProfile, setCreatingProfile] = useState<boolean>(false);
+  const [createProfileError, setCreateProfileError] = useState<string>("");
 
   const selectedProfile = useMemo(() => {
     if (!profilesQuery.data) {
@@ -628,6 +638,55 @@ export function DataOutputWorkspace() {
     await handleSaveProfile();
   };
 
+  const handleOpenNewProfileModal = () => {
+    setNewProfileName("");
+    setNewProfileDescription("");
+    setNewProfileFormat("CSV");
+    setCreateProfileError("");
+    setShowNewProfileModal(true);
+  };
+
+  const handleCloseNewProfileModal = () => {
+    if (creatingProfile) return;
+    setShowNewProfileModal(false);
+  };
+
+  const handleCreateProfile = async () => {
+    const trimmedName = newProfileName.trim();
+    if (!trimmedName) {
+      setCreateProfileError("프로파일 이름을 입력해주세요.");
+      return;
+    }
+
+    try {
+      setCreatingProfile(true);
+      setCreateProfileError("");
+
+      const payload: CreateOutputProfilePayload = {
+        name: trimmedName,
+        description: newProfileDescription.trim() || null,
+        format: newProfileFormat,
+        mappings: [],
+      };
+
+      const result = await createOutputProfile(payload);
+
+      // 성공 시 모달 닫고, 새 프로파일 선택
+      setShowNewProfileModal(false);
+      setSelectedProfileId(result.id);
+      setStatusMessage(result.message || "프로파일이 생성되었습니다.");
+
+      // 프로파일 목록 새로고침
+      await profilesQuery.refresh();
+
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || error.message || "프로파일 생성 중 오류가 발생했습니다.";
+      setCreateProfileError(errorMsg);
+    } finally {
+      setCreatingProfile(false);
+    }
+  };
+
   const isSaving = saving || configSaving;
   const isLoading = configLoading || profilesQuery.isLoading || profileDetailQuery.isLoading;
 
@@ -637,7 +696,12 @@ export function DataOutputWorkspace() {
       <div className="glass-morphism p-8 rounded-xl">
         <header className="flex items-center justify-between mb-6">
           <h2 className="heading-2">Output Profiles</h2>
-          <button type="button" className="btn-secondary" title="Create new profile" disabled>
+          <button
+            type="button"
+            className="btn-secondary neon-cyan"
+            title="Create new profile"
+            onClick={handleOpenNewProfileModal}
+          >
             <Plus size={16} /> New Profile
           </button>
         </header>
@@ -964,6 +1028,108 @@ export function DataOutputWorkspace() {
   return (
     <div className="min-h-screen p-6 animate-fade-in" role="region" aria-label="Output profile setup">
       <TabContainer tabs={tabs} defaultTab="profiles" />
+
+      {/* New Profile Modal */}
+      {showNewProfileModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={handleCloseNewProfileModal}
+        >
+          <div
+            className="glass-morphism p-8 rounded-xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between mb-6">
+              <h2 className="heading-2">New Profile</h2>
+              <button
+                type="button"
+                className="btn-ghost p-2"
+                onClick={handleCloseNewProfileModal}
+                disabled={creatingProfile}
+              >
+                <X size={20} />
+              </button>
+            </header>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="new-profile-name" className="block text-sm font-medium mb-2">
+                  Profile Name <span className="text-red-400">*</span>
+                </label>
+                <input
+                  id="new-profile-name"
+                  type="text"
+                  className="form-input w-full"
+                  placeholder="예: Production Export"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  disabled={creatingProfile}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label htmlFor="new-profile-description" className="block text-sm font-medium mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="new-profile-description"
+                  className="form-input w-full resize-none"
+                  rows={3}
+                  placeholder="프로파일 설명을 입력하세요 (선택사항)"
+                  value={newProfileDescription}
+                  onChange={(e) => setNewProfileDescription(e.target.value)}
+                  disabled={creatingProfile}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="new-profile-format" className="block text-sm font-medium mb-2">
+                  Default Format
+                </label>
+                <select
+                  id="new-profile-format"
+                  className="form-input w-full"
+                  value={newProfileFormat}
+                  onChange={(e) => setNewProfileFormat(e.target.value)}
+                  disabled={creatingProfile}
+                >
+                  <option value="CSV">CSV</option>
+                  <option value="EXCEL">Excel</option>
+                  <option value="JSON">JSON</option>
+                  <option value="XML">XML</option>
+                  <option value="TXT">Text</option>
+                </select>
+              </div>
+
+              {createProfileError && (
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-200 text-sm">
+                  {createProfileError}
+                </div>
+              )}
+
+              <div className="flex gap-3 justify-end pt-4">
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={handleCloseNewProfileModal}
+                  disabled={creatingProfile}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary neon-cyan"
+                  onClick={handleCreateProfile}
+                  disabled={creatingProfile || !newProfileName.trim()}
+                >
+                  {creatingProfile ? "Creating…" : "Create Profile"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

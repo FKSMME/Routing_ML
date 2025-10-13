@@ -369,16 +369,87 @@ export async function triggerRoutingInterface(...args: any[]): Promise<any> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
-export async function fetchOutputProfiles(...args: any[]): Promise<any> {
-  return [];
+export interface OutputProfileListItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  format?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export async function fetchOutputProfileDetail(...args: any[]): Promise<any> {
-  throw new Error("Output profiles API removed - feature not available");
+export interface OutputProfileMapping {
+  source: string;
+  mapped: string;
+  type: string;
+  required: boolean;
+  default_value?: string | null;
 }
 
-export async function generateOutputPreview(...args: any[]): Promise<any> {
-  return { columns: [], rows: [] };
+export interface OutputProfileDetail {
+  id: string;
+  name: string;
+  description?: string | null;
+  format: string;
+  mappings: OutputProfileMapping[];
+  created_at?: string;
+  updated_at?: string;
+  sample?: Array<Record<string, unknown>>;
+}
+
+export interface CreateOutputProfilePayload {
+  name: string;
+  description?: string | null;
+  format?: string;
+  mappings?: OutputProfileMapping[];
+}
+
+export interface CreateOutputProfileResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  format: string;
+  created_at: string;
+  updated_at: string;
+  message: string;
+}
+
+export async function fetchOutputProfiles(): Promise<OutputProfileListItem[]> {
+  const response = await api.get<OutputProfileListItem[]>("/routing/output-profiles");
+  return response.data;
+}
+
+export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
+  const response = await api.get<OutputProfileDetail>(`/routing/output-profiles/${profileId}`);
+  return response.data;
+}
+
+export async function createOutputProfile(payload: CreateOutputProfilePayload): Promise<CreateOutputProfileResponse> {
+  const response = await api.post<CreateOutputProfileResponse>("/routing/output-profiles", {
+    name: payload.name,
+    description: payload.description ?? null,
+    format: payload.format ?? "CSV",
+    mappings: payload.mappings ?? [],
+  });
+  return response.data;
+}
+
+export async function generateOutputPreview(payload: {
+  profileId?: string | null;
+  mappings: Array<{
+    source: string;
+    mapped: string;
+    type: string;
+    required: boolean;
+    default_value?: string | null;
+  }>;
+  format: string;
+}): Promise<{ rows: Array<Record<string, unknown>>; columns: string[] }> {
+  const response = await api.post<{ rows: Array<Record<string, unknown>>; columns: string[] }>(
+    "/routing/output-profiles/preview",
+    payload
+  );
+  return response.data;
 }
 
 export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
