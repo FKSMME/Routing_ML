@@ -87,7 +87,8 @@
       "Bash(echo \"=== $log ===\")",
       "Bash(tail:*)",
       "Bash(done)",
-      "Bash(do echo -n \"Port $port: \")"
+      "Bash(do echo -n \"Port $port: \")",
+      "Bash(npm run test:*)"
     ],
     "deny": [],
     "ask": []

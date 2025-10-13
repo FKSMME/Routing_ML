@@ -44,7 +44,30 @@ vi.mock("@lib/indexedDb", () => ({
 }));
 
 vi.mock("@store/workspaceStore", () => {
-  const store = { saveRouting: saveRoutingSelectorMock };
+  const store = {
+    saveRouting: saveRoutingSelectorMock,
+    workspaceOptions: {
+      data: {
+        standard: [],
+        similarity: [],
+        offlineDatasetPath: "",
+        databaseTargetTable: "dbo.ROUTING_MASTER",
+        columnMappings: [],
+        erpInterface: false,
+      },
+      loading: false,
+      saving: false,
+      dirty: false,
+      lastSyncedAt: undefined,
+    },
+    exportProfile: {
+      formats: ["csv"],
+      destination: "server" as const,
+      withVisualization: false,
+    },
+    layout: "desktop" as const,
+    activeMenu: "routing" as const,
+  };
   const useWorkspaceStore: any = (selector?: unknown) => {
     if (typeof selector === "function") {
       return (selector as (state: typeof store) => unknown)(store);
