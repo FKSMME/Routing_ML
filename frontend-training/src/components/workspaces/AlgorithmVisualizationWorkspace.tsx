@@ -126,23 +126,6 @@ interface FileFlowDefinition {
 }
 
 const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
-  'train_model.py': {
-    summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
-    steps: [
-      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'MSSQL · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
-      { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
-      { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
-      { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
-      { id: 'export', label: '모델 아티팩트 저장', position: { x: 700, y: 0 }, description: '모델 가중치와 메타데이터를 S3/로컬에 저장합니다.' },
-    ],
-    edges: [
-      { source: 'data-ingest', target: 'feature-build', label: '데이터프레임' },
-      { source: 'data-ingest', target: 'normalize', label: '스케일링 입력' },
-      { source: 'feature-build', target: 'train', label: '피처 세트' },
-      { source: 'normalize', target: 'train', label: '정규화 값' },
-      { source: 'train', target: 'export', label: '학습 결과' },
-    ],
-  },
   'trainer_ml.py': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
@@ -160,7 +143,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
       { source: 'train', target: 'export', label: '학습 결과' },
     ],
   },
-  '1': {
+  'trainer_ml': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
       { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'MSSQL · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
@@ -177,7 +160,23 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
       { source: 'train', target: 'export', label: '학습 결과' },
     ],
   },
-  '2': {
+  'training_service': {
+    summary: 'Training service API가 모델 학습 요청을 처리합니다.',
+    steps: [
+      { id: 'api-receive', label: 'API 요청 수신', position: { x: 0, y: 0 }, description: 'FastAPI 엔드포인트에서 학습 요청을 받습니다.' },
+      { id: 'validate', label: '파라미터 검증', position: { x: 220, y: -40 }, description: '학습 파라미터와 데이터 경로를 검증합니다.' },
+      { id: 'call-trainer', label: 'Trainer 호출', position: { x: 220, y: 80 }, description: 'trainer_ml.py의 학습 함수를 비동기 호출합니다.' },
+      { id: 'monitor', label: '진행 상황 모니터링', position: { x: 460, y: 0 }, description: '학습 진행률과 메트릭을 실시간 추적합니다.' },
+      { id: 'response', label: 'API 응답', position: { x: 700, y: 0 }, description: '학습 결과와 메타데이터를 JSON으로 반환합니다.' },
+    ],
+    edges: [
+      { source: 'api-receive', target: 'validate' },
+      { source: 'validate', target: 'call-trainer' },
+      { source: 'call-trainer', target: 'monitor' },
+      { source: 'monitor', target: 'response' },
+    ],
+  },
+  'predictor_ml': {
     summary: '훈련된 모델을 불러와 실시간 라우팅을 예측합니다.',
     steps: [
       { id: 'load-model', label: '모델 로드', position: { x: 0, y: 0 }, description: '가장 최근 학습된 모델 가중치를 메모리에 로드합니다.' },
@@ -194,60 +193,49 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
       { source: 'ranking', target: 'serialize', label: 'Top-K 결과' },
     ],
   },
-  '3': {
-    summary: '원천 데이터를 정제하고 누락값과 이상치를 처리합니다.',
+  'prediction_service': {
+    summary: 'Prediction service API가 라우팅 예측 요청을 처리합니다.',
     steps: [
-      { id: 'raw-load', label: '로우데이터 적재', position: { x: 0, y: 0 }, description: '원천 MSSQL/CSV 파일을 병합합니다.' },
-      { id: 'null-handle', label: '결측치 처리', position: { x: 220, y: -40 }, description: '임계치/중앙값으로 결측치를 보강합니다.' },
-      { id: 'outlier', label: '이상치 정제', position: { x: 220, y: 80 }, description: 'IQR/3σ 기준으로 이상치를 제거합니다.' },
-      { id: 'export-clean', label: '정제 데이터 출력', position: { x: 460, y: 0 }, description: '전처리된 데이터를 parquet/csv로 저장합니다.' },
+      { id: 'api-receive', label: 'API 요청 수신', position: { x: 0, y: 0 }, description: 'FastAPI 엔드포인트에서 예측 요청을 받습니다.' },
+      { id: 'parse-input', label: '입력 파싱', position: { x: 220, y: -40 }, description: '품목 정보와 제약 조건을 파싱합니다.' },
+      { id: 'call-predictor', label: 'Predictor 호출', position: { x: 220, y: 80 }, description: 'predictor_ml.py의 예측 함수를 호출합니다.' },
+      { id: 'format-result', label: '결과 포맷팅', position: { x: 460, y: 0 }, description: 'ERP 인터페이스 형식으로 결과를 변환합니다.' },
+      { id: 'response', label: 'API 응답', position: { x: 700, y: 0 }, description: '예측된 라우팅을 JSON으로 반환합니다.' },
     ],
     edges: [
-      { source: 'raw-load', target: 'null-handle' },
-      { source: 'raw-load', target: 'outlier' },
-      { source: 'null-handle', target: 'export-clean' },
-      { source: 'outlier', target: 'export-clean' },
+      { source: 'api-receive', target: 'parse-input' },
+      { source: 'parse-input', target: 'call-predictor' },
+      { source: 'call-predictor', target: 'format-result' },
+      { source: 'format-result', target: 'response' },
     ],
   },
-  '4': {
-    summary: '피처 엔지니어링 규칙으로 라우팅 품질을 높입니다.',
+  'database': {
+    summary: 'MSSQL 데이터베이스 연결과 CRUD 작업을 관리합니다.',
     steps: [
-      { id: 'ingest', label: '데이터 인입', position: { x: 0, y: 0 }, description: '가공 로그/ERP 기록을 로드합니다.' },
-      { id: 'rule-based', label: '규칙 기반 특성', position: { x: 220, y: -60 }, description: '도메인 규칙으로 파생 변수 생성 (예: 난이도 등급).' },
-      { id: 'stat-feature', label: '통계 특성', position: { x: 220, y: 60 }, description: '창(window) 기반 통계 피처 계산.' },
-      { id: 'feature-store', label: 'Feature Store 저장', position: { x: 460, y: 0 }, description: 'Feature Store/Redis에 저장하여 추론 시 재사용.' },
+      { id: 'connect', label: 'DB 연결 풀', position: { x: 0, y: 0 }, description: 'SQLAlchemy 연결 풀을 초기화합니다.' },
+      { id: 'query', label: '쿼리 실행', position: { x: 220, y: -40 }, description: 'SELECT/INSERT/UPDATE 쿼리를 실행합니다.' },
+      { id: 'transaction', label: '트랜잭션 관리', position: { x: 220, y: 80 }, description: 'ACID 트랜잭션을 보장하고 롤백을 처리합니다.' },
+      { id: 'result', label: '결과 반환', position: { x: 460, y: 0 }, description: '쿼리 결과를 Python 객체로 매핑합니다.' },
     ],
     edges: [
-      { source: 'ingest', target: 'rule-based' },
-      { source: 'ingest', target: 'stat-feature' },
-      { source: 'rule-based', target: 'feature-store' },
-      { source: 'stat-feature', target: 'feature-store' },
+      { source: 'connect', target: 'query' },
+      { source: 'connect', target: 'transaction' },
+      { source: 'query', target: 'result' },
+      { source: 'transaction', target: 'result' },
     ],
   },
-  '5': {
-    summary: '모델 유틸 함수가 어떤 흐름으로 호출되는지 정리합니다.',
+  'feature_weights': {
+    summary: '피처 가중치를 계산하고 저장하는 유틸리티입니다.',
     steps: [
-      { id: 'load-utils', label: '유틸 로드', position: { x: 0, y: 0 }, description: '공통 유틸 함수를 메모리에 로드.' },
-      { id: 'apply-metrics', label: '평가지표 계산', position: { x: 220, y: -40 }, description: '정확도, 리콜, 비용절감률 등 모델 지표 계산.' },
-      { id: 'log-export', label: '로그/리포트 출력', position: { x: 460, y: 0 }, description: 'Slack/Teams 알림과 리포트 파일 생성.' },
+      { id: 'load-history', label: '이력 로드', position: { x: 0, y: 0 }, description: '과거 학습 이력과 피처 중요도를 로드합니다.' },
+      { id: 'calculate', label: '가중치 계산', position: { x: 220, y: -40 }, description: 'SHAP/LIME 기반으로 피처 가중치를 계산합니다.' },
+      { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: '가중치를 0-1 범위로 정규화합니다.' },
+      { id: 'save', label: '저장', position: { x: 460, y: 0 }, description: '가중치를 JSON/DB에 저장합니다.' },
     ],
     edges: [
-      { source: 'load-utils', target: 'apply-metrics' },
-      { source: 'apply-metrics', target: 'log-export' },
-    ],
-  },
-  '6': {
-    summary: '데이터 로더가 훈련/예측에 필요한 데이터를 제공합니다.',
-    steps: [
-      { id: 'connect', label: 'DB 연결', position: { x: 0, y: 0 }, description: 'MSSQL/MSSQL, S3 등 소스에 연결합니다.' },
-      { id: 'extract', label: '데이터 추출', position: { x: 220, y: -40 }, description: '필요한 테이블과 컬럼을 추출합니다.' },
-      { id: 'transform', label: '변환 & 캐싱', position: { x: 220, y: 80 }, description: '타입 변환, 캐싱, 배치 처리를 수행합니다.' },
-      { id: 'deliver', label: '배포', position: { x: 460, y: 0 }, description: '훈련/예측 파이프라인에 데이터를 전달합니다.' },
-    ],
-    edges: [
-      { source: 'connect', target: 'extract' },
-      { source: 'extract', target: 'transform' },
-      { source: 'transform', target: 'deliver' },
+      { source: 'load-history', target: 'calculate' },
+      { source: 'calculate', target: 'normalize' },
+      { source: 'normalize', target: 'save' },
     ],
   },
 };
