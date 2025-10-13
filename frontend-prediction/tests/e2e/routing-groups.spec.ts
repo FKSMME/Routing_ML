@@ -63,8 +63,8 @@ vi.mock("@store/workspaceStore", () => {
       data: {
         standard: ["zscore"],
         similarity: ["cosine"],
-        accessPath: "",
-        accessTable: "",
+        offlineDatasetPath: "",
+        databaseTargetTable: "dbo.ROUTING_MASTER",
         columnMappings: [],
         erpInterface: false,
       },

@@ -61,7 +61,7 @@ const mockWorkflowConfig: WorkflowConfigResponse = {
     training_output_mapping: { feature_a: "ITEM_CD" },
   },
   data_source: {
-    access_path: "db://primary",
+    offline_dataset_path: "db://primary",
     default_table: "items",
     backup_paths: [],
     table_profiles: [],
@@ -78,6 +78,8 @@ const mockWorkflowConfig: WorkflowConfigResponse = {
     enable_txt: false,
     enable_parquet: false,
     enable_json: true,
+    enable_database_export: true,
+    database_target_table: "dbo.ROUTING_MASTER",
     erp_interface_enabled: false,
     default_encoding: "utf-8",
     export_directory: "/tmp",

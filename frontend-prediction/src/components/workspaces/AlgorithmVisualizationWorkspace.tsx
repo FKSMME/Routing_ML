@@ -128,7 +128,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   'train_model.py': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
-      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'Access · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
+      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'MSSQL · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
       { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
       { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
       { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
@@ -145,7 +145,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   'trainer_ml.py': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
-      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'Access · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
+      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'MSSQL · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
       { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
       { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
       { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
@@ -162,7 +162,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   '1': {
     summary: 'Raw 생산 데이터를 전처리하고 신규 라우팅 모델을 학습합니다.',
     steps: [
-      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'Access · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
+      { id: 'data-ingest', label: '데이터 수집', position: { x: 0, y: 0 }, description: 'MSSQL · CSV · API 소스에서 최신 생산 데이터를 로드합니다.' },
       { id: 'feature-build', label: '피처 엔지니어링', position: { x: 220, y: -40 }, description: '엔지니어링 규칙과 통계로 신규 피처를 구성합니다.' },
       { id: 'normalize', label: '정규화', position: { x: 220, y: 80 }, description: 'MinMax/StandardScaler로 수치형 피처를 정규화합니다.' },
       { id: 'train', label: '모델 학습', position: { x: 460, y: 0 }, description: 'LightGBM + 파이프라인 튜닝으로 최종 모델을 학습합니다.' },
@@ -183,7 +183,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
       { id: 'candidate-search', label: '후보 탐색', position: { x: 220, y: -40 }, description: 'Faiss/HNSW로 유사 공정 후보를 조회합니다.' },
       { id: 'scoring', label: '스코어 계산', position: { x: 220, y: 80 }, description: '유사도/비용/시간 가중치를 조합해 점수를 계산합니다.' },
       { id: 'ranking', label: '상위 라우팅 선정', position: { x: 460, y: 0 }, description: 'Top-K 라우팅을 점수 순으로 정렬합니다.' },
-      { id: 'serialize', label: 'ERP 직렬화', position: { x: 700, y: 0 }, description: 'ERP/Access 저장 형식으로 결과를 직렬화합니다.' },
+      { id: 'serialize', label: 'ERP 직렬화', position: { x: 700, y: 0 }, description: 'ERP/MSSQL 저장 형식으로 결과를 직렬화합니다.' },
     ],
     edges: [
       { source: 'load-model', target: 'candidate-search', label: '임베딩 인덱스' },
@@ -196,7 +196,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   '3': {
     summary: '원천 데이터를 정제하고 누락값과 이상치를 처리합니다.',
     steps: [
-      { id: 'raw-load', label: '로우데이터 적재', position: { x: 0, y: 0 }, description: '원천 Access/CSV 파일을 병합합니다.' },
+      { id: 'raw-load', label: '로우데이터 적재', position: { x: 0, y: 0 }, description: '원천 MSSQL/CSV 파일을 병합합니다.' },
       { id: 'null-handle', label: '결측치 처리', position: { x: 220, y: -40 }, description: '임계치/중앙값으로 결측치를 보강합니다.' },
       { id: 'outlier', label: '이상치 정제', position: { x: 220, y: 80 }, description: 'IQR/3σ 기준으로 이상치를 제거합니다.' },
       { id: 'export-clean', label: '정제 데이터 출력', position: { x: 460, y: 0 }, description: '전처리된 데이터를 parquet/csv로 저장합니다.' },
@@ -238,7 +238,7 @@ const FLOW_LIBRARY: Record<string, FileFlowDefinition> = {
   '6': {
     summary: '데이터 로더가 훈련/예측에 필요한 데이터를 제공합니다.',
     steps: [
-      { id: 'connect', label: 'DB 연결', position: { x: 0, y: 0 }, description: 'MSSQL/Access, S3 등 소스에 연결합니다.' },
+      { id: 'connect', label: 'DB 연결', position: { x: 0, y: 0 }, description: 'MSSQL/MSSQL, S3 등 소스에 연결합니다.' },
       { id: 'extract', label: '데이터 추출', position: { x: 220, y: -40 }, description: '필요한 테이블과 컬럼을 추출합니다.' },
       { id: 'transform', label: '변환 & 캐싱', position: { x: 220, y: 80 }, description: '타입 변환, 캐싱, 배치 처리를 수행합니다.' },
       { id: 'deliver', label: '배포', position: { x: 460, y: 0 }, description: '훈련/예측 파이프라인에 데이터를 전달합니다.' },

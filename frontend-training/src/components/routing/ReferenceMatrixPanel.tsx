@@ -147,7 +147,7 @@ export function ReferenceMatrixPanel() {
     <section className="panel-card interactive-card reference-matrix">
       <header className="panel-header">
         <div>
-          <h2 className="panel-title">Access 행렬 프리뷰</h2>
+          <h2 className="panel-title">MSSQL 행렬 프리뷰</h2>
           <p className="panel-subtitle">선택 품목의 기준 공정 데이터를 확인합니다.</p>
         </div>
         <div className="panel-header__actions">
@@ -175,7 +175,7 @@ export function ReferenceMatrixPanel() {
       {rows.length === 0 ? (
         <div className="p-4 text-sm text-muted">추천 데이터를 불러오면 행렬이 표시됩니다.</div>
       ) : (
-        <div className="reference-matrix__scroll" role="grid" aria-label="Access 행렬 프리뷰">
+        <div className="reference-matrix__scroll" role="grid" aria-label="MSSQL 행렬 프리뷰">
           <table className="reference-matrix__table">
             <thead>
               <tr>

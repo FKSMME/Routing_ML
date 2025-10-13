@@ -17,10 +17,11 @@ export type NavigationKey =
   | "master-data"
   | "routing"
   | "routing-matrix"
-  | "algorithm"
+  | "process-groups"
   | "data-output"
+  | "algorithm"
+  | "algorithm-viz"
   | "training-status"
-  | "model-training"
   | "options";
 
 type ExportDestination = "local" | "clipboard" | "server";
@@ -34,7 +35,8 @@ interface ItemSearchState {
 
 interface FeatureProfileSummary {
   name: string;
-  description?: string;
+  description?: string | null;
+  weights?: Record<string, number>;
 }
 
 interface FeatureWeightState {
@@ -60,11 +62,10 @@ export interface WorkspaceColumnMappingRow {
 export interface WorkspaceOptionsSnapshot {
   standard: string[];
   similarity: string[];
-  accessPath: string;
-  accessTable: string;
+  offlineDatasetPath: string;
+  databaseTargetTable: string;
   columnMappings: WorkspaceColumnMappingRow[];
   erpInterface: boolean;
-  tensorboardUrl: string;
 }
 
 interface WorkspaceOptionsState {
@@ -170,7 +171,8 @@ const toProfileSummary = (profiles: FeatureWeightsProfile[] | undefined): Featur
   }
   return profiles.map((profile) => ({
     name: profile.name,
-    description: profile.description ?? undefined,
+    description: profile.description ?? null,
+    weights: profile.weights,
   }));
 };
 
@@ -199,11 +201,10 @@ const nowIsoString = () => new Date().toISOString();
 const createDefaultWorkspaceOptions = (): WorkspaceOptionsSnapshot => ({
   standard: ["zscore"],
   similarity: ["cosine", "profile"],
-  accessPath: "",
-  accessTable: "",
+  offlineDatasetPath: "",
+  databaseTargetTable: "",
   columnMappings: [],
   erpInterface: useRoutingStore.getState().erpRequired,
-  tensorboardUrl: "",
 });
 
 const createWorkspaceOptionsState = (): WorkspaceOptionsState => ({
@@ -519,8 +520,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
     const current = get().workspaceOptions.data;
     const standard = Array.from(new Set(current.standard.map((value) => value.trim()).filter(Boolean)));
     const similarity = Array.from(new Set(current.similarity.map((value) => value.trim()).filter(Boolean)));
-    const accessPath = current.accessPath.trim();
-    const accessTable = current.accessTable.trim();
+    const offlineDatasetPath = current.offlineDatasetPath.trim();
+    const databaseTargetTable = current.databaseTargetTable.trim();
     const mappingsSource = args?.columnMappings ?? current.columnMappings;
     const normalizedMappings = mappingsSource.map((row) => ({
       id: row.id,
@@ -540,15 +541,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
       options: {
         standard,
         similarity,
-        access_path: accessPath,
-        access_table: accessTable || null,
+        offline_dataset_path: offlineDatasetPath,
+        database_target_table: databaseTargetTable || null,
         erp_interface: current.erpInterface,
-        tensorboard_url: current.tensorboardUrl.trim(),
         column_mappings: payloadMappings,
       },
       access: {
-        path: accessPath || null,
-        table: accessTable || null,
+        path: offlineDatasetPath || null,
+        table: databaseTargetTable || null,
       },
       metadata: args?.metadata,
     };
@@ -571,8 +571,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
             ...state.workspaceOptions.data,
             standard,
             similarity,
-            accessPath,
-            accessTable,
+            offlineDatasetPath,
+            databaseTargetTable,
             columnMappings: normalizedMappings,
             erpInterface: current.erpInterface,
           },

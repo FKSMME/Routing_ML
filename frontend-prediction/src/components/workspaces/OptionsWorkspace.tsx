@@ -1,16 +1,7 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
-import {
-  // type AccessMetadataResponse,
-  fetchAccessMetadata,
-  fetchWorkflowConfig,
-  fetchWorkspaceSettings,
-  postUiAudit,
-  testAccessConnection,
-  // type WorkspaceSettingsResponse,
-} from "@lib/apiClient";
+import { fetchWorkflowConfig, fetchWorkspaceSettings, postUiAudit } from "@lib/apiClient";
 
-type AccessMetadataResponse = any;
 type WorkspaceSettingsResponse = any;
 import { useWorkspaceStore, type WorkspaceColumnMappingRow } from "@store/workspaceStore";
 import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
@@ -31,7 +22,8 @@ const SIMILARITY_OPTIONS = [
 const DEFAULT_OPTIONS = {
   standard: ["zscore"] as string[],
   similarity: ["cosine", "profile"] as string[],
-  accessPath: "",
+  offlineDatasetPath: "",
+  databaseTargetTable: "dbo.ROUTING_MASTER",
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -209,18 +201,11 @@ export function OptionsWorkspace() {
 
   const standardOptions = workspaceOptions.data.standard;
   const similarityOptions = workspaceOptions.data.similarity;
-  const accessPath = workspaceOptions.data.accessPath;
-  const accessTable = workspaceOptions.data.accessTable;
+  const offlineDatasetPath = workspaceOptions.data.offlineDatasetPath;
+  const databaseTargetTable = workspaceOptions.data.databaseTargetTable;
   const erpInterface = workspaceOptions.data.erpInterface;
   const columnMappings = workspaceOptions.data.columnMappings;
-  const [availableTables, setAvailableTables] = useState<string[]>([]);
-  const [testedPath, setTestedPath] = useState<string>("");
-  const [metadataPreview, setMetadataPreview] = useState<AccessMetadataResponse | null>(null);
-  const [metadataLoading, setMetadataLoading] = useState<boolean>(false);
-  const [metadataError, setMetadataError] = useState<string>("");
-  const [testing, setTesting] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>("");
-  const [testMessage, setTestMessage] = useState<string>("");
   const [columnMappingSource, setColumnMappingSource] = useState<string>("");
 
   useEffect(() => {
@@ -233,10 +218,16 @@ export function OptionsWorkspace() {
         const options = data.options ?? {};
         const standard = Array.isArray(options.standard) ? (options.standard as string[]) : DEFAULT_OPTIONS.standard;
         const similarity = Array.isArray(options.similarity) ? (options.similarity as string[]) : DEFAULT_OPTIONS.similarity;
-        const initialPath = (options.access_path as string | undefined) ?? (data.access?.path as string | undefined) ?? DEFAULT_OPTIONS.accessPath;
-        const savedTable = (options.access_table as string | undefined) ?? (data.access?.table as string | undefined) ?? "";
-        setAvailableTables([]);
-        setTestedPath("");
+        const datasetPath = typeof options.offline_dataset_path === "string"
+          ? options.offline_dataset_path
+          : (typeof data.data_source?.offline_dataset_path === "string"
+              ? data.data_source.offline_dataset_path
+              : DEFAULT_OPTIONS.offlineDatasetPath);
+        const targetTable = typeof options.database_target_table === "string"
+          ? options.database_target_table
+          : (typeof data.export?.database_target_table === "string"
+              ? data.export.database_target_table
+              : DEFAULT_OPTIONS.databaseTargetTable);
         const erpEnabled = Boolean((options.erp_interface as boolean | undefined) ?? (data.export?.erp_interface_enabled as boolean | undefined));
 
         let mappingRows = dedupeMappings(normalizeMappingCandidate((options.column_mappings as unknown) ?? null));
@@ -262,8 +253,8 @@ export function OptionsWorkspace() {
           {
             standard,
             similarity,
-            accessPath: initialPath,
-            accessTable: savedTable,
+            offlineDatasetPath: datasetPath,
+            databaseTargetTable: targetTable,
             erpInterface: erpEnabled,
             columnMappings: mappingRows,
           },
@@ -277,8 +268,8 @@ export function OptionsWorkspace() {
             {
               standard: DEFAULT_OPTIONS.standard,
               similarity: DEFAULT_OPTIONS.similarity,
-              accessPath: DEFAULT_OPTIONS.accessPath,
-              accessTable: "",
+              offlineDatasetPath: DEFAULT_OPTIONS.offlineDatasetPath,
+              databaseTargetTable: DEFAULT_OPTIONS.databaseTargetTable,
               erpInterface: false,
               columnMappings: [makeRow({ scope: "Routing Generation" })],
             },
@@ -442,15 +433,7 @@ export function OptionsWorkspace() {
         }))
         .filter((row) => row.scope || row.source || row.target);
       const mappingScopes = Array.from(new Set(payloadMappings.map((row) => row.scope).filter(Boolean)));
-      const metadataPayload = metadataPreview
-        ? {
-            access_table: metadataPreview.table,
-            column_count: metadataPreview.columns.length,
-            inspected_path: metadataPreview.path,
-            inspected_at: metadataPreview.updated_at,
-          }
-        : undefined;
-      await saveWorkspaceOptions({ metadata: metadataPayload, version: Date.now(), columnMappings: normalizedRows });
+      await saveWorkspaceOptions({ version: Date.now(), columnMappings: normalizedRows });
       setColumnMappingSource("workspace");
       await postUiAudit({
         action: "ui.options.save",
@@ -459,13 +442,12 @@ export function OptionsWorkspace() {
           status: "success",
           standard: standardOptions,
           similarity: similarityOptions,
-          access_path: accessPath,
-          access_table: accessTable || null,
+          offline_dataset_path: offlineDatasetPath,
+          database_target_table: databaseTargetTable || null,
           erp_interface: erpInterface,
           column_mapping_count: payloadMappings.length,
           column_mapping_scopes: mappingScopes,
           column_mapping_source_before: previousSource,
-          metadata_included: Boolean(metadataPayload),
         },
       }).catch(() => undefined);
       setStatusMessage(
@@ -482,94 +464,13 @@ export function OptionsWorkspace() {
         payload: {
           status: "error",
           message: detail,
-          access_path: accessPath,
-          access_table: accessTable || null,
+          offline_dataset_path: offlineDatasetPath,
+          database_target_table: databaseTargetTable || null,
           mapping_rows: columnMappings.length,
         },
       }).catch(() => undefined);
     }
   };
-
-  const handleTestAccess = async () => {
-    const trimmedPath = accessPath.trim();
-    if (!trimmedPath) {
-      setTestMessage("Enter an Access database path.");
-      return;
-    }
-    try {
-      setTesting(true);
-      setTestMessage("");
-      setMetadataPreview(null);
-      setMetadataError("");
-      const response = await testAccessConnection({ path: trimmedPath, table: accessTable ? accessTable.trim() : undefined });
-      setTestedPath(response.ok ? trimmedPath : "");
-      const tables = response.table_profiles ?? [];
-      setAvailableTables(tables);
-      if (response.verified_table) {
-        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: response.verified_table ?? prev.accessTable }));
-      } else if (accessTable && tables.length > 0 && !tables.includes(accessTable)) {
-        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: tables[0] }));
-      } else if (!accessTable && tables.length > 0) {
-        updateWorkspaceOptions((prev) => ({ ...prev, accessTable: tables[0] }));
-      }
-      const parts: string[] = [response.message ?? "Connection checked."];
-      if (typeof response.elapsed_ms === "number") {
-        parts.push(`(${response.elapsed_ms.toFixed(1)} ms)`);
-      }
-      setTestMessage(parts.join(" "));
-      await postUiAudit({
-        action: "ui.access.connection",
-        username: "codex",
-        payload: {
-          path_hash: response.path_hash,
-          ok: response.ok,
-          table_count: tables.length,
-          verified_table: response.verified_table,
-        },
-      });
-    } catch (error: unknown) {
-      const detail = (error as ErrorWithDetail).response?.data?.detail;
-      setTestMessage(detail ?? "Access connection test failed.");
-      setTestedPath("");
-      setAvailableTables([]);
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  useEffect(() => {
-    const trimmedPath = accessPath.trim();
-    if (!testedPath || testedPath !== trimmedPath || !accessTable.trim()) {
-      setMetadataPreview(null);
-      if (!accessTable.trim()) {
-        setMetadataError("");
-      }
-      return;
-    }
-    let cancelled = false;
-    async function loadMetadata() {
-      try {
-        setMetadataLoading(true);
-        const response = await fetchAccessMetadata({ table: accessTable, path: trimmedPath });
-        if (cancelled) return;
-        setMetadataPreview(response);
-        setMetadataError("");
-      } catch {
-        if (!cancelled) {
-          setMetadataPreview(null);
-          setMetadataError("Failed to load Access metadata.");
-        }
-      } finally {
-        if (!cancelled) {
-          setMetadataLoading(false);
-        }
-      }
-    }
-    void loadMetadata();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessTable, accessPath, testedPath]);
 
   const loading = workspaceOptions.loading;
   const saving = workspaceOptions.saving;
@@ -577,10 +478,6 @@ export function OptionsWorkspace() {
 
   const standardValid = standardOptions.length > 0;
   const similarityValid = similarityOptions.length > 0;
-  const trimmedAccessPath = accessPath.trim();
-  const accessPathValid = Boolean(trimmedAccessPath);
-  const accessPathVerified = accessPathValid && testedPath === trimmedAccessPath;
-  const accessTableValid = !accessPathValid || Boolean(accessTable.trim());
   const mappingHasErrors = mappingDiagnostics.rowErrors.size > 0;
 
   return (
@@ -757,8 +654,8 @@ export function OptionsWorkspace() {
       <CardShell as="section" innerClassName="options-card" tone="soft">
         <header className="panel-header">
           <div>
-            <h2 className="panel-title">Access Connection & ERP Interface</h2>
-            <p className="panel-subtitle">Validate Access paths and interface options.</p>
+            <h2 className="panel-title">데이터베이스 & ERP 설정</h2>
+            <p className="panel-subtitle">오프라인 데이터셋 경로와 내보내기 대상 테이블을 관리합니다.</p>
           </div>
         </header>
         <div className="option-grid">
@@ -766,59 +663,47 @@ export function OptionsWorkspace() {
             <article>
               <Shield size={32} />
               <h3>ERP interface</h3>
-              <p>When enabled, the routing save dialog activates the INTERFACE button automatically.</p>
+              <p>INTERFACE 버튼 활성화 여부와 회귀 검증 로깅을 제어합니다.</p>
             </article>
             <article>
               <XCircle size={32} />
-              <h3>Conflict guard</h3>
-              <p>Conflicting combinations are revalidated on save and recorded in audit logs.</p>
+              <h3>Export guard</h3>
+              <p>내보내기 테이블과 컬럼 매핑을 저장하기 전에 항상 검증합니다.</p>
             </article>
           </div>
           <div className="options-access">
             <label>
-              <span>Access database path</span>
+              <span>Offline dataset path (선택)</span>
               <input
                 type="text"
-                value={accessPath}
+                value={offlineDatasetPath}
                 onChange={(event) => {
                   const value = event.target.value;
-                  updateWorkspaceOptions((prev) => ({ ...prev, accessPath: value }));
-                  setTestedPath("");
-                  setMetadataPreview(null);
-                  setMetadataError("");
-                  setAvailableTables([]);
+                  updateWorkspaceOptions((prev) => ({ ...prev, offlineDatasetPath: value }));
                 }}
-                placeholder="\\\\Share\\Routing\\ROUTING.accdb"
+                placeholder="Optional CSV 또는 Parquet 파일 경로"
               />
             </label>
+            <p className="option-hint" role="status">
+              <AlertTriangle size={14} /> 지정된 파일이 있을 경우 학습 전처리에 사용되며, 없으면 MSSQL 품목 뷰를 참조합니다.
+            </p>
+
             <label>
-              <span>Access table</span>
+              <span>Export target table</span>
               <input
                 type="text"
-                value={accessTable}
+                value={databaseTargetTable}
                 onChange={(event) => {
                   const value = event.target.value;
-                  updateWorkspaceOptions((prev) => ({ ...prev, accessTable: value }));
-                  setTestedPath("");
-                  setMetadataPreview(null);
-                  setMetadataError("");
+                  updateWorkspaceOptions((prev) => ({ ...prev, databaseTargetTable: value }));
                 }}
-                list="access-table-options"
-                placeholder="dbo_BI_ITEM_INFO_VIEW"
+                placeholder="dbo.ROUTING_MASTER"
               />
-              {availableTables.length > 0 ? (
-                <datalist id="access-table-options">
-                  {availableTables.map((table) => (
-                    <option key={table} value={table} />
-                  ))}
-                </datalist>
-              ) : null}
             </label>
-            <div className="options-access__actions">
-              <button type="button" onClick={handleTestAccess} disabled={testing || !accessPath.trim()} className="btn-secondary">
-                {testing ? "Testing..." : "Test connection"}
-              </button>
-            </div>
+            <p className="option-hint" role="status">
+              <Check size={14} /> 예측 결과를 저장할 MSSQL 테이블을 지정하세요. 스키마는 워크플로우에서 구성된 매핑을 따릅니다.
+            </p>
+
             <div className="options-access__toggle">
               <label>
                 <input type="checkbox" checked={erpInterface} onChange={(event) => handleToggleErp(event.target.checked)} />
@@ -826,55 +711,9 @@ export function OptionsWorkspace() {
               </label>
               <p className="options-access__status">
                 {erpInterface
-                  ? "INTERFACE button will be available on the routing save panel."
-                  : "INTERFACE button stays disabled until this option is enabled."}
+                  ? "INTERFACE 버튼이 라우팅 저장 패널에서 활성화됩니다."
+                  : "옵션을 켜기 전까지는 INTERFACE 버튼이 비활성 상태로 유지됩니다."}
               </p>
-            </div>
-            {testMessage ? <p className="options-access__status">{testMessage}</p> : null}
-            {metadataLoading ? (
-              <p className="options-access__status">Loading metadata...</p>
-            ) : metadataError ? (
-              <p className="options-access__status">{metadataError}</p>
-            ) : metadataPreview ? (
-              <div className="options-access__metadata">
-                <p className="options-access__status">
-                  {metadataPreview.table} ({metadataPreview.columns.length} columns)
-                </p>
-                <ul className="metadata-list">
-                  {metadataPreview.columns.map((column: any) => (
-                    <li key={column.name}>
-                      <span className="metadata-list__name">{column.name}</span>
-                      <span className="metadata-list__type">
-                        {column.type}
-                        {column.nullable === false ? " · NOT NULL" : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            <div className={`option-hint${accessPathValid && accessPathVerified && accessTableValid ? " is-success" : " is-warning"}`} role="status" aria-live="polite">
-              {accessPathValid ? (
-                accessPathVerified ? (
-                  accessTableValid ? (
-                    <span>
-                      <Check size={14} /> Access path verified{accessTable ? ` with table ${accessTable}` : ""}.
-                    </span>
-                  ) : (
-                    <span>
-                      <AlertTriangle size={14} /> Provide a table name for the verified path.
-                    </span>
-                  )
-                ) : (
-                  <span>
-                    <AlertTriangle size={14} /> Test the connection to verify this path.
-                  </span>
-                )
-              ) : (
-                <span>
-                  <AlertTriangle size={14} /> Enter an Access database path to enable validation.
-                </span>
-              )}
             </div>
           </div>
         </div>

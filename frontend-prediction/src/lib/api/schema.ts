@@ -1081,7 +1081,7 @@ export const openApiSchema = {
         "tags": [
           "workspace"
         ],
-        "summary": "Test Access Connection",
+        "summary": "Test MSSQL Connection",
         "operationId": "test_access_connection_api_access_connection_test_post",
         "parameters": [
           {
@@ -1428,7 +1428,7 @@ export const openApiSchema = {
           "master-data"
         ],
         "summary": "Get Master Data Tree",
-        "description": "Access 기준정보 트리 구조를 반환한다.",
+        "description": "MSSQL 기준정보 트리 구조를 반환한다.",
         "operationId": "get_master_data_tree_api_master_data_tree_get",
         "parameters": [
           {
@@ -1482,7 +1482,7 @@ export const openApiSchema = {
           "master-data"
         ],
         "summary": "Get Master Data Item",
-        "description": "특정 품목의 Access 행렬 데이터를 반환한다.",
+        "description": "특정 품목의 MSSQL 행렬 데이터를 반환한다.",
         "operationId": "get_master_data_item_api_master_data_items__item_code__get",
         "parameters": [
           {
@@ -1629,27 +1629,27 @@ export const openApiSchema = {
         "tags": [
           "access"
         ],
-        "summary": "Fetch Access Metadata",
+        "summary": "Fetch MSSQL Metadata",
         "operationId": "fetch_access_metadata_api_access_metadata_get",
         "parameters": [
           {
-            "description": "Access table name to inspect",
+            "description": "MSSQL table name to inspect",
             "required": false,
             "schema": {
               "type": "string",
               "title": "Table",
-              "description": "Access table name to inspect"
+              "description": "MSSQL table name to inspect"
             },
             "name": "table",
             "in": "query"
           },
           {
-            "description": "Absolute path to the Access database",
+            "description": "Absolute path to the MSSQL database",
             "required": false,
             "schema": {
               "type": "string",
               "title": "Path",
-              "description": "Absolute path to the Access database"
+              "description": "Absolute path to the MSSQL database"
             },
             "name": "path",
             "in": "query"
@@ -3013,9 +3013,9 @@ export const openApiSchema = {
       },
       "DataSourceConfigModel": {
         "properties": {
-          "access_path": {
+          "offline_dataset_path": {
             "type": "string",
-            "title": "Access Path"
+            "title": "MSSQL Path"
           },
           "default_table": {
             "type": "string",
@@ -3071,16 +3071,16 @@ export const openApiSchema = {
         },
         "type": "object",
         "required": [
-          "access_path",
+          "offline_dataset_path",
           "default_table"
         ],
         "title": "DataSourceConfigModel"
       },
       "DataSourceConfigPatch": {
         "properties": {
-          "access_path": {
+          "offline_dataset_path": {
             "type": "string",
-            "title": "Access Path"
+            "title": "MSSQL Path"
           },
           "default_table": {
             "type": "string",
@@ -6162,7 +6162,7 @@ export const openApiSchema = {
           },
           "access": {
             "type": "object",
-            "title": "Access"
+            "title": "MSSQL"
           },
           "metadata": {
             "type": "object",
@@ -6203,7 +6203,7 @@ export const openApiSchema = {
           },
           "access": {
             "type": "object",
-            "title": "Access"
+            "title": "MSSQL"
           },
           "metadata": {
             "type": "object",

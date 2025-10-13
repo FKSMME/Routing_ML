@@ -125,7 +125,7 @@ const createWorkflowResponse = (): WorkflowConfigResponse & { correlation_id?: s
     training_output_mapping: {},
   },
   data_source: {
-    access_path: "",
+    offline_dataset_path: "",
     default_table: "",
     backup_paths: [],
     table_profiles: [],

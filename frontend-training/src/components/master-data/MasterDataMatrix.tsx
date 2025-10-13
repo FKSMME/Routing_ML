@@ -139,8 +139,8 @@ export function MasterDataMatrixPanel({
   onCopy,
   filterText,
   rowFilter,
-  title = "Access matrix",
-  subtitle = "Selected item master data from Access",
+  title = "MSSQL matrix",
+  subtitle = "Selected item master data from MSSQL",
   emptyState,
   className,
 }: MasterDataMatrixPanelProps) {

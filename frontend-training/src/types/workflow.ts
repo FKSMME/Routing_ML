@@ -76,7 +76,7 @@ export interface DataSourceTableProfile {
 }
 
 export interface DataSourceConfigModel {
-  access_path: string;
+  offline_dataset_path?: string | null;
   default_table: string;
   backup_paths: string[];
   table_profiles: DataSourceTableProfile[];
@@ -94,6 +94,8 @@ export interface ExportConfigModel {
   enable_txt: boolean;
   enable_parquet: boolean;
   enable_json: boolean;
+  enable_database_export: boolean;
+  database_target_table?: string | null;
   erp_interface_enabled: boolean;
   erp_protocol?: string | null;
   erp_endpoint?: string | null;
@@ -157,7 +159,7 @@ export interface SQLConfigPatch {
 }
 
 export interface DataSourceConfigPatch {
-  access_path?: string;
+  offline_dataset_path?: string | null;
   default_table?: string;
   backup_paths?: string[];
   table_profiles?: DataSourceTableProfile[];
@@ -173,6 +175,8 @@ export interface ExportConfigPatch {
   enable_txt?: boolean;
   enable_parquet?: boolean;
   enable_json?: boolean;
+  enable_database_export?: boolean;
+  database_target_table?: string | null;
   erp_interface_enabled?: boolean;
   erp_protocol?: string | null;
   erp_endpoint?: string | null;

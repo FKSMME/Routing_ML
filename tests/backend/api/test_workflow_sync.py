@@ -166,11 +166,11 @@ async def test_data_source_patch_includes_audit_summary(workflow_sync_context, m
     patch_model = WorkflowConfigPatch.parse_obj(
         {
             "data_source": {
-                "access_path": "C:/sensitive/path/AccessConfig.accdb",
+                "offline_dataset_path": "C:/secure/datasets/offline.parquet",
                 "default_table": "dbo_NEW_TABLE",
                 "backup_paths": [
-                    "\\\\server\\share\\backup1.accdb",
-                    "/var/tmp/backup2.accdb",
+                    "\\\\server\\share\\backup1.parquet",
+                    "/var/tmp/backup2.parquet",
                 ],
             }
         }
@@ -184,26 +184,26 @@ async def test_data_source_patch_includes_audit_summary(workflow_sync_context, m
 
     data_source_summary = audit_extra.get("data_source_changes")
     assert isinstance(data_source_summary, dict)
-    assert data_source_summary["access_path_name"] == "AccessConfig.accdb"
+    assert data_source_summary["offline_dataset_name"] == "offline.parquet"
     assert data_source_summary["default_table"] == "dbo_NEW_TABLE"
     assert data_source_summary["backup_count"] == 2
 
-    access_hash = data_source_summary.get("access_path_hash")
-    assert isinstance(access_hash, str) and len(access_hash) == 12
-    assert "C:/sensitive/path/AccessConfig.accdb" not in repr(data_source_summary)
+    dataset_hash = data_source_summary.get("offline_dataset_hash")
+    assert isinstance(dataset_hash, str) and len(dataset_hash) == 12
+    assert "C:/secure/datasets/offline.parquet" not in repr(data_source_summary)
 
     assert "data_source" in audit_extra.get("updated_keys", [])
 
 
 @pytest.mark.anyio
-async def test_patch_accepts_mdb_access_path(workflow_sync_context):
+async def test_patch_accepts_offline_dataset_path(workflow_sync_context):
     store, user, _ = workflow_sync_context
 
     patch_model = WorkflowConfigPatch.parse_obj(
-        {"data_source": {"access_path": "C:/data/source.mdb"}}
+        {"data_source": {"offline_dataset_path": "C:/data/source.parquet"}}
     )
 
     response = await workflow_module.patch_workflow_graph(patch_model, current_user=user)
 
-    assert response.data_source.access_path == "C:/data/source.mdb"
-    assert store.get_data_source_config().access_path == "C:/data/source.mdb"
+    assert response.data_source.offline_dataset_path == "C:/data/source.parquet"
+    assert store.get_data_source_config().offline_dataset_path == "C:/data/source.parquet"

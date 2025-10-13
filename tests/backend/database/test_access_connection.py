@@ -1,7 +1,7 @@
-import pathlib
-
+import pandas as pd
 import pytest
 
+from backend import database
 from backend.api.services.master_data_service import MasterDataService
 
 
@@ -10,54 +10,41 @@ def master_data_service() -> MasterDataService:
     return MasterDataService(cache_ttl_seconds=0)
 
 
-def test_validate_access_path_accepts_existing_accdb(tmp_path: pathlib.Path, master_data_service: MasterDataService) -> None:
-    db_file = tmp_path / "sample.accdb"
-    db_file.write_text("", encoding="utf-8")
+def test_get_database_metadata_uses_describe_table(monkeypatch: pytest.MonkeyPatch, master_data_service: MasterDataService) -> None:
+    expected_columns = [
+        {"name": "ITEM_CD", "type": "nvarchar", "nullable": False},
+        {"name": "ITEM_NM", "type": "nvarchar", "nullable": True},
+    ]
 
-    resolved = master_data_service.validate_access_path(db_file)
+    monkeypatch.setattr(database, "describe_table", lambda table: expected_columns)
 
-    assert resolved == db_file
+    result = master_data_service.get_database_metadata(table="dbo.ITEMS")
 
-
-def test_validate_access_path_rejects_missing_file(master_data_service: MasterDataService) -> None:
-    with pytest.raises(FileNotFoundError):
-        master_data_service.validate_access_path("/tmp/nonexistent.accdb")
-
-
-def test_validate_access_path_requires_access_extension(tmp_path: pathlib.Path, master_data_service: MasterDataService) -> None:
-    db_file = tmp_path / "not_access.sqlite"
-    db_file.write_text("", encoding="utf-8")
-
-    with pytest.raises(ValueError):
-        master_data_service.validate_access_path(db_file)
+    assert result["table"] == "dbo.ITEMS"
+    assert result["columns"] == expected_columns
 
 
-def test_read_access_tables_returns_sorted_unique_names(
-    tmp_path: pathlib.Path, master_data_service: MasterDataService, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_file = tmp_path / "routing.accdb"
-    db_file.write_text("", encoding="utf-8")
+def test_get_database_metadata_falls_back_to_dataframe(monkeypatch: pytest.MonkeyPatch, master_data_service: MasterDataService) -> None:
+    def raise_error(table: str) -> list[dict[str, object]]:
+        raise ValueError(f"missing table: {table}")
 
-    def fake_list_tables(path: pathlib.Path) -> list[str]:
-        assert path == db_file
-        return ["Routing", "Items", "Items", "Vendors"]
+    monkeypatch.setattr(database, "describe_table", raise_error)
+    monkeypatch.setattr(
+        database,
+        "fetch_item_master",
+        lambda columns=None: pd.DataFrame({"ITEM_CD": ["A"], "ITEM_NM": ["Widget"]}),
+    )
 
-    monkeypatch.setattr(master_data_service, "_list_access_tables", fake_list_tables)
+    result = master_data_service.get_database_metadata(table="dbo.ITEMS")
 
-    tables = master_data_service.read_access_tables(db_file)
+    column_names = [column["name"] for column in result["columns"]]
+    assert "ITEM_CD" in column_names
+    assert result["server"] == database.MSSQL_CONFIG["server"]
 
-    assert tables == ["Items", "Routing", "Vendors"]
 
+def test_detect_connection_status_handles_failure(monkeypatch: pytest.MonkeyPatch, master_data_service: MasterDataService) -> None:
+    monkeypatch.setattr(database, "get_database_info", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
 
-def test_read_access_tables_raises_when_no_tables(
-    tmp_path: pathlib.Path, master_data_service: MasterDataService, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    db_file = tmp_path / "routing.accdb"
-    db_file.write_text("", encoding="utf-8")
+    status = master_data_service._detect_connection_status()
 
-    monkeypatch.setattr(master_data_service, "_list_access_tables", lambda _: [])
-
-    with pytest.raises(RuntimeError) as exc_info:
-        master_data_service.read_access_tables(db_file)
-
-    assert "테이블 목록" in str(exc_info.value)
+    assert status["status"] == "disconnected"

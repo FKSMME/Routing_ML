@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -17,8 +16,8 @@ vi.mock("@lib/apiClient", () => {
     options: {
       standard: ["zscore"],
       similarity: ["cosine", "profile"],
-      access_path: "\\\\Server\\Routing\\ROUTING.accdb",
-      access_table: "dbo_ROUTING",
+      offline_dataset_path: "",
+      database_target_table: "dbo.ROUTING_MASTER",
       erp_interface: false,
       column_mappings: [
         {
@@ -28,17 +27,15 @@ vi.mock("@lib/apiClient", () => {
         },
       ],
     },
-    access: { path: "\\\\Server\\Routing\\ROUTING.accdb", table: "dbo_ROUTING" },
+    access: { path: "", table: "dbo.ROUTING_MASTER" },
     metadata: null,
   };
 
   return {
     fetchWorkspaceSettings: vi.fn().mockResolvedValue(defaultResponse),
     fetchWorkflowConfig: vi.fn().mockResolvedValue({ graph: { nodes: [] } }),
-    fetchAccessMetadata: vi.fn(),
     postUiAudit: vi.fn().mockResolvedValue(undefined),
     saveWorkspaceSettings: vi.fn().mockResolvedValue(defaultResponse),
-    testAccessConnection: vi.fn(),
   };
 });
 
@@ -52,8 +49,8 @@ const resetStores = () => {
       data: {
         standard: ["zscore"],
         similarity: ["cosine", "profile"],
-        accessPath: "",
-        accessTable: "",
+        offlineDatasetPath: "",
+        databaseTargetTable: "dbo.ROUTING_MASTER",
         columnMappings: [
           {
             id: "test-row",

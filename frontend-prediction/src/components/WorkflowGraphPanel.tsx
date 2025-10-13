@@ -730,7 +730,7 @@ function NodeSettingsDialog({
                   </table>
                 </div>
                 <p className="text-xs text-muted">
-                  Access VIEW 별칭과 내부 컬럼명을 매핑합니다. 공백 또는 중복된 별칭은 저장 전에 수정해야 합니다.
+                  MSSQL VIEW 별칭과 내부 컬럼명을 매핑합니다. 공백 또는 중복된 별칭은 저장 전에 수정해야 합니다.
                 </p>
                 {aliasDuplicateSet.size > 0 ? (
                   <p className="text-xs text-rose-300">중복 별칭: {Array.from(aliasDuplicateSet).join(", ")}</p>

@@ -60,16 +60,16 @@ const NAVIGATION_ITEMS = [
     icon: <Layers size={18} />,
   },
   {
-    id: "data-output",
-    label: "데이터 출력",
-    description: "미리보기 · 내보내기",
-    icon: <FileOutput size={18} />,
-  },
-  {
     id: "algorithm-viz",
     label: "알고리즘 시각화",
     description: "Python 코드 노드 뷰",
     icon: <GitBranch size={18} />,
+  },
+  {
+    id: "data-output",
+    label: "출력설정",
+    description: "미리보기 · 내보내기",
+    icon: <FileOutput size={18} />,
   },
 ];
 

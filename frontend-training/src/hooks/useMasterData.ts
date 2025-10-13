@@ -244,12 +244,12 @@ export function useMasterData(): UseMasterDataState {
         setSearchMetadataChips([]);
         lastSearchedItemRef.current = null;
         if (isAxiosError(error) && error.response?.status === 404) {
-          throw new Error(`Item ${trimmed} was not found in Access master data.`);
+          throw new Error(`Item ${trimmed} was not found in MSSQL master data.`);
         }
         if (error instanceof Error) {
           throw error;
         }
-        throw new Error("Failed to search Access master data.");
+        throw new Error("Failed to search MSSQL master data.");
       } finally {
         setIsSearchLoading(false);
       }
