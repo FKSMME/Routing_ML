@@ -13,7 +13,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.config import get_settings
-from backend.api.routes.access import router as access_router
 from backend.api.routes.algorithm_viz import router as algorithm_viz_router
 from backend.api.routes.anomaly import router as anomaly_router  # ✅ PyODBC 리팩토링 완료
 from backend.api.routes.audit import router as audit_router
@@ -26,6 +25,7 @@ from backend.api.routes.health import router as health_router
 from backend.api.routes.items import router as items_router
 from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
+from backend.api.routes.mssql import router as mssql_router
 from backend.api.routes.metrics import router as metrics_router
 from backend.api.routes.onprem_nlp import router as onprem_nlp_router
 from backend.api.routes.prediction import router as prediction_router
@@ -71,7 +71,7 @@ def create_app() -> FastAPI:
     app.include_router(routing_groups_router)
     app.include_router(routing_router)
     app.include_router(master_data_router)
-    app.include_router(access_router)
+    app.include_router(mssql_router)
     app.include_router(rsl_router)
     app.include_router(algorithm_viz_router)
 

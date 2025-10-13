@@ -3,9 +3,8 @@ import type { MasterDataConnectionStatus, MasterDataLogEntry } from "@app-types/
 interface MasterDataInfoPanelProps {
   connection: MasterDataConnectionStatus;
   logs: MasterDataLogEntry[];
-  onDownloadLog: (logId?: string) => void | Promise<void>;
+  onDownloadLog: () => void | Promise<void>;
   onRefresh?: () => void;
-  onOpenConnection?: () => void;
 }
 
 const STATUS_LABEL: Record<MasterDataConnectionStatus["status"], string> = {
@@ -13,7 +12,7 @@ const STATUS_LABEL: Record<MasterDataConnectionStatus["status"], string> = {
   disconnected: "Disconnected",
 };
 
-export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh, onOpenConnection }: MasterDataInfoPanelProps) {
+export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh }: MasterDataInfoPanelProps) {
   const statusClass = ["status-dot", `status-${connection.status}`].join(" ");
   const statusLabel = STATUS_LABEL[connection.status];
 
@@ -22,8 +21,8 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
       <section className="panel-card interactive-card">
         <header className="panel-header">
           <div>
-            <h2 className="panel-title">Access Connection</h2>
-            <p className="panel-subtitle">ODBC path and last synchronization status</p>
+            <h2 className="panel-title">MSSQL Connection</h2>
+            <p className="panel-subtitle">Current server state and last check</p>
           </div>
           <span className={statusClass} aria-label={statusLabel} />
         </header>
@@ -33,32 +32,29 @@ export function MasterDataInfoPanel({ connection, logs, onDownloadLog, onRefresh
             <dd>{statusLabel}</dd>
           </div>
           <div>
-            <dt>Path</dt>
-            <dd className="truncate" title={connection.path}>
-              {connection.path || "-"}
+            <dt>Server</dt>
+            <dd className="truncate" title={connection.server ?? ""}>
+              {connection.server ?? "-"}
             </dd>
           </div>
           <div>
-            <dt>Last sync</dt>
-            <dd>{connection.last_sync ?? "-"}</dd>
+            <dt>Database</dt>
+            <dd>{connection.database ?? "-"}</dd>
+          </div>
+          <div>
+            <dt>Last checked</dt>
+            <dd>{connection.last_checked ?? "-"}</dd>
           </div>
         </dl>
-        <div className="flex flex-col gap-2 mt-3">
-          {onOpenConnection ? (
-            <button type="button" className="btn-primary w-full" onClick={onOpenConnection}>
-              Connect source
+        <div className="flex gap-2 mt-3">
+          {onRefresh ? (
+            <button type="button" className="btn-secondary flex-1" onClick={onRefresh}>
+              Refresh
             </button>
           ) : null}
-          <div className="flex gap-2">
-            {onRefresh ? (
-              <button type="button" className="btn-secondary flex-1" onClick={onRefresh}>
-                Refresh
-              </button>
-            ) : null}
-            <button type="button" className="btn-secondary flex-1" onClick={() => void onDownloadLog()}>
-              Download log
-            </button>
-          </div>
+          <button type="button" className="btn-secondary flex-1" onClick={() => void onDownloadLog()}>
+            Download log
+          </button>
         </div>
       </section>
 

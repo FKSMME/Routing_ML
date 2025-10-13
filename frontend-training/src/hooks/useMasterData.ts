@@ -4,15 +4,16 @@ import type {
   MasterDataLogsResponse,
   MasterDataTreeNode,
 } from "@app-types/masterData";
+import type { DatabaseMetadataResponse } from "@lib/apiClient";
 import {
-  type AccessMetadataResponse,
   downloadMasterDataLog,
-  fetchAccessMetadata,
+  fetchDatabaseMetadata,
   fetchMasterDataItem,
   fetchMasterDataLogs,
   fetchMasterDataTree,
   postUiAudit,
 } from "@lib/apiClient";
+
 import { MASTER_DATA_MOCK } from "@lib/masterDataMock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -33,11 +34,10 @@ export interface UseMasterDataState {
   matrixRows: MasterDataItemResponse["rows"];
   logs: MasterDataLogsResponse["logs"];
   connectionStatus: MasterDataConnectionStatus;
-  accessMetadata: AccessMetadataResponse | null;
+  databaseMetadata: DatabaseMetadataResponse | null;
   searchMetadataChips: MasterDataSearchMetadataChip[];
   searchItem: (itemCode: string) => Promise<MasterDataItemResponse | null>;
   isSearchLoading: boolean;
-  inspectAccessSource: (params: { path?: string | null; table?: string | null }) => void;
   isTreeLoading: boolean;
   isMatrixLoading: boolean;
   isMetadataLoading: boolean;
@@ -83,7 +83,6 @@ export function useMasterData(): UseMasterDataState {
   const [tabs, setTabs] = useState<string[]>(MOCK_DEFAULT_ITEM ? [MOCK_DEFAULT_ITEM] : []);
   const [searchMetadataChips, setSearchMetadataChips] = useState<MasterDataSearchMetadataChip[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const [metadataSelection, setMetadataSelection] = useState<{ table?: string; path?: string }>({});
   const hasLoggedInitialSelection = useRef(false);
   const lastSearchedItemRef = useRef<string | null>(null);
 
@@ -102,22 +101,13 @@ export function useMasterData(): UseMasterDataState {
 
   const treeQuery = useQuery({
     queryKey: ["master-data-tree", debouncedSearch],
-    queryFn: async () => fetchMasterDataTree(debouncedSearch ? { query: debouncedSearch } : undefined),
+    queryFn: async () => fetchMasterDataTree(debouncedSearch || undefined),
     staleTime: 60_000,
   });
 
   const metadataQuery = useQuery({
-    queryKey: ["access-metadata", metadataSelection.table ?? null, metadataSelection.path ?? null],
-    queryFn: () => {
-      const params: { table?: string; path?: string } = {};
-      if (metadataSelection.table) {
-        params.table = metadataSelection.table;
-      }
-      if (metadataSelection.path) {
-        params.path = metadataSelection.path;
-      }
-      return fetchAccessMetadata(Object.keys(params).length > 0 ? params : undefined);
-    },
+    queryKey: ["mssql-metadata"],
+    queryFn: () => fetchDatabaseMetadata(),
     staleTime: 300_000,
     placeholderData: (previousData) => previousData,
   });
@@ -269,7 +259,7 @@ export function useMasterData(): UseMasterDataState {
 
   const logsQuery = useQuery({
     queryKey: ["master-data-logs"],
-    queryFn: () => fetchMasterDataLogs(5),
+    queryFn: () => fetchMasterDataLogs(),
     staleTime: 30_000,
   });
 
@@ -307,34 +297,20 @@ export function useMasterData(): UseMasterDataState {
     logs: MASTER_DATA_MOCK.logs,
     connection: {
       status: "connected" as const,
-      path: "//fileserver/routing_data/ROUTING AUTO TEST.accdb",
-      last_sync: "",
+      server: "K3-DB.ksm.co.kr,1433",
+      database: "KsmErp",
+      last_checked: "",
     },
   };
 
   const connectionStatus = logsData.connection ?? {
     status: "disconnected" as const,
-    path: "",
-    last_sync: null,
+    server: undefined,
+    database: undefined,
+    last_checked: null,
   };
 
-  const accessMetadata = metadataQuery.data ?? null;
-
-  const inspectAccessSource = useCallback(
-    (params: { path?: string | null; table?: string | null }) => {
-      const tableValue = params.table?.trim() || undefined;
-      const pathValue = params.path?.trim() || undefined;
-      setMetadataSelection({ table: tableValue, path: pathValue });
-      void postUiAudit({
-        action: "master_data.access.inspect",
-        payload: {
-          table: tableValue ?? null,
-          path: pathValue ?? null,
-        },
-      });
-    },
-    [],
-  );
+  const databaseMetadata = metadataQuery.data ?? null;
 
   return {
     search,
@@ -351,11 +327,10 @@ export function useMasterData(): UseMasterDataState {
     matrixRows,
     logs: logsData.logs ?? [],
     connectionStatus,
-    accessMetadata,
+    databaseMetadata,
     searchMetadataChips,
     searchItem,
     isSearchLoading,
-    inspectAccessSource,
     isTreeLoading: treeQuery.isFetching,
     isMatrixLoading: itemQuery.isFetching,
     isMetadataLoading: metadataQuery.isFetching,
@@ -363,6 +338,8 @@ export function useMasterData(): UseMasterDataState {
       void logsQuery.refetch();
       void postUiAudit({ action: "master_data.logs.refresh" });
     },
-    downloadLog: () => downloadMutation.mutateAsync(),
+    downloadLog: async () => {
+      await downloadMutation.mutateAsync();
+    },
   };
 }

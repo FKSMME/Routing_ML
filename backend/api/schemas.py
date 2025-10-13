@@ -499,7 +499,7 @@ class DataSourceTableProfileModel(BaseModel):
 
 
 class DataSourceConfigModel(BaseModel):
-    access_path: str
+    offline_dataset_path: Optional[str] = None
     default_table: str
     backup_paths: List[str] = Field(default_factory=list)
     table_profiles: List[DataSourceTableProfileModel] = Field(default_factory=list)
@@ -947,8 +947,9 @@ class MasterDataLogEntry(BaseModel):
 
 class MasterDataConnectionStatus(BaseModel):
     status: Literal["connected", "disconnected"]
-    path: str
-    last_sync: Optional[str] = None
+    server: Optional[str] = None
+    database: Optional[str] = None
+    last_checked: Optional[str] = None
 
 
 class MasterDataLogsResponse(BaseModel):

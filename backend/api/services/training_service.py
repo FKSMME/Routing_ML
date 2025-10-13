@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 import pandas as pd
 
+from backend import database
 from backend.api.config import get_settings
-from backend.api.services.master_data_service import ACCESS_FILE_SUFFIXES, MasterDataService
 from backend.api.services.model_metrics import evaluate_training_dataset, save_model_metrics
 from backend.maintenance.model_registry import list_versions, register_version
 from common.config_store import (
@@ -364,30 +364,34 @@ class TrainingService:
         }
 
     def _load_dataset(self, data_cfg: DataSourceConfig) -> pd.DataFrame:
-        access_path = Path(data_cfg.access_path).expanduser()
-        suffix = access_path.suffix.lower()
+        """기준정보를 MSSQL에서 로드하거나 로컬 CSV/파케이지만 허용한다."""
 
-        if access_path.exists():
-            if suffix == ".csv":
-                return pd.read_csv(access_path)
-            if suffix == ".parquet":
-                return pd.read_parquet(access_path)
+        dataset_path_str = getattr(data_cfg, "offline_dataset_path", None)
+        if dataset_path_str:
+            dataset_path = Path(dataset_path_str).expanduser()
+            suffix = dataset_path.suffix.lower()
 
-        if suffix in ACCESS_FILE_SUFFIXES:
-            validator = MasterDataService(cache_ttl_seconds=0)
-            validated_path = validator.validate_access_path(access_path)
-            try:
-                with validated_path.open("rb") as handle:
-                    handle.read(1)
-            except OSError as exc:
-                raise RuntimeError(
-                    f"Access 데이터베이스 파일을 열 수 없습니다: {validated_path}"
-                ) from exc
+            if dataset_path.exists():
+                if suffix == ".csv":
+                    return pd.read_csv(dataset_path)
+                if suffix == ".parquet":
+                    return pd.read_parquet(dataset_path)
 
-        # Access 혹은 미지원 포맷일 경우 빈 데이터프레임 생성
-        columns = ["ITEM_CD", "ITEM_NM"]
-        columns.extend(data_cfg.column_overrides.get("features", []))
-        return pd.DataFrame(columns=columns)
+        try:
+            columns = None
+            if data_cfg.table_profiles:
+                first_profile = data_cfg.table_profiles[0]
+                if isinstance(first_profile, dict):
+                    columns = first_profile.get("columns")
+            df = database.fetch_item_master(columns=columns)
+            if not df.empty:
+                return df
+        except Exception as exc:
+            logger.warning("MSSQL 품목 데이터 로드 실패", extra={"error": str(exc)})
+
+        fallback_columns = ["ITEM_CD", "ITEM_NM"]
+        fallback_columns.extend(data_cfg.column_overrides.get("features", []))
+        return pd.DataFrame(columns=fallback_columns)
 
     def _run_training(
         self,
@@ -454,7 +458,7 @@ class TrainingService:
             metrics.update(
                 {
                     "samples": sample_count,
-                    "dataset_path": str(getattr(data_cfg, "access_path", "")),
+                    "dataset_path": str(getattr(data_cfg, "offline_dataset_path", "") or ""),
                     "version_name": resolved_version,
                     "dry_run": dry_run,
                     "dataset_stats": dataset_stats,

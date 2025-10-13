@@ -82,7 +82,11 @@
       "Bash(/dev/null sleep 2)",
       "Bash(PYTHONPATH=/workspaces/Routing_ML_4 /workspaces/Routing_ML_4/venv-linux/bin/python -c \"import backend.main; print(''OK'')\")",
       "Bash(PYTHONPATH=/workspaces/Routing_ML_4 JWT_SECRET_KEY=\"test-key-min-32-chars-long-do-not-use-prod\" timeout 10 /workspaces/Routing_ML_4/venv-linux/bin/python -c \"from backend.api.app import app; print(''''✅ App imported successfully'''')\")",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(do [ -f \"$log\" ])",
+      "Bash(echo \"=== $log ===\")",
+      "Bash(tail:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

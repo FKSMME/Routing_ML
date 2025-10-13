@@ -30,8 +30,10 @@ from backend.api.schemas import (
     WorkflowGraphNode,
 )
 from backend.api.security import require_auth
-from backend.api.services.master_data_service import ACCESS_FILE_SUFFIXES
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
+
+# Access 파일 확장자 정의
+ACCESS_FILE_SUFFIXES = {".mdb", ".accdb"}
 from backend.trainer_ml import apply_trainer_runtime_config
 from common.config_store import (
     DataSourceConfig,

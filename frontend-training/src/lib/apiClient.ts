@@ -1,4 +1,5 @@
 import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
+import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
 import axios from "axios";
@@ -234,30 +235,95 @@ export async function runTraining(payload: TrainingRequestPayload): Promise<Trai
 // ============================================================================
 
 export type WorkspaceSettingsResponse = any;
-export type AccessMetadataResponse = any;
 export type OutputProfileColumn = any;
 export type WorkflowConfigResponse = any;
 
+export interface DatabaseMetadataColumn {
+  name: string;
+  type: string;
+  nullable?: boolean;
+}
+
+export interface DatabaseMetadataResponse {
+  table: string;
+  columns: DatabaseMetadataColumn[];
+  server?: string;
+  database?: string;
+  updated_at?: string;
+}
+
+export interface DatabaseConnectionTestPayload {
+  server: string;
+  database: string;
+  user: string;
+  password: string;
+  encrypt?: boolean;
+  trustCertificate?: boolean;
+}
+
+export interface DatabaseConnectionTestResult {
+  success: boolean;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 // ============================================================================
-// STUB FUNCTIONS FOR REMOVED APIs
-// These are kept to prevent import errors but will throw or return empty data
+// MASTER DATA APIs (MSSQL)
 // ============================================================================
 
-export async function fetchMasterDataTree(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataTree(
+  query?: string,
+  parentType?: string,
+  parentId?: string
+): Promise<MasterDataTreeResponse> {
+  const params: Record<string, string> = {};
+  if (query) params.query = query;
+  if (parentType) params.parent_type = parentType;
+  if (parentId) params.parent_id = parentId;
+
+  const response = await api.get<MasterDataTreeResponse>("/master-data/tree", { params });
+  return response.data;
 }
 
-export async function fetchMasterDataItem(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataItem(itemCode: string): Promise<MasterDataItemResponse> {
+  const response = await api.get<MasterDataItemResponse>(`/master-data/items/${encodeURIComponent(itemCode)}`);
+  return response.data;
 }
 
-export async function fetchMasterDataLogs(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function fetchMasterDataLogs(): Promise<MasterDataLogsResponse> {
+  const response = await api.get<MasterDataLogsResponse>("/master-data/logs");
+  return response.data;
 }
 
-export async function downloadMasterDataLog(...args: any[]): Promise<any> {
-  throw new Error("Master data API removed - feature not available");
+export async function downloadMasterDataLog(): Promise<Blob> {
+  const response = await api.get<Blob>("/master-data/logs/download", { responseType: "blob" });
+  return response.data;
 }
+
+export async function fetchDatabaseMetadata(params?: { table?: string }): Promise<DatabaseMetadataResponse> {
+  const response = await api.get<DatabaseMetadataResponse>("/mssql/metadata", {
+    params: params ?? {},
+  });
+  return response.data;
+}
+
+export async function testDatabaseConnection(
+  payload: DatabaseConnectionTestPayload
+): Promise<DatabaseConnectionTestResult> {
+  const response = await api.post<DatabaseConnectionTestResult>("/database/test-connection", {
+    server: payload.server,
+    database: payload.database,
+    user: payload.user,
+    password: payload.password,
+    encrypt: payload.encrypt ?? false,
+    trust_certificate: payload.trustCertificate ?? true,
+  });
+  return response.data;
+}
+
+// ============================================================================
+// PLACEHOLDER / LEGACY APIs
+// ============================================================================
 
 export async function fetchWorkflowConfig(...args: any[]): Promise<any> {
   throw new Error("Workflow API removed - feature not available");
@@ -280,12 +346,10 @@ export async function saveWorkspaceSettings(...args: any[]): Promise<any> {
 }
 
 export async function postUiAudit(...args: any[]): Promise<void> {
-  // Silently ignore audit calls
   return;
 }
 
 export async function postUiAuditBatch(...args: any[]): Promise<void> {
-  // Silently ignore audit calls
   return;
 }
 
@@ -305,14 +369,6 @@ export async function triggerRoutingInterface(...args: any[]): Promise<any> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
-export async function testAccessConnection(...args: any[]): Promise<any> {
-  throw new Error("Access connection API removed - feature not available");
-}
-
-export async function fetchAccessMetadata(...args: any[]): Promise<any> {
-  throw new Error("Access metadata API removed - feature not available");
-}
-
 export async function fetchOutputProfiles(...args: any[]): Promise<any> {
   return [];
 }
@@ -328,5 +384,6 @@ export async function generateOutputPreview(...args: any[]): Promise<any> {
 export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
   return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
 }
+
 
 export default api;

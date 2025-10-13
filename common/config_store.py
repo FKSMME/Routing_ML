@@ -341,9 +341,9 @@ class BlueprintToggle:
 
 @dataclass
 class DataSourceConfig:
-    """Access/테이블/컬럼 구성을 UI에서 조정 가능하도록 저장."""
+    """MSSQL 테이블 구조와 오프라인 데이터셋 구성을 UI에서 조정 가능하도록 저장."""
 
-    access_path: str = "routing_data/ROUTING AUTO TEST.accdb"
+    offline_dataset_path: Optional[str] = None
     default_table: str = "dbo_BI_ITEM_INFO_VIEW"
     backup_paths: List[str] = field(default_factory=list)
     table_profiles: List[Dict[str, Any]] = field(
@@ -417,11 +417,11 @@ class DataSourceConfig:
             ),
         ]
     )
-    version_hint: str = "access-config-v1"
+    version_hint: str = "datasource-config-v2"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "access_path": self.access_path,
+            "offline_dataset_path": self.offline_dataset_path,
             "default_table": self.default_table,
             "backup_paths": list(self.backup_paths),
             "table_profiles": list(self.table_profiles),
@@ -439,8 +439,12 @@ class DataSourceConfig:
         switches = [BlueprintToggle.from_dict(item) for item in data.get("blueprint_switches", [])]
         if not switches:
             switches = cls().blueprint_switches
+        fallback_dataset = data.get("offline_dataset_path")
+        if fallback_dataset is None:
+            # 호환성을 위해 legacy access_path 키를 지원
+            fallback_dataset = data.get("access_path")
         instance = cls(
-            access_path=data.get("access_path", "routing_data/ROUTING AUTO TEST.accdb"),
+            offline_dataset_path=fallback_dataset,
             default_table=data.get("default_table", "dbo_BI_ITEM_INFO_VIEW"),
             backup_paths=data.get("backup_paths", []),
             table_profiles=data.get("table_profiles", cls().table_profiles),
@@ -448,7 +452,7 @@ class DataSourceConfig:
             allow_gui_override=bool(data.get("allow_gui_override", True)),
             shading_palette=data.get("shading_palette", cls().shading_palette),
             blueprint_switches=switches,
-            version_hint=data.get("version_hint", "access-config-v1"),
+            version_hint=data.get("version_hint", "datasource-config-v2"),
         )
         return instance
 

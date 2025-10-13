@@ -1100,6 +1100,82 @@ def get_database_info() -> Dict[str, Any]:
             "tables_info": {},
         }
 
+
+def _split_table_identifier(identifier: str) -> Tuple[str, str]:
+    """`schema.table` 형식의 식별자를 분리한다."""
+    if not identifier:
+        return "dbo", ""
+
+    token = identifier.strip().strip("[]")
+    if "." in token:
+        schema, table = token.split(".", 1)
+    else:
+        schema, table = "dbo", token
+
+    return schema.strip("[]"), table.strip("[]")
+
+
+def describe_table(table_identifier: str) -> List[Dict[str, Any]]:
+    """INFORMATION_SCHEMA 기반으로 컬럼 메타데이터를 조회한다."""
+
+    schema, table = _split_table_identifier(table_identifier)
+    query = """
+        SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+        ORDER BY ORDINAL_POSITION
+    """
+
+    with _connect() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query, schema, table)
+        rows = cursor.fetchall()
+
+    if not rows:
+        raise ValueError(f"No metadata returned for table '{schema}.{table}'")
+
+    columns: List[Dict[str, Any]] = []
+    for row in rows:
+        column_name = getattr(row, "COLUMN_NAME", None) or row[0]
+        data_type = getattr(row, "DATA_TYPE", None) or row[1]
+        nullable_raw = getattr(row, "IS_NULLABLE", None) or row[2]
+        if isinstance(nullable_raw, str):
+            nullable = nullable_raw.strip().upper() in {"YES", "Y", "TRUE", "1"}
+        else:
+            nullable = bool(nullable_raw)
+        columns.append(
+            {
+                "name": str(column_name),
+                "type": str(data_type),
+                "nullable": nullable,
+            }
+        )
+    return columns
+
+
+def list_tables(*, schema: Optional[str] = None) -> List[str]:
+    """MSSQL 테이블/뷰 목록을 반환한다."""
+
+    query = """
+        SELECT TABLE_SCHEMA, TABLE_NAME
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_TYPE IN ('BASE TABLE', 'VIEW')
+    """
+    params: List[str] = []
+    if schema:
+        query += " AND TABLE_SCHEMA = ?"
+        params.append(schema)
+    query += " ORDER BY TABLE_SCHEMA, TABLE_NAME"
+
+    with _connect() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+
+    tables = [f"{getattr(row, 'TABLE_SCHEMA', row[0])}.{getattr(row, 'TABLE_NAME', row[1])}" for row in rows]
+    return tables
+
+
 # ════════════════════════════════════════════════
 # 10) 추가 함수들
 # ════════════════════════════════════════════════

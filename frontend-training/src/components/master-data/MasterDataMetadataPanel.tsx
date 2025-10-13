@@ -1,27 +1,27 @@
-import type { AccessMetadataResponse } from "@lib/apiClient";
+import type { DatabaseMetadataResponse } from "@lib/apiClient";
 
 interface MasterDataMetadataPanelProps {
-  metadata: AccessMetadataResponse | null;
+  metadata: DatabaseMetadataResponse | null;
   isLoading: boolean;
 }
 
 export function MasterDataMetadataPanel({ metadata, isLoading }: MasterDataMetadataPanelProps) {
   const columns = metadata?.columns ?? [];
   return (
-    <section className="panel-card interactive-card master-metadata" aria-label="Access metadata">
+    <section className="panel-card interactive-card master-metadata" aria-label="MSSQL metadata">
       <header className="panel-header">
         <div>
-          <h2 className="panel-title">Access Metadata</h2>
-          <p className="panel-subtitle">Column definitions from the selected Access table.</p>
+          <h2 className="panel-title">MSSQL Metadata</h2>
+          <p className="panel-subtitle">Column definitions from the selected MSSQL table or view.</p>
         </div>
       </header>
       {isLoading ? (
         <p className="text-sm text-muted">Loading metadata...</p>
       ) : columns.length === 0 ? (
-        <p className="text-sm text-muted">No metadata available. Check Access connection.</p>
+        <p className="text-sm text-muted">No metadata available. Verify the MSSQL connection.</p>
       ) : (
         <ul className="metadata-list">
-          {columns.map((column: any) => (
+          {columns.map((column) => (
             <li key={column.name}>
               <span className="metadata-list__name">{column.name}</span>
               <span className="metadata-list__type">

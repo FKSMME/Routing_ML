@@ -41,8 +41,9 @@ export interface MasterDataLogEntry {
 
 export interface MasterDataConnectionStatus {
   status: "connected" | "disconnected";
-  path: string;
-  last_sync: string | null;
+  server?: string;
+  database?: string;
+  last_checked?: string | null;
 }
 
 export interface MasterDataLogsResponse {

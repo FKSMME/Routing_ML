@@ -5,12 +5,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
 from backend import database
 from backend.api.config import get_settings
+from common.logger import get_logger
 
 ITEM_MASTER_COLUMNS: List[str] = [
     "ITEM_CD",
@@ -62,12 +63,10 @@ TREE_GROUP_COLUMNS: List[str] = ["ITEM_GRP1NM", "GROUP1", "ITEM_GRP1"]
 TREE_FAMILY_COLUMNS: List[str] = ["GROUP2", "ITEM_GRP2", "ITEM_GRP2NM"]
 
 settings = get_settings()
-
-ACCESS_FILE_SUFFIXES = {".accdb", ".mdb"}
-
+logger = get_logger("service.master_data")
 
 class MasterDataService:
-    """Access 기준정보 데이터를 조회하는 서비스."""
+    """MSSQL 기준정보 데이터를 조회하는 서비스."""
 
     def __init__(self, cache_ttl_seconds: int = 300) -> None:
         self._cache_ttl = cache_ttl_seconds
@@ -352,167 +351,39 @@ class MasterDataService:
 
     def _detect_connection_status(self) -> Dict[str, Optional[str]]:
         try:
-            latest = database._latest_db(database.ACCESS_DIR)  # type: ignore[attr-defined]
-            stat = latest.stat()
-            last_sync = datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S")
+            info = database.get_database_info()
             return {
                 "status": "connected",
-                "path": str(latest),
-                "last_sync": last_sync,
+                "server": info.get("server") or database.MSSQL_CONFIG["server"],
+                "database": info.get("database") or database.MSSQL_CONFIG["database"],
+                "last_checked": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
             }
-        except Exception:
+        except Exception as exc:
+            logger.warning("MSSQL 연결 상태 확인 실패: %s", exc)
             return {
                 "status": "disconnected",
-                "path": str(database.ACCESS_DIR),
-                "last_sync": None,
+                "server": database.MSSQL_CONFIG["server"],
+                "database": database.MSSQL_CONFIG["database"],
+                "last_checked": None,
             }
 
 
-    def _workspace_access_config(self) -> tuple[Optional[str], Optional[str]]:
-        try:
-            workspace_file = settings.audit_log_dir / "workspace_settings.json"
-            if workspace_file.exists():
-                data = json.loads(workspace_file.read_text(encoding="utf-8"))
-                access_cfg = data.get("access") or {}
-                options_cfg = data.get("options") or {}
-                path_value = access_cfg.get("path") or options_cfg.get("access_path")
-                table_value = access_cfg.get("table") or options_cfg.get("access_table")
-                path_str = str(path_value).strip() if isinstance(path_value, str) else None
-                table_str = str(table_value).strip() if isinstance(table_value, str) else None
-                return (path_str or None, table_str or None)
-        except Exception:
-            pass
-        return None, None
+    def get_database_metadata(self, table: Optional[str] = None) -> Dict[str, Any]:
+        """MSSQL 테이블/뷰 메타데이터를 조회한다."""
 
-    @staticmethod
-    def _resolve_access_path(value: Optional[str]) -> Optional[Path]:
-        if not value:
-            return None
-        candidate = Path(value).expanduser()
-        if candidate.exists():
-            return candidate
-        return None
-
-    def validate_access_path(self, candidate: Union[str, Path]) -> Path:
-        """Ensure the provided path points to an Access database file."""
-
-        path = Path(candidate).expanduser()
-        suffix = path.suffix.lower()
-        if suffix not in ACCESS_FILE_SUFFIXES:
-            raise ValueError("Access 파일은 .accdb 또는 .mdb 형식이어야 합니다.")
-        if not path.exists():
-            raise FileNotFoundError(f"Access 파일을 찾을 수 없습니다: {path}")
-        if not path.is_file():
-            raise ValueError(f"Access 경로가 파일이 아닙니다: {path}")
-        return path
-
-    @staticmethod
-    def _list_access_tables(path: Path) -> List[str]:
-        try:
-            import pyodbc  # type: ignore
-        except ImportError:
-            return []
-        try:
-            with pyodbc.connect(
-                r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};" f"DBQ={path}",
-                timeout=5,
-            ) as conn:
-                cursor = conn.cursor()
-                tables: List[str] = []
-                for row in cursor.tables(tableType="TABLE"):
-                    name = getattr(row, "table_name", None)
-                    if not name:
-                        continue
-                    if str(name).startswith("MSys"):
-                        continue
-                    tables.append(str(name))
-                return sorted(dict.fromkeys(tables))
-        except Exception:
-            return []
-
-    def read_access_tables(self, candidate: Union[str, Path]) -> List[str]:
-        """Return sorted Access table names for the validated path."""
-
-        path = self.validate_access_path(candidate)
-        tables = self._list_access_tables(path)
-        unique_tables = sorted(dict.fromkeys(tables))
-        if not unique_tables:
-            raise RuntimeError(f"Access 파일에서 테이블 목록을 찾을 수 없습니다: {path}")
-        return unique_tables
-
-    @staticmethod
-    def _introspect_access_columns(path: Path, table: str) -> List[Dict[str, Any]]:
-        try:
-            import pyodbc  # type: ignore
-        except ImportError as exc:
-            raise RuntimeError("pyodbc is not available") from exc
+        target_table = table or getattr(database, "VIEW_ITEM_MASTER", "dbo.BI_ITEM_INFO_VIEW")
         columns: List[Dict[str, Any]] = []
+
         try:
-            with pyodbc.connect(
-                r"DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};" f"DBQ={path}",
-                timeout=5,
-            ) as conn:
-                cursor = conn.cursor()
-                for row in cursor.columns(table=table):
-                    table_name = getattr(row, "table_name", "")
-                    if table_name and table_name.lower() != table.lower():
-                        continue
-                    column_name = getattr(row, "column_name", None)
-                    if not column_name:
-                        continue
-                    type_name = getattr(row, "type_name", None) or getattr(row, "data_type", "")
-                    nullable_flag = getattr(row, "is_nullable", getattr(row, "nullable", None))
-                    if nullable_flag is None:
-                        nullable = True
-                    elif isinstance(nullable_flag, str):
-                        nullable = nullable_flag.upper() != "NO"
-                    else:
-                        nullable = bool(nullable_flag)
-                    columns.append(
-                        {
-                            "name": str(column_name),
-                            "type": str(type_name) if type_name else "TEXT",
-                            "nullable": nullable,
-                        }
-                    )
+            columns = database.describe_table(target_table)
         except Exception as exc:
-            raise RuntimeError(f"Failed to inspect table '{table}': {exc}") from exc
-        return columns
-
-    def list_access_tables(self, path: Path) -> List[str]:
-        try:
-            return self.read_access_tables(path)
-        except Exception:
-            return []
-
-    def get_access_metadata(self, table: Optional[str] = None, path: Optional[str] = None) -> Dict[str, Any]:
-        """Inspect Access metadata using the provided path/table or fallbacks."""
-
-        workspace_path, workspace_table = self._workspace_access_config()
-        candidate_table = table or workspace_table or getattr(database, "VIEW_ITEM_MASTER", "dbo_BI_ITEM_INFO_VIEW")
-        table_name = candidate_table.strip() if isinstance(candidate_table, str) else getattr(database, "VIEW_ITEM_MASTER", "dbo_BI_ITEM_INFO_VIEW")
-
-        resolved_path = self._resolve_access_path(path) or self._resolve_access_path(workspace_path)
-        if resolved_path is None:
-            try:
-                resolved_path = database._latest_db(database.ACCESS_DIR)  # type: ignore[attr-defined]
-            except Exception:
-                resolved_path = None
-
-        columns: List[Dict[str, Any]] = []
-        if resolved_path is not None and table_name:
-            try:
-                columns = self._introspect_access_columns(resolved_path, table_name)
-            except Exception:
-                columns = []
-
-        if not columns:
+            logger.warning("MSSQL 메타데이터 조회 실패 (%s), DataFrame 기반 추론 시도: %s", target_table, exc)
             type_map = {
-                "object": "TEXT",
-                "float64": "DOUBLE",
-                "int64": "LONG",
-                "datetime64[ns]": "DATETIME",
-                "bool": "YESNO",
+                "object": "NVARCHAR",
+                "float64": "FLOAT",
+                "int64": "BIGINT",
+                "datetime64[ns]": "DATETIME2",
+                "bool": "BIT",
             }
             try:
                 df = self._load_item_master()
@@ -520,27 +391,16 @@ class MasterDataService:
                     dtype = str(df[name].dtype)
                     mapped = type_map.get(dtype, dtype.upper())
                     nullable = bool(df[name].isna().any())
-                    columns.append(
-                        {
-                            "name": name,
-                            "type": mapped,
-                            "nullable": nullable,
-                        }
-                    )
-            except Exception:
-                columns = [
-                    {
-                        "name": column,
-                        "type": "TEXT",
-                        "nullable": True,
-                    }
-                    for column in ITEM_MASTER_COLUMNS
-                ]
+                    columns.append({"name": name, "type": mapped, "nullable": nullable})
+            except Exception as inner_exc:
+                logger.error("DataFrame 추론도 실패하여 기본 컬럼 반환: %s", inner_exc)
+                columns = [{"name": column, "type": "NVARCHAR", "nullable": True} for column in ITEM_MASTER_COLUMNS]
 
         return {
-            "table": table_name,
+            "table": target_table,
             "columns": columns,
-            "path": str(resolved_path) if resolved_path else None,
+            "server": database.MSSQL_CONFIG["server"],
+            "database": database.MSSQL_CONFIG["database"],
             "updated_at": datetime.utcnow().isoformat(),
         }
 
