@@ -1,11 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { RoutingGroupControls } from "@components/RoutingGroupControls";
 import { useRoutingStore } from "@store/routingStore";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const fetchWorkspaceSettingsMock = vi.hoisted(() => vi.fn());
 const createRoutingGroupMock = vi.hoisted(() => vi.fn());
@@ -69,6 +71,19 @@ const writeEvidence = (suffix: "ui" | "network", data: Record<string, unknown>) 
   };
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf-8");
   return filePath;
+};
+
+const renderWithClient = (ui: ReactNode) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return {
+    queryClient,
+    ...render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>),
+  };
 };
 
 describe("ERP disabled routing save evidence capture", () => {
@@ -163,8 +178,8 @@ describe("ERP disabled routing save evidence capture", () => {
     readLatestSnapshotMock.mockResolvedValue(undefined);
   });
 
-  it("captures routing save confirmation details when ERP is disabled", async () => {
-    render(<RoutingGroupControls />);
+it("captures routing save confirmation details when ERP is disabled", async () => {
+  const { queryClient } = renderWithClient(<RoutingGroupControls />);
 
     const interfaceButton = await screen.findByRole("button", { name: /INTERFACE/i });
     expect(interfaceButton).toBeDisabled();
@@ -197,9 +212,11 @@ describe("ERP disabled routing save evidence capture", () => {
       statusVariant: "success",
     });
 
-    writeEvidence("network", {
-      requestPayload: payload ?? null,
-      auditTrail: postUiAuditMock.mock.calls.map((call) => call[0]),
-    });
+  writeEvidence("network", {
+    requestPayload: payload ?? null,
+    auditTrail: postUiAuditMock.mock.calls.map((call) => call[0]),
   });
+
+  queryClient.clear();
+});
 });

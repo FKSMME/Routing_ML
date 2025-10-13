@@ -1,11 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ReactNode } from "react";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { RoutingGroupControls } from "@components/RoutingGroupControls";
 import { useRoutingStore } from "@store/routingStore";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const fetchWorkspaceSettingsMock = vi.hoisted(() => vi.fn());
 const createRoutingGroupMock = vi.hoisted(() => vi.fn());
@@ -45,6 +47,19 @@ const writeEvidence = (suffix: "ui" | "network", data: Record<string, unknown>) 
   };
   writeFileSync(filePath, `${JSON.stringify(payload, null, 2)}\n`, "utf-8");
   return filePath;
+};
+
+const renderWithClient = (ui: ReactNode) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return {
+    queryClient,
+    ...render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>),
+  };
 };
 
 describe("ERP interface evidence capture", () => {
@@ -135,7 +150,7 @@ describe("ERP interface evidence capture", () => {
   });
 
   it("captures interface activation state and payload when ERP is enabled", async () => {
-    render(<RoutingGroupControls />);
+    const { queryClient } = renderWithClient(<RoutingGroupControls />);
 
     const interfaceButton = await screen.findByRole("button", { name: "INTERFACE" });
 
@@ -170,5 +185,7 @@ describe("ERP interface evidence capture", () => {
       requestPayload: payload ?? null,
       auditTrail: postUiAuditMock.mock.calls.map((call) => call[0]),
     });
+
+    queryClient.clear();
   });
 });
