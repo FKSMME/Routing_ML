@@ -13,6 +13,9 @@ from backend import database
 from backend.api.config import get_settings
 from common.logger import get_logger
 
+# Access 파일 확장자 (하위 호환성)
+ACCESS_FILE_SUFFIXES = {".mdb", ".accdb"}
+
 ITEM_MASTER_COLUMNS: List[str] = [
     "ITEM_CD",
     "ITEM_NM",
