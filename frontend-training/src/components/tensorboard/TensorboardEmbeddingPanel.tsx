@@ -90,16 +90,18 @@ const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
           const item = params[0];
           const index = item.dataIndex;
           const timestamp = timestamps[index] ?? "";
-          return 
+          const step = steps[index] ?? 0;
+          const value = values[index] ?? 0;
+          return `
             <div style="display:flex;flex-direction:column;gap:6px;">
-              <div style="font-size:11px;opacity:0.7;"></div>
+              <div style="font-size:11px;opacity:0.7;">${timestamp}</div>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:;"></span>
-                <span style="font-size:13px;">step </span>
+                <span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:#38bdf8;"></span>
+                <span style="font-size:13px;">step ${step}</span>
               </div>
-              <div style="font-size:16px;font-weight:600;"></div>
+              <div style="font-size:16px;font-weight:600;">${value.toFixed(4)}</div>
             </div>
-          ;
+          `;
         },
       },
       series: [
@@ -131,6 +133,7 @@ const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
             label: { color: "#ffffff", fontSize: 11 },
             data: [
               {
+                name: "Latest",
                 coord: [latestStep, latestValue],
                 value: latestValue.toFixed(4),
               },
