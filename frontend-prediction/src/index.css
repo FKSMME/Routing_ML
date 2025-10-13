@@ -2354,12 +2354,64 @@ html.dark {
   color: var(--text-muted);
 }
 
+.candidate-block__badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 12%, transparent);
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.candidate-block__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.candidate-block__action {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.candidate-block__action:hover {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 8%, var(--surface));
+  color: var(--accent);
+}
+
+.candidate-block__action svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 .candidate-block__hint {
   margin-top: 0.45rem;
   font-size: 0.7rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.candidate-block.is-custom {
+  border-color: var(--accent);
+  background: color-mix(in oklch, var(--accent) 4%, var(--surface-card));
 }
 
 .candidate-settings-backdrop {

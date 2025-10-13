@@ -213,6 +213,20 @@ class OperationStep(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    @validator("*", pre=True)
+    def _convert_nan_to_none(cls, value):  # noqa: N805
+        """Convert NaN/nan values from MSSQL to None for all fields."""
+        import math
+        if value is None:
+            return None
+        # Handle float NaN
+        if isinstance(value, float) and math.isnan(value):
+            return None
+        # Handle string 'nan'
+        if isinstance(value, str) and value.lower() == 'nan':
+            return None
+        return value
+
 
 class CandidateRouting(BaseModel):
     candidate_item_code: str = Field(..., alias="CANDIDATE_ITEM_CD")
