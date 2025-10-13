@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Grid } from "@react-three/drei";
 import ReactECharts from "echarts-for-react";
 import type { EChartsOption } from "echarts";
 import * as THREE from "three";
@@ -305,7 +305,12 @@ const HeatmapChart = () => {
   );
 };
 
-const PointCloud = () => {
+interface PointCloudProps {
+  pointSize?: number;
+  pointOpacity?: number;
+}
+
+const PointCloud = ({ pointSize = 0.25, pointOpacity = 0.9 }: PointCloudProps) => {
   const points = useTensorboardStore((state) => state.points);
   const colorField = useTensorboardStore((state) => state.colorField);
 
@@ -384,12 +389,12 @@ const PointCloud = () => {
         ) : null}
       </bufferGeometry>
       <pointsMaterial
-        size={0.25}
+        size={pointSize}
         sizeAttenuation
         depthWrite={false}
         vertexColors
         transparent
-        opacity={0.9}
+        opacity={pointOpacity}
         map={circleTexture}
         alphaTest={0.1}
       />
@@ -429,6 +434,8 @@ export const TensorboardEmbeddingPanel = () => {
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3d');
+  const [pointSize, setPointSize] = useState(0.25);
+  const [showGrid, setShowGrid] = useState(true);
 
   useEffect(() => {
     void initialize();
@@ -655,12 +662,43 @@ export const TensorboardEmbeddingPanel = () => {
           <div className="relative h-[520px] min-h-[520px] overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
             {visualizationMode === '3d' ? (
               <>
-                <Canvas camera={{ position: [6, 6, 6], fov: 60 }}>
-                  <ambientLight intensity={0.6} />
-                  <directionalLight position={[5, 5, 10]} intensity={0.8} />
-                  <pointLight position={[-5, -5, -5]} intensity={0.3} />
-                  <PointCloud />
-                  <OrbitControls enablePan enableRotate enableZoom />
+                <Canvas camera={{ position: [8, 8, 8], fov: 50 }}>
+                  {/* Improved lighting */}
+                  <ambientLight intensity={0.4} />
+                  <directionalLight position={[10, 10, 10]} intensity={1.0} castShadow />
+                  <directionalLight position={[-10, -10, -10]} intensity={0.3} />
+                  <pointLight position={[0, 10, 0]} intensity={0.5} color="#a0d8ff" />
+
+                  {/* Grid helper */}
+                  {showGrid && (
+                    <Grid
+                      position={[0, -5, 0]}
+                      args={[20, 20]}
+                      cellSize={1}
+                      cellThickness={0.5}
+                      cellColor="#6366f1"
+                      sectionSize={5}
+                      sectionThickness={1}
+                      sectionColor="#818cf8"
+                      fadeDistance={30}
+                      fadeStrength={1}
+                      followCamera={false}
+                      infiniteGrid
+                    />
+                  )}
+
+                  {/* Point cloud */}
+                  <PointCloud pointSize={pointSize} />
+
+                  {/* Controls */}
+                  <OrbitControls
+                    enablePan
+                    enableRotate
+                    enableZoom
+                    minDistance={3}
+                    maxDistance={50}
+                    autoRotate={false}
+                  />
                 </Canvas>
                 {loadingPoints ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm font-medium text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">

@@ -139,6 +139,64 @@ const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3
 | 16:00 | 사용자 피드백: 포인트 사각형 → 원형 변경 요청 |
 | 16:10 | 원형 스프라이트 텍스처 생성 및 적용 완료 |
 | 16:20 | 시각화 모드 전환 UI 추가 및 조건부 렌더링 구현 완료 |
+| 16:35 | Phase 3: Grid helper, 조명 시스템 개선 완료 |
+
+---
+
+## 7. Phase 3 작업 - 3D 시각화 품질 개선 (2025-10-14)
+
+### 7.1 작업 목표
+- 3D 공간 인식을 위한 Grid helper 추가
+- 조명 시스템 개선으로 depth perception 향상
+- 카메라 및 OrbitControls 최적화
+- PointCloud 컴포넌트 props 기반 커스터마이징
+
+### 7.2 구현 내용
+
+**1. Infinite Grid Helper**
+- `@react-three/drei`의 Grid 컴포넌트 사용
+- 위치: Y축 -5 (포인트 클라우드 아래)
+- 크기: 20x20, cell 1 단위, section 5 단위
+- 색상: Indigo 계열 (#6366f1 cell, #818cf8 section)
+- Fade distance 30, 카메라 미추적
+- `showGrid` state로 토글 가능
+
+**2. 개선된 조명 시스템**
+```typescript
+<ambientLight intensity={0.4} />                          // 기본 조도
+<directionalLight position={[10, 10, 10]} intensity={1.0} castShadow />  // 메인
+<directionalLight position={[-10, -10, -10]} intensity={0.3} />          // 보조
+<pointLight position={[0, 10, 0]} intensity={0.5} color="#a0d8ff" />     // 상단 하늘색
+```
+
+**3. 카메라 설정 최적화**
+- 초기 위치: [6, 6, 6] → [8, 8, 8] (더 넓은 시야)
+- FOV: 60 → 50 (원근감 개선)
+
+**4. OrbitControls 제한**
+- minDistance: 3 (최소 줌인)
+- maxDistance: 50 (최대 줌아웃)
+- autoRotate: false (수동 회전)
+
+**5. PointCloud Props 지원**
+```typescript
+interface PointCloudProps {
+  pointSize?: number;      // 기본값 0.25
+  pointOpacity?: number;   // 기본값 0.9
+}
+```
+
+### 7.3 State 관리
+- `pointSize`: number = 0.25
+- `showGrid`: boolean = true
+- 향후 UI 컨트롤 추가 가능
+
+### 7.4 시각적 개선 효과
+- ✅ Grid로 3D 공간감 향상
+- ✅ 다층 조명으로 depth perception 개선
+- ✅ 하늘색 point light로 상단 강조
+- ✅ 카메라 거리 제한으로 UX 개선
+- ✅ Props 기반 커스터마이징 지원
 
 ### 6.6 Phase 2 완료 사항
 
@@ -161,10 +219,12 @@ const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3
 
 **파일 변경 사항**:
 - `frontend-training/src/components/tensorboard/TensorboardEmbeddingPanel.tsx`
+  - Line 3: Grid import from @react-three/drei
   - Line 6: Three.js import
   - Line 13: VisualizationMode 타입
   - Line 151-303: HeatmapChart 컴포넌트
-  - Line 305-395: PointCloud 원형 렌더링
-  - Line 428: visualizationMode 상태
-  - Line 626-649: 모드 전환 탭 버튼
-  - Line 653-678: 조건부 렌더링 로직
+  - Line 308-403: PointCloud 원형 렌더링 (props 지원)
+  - Line 437-438: pointSize, showGrid 상태
+  - Line 636-659: 모드 전환 탭 버튼
+  - Line 665-702: Canvas with Grid, improved lighting
+  - Line 673-688: Infinite Grid helper
