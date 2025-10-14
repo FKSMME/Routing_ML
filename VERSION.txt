@@ -1,0 +1,105 @@
+Routing ML Service Monitor - Version Information
+================================================
+
+Current Version: 4.0.0
+Build Date: 2025-10-14
+Author: Routing ML Team
+
+Release Notes:
+--------------
+
+v4.0.0 (2025-10-14) - Cyberpunk Edition
+========================================
+MAJOR UPDATE - Complete UI/UX overhaul with cyberpunk theme
+
+New Features:
+- ✓ Real-time performance monitoring with live charts
+  - CPU usage tracking
+  - Memory usage tracking
+  - Disk usage tracking
+  - Average response time monitoring
+
+- ✓ Backend logs viewer with filtering
+  - Real-time log display
+  - Filter by log level (ERROR, WARNING, INFO, DEBUG)
+  - Color-coded log entries
+  - Auto-refresh functionality
+
+- ✓ User management system
+  - Approve/reject user registrations
+  - Admin rights assignment
+  - User information display
+
+- ✓ Background service execution
+  - Services start without terminal windows
+  - Clean background process management
+  - No console windows cluttering taskbar
+
+- ✓ Cyberpunk UI theme
+  - Neon blue/cyan color scheme
+  - Dark background with gradients
+  - Glowing borders and accents
+  - Terminal-style fonts (Consolas)
+  - Futuristic design elements
+
+Build Types:
+- Portable EXE: Single file executable (RoutingMLMonitor_v4.0.0.exe)
+  - Build command: deploy\build_server_monitor_exe.bat
+  - Use case: Quick deployment, testing, portable usage
+
+- Installer Package: Directory-based installation
+  - Build command: deploy\build_server_monitor_installer.bat
+  - Use case: Permanent installation, faster startup
+
+Bug Fixes:
+- Fixed admin checkbox not working in user approval
+- Fixed background color consistency across all tabs
+- Improved service status detection
+
+Technical Details:
+- Python 3.11+
+- Tkinter GUI framework
+- psutil for system monitoring
+- PyInstaller for executable packaging
+
+Dependencies:
+- psutil
+- tkinter (built-in)
+- urllib (built-in)
+- threading (built-in)
+
+System Requirements:
+- Windows 10/11 (x64)
+- 4GB RAM minimum
+- 100MB disk space
+- Network access to backend services
+
+Installation:
+1. Download the appropriate build (portable or installer)
+2. For portable: Run RoutingMLMonitor_v4.0.0.exe directly
+3. For installer: Extract folder and run the .exe inside
+4. Select your project folder on first run
+5. Click "Start All" to launch services
+
+Usage:
+- Service Monitor tab: View and control all services
+- Real-time Performance tab: Monitor system resources
+- Backend Logs tab: View and filter backend logs
+- User Management tab: Approve/reject user registrations
+
+Support:
+- GitHub: https://github.com/routing-ml/project
+- Documentation: See docs/guides/
+- Issues: Report via GitHub Issues
+
+License:
+- Copyright (c) 2025 Routing ML Team
+- All rights reserved
+
+================================================
+Previous Versions:
+================================================
+
+v3.x - Service monitoring with basic UI
+v2.x - Console-based monitoring
+v1.x - Initial prototype

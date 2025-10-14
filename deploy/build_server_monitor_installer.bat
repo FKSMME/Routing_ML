@@ -1,9 +1,9 @@
 @echo off
 REM =============================================================================
-REM  Build script for Routing ML Service Monitor - PORTABLE EXECUTABLE
+REM  Build script for Routing ML Service Monitor - INSTALLER PACKAGE
 REM  Version: 4.0.0
 REM  Build Date: 2025-10-14
-REM  This creates a single portable .exe file
+REM  This creates a directory-based installer package
 REM =============================================================================
 setlocal ENABLEDELAYEDEXPANSION
 
@@ -12,8 +12,8 @@ cd /d "%~dp0.."
 
 echo.
 echo ============================================================================
-echo   Routing ML v4.0.0 - Portable EXE Builder
-echo   Build Type: Single File (Portable)
+echo   Routing ML v4.0.0 - Installer Package Builder
+echo   Build Type: Directory-based Installation
 echo ============================================================================
 echo.
 
@@ -67,12 +67,12 @@ if errorlevel 1 (
 )
 
 REM -----------------------------------------------------------------------------
-REM 4. Run PyInstaller to build single-file GUI executable (Portable)
+REM 4. Run PyInstaller to build directory-based installer
 REM -----------------------------------------------------------------------------
 echo.
-echo [INFO] Building portable executable...
+echo [INFO] Building installer package...
 "%PYINSTALLER%" --noconfirm --clean ^
-    RoutingMLMonitor.spec
+    RoutingMLMonitor_Installer.spec
 
 if errorlevel 1 (
     echo [ERROR] Build failed. Check the PyInstaller output above.
@@ -82,19 +82,25 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================================
-echo   [SUCCESS] Portable EXE Build Complete!
+echo   [SUCCESS] Installer Package Build Complete!
 echo ============================================================================
 echo.
-echo   Output: dist\RoutingMLMonitor_v4.0.0.exe
-echo   Type: Single portable executable file
+echo   Output: dist\RoutingMLMonitor_v4.0.0\ (directory)
+echo   Type: Installation package with all dependencies
 echo
-echo   This executable:
-echo   - Can run standalone without installation
-echo   - Extracts to temp directory on each run
-echo   - Suitable for quick deployment and testing
+echo   This package:
+echo   - Contains all required DLLs and dependencies
+echo   - Faster startup time (no extraction needed)
+echo   - Better for permanent installation
+echo   - Can be distributed as a folder or zipped
 echo.
 echo   Build artifacts:
-echo   - Executable: dist\RoutingMLMonitor_v4.0.0.exe
+echo   - Installer folder: dist\RoutingMLMonitor_v4.0.0\
+echo   - Main executable: dist\RoutingMLMonitor_v4.0.0\RoutingMLMonitor_v4.0.0.exe
 echo   - Build files: build\ (can be deleted)
+echo.
+echo   To create a distributable package:
+echo   - Option 1: Zip the entire dist\RoutingMLMonitor_v4.0.0\ folder
+echo   - Option 2: Create an NSIS or Inno Setup installer from this folder
 echo.
 pause

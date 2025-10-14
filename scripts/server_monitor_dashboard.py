@@ -10,14 +10,22 @@ import urllib.request
 from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Dict, Tuple, List, Optional
+from collections import deque
 import json
+import psutil
 
 import tkinter as tk
 from tkinter import ttk
 import webbrowser
 from functools import partial
 
+# Version Information
+__version__ = "4.0.0"
+__build_date__ = "2025-10-14"
+__author__ = "Routing ML Team"
+
 POLL_INTERVAL_SECONDS = 5.0
+PERFORMANCE_HISTORY_SIZE = 60  # Keep last 60 data points
 
 
 @dataclass(frozen=True)
@@ -102,13 +110,13 @@ def check_service(service: Service) -> Tuple[str, str]:
 
 
 class ServiceCard(tk.Frame):
-    """Visual card that displays status for a single service."""
+    """Visual card that displays status for a single service (Cyberpunk style)."""
 
     COLORS: Dict[str, str] = {
-        "online": "#4caf50",
-        "warning": "#ff9800",
-        "offline": "#f44336",
-        "checking": "#2196f3",
+        "online": "#00ff88",
+        "warning": "#ffaa00",
+        "offline": "#ff0055",
+        "checking": "#00d4ff",
     }
 
     ICONS: Dict[str, str] = {
@@ -121,67 +129,67 @@ class ServiceCard(tk.Frame):
     def __init__(self, master: tk.Widget, service: Service) -> None:
         super().__init__(
             master,
-            borderwidth=0,
-            relief="flat",
+            borderwidth=2,
+            relief="solid",
             padx=16,
             pady=12,
-            bg="#1a1d23",
-            highlightbackground="#2d3139",
-            highlightthickness=1,
+            bg="#0a1628",
+            highlightbackground="#00d4ff",
+            highlightthickness=2,
         )
         self.service = service
 
         # Title with icon
-        title_frame = tk.Frame(self, bg="#1a1d23")
+        title_frame = tk.Frame(self, bg="#0a1628")
         title_frame.pack(anchor="w", fill="x")
 
         self.status_icon = tk.Label(
             title_frame,
             text="◌",
-            font=("Segoe UI", 16),
-            fg="#2196f3",
-            bg="#1a1d23",
+            font=("Consolas", 16, "bold"),
+            fg="#00d4ff",
+            bg="#0a1628",
         )
         self.status_icon.pack(side="left", padx=(0, 8))
 
         self.title_label = tk.Label(
             title_frame,
-            text=service.name,
-            font=("Segoe UI", 12, "bold"),
-            fg="#ffffff",
-            bg="#1a1d23",
+            text=service.name.upper(),
+            font=("Consolas", 11, "bold"),
+            fg="#00ffff",
+            bg="#0a1628",
         )
         self.title_label.pack(side="left")
 
         # Status message (compact)
         self.status_label = tk.Label(
             self,
-            text="Checking...",
-            font=("Segoe UI", 9),
-            fg="#90a4ae",
-            bg="#1a1d23",
+            text="CHECKING...",
+            font=("Consolas", 9),
+            fg="#00d4ff",
+            bg="#0a1628",
             anchor="w",
         )
         self.status_label.pack(anchor="w", pady=(6, 8))
 
-        # Links (more compact)
-        self.links_frame = tk.Frame(self, bg="#1a1d23")
+        # Links (more compact, cyberpunk style)
+        self.links_frame = tk.Frame(self, bg="#0a1628")
         self.links_frame.pack(anchor="w", fill="x")
 
         for label, url in service.links:
             btn = tk.Button(
                 self.links_frame,
-                text=f"{label}",
-                font=("Segoe UI", 9),
-                fg="#90caf9",
-                bg="#263238",
-                activebackground="#37474f",
-                activeforeground="#ffffff",
-                relief="flat",
-                bd=0,
+                text=f"◢ {label.upper()} ◣",
+                font=("Consolas", 8, "bold"),
+                fg="#00ffff",
+                bg="#1a2f4a",
+                activebackground="#2a4f6a",
+                activeforeground="#00ffff",
+                relief="solid",
+                bd=1,
                 cursor="hand2",
-                padx=10,
-                pady=4,
+                padx=12,
+                pady=5,
                 command=partial(self._open_url, url),
             )
             btn.pack(side="left", padx=(0, 6))
@@ -201,6 +209,102 @@ class ServiceCard(tk.Frame):
             webbrowser.open(url, new=0)
 
 
+class PerformanceChart(tk.Canvas):
+    """Real-time performance chart widget"""
+
+    def __init__(self, master: tk.Widget, title: str, color: str, unit: str = "%", max_value: float = 100.0) -> None:
+        super().__init__(
+            master,
+            bg="#0a0e1a",
+            highlightthickness=1,
+            highlightbackground="#1a2332",
+            width=300,
+            height=120
+        )
+        self.title = title
+        self.color = color
+        self.unit = unit
+        self.max_value = max_value
+        self.data: deque = deque(maxlen=PERFORMANCE_HISTORY_SIZE)
+        self.chart_padding = 30
+        self.draw_chart()
+
+    def add_data(self, value: float) -> None:
+        """Add new data point and redraw chart"""
+        self.data.append(value)
+        self.draw_chart()
+
+    def draw_chart(self) -> None:
+        """Draw the performance chart"""
+        self.delete("all")
+        width = self.winfo_width() or 300
+        height = self.winfo_height() or 120
+
+        # Title
+        self.create_text(
+            10, 10,
+            text=self.title,
+            font=("Segoe UI", 9, "bold"),
+            fill="#8b949e",
+            anchor="nw"
+        )
+
+        # Current value
+        if self.data:
+            current = self.data[-1]
+            self.create_text(
+                width - 10, 10,
+                text=f"{current:.1f}{self.unit}",
+                font=("Segoe UI", 11, "bold"),
+                fill=self.color,
+                anchor="ne"
+            )
+
+        # Chart area
+        chart_height = height - self.chart_padding - 10
+        chart_width = width - 20
+
+        if len(self.data) < 2:
+            return
+
+        # Draw grid lines
+        for i in range(5):
+            y = self.chart_padding + (chart_height * i / 4)
+            self.create_line(
+                10, y, width - 10, y,
+                fill="#1a2332",
+                width=1
+            )
+
+        # Draw data line
+        points = []
+        data_count = len(self.data)
+        x_step = chart_width / max(data_count - 1, 1)
+
+        for i, value in enumerate(self.data):
+            x = 10 + (i * x_step)
+            y = self.chart_padding + chart_height - (value / self.max_value * chart_height)
+            y = max(self.chart_padding, min(y, height - 10))
+            points.extend([x, y])
+
+        if len(points) >= 4:
+            self.create_line(
+                *points,
+                fill=self.color,
+                width=2,
+                smooth=True
+            )
+
+            # Fill area under curve
+            fill_points = points + [width - 10, height - 10, 10, height - 10]
+            self.create_polygon(
+                *fill_points,
+                fill=self.color,
+                stipple="gray25",
+                outline=""
+            )
+
+
 class MonitorApp:
     """Main window wiring Tkinter widgets with the polling thread."""
 
@@ -214,125 +318,163 @@ class MonitorApp:
         self.selected_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         self.root = tk.Tk()
-        self.root.title("Routing ML v4 - Service Monitor")
-        self.root.configure(bg="#0d1117")
-        self.root.geometry("1000x650")
-        self.root.resizable(False, False)
+        self.root.title(f"◢ ROUTING ML v{__version__} ◣ Cyberpunk Monitor")
+        self.root.configure(bg="#000510")
+        self.root.geometry("1200x750")
+        self.root.resizable(True, True)
 
-        # Header with gradient effect
-        header_frame = tk.Frame(self.root, bg="#0d1117", height=60)
-        header_frame.pack(fill="x", pady=(0, 10))
+        # Cyberpunk Header with gradient effect
+        header_frame = tk.Frame(self.root, bg="#000510", height=70)
+        header_frame.pack(fill="x", pady=(0, 5))
 
-        header = tk.Label(
-            header_frame,
-            text="🚀 Routing ML Service Monitor",
-            font=("Segoe UI", 18, "bold"),
-            fg="#58a6ff",
-            bg="#0d1117",
+        # Create gradient-like effect with multiple labels
+        gradient_canvas = tk.Canvas(header_frame, bg="#000510", height=70, highlightthickness=0)
+        gradient_canvas.pack(fill="x")
+
+        # Draw gradient background
+        for i in range(70):
+            color_val = int(5 + i * 0.3)
+            color = f"#{color_val:02x}{int(color_val * 0.5):02x}{int(color_val * 1.5):02x}"
+            gradient_canvas.create_line(0, i, 1200, i, fill=color, width=1)
+
+        # Cyberpunk title with glow effect
+        title_text = f"◢ ROUTING ML v{__version__} ◣"
+        gradient_canvas.create_text(
+            600, 28,
+            text=title_text,
+            font=("Consolas", 22, "bold"),
+            fill="#00ffff",
         )
-        header.pack(pady=15)
+        gradient_canvas.create_text(
+            600, 28,
+            text=title_text,
+            font=("Consolas", 22, "bold"),
+            fill="#0088ff",
+        )
 
-        # Tab control with explicit styling
+        # Version info subtitle
+        version_text = f"BUILD: {__build_date__} | AUTHOR: {__author__}"
+        gradient_canvas.create_text(
+            600, 52,
+            text=version_text,
+            font=("Consolas", 8),
+            fill="#00aaaa",
+        )
+
+        # Cyberpunk Tab control styling
         style = ttk.Style()
         style.theme_use('clam')
-        style.configure('TNotebook', background='#0d1117', borderwidth=0)
-        style.configure('TNotebook.Tab', background='#21262d', foreground='#c9d1d9',
-                       padding=[20, 10], font=('Segoe UI', 10))
+        style.configure('TNotebook', background='#000510', borderwidth=0)
+        style.configure('TNotebook.Tab',
+                       background='#0a1628',
+                       foreground='#00d4ff',
+                       padding=[25, 12],
+                       font=('Consolas', 10, 'bold'),
+                       borderwidth=1)
         style.map('TNotebook.Tab',
-                 background=[('selected', '#238636')],
-                 foreground=[('selected', '#ffffff')])
+                 background=[('selected', '#1a2f4a')],
+                 foreground=[('selected', '#00ffff')],
+                 borderwidth=[('selected', 2)])
 
         tab_control = ttk.Notebook(self.root)
 
         # Service Monitor Tab
-        service_tab = tk.Frame(tab_control, bg="#0d1117")
-        tab_control.add(service_tab, text="서비스 모니터")
+        service_tab = tk.Frame(tab_control, bg="#000510")
+        tab_control.add(service_tab, text="◢ 서비스 모니터 ◣")
+
+        # Performance Monitor Tab
+        performance_tab = tk.Frame(tab_control, bg="#000510")
+        tab_control.add(performance_tab, text="◢ 실시간 성능 ◣")
+
+        # Backend Logs Tab
+        logs_tab = tk.Frame(tab_control, bg="#000510")
+        tab_control.add(logs_tab, text="◢ 백엔드 로그 ◣")
 
         # User Management Tab
-        user_tab = tk.Frame(tab_control, bg="#0d1117")
-        tab_control.add(user_tab, text="회원 관리")
+        user_tab = tk.Frame(tab_control, bg="#000510")
+        tab_control.add(user_tab, text="◢ 회원 관리 ◣")
 
         tab_control.pack(expand=1, fill="both", padx=10, pady=(0, 10))
 
         # Service Tab Content
         # Action buttons frame
-        action_frame = tk.Frame(service_tab, bg="#0d1117")
+        action_frame = tk.Frame(service_tab, bg="#000510")
         action_frame.pack(fill="x", padx=20, pady=(10, 10))
 
-        # Select folder button
+        # Select folder button (Cyberpunk style)
         folder_btn = tk.Button(
             action_frame,
-            text="📁 Select Project Folder",
-            font=("Segoe UI", 10),
-            fg="#c9d1d9",
-            bg="#21262d",
-            activebackground="#30363d",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            text="◢ SELECT FOLDER ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#0a1628",
+            activebackground="#1a2f4a",
+            activeforeground="#00ffff",
+            relief="solid",
+            bd=2,
             cursor="hand2",
             padx=20,
-            pady=8,
+            pady=10,
             command=self._select_folder,
         )
         folder_btn.pack(side="left", padx=(0, 10))
 
-        # START_ALL button
+        # START_ALL button (Neon green)
         start_btn = tk.Button(
             action_frame,
-            text="▶ Start All Services",
-            font=("Segoe UI", 10, "bold"),
-            fg="#ffffff",
-            bg="#238636",
-            activebackground="#2ea043",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            text="▶ START ALL",
+            font=("Consolas", 10, "bold"),
+            fg="#000000",
+            bg="#00ff88",
+            activebackground="#00ffaa",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
             cursor="hand2",
-            padx=20,
-            pady=8,
+            padx=25,
+            pady=10,
             command=self._start_services,
         )
         start_btn.pack(side="left", padx=(0, 10))
 
-        # STOP_ALL button
+        # STOP_ALL button (Neon red)
         stop_btn = tk.Button(
             action_frame,
-            text="■ Stop All Services",
-            font=("Segoe UI", 10, "bold"),
-            fg="#ffffff",
-            bg="#da3633",
-            activebackground="#f85149",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            text="■ STOP ALL",
+            font=("Consolas", 10, "bold"),
+            fg="#000000",
+            bg="#ff0055",
+            activebackground="#ff3377",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
             cursor="hand2",
-            padx=20,
-            pady=8,
+            padx=25,
+            pady=10,
             command=self._stop_services,
         )
         stop_btn.pack(side="left", padx=(0, 10))
 
-        # Clear cache button
+        # Clear cache button (Neon orange)
         cache_btn = tk.Button(
             action_frame,
-            text="🗑️ Clear Vite Cache",
-            font=("Segoe UI", 10),
-            fg="#c9d1d9",
-            bg="#21262d",
-            activebackground="#30363d",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            text="◢ CLEAR CACHE ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#000000",
+            bg="#ffaa00",
+            activebackground="#ffcc00",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
             cursor="hand2",
             padx=20,
-            pady=8,
+            pady=10,
             command=self._clear_cache,
         )
         cache_btn.pack(side="left")
 
         # Service cards grid
-        grid = tk.Frame(service_tab, bg="#0d1117")
+        grid = tk.Frame(service_tab, bg="#000510")
         grid.pack(padx=20, pady=10, fill="both", expand=True)
 
         self.cards: Dict[str, ServiceCard] = {}
@@ -346,16 +488,26 @@ class MonitorApp:
             grid.grid_rowconfigure(row, weight=1)
             self.cards[service.key] = card
 
-        # Footer info for service tab
+        # Footer info for service tab (Cyberpunk style)
         service_info = tk.Label(
             service_tab,
-            text="● Online  ◐ Degraded  ○ Offline  •  Refreshes every 5 seconds",
-            font=("Segoe UI", 9),
-            fg="#8b949e",
-            bg="#0d1117",
+            text="◢ ● ONLINE  ◐ DEGRADED  ○ OFFLINE • AUTO-REFRESH: 5s ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#000510",
             pady=12,
         )
         service_info.pack(fill="x", side="bottom")
+
+        # ==================================================================
+        # Performance Monitor Tab Content
+        # ==================================================================
+        self._init_performance_tab(performance_tab)
+
+        # ==================================================================
+        # Backend Logs Tab Content
+        # ==================================================================
+        self._init_logs_tab(logs_tab)
 
         # ==================================================================
         # User Management Tab Content
@@ -363,8 +515,351 @@ class MonitorApp:
         self._init_user_management_tab(user_tab)
 
         self.root.after(200, self._drain_queue)
+        self.root.after(1000, self._update_performance_charts)
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
+
+    def _init_performance_tab(self, parent: tk.Frame) -> None:
+        """실시간 성능 모니터링 탭 초기화"""
+        # Header
+        header_frame = tk.Frame(parent, bg="#000510")
+        header_frame.pack(fill="x", padx=20, pady=15)
+
+        title_label = tk.Label(
+            header_frame,
+            text="◢ SYSTEM PERFORMANCE MONITOR ◣",
+            font=("Consolas", 14, "bold"),
+            fg="#00ffff",
+            bg="#000510",
+        )
+        title_label.pack(side="left")
+
+        # Charts container
+        charts_frame = tk.Frame(parent, bg="#000510")
+        charts_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # Top row: CPU and Memory
+        top_row = tk.Frame(charts_frame, bg="#000510")
+        top_row.pack(fill="both", expand=True, pady=(0, 10))
+
+        self.cpu_chart = PerformanceChart(
+            top_row,
+            title="◢ CPU USAGE ◣",
+            color="#00d4ff",
+            unit="%",
+            max_value=100.0
+        )
+        self.cpu_chart.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        self.memory_chart = PerformanceChart(
+            top_row,
+            title="◢ MEMORY USAGE ◣",
+            color="#ff00ff",
+            unit="%",
+            max_value=100.0
+        )
+        self.memory_chart.pack(side="left", fill="both", expand=True)
+
+        # Bottom row: Response Time and Network
+        bottom_row = tk.Frame(charts_frame, bg="#000510")
+        bottom_row.pack(fill="both", expand=True)
+
+        self.response_time_chart = PerformanceChart(
+            bottom_row,
+            title="◢ AVG RESPONSE TIME ◣",
+            color="#00ff88",
+            unit="ms",
+            max_value=1000.0
+        )
+        self.response_time_chart.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        self.disk_chart = PerformanceChart(
+            bottom_row,
+            title="◢ DISK USAGE ◣",
+            color="#ffaa00",
+            unit="%",
+            max_value=100.0
+        )
+        self.disk_chart.pack(side="left", fill="both", expand=True)
+
+        # Info labels
+        info_frame = tk.Frame(parent, bg="#000510")
+        info_frame.pack(fill="x", padx=20, pady=15)
+
+        self.system_info_label = tk.Label(
+            info_frame,
+            text="◢ INITIALIZING SYSTEM MONITOR... ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#000510",
+        )
+        self.system_info_label.pack()
+
+        # Bind configure event to redraw charts on resize
+        self.cpu_chart.bind("<Configure>", lambda e: self.cpu_chart.draw_chart())
+        self.memory_chart.bind("<Configure>", lambda e: self.memory_chart.draw_chart())
+        self.response_time_chart.bind("<Configure>", lambda e: self.response_time_chart.draw_chart())
+        self.disk_chart.bind("<Configure>", lambda e: self.disk_chart.draw_chart())
+
+    def _update_performance_charts(self) -> None:
+        """Update performance charts with new data"""
+        try:
+            # Get CPU and Memory usage
+            cpu_percent = psutil.cpu_percent(interval=0.1)
+            memory = psutil.virtual_memory()
+            memory_percent = memory.percent
+
+            # Get disk usage
+            disk = psutil.disk_usage('/')
+            disk_percent = disk.percent
+
+            # Calculate average response time from recent service checks
+            avg_response_time = 0.0
+            response_count = 0
+            for card in self.cards.values():
+                status_text = card.status_label.cget("text")
+                if "ms" in status_text:
+                    try:
+                        ms_value = float(status_text.split("·")[1].strip().replace("ms", ""))
+                        avg_response_time += ms_value
+                        response_count += 1
+                    except:
+                        pass
+
+            if response_count > 0:
+                avg_response_time /= response_count
+
+            # Update charts
+            self.cpu_chart.add_data(cpu_percent)
+            self.memory_chart.add_data(memory_percent)
+            self.response_time_chart.add_data(avg_response_time)
+            self.disk_chart.add_data(disk_percent)
+
+            # Update system info
+            self.system_info_label.config(
+                text=f"CPU: {cpu_percent:.1f}% | Memory: {memory_percent:.1f}% ({memory.used // (1024**3)}GB / {memory.total // (1024**3)}GB) | Disk: {disk_percent:.1f}% | Avg Response: {avg_response_time:.0f}ms"
+            )
+
+        except Exception as e:
+            pass  # Silently fail if psutil is not available
+
+        # Schedule next update
+        self.root.after(1000, self._update_performance_charts)
+
+    def _init_logs_tab(self, parent: tk.Frame) -> None:
+        """백엔드 로그 뷰어 탭 초기화"""
+        # Header with controls
+        header_frame = tk.Frame(parent, bg="#000510")
+        header_frame.pack(fill="x", padx=20, pady=15)
+
+        title_label = tk.Label(
+            header_frame,
+            text="◢ BACKEND LOGS VIEWER ◣",
+            font=("Consolas", 14, "bold"),
+            fg="#00ffff",
+            bg="#000510",
+        )
+        title_label.pack(side="left")
+
+        # Control buttons
+        btn_frame = tk.Frame(header_frame, bg="#000510")
+        btn_frame.pack(side="right")
+
+        refresh_log_btn = tk.Button(
+            btn_frame,
+            text="◢ REFRESH ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#000000",
+            bg="#00ff88",
+            activebackground="#00ffaa",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
+            cursor="hand2",
+            padx=15,
+            pady=8,
+            command=self._load_backend_logs,
+        )
+        refresh_log_btn.pack(side="left", padx=5)
+
+        clear_log_btn = tk.Button(
+            btn_frame,
+            text="◢ CLEAR ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#000000",
+            bg="#ffaa00",
+            activebackground="#ffcc00",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
+            cursor="hand2",
+            padx=15,
+            pady=8,
+            command=self._clear_log_display,
+        )
+        clear_log_btn.pack(side="left", padx=5)
+
+        # Filter frame
+        filter_frame = tk.Frame(parent, bg="#000510")
+        filter_frame.pack(fill="x", padx=20, pady=(0, 10))
+
+        filter_label = tk.Label(
+            filter_frame,
+            text="FILTER:",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#000510",
+        )
+        filter_label.pack(side="left", padx=(0, 10))
+
+        # Filter level buttons
+        self.log_filter = tk.StringVar(value="ALL")
+
+        for level, color in [("ALL", "#00d4ff"), ("ERROR", "#ff0055"), ("WARNING", "#ffaa00"), ("INFO", "#00ff88")]:
+            filter_btn = tk.Radiobutton(
+                filter_frame,
+                text=level,
+                variable=self.log_filter,
+                value=level,
+                font=("Consolas", 9, "bold"),
+                fg=color,
+                bg="#000510",
+                selectcolor="#1a2f4a",
+                activebackground="#000510",
+                activeforeground=color,
+                command=self._filter_logs,
+            )
+            filter_btn.pack(side="left", padx=5)
+
+        # Log display area
+        log_frame = tk.Frame(parent, bg="#000510")
+        log_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        # Scrollbar
+        scrollbar = tk.Scrollbar(log_frame, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+
+        # Text widget for logs (terminal-like)
+        self.log_text = tk.Text(
+            log_frame,
+            bg="#000a1a",
+            fg="#00ff00",
+            font=("Consolas", 9),
+            wrap="word",
+            yscrollcommand=scrollbar.set,
+            state="disabled",
+            insertbackground="#00ffff",
+            selectbackground="#1a2f4a",
+            selectforeground="#00ffff",
+        )
+        self.log_text.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=self.log_text.yview)
+
+        # Configure text tags for different log levels
+        self.log_text.tag_config("ERROR", foreground="#ff0055", font=("Consolas", 9, "bold"))
+        self.log_text.tag_config("WARNING", foreground="#ffaa00", font=("Consolas", 9, "bold"))
+        self.log_text.tag_config("INFO", foreground="#00ff88")
+        self.log_text.tag_config("DEBUG", foreground="#00d4ff")
+        self.log_text.tag_config("TIMESTAMP", foreground="#8899aa")
+
+        # Status label
+        self.log_status_label = tk.Label(
+            parent,
+            text="◢ LOG VIEWER READY ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#000510",
+            pady=10,
+        )
+        self.log_status_label.pack(fill="x", side="bottom")
+
+        # Store all logs for filtering
+        self.all_logs = []
+
+        # Initial load
+        self._load_backend_logs()
+
+    def _load_backend_logs(self) -> None:
+        """백엔드 로그 파일 로드"""
+        import os
+
+        self.log_status_label.config(text="◢ LOADING LOGS... ◣")
+
+        # Look for common log file locations
+        log_paths = [
+            os.path.join(self.selected_folder, "backend.log"),
+            os.path.join(self.selected_folder, "logs", "backend.log"),
+            os.path.join(self.selected_folder, "logs", "app.log"),
+        ]
+
+        log_content = None
+        for log_path in log_paths:
+            if os.path.exists(log_path):
+                try:
+                    with open(log_path, 'r', encoding='utf-8') as f:
+                        log_content = f.readlines()
+                    break
+                except Exception as e:
+                    continue
+
+        if log_content:
+            self.all_logs = log_content[-500:]  # Keep last 500 lines
+            self._display_logs(self.all_logs)
+            self.log_status_label.config(
+                text=f"◢ LOADED {len(self.all_logs)} LOG ENTRIES ◣"
+            )
+        else:
+            self.log_text.config(state="normal")
+            self.log_text.delete("1.0", "end")
+            self.log_text.insert("1.0", "◢ NO LOG FILES FOUND ◣\n\n")
+            self.log_text.insert("end", "Checked locations:\n")
+            for path in log_paths:
+                self.log_text.insert("end", f"  • {path}\n")
+            self.log_text.config(state="disabled")
+            self.log_status_label.config(text="◢ NO LOGS FOUND ◣")
+
+    def _display_logs(self, logs: list) -> None:
+        """로그를 텍스트 위젯에 표시"""
+        self.log_text.config(state="normal")
+        self.log_text.delete("1.0", "end")
+
+        for line in logs:
+            # Detect log level and apply appropriate tag
+            if "ERROR" in line or "Exception" in line:
+                self.log_text.insert("end", line, "ERROR")
+            elif "WARNING" in line or "WARN" in line:
+                self.log_text.insert("end", line, "WARNING")
+            elif "INFO" in line:
+                self.log_text.insert("end", line, "INFO")
+            elif "DEBUG" in line:
+                self.log_text.insert("end", line, "DEBUG")
+            else:
+                self.log_text.insert("end", line)
+
+        self.log_text.config(state="disabled")
+        self.log_text.see("end")  # Scroll to bottom
+
+    def _filter_logs(self) -> None:
+        """선택된 필터에 따라 로그 필터링"""
+        filter_level = self.log_filter.get()
+
+        if filter_level == "ALL":
+            self._display_logs(self.all_logs)
+        else:
+            filtered = [line for line in self.all_logs if filter_level in line]
+            self._display_logs(filtered)
+            self.log_status_label.config(
+                text=f"◢ SHOWING {len(filtered)} {filter_level} ENTRIES ◣"
+            )
+
+    def _clear_log_display(self) -> None:
+        """로그 디스플레이 클리어"""
+        self.log_text.config(state="normal")
+        self.log_text.delete("1.0", "end")
+        self.log_text.insert("1.0", "◢ LOG DISPLAY CLEARED ◣\n\nPress REFRESH to reload logs.\n")
+        self.log_text.config(state="disabled")
+        self.all_logs = []
+        self.log_status_label.config(text="◢ LOG DISPLAY CLEARED ◣")
 
     def _select_folder(self) -> None:
         """폴더 선택 다이얼로그를 열어 프로젝트 폴더를 선택합니다."""
@@ -390,7 +885,7 @@ class MonitorApp:
                 )
 
     def _start_services(self) -> None:
-        """선택된 폴더에서 START_ALL_WINDOWS.bat을 실행합니다."""
+        """선택된 폴더에서 START_ALL_WINDOWS.bat을 백그라운드로 실행합니다."""
         import os
         import subprocess
 
@@ -405,10 +900,24 @@ class MonitorApp:
             return
 
         try:
+            # CREATE_NO_WINDOW flag를 사용하여 백그라운드에서 실행
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
             subprocess.Popen(
-                ["cmd", "/c", "start", "cmd", "/k", "START_ALL_WINDOWS.bat"],
+                ["cmd", "/c", bat_file],
                 cwd=self.selected_folder,
-                shell=True
+                startupinfo=startupinfo,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            from tkinter import messagebox
+            messagebox.showinfo(
+                "Services Starting",
+                "All services are starting in background.\n\nPlease wait a few seconds for services to become available."
             )
         except Exception as e:
             from tkinter import messagebox
@@ -497,25 +1006,25 @@ class MonitorApp:
             )
 
     def _init_user_management_tab(self, parent: tk.Frame) -> None:
-        """회원 관리 탭 초기화"""
+        """회원 관리 탭 초기화 (Cyberpunk style)"""
         # Top controls
-        control_frame = tk.Frame(parent, bg="#0d1117")
+        control_frame = tk.Frame(parent, bg="#000510")
         control_frame.pack(fill="x", padx=20, pady=15)
 
-        # Refresh button
+        # Refresh button (Cyberpunk style)
         refresh_btn = tk.Button(
             control_frame,
-            text="🔄 새로고침",
-            font=("Segoe UI", 10),
-            fg="#c9d1d9",
-            bg="#238636",
-            activebackground="#2ea043",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            text="◢ 새로고침 ◣",
+            font=("Consolas", 10, "bold"),
+            fg="#000000",
+            bg="#00ff88",
+            activebackground="#00ffaa",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
             cursor="hand2",
             padx=20,
-            pady=8,
+            pady=10,
             command=self._load_pending_users,
         )
         refresh_btn.pack(side="left")
@@ -523,15 +1032,15 @@ class MonitorApp:
         # Status label
         self.user_status_label = tk.Label(
             control_frame,
-            text="대기 중인 회원을 불러오는 중...",
-            font=("Segoe UI", 9),
-            fg="#8b949e",
-            bg="#0d1117",
+            text="◢ 대기 중인 회원을 불러오는 중... ◣",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#000510",
         )
         self.user_status_label.pack(side="left", padx=15)
 
         # User list frame with scrollbar
-        list_frame = tk.Frame(parent, bg="#0d1117")
+        list_frame = tk.Frame(parent, bg="#000510")
         list_frame.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
         # Scrollbar
@@ -541,7 +1050,7 @@ class MonitorApp:
         # Canvas for scrolling
         self.user_canvas = tk.Canvas(
             list_frame,
-            bg="#0d1117",
+            bg="#000510",
             highlightthickness=0,
             yscrollcommand=scrollbar.set,
         )
@@ -549,7 +1058,7 @@ class MonitorApp:
         scrollbar.config(command=self.user_canvas.yview)
 
         # Inner frame for user cards
-        self.user_list_frame = tk.Frame(self.user_canvas, bg="#0d1117")
+        self.user_list_frame = tk.Frame(self.user_canvas, bg="#000510")
         self.canvas_window = self.user_canvas.create_window(
             (0, 0), window=self.user_list_frame, anchor="nw"
         )
@@ -620,26 +1129,26 @@ class MonitorApp:
             error_label.pack()
 
     def _create_user_card(self, user: dict) -> None:
-        """개별 회원 카드 생성"""
+        """개별 회원 카드 생성 (Cyberpunk style)"""
         card = tk.Frame(
             self.user_list_frame,
-            bg="#1a1d23",
-            highlightbackground="#2d3139",
-            highlightthickness=1,
+            bg="#0a1628",
+            highlightbackground="#00d4ff",
+            highlightthickness=2,
         )
         card.pack(fill="x", padx=10, pady=8)
 
         # User info frame
-        info_frame = tk.Frame(card, bg="#1a1d23")
+        info_frame = tk.Frame(card, bg="#0a1628")
         info_frame.pack(side="left", fill="both", expand=True, padx=20, pady=15)
 
-        # Username (large)
+        # Username (large, cyberpunk style)
         username_label = tk.Label(
             info_frame,
-            text=f"👤 {user.get('username', 'N/A')}",
-            font=("Segoe UI", 14, "bold"),
-            fg="#ffffff",
-            bg="#1a1d23",
+            text=f"◢ USER: {user.get('username', 'N/A').upper()} ◣",
+            font=("Consolas", 13, "bold"),
+            fg="#00ffff",
+            bg="#0a1628",
             anchor="w",
         )
         username_label.pack(anchor="w")
@@ -648,10 +1157,10 @@ class MonitorApp:
         if user.get('full_name'):
             fullname_label = tk.Label(
                 info_frame,
-                text=f"이름: {user['full_name']}",
-                font=("Segoe UI", 10),
-                fg="#c9d1d9",
-                bg="#1a1d23",
+                text=f"NAME: {user['full_name']}",
+                font=("Consolas", 9),
+                fg="#00d4ff",
+                bg="#0a1628",
                 anchor="w",
             )
             fullname_label.pack(anchor="w", pady=(5, 0))
@@ -660,10 +1169,10 @@ class MonitorApp:
         if user.get('email'):
             email_label = tk.Label(
                 info_frame,
-                text=f"이메일: {user['email']}",
-                font=("Segoe UI", 10),
-                fg="#c9d1d9",
-                bg="#1a1d23",
+                text=f"EMAIL: {user['email']}",
+                font=("Consolas", 9),
+                fg="#00d4ff",
+                bg="#0a1628",
                 anchor="w",
             )
             email_label.pack(anchor="w", pady=(2, 0))
@@ -672,65 +1181,62 @@ class MonitorApp:
         if user.get('created_at'):
             created_label = tk.Label(
                 info_frame,
-                text=f"신청일: {user['created_at'][:19].replace('T', ' ')}",
-                font=("Segoe UI", 9),
-                fg="#8b949e",
-                bg="#1a1d23",
+                text=f"CREATED: {user['created_at'][:19].replace('T', ' ')}",
+                font=("Consolas", 8),
+                fg="#00aaaa",
+                bg="#0a1628",
                 anchor="w",
             )
             created_label.pack(anchor="w", pady=(2, 0))
 
         # Action buttons frame
-        action_frame = tk.Frame(card, bg="#1a1d23")
+        action_frame = tk.Frame(card, bg="#0a1628")
         action_frame.pack(side="right", padx=20, pady=15)
 
-        # Approve button
-        approve_btn = tk.Button(
-            action_frame,
-            text="✓ 승인",
-            font=("Segoe UI", 10, "bold"),
-            fg="#ffffff",
-            bg="#238636",
-            activebackground="#2ea043",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=10,
-            command=lambda u=user: self._approve_user(u['username']),
-        )
-        approve_btn.pack(side="left", padx=5)
-
-        # Make admin checkbox
+        # Make admin checkbox (cyberpunk style)
         admin_var = tk.BooleanVar()
         admin_check = tk.Checkbutton(
             action_frame,
-            text="관리자",
+            text="ADMIN",
             variable=admin_var,
-            font=("Segoe UI", 9),
-            fg="#c9d1d9",
-            bg="#1a1d23",
-            selectcolor="#21262d",
-            activebackground="#1a1d23",
-            activeforeground="#ffffff",
+            font=("Consolas", 9, "bold"),
+            fg="#00d4ff",
+            bg="#0a1628",
+            selectcolor="#1a2f4a",
+            activebackground="#0a1628",
+            activeforeground="#00ffff",
         )
         admin_check.pack(side="left", padx=10)
 
-        # Store admin_var in button for later access
-        approve_btn.admin_var = admin_var
+        # Approve button with admin_var captured in lambda (neon green)
+        approve_btn = tk.Button(
+            action_frame,
+            text="✓ 승인",
+            font=("Consolas", 10, "bold"),
+            fg="#000000",
+            bg="#00ff88",
+            activebackground="#00ffaa",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
+            cursor="hand2",
+            padx=25,
+            pady=10,
+            command=lambda u=user, av=admin_var: self._approve_user(u['username'], av.get()),
+        )
+        approve_btn.pack(side="left", padx=5)
 
-        # Reject button
+        # Reject button (neon red)
         reject_btn = tk.Button(
             action_frame,
             text="✗ 거절",
-            font=("Segoe UI", 10, "bold"),
-            fg="#ffffff",
-            bg="#da3633",
-            activebackground="#f85149",
-            activeforeground="#ffffff",
-            relief="flat",
-            bd=0,
+            font=("Consolas", 10, "bold"),
+            fg="#000000",
+            bg="#ff0055",
+            activebackground="#ff3377",
+            activeforeground="#000000",
+            relief="solid",
+            bd=2,
             cursor="hand2",
             padx=25,
             pady=10,
@@ -738,21 +1244,11 @@ class MonitorApp:
         )
         reject_btn.pack(side="left", padx=5)
 
-    def _approve_user(self, username: str) -> None:
+    def _approve_user(self, username: str, make_admin: bool) -> None:
         """회원 승인"""
         from tkinter import messagebox
         import urllib.request
         import json
-
-        # Find the approve button to get make_admin checkbox value
-        make_admin = False
-        for widget in self.user_list_frame.winfo_children():
-            for child in widget.winfo_children():
-                if isinstance(child, tk.Frame):
-                    for btn in child.winfo_children():
-                        if isinstance(btn, tk.Button) and hasattr(btn, 'admin_var'):
-                            make_admin = btn.admin_var.get()
-                            break
 
         confirm = messagebox.askyesno(
             "회원 승인",
