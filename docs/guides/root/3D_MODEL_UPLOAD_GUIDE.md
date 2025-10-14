@@ -30,6 +30,11 @@
    │   │   └── factory.fbx
    ```
 
+> **NOTE**  
+> 전체 대시보드 배경에 공통 모델을 사용하려면 `background.glb` 이름으로 업로드하세요.  
+> 각 프럭팅엔드의 `/public/models/background.glb` 위치에 두면 자동으로 3D 배경이 적용됩니다.
+
+
 3. **코드에서 로드**
    ```jsx
    import { useLoader } from '@react-three/fiber';
@@ -256,3 +261,9 @@ export const MyWorkspace = () => {
 **작성일:** 2025-10-07
 **프로젝트:** Routing ML System
 **대상:** Frontend Prediction (5173), Frontend Training (5174)
+
+> **TIP**  
+> Prediction 앱 Hero banner 3D 뷰어는 `VITE_HERO_MODEL_URL` 환경 변수로 교체 가능합니다.
+> 기본값은 공개 ToyCar 샘플이므로 `/public/models/hero.glb` 등 내부 파일로 대체해 사용하는 것을 권장합니다.
+
+
