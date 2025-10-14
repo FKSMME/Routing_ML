@@ -284,13 +284,17 @@ html.dark {
   inset: 0;
 /* Surface utility classes */
 .surface-base {
-  background-color: var(--background);
-  transition: background-color 0.3s ease;
+  background-color: hsl(var(--surface-base) / 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .surface-card {
-  background-color: var(--card);
-  transition: background-color 0.3s ease;
+  background-color: hsl(var(--surface-card) / 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
   padding: 1px;
@@ -367,6 +371,7 @@ html.dark {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 .app-shell[data-nav-mode="drawer"] .main-nav {

@@ -284,13 +284,17 @@ html.dark {
 
 /* Surface utility classes */
 .surface-base {
-  background-color: var(--background);
-  transition: background-color 0.3s ease;
+  background-color: hsl(var(--surface-base) / 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .surface-card {
-  background-color: var(--card);
-  transition: background-color 0.3s ease;
+  background-color: hsl(var(--surface-card) / 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .frosted-panel::before {
@@ -371,6 +375,7 @@ html.dark {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 .app-shell[data-nav-mode="drawer"] .main-nav {
@@ -407,12 +412,40 @@ html.dark {
   pointer-events: none;
 }
 
+.hero-banner__layout {
+  position: relative;
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+}
+
 .hero-banner__content {
   position: relative;
   display: grid;
   gap: 1.25rem;
   max-width: min(540px, 100%);
   z-index: 1;
+}
+
+.hero-banner__visual {
+  display: none;
+  justify-self: center;
+  width: min(38vw, 420px);
+  isolation: isolate;
+}
+
+.hero-banner__visual canvas {
+  pointer-events: none;
+}
+
+@media (min-width: 992px) {
+  .hero-banner__layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr);
+  }
+
+  .hero-banner__visual {
+    display: block;
+  }
 }
 
 .hero-banner__badge {
@@ -5505,7 +5538,4 @@ html.dark {
 }
 
 /* Responsive */
-
-
-
 

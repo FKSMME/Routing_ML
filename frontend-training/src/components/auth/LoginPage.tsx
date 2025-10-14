@@ -1,11 +1,9 @@
-import { useState, lazy, Suspense, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LogIn, UserPlus } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-
-// 🚀 Three.js 지연 로딩 (초기 번들 크기 -600KB)
-const Ballpit = lazy(() => import("@components/effects/Ballpit"));
-
+import { BackgroundControls } from "@components/BackgroundControls";
+import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -28,7 +26,6 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
     try {
       if (mode === "register") {
-        // 회원가입
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
@@ -37,23 +34,22 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           body: JSON.stringify({
             username,
             password,
-            display_name: displayName || undefined
+            display_name: displayName || undefined,
           }),
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: "회원가입 실패" }));
-          throw new Error(errorData.detail || "회원가입에 실패했습니다");
+          const errorData = await response.json().catch(() => ({ detail: "ȸ������ ����" }));
+          throw new Error(errorData.detail || "ȸ�����Կ� �����߽��ϴ�");
         }
 
-        const data = await response.json();
-        setSuccess("회원가입이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.");
+        await response.json();
+        setSuccess("ȸ�������� �Ϸ�Ǿ����ϴ�. ������ ���� �� �α����� �� �ֽ��ϴ�.");
         setUsername("");
         setPassword("");
         setDisplayName("");
         setTimeout(() => setMode("login"), 3000);
       } else {
-        // 로그인
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
@@ -64,63 +60,54 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: "로그인 실패" }));
-          throw new Error(errorData.detail || "로그인에 실패했습니다");
+          const errorData = await response.json().catch(() => ({ detail: "�α��� ����" }));
+          throw new Error(errorData.detail || "�α��ο� �����߽��ϴ�");
         }
 
         const data = await response.json();
-
         if (data.status !== "approved") {
-          throw new Error("계정이 승인되지 않았습니다. 관리자에게 문의하세요.");
+          throw new Error("������ ���ε��� �ʾҽ��ϴ�. �����ڿ��� �����ϼ���.");
         }
 
         onLoginSuccess();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "오류가 발생했습니다");
+      setError(err instanceof Error ? err.message : "������ �߻��߽��ϴ�");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center surface-base p-6" style={{ position: 'relative' }}>
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, pointerEvents: 'none' }}>
-        <Suspense fallback={<div className="surface-base" style={{ width: '100%', height: '100%' }} />}>
-          <Ballpit count={100} followCursor={true} />
-        </Suspense>
-      </div>
-      <div className="absolute top-4 right-4" style={{ zIndex: 10 }}>
+    <div className="relative flex min-h-screen items-center justify-center surface-base p-6 overflow-hidden">
+      <FullScreen3DBackground />
+      <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
       <CardShell
         className="w-full max-w-md"
-        style={{ position: 'relative', zIndex: 1 }}
+        style={{ position: "relative", zIndex: 1 }}
         tone="soft"
         padding="lg"
         innerClassName="space-y-6"
         interactive={false}
       >
-        <header className="text-center">
-          <div className="mb-4 flex justify-center">
-            <div className="rounded-full surface-card p-4">
-              {mode === "login" ? (
-                <LogIn size={32} className="text-accent-strong" />
-              ) : (
-                <UserPlus size={32} className="text-accent-strong" />
-              )}
+        <header className="text-center space-y-2">
+          <div className="mb-2 flex justify-center">
+            <div className="rounded-full surface-card/90 p-4 shadow-lg">
+              {mode === "login" ? <LogIn size={32} className="text-accent-strong" /> : <UserPlus size={32} className="text-accent-strong" />}
             </div>
           </div>
           <h1 className="text-2xl font-semibold text-accent-strong">Routing ML Console</h1>
-          <p className="mt-2 text-sm text-muted">
-            {mode === "login" ? "로그인하여 시스템에 접속하세요" : "새 계정을 생성하세요"}
+          <p className="text-sm text-muted">
+            {mode === "login" ? "�α����Ͽ� �ý��ۿ� �����ϼ���" : "�� ������ �����ϼ���"}
           </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="username" className="block text-sm font-medium text-foreground">
-              사용자 ID
+              ����� ID
             </label>
             <input
               id="username"
@@ -128,7 +115,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="form-control w-full"
-              placeholder="사용자 ID를 입력하세요"
+              placeholder="����� ID�� �Է��ϼ���"
               required
               autoFocus
               disabled={loading}
@@ -137,7 +124,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <div className="space-y-2">
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
-              비밀번호
+              ��й�ȣ
             </label>
             <input
               id="password"
@@ -145,7 +132,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="form-control w-full"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="��й�ȣ�� �Է��ϼ���"
               required
               disabled={loading}
             />
@@ -154,7 +141,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {mode === "register" && (
             <div className="space-y-2">
               <label htmlFor="displayName" className="block text-sm font-medium text-foreground">
-                표시 이름 (선택사항)
+                ǥ�� �̸� (���û���)
               </label>
               <input
                 id="displayName"
@@ -162,22 +149,18 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="form-control w-full"
-                placeholder="표시할 이름을 입력하세요"
+                placeholder="ǥ���� �̸��� �Է��ϼ���"
                 disabled={loading}
               />
             </div>
           )}
 
           {error ? (
-            <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">
-              {error}
-            </div>
+            <div className="rounded-lg border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">{error}</div>
           ) : null}
 
           {success ? (
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-              {success}
-            </div>
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm text-emerald-300">{success}</div>
           ) : null}
 
           <button
@@ -185,11 +168,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             disabled={loading || !username || !password}
             className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? (mode === "login" ? "로그인 중..." : "가입 중...") : (mode === "login" ? "로그인" : "회원가입")}
+            {loading ? (mode === "login" ? "�α��� ��..." : "���� ��...") : mode === "login" ? "�α���" : "ȸ������"}
           </button>
         </form>
 
-        <footer className="text-center space-y-2">
+        <footer className="text-center space-y-3 text-xs text-muted">
           <button
             type="button"
             onClick={() => {
@@ -197,13 +180,22 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               setError(null);
               setSuccess(null);
             }}
-            className="text-xs text-accent hover:text-accent-strong transition-colors"
+            className="text-accent hover:text-accent-strong transition-colors"
             disabled={loading}
           >
-            {mode === "login" ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
+            {mode === "login" ? "������ �����Ű���? ȸ������" : "�̹� ������ �����Ű���? �α���"}
           </button>
+
+          <div className="space-y-1 text-foreground">
+            <p>��й�ȣ�� ������? <span className="font-medium">KSM Support</span>���� �����ϼ���.</p>
+            <p>
+              Email: <a href="mailto:syyun@ksm.co.kr" className="text-accent hover:text-accent-strong">syyun@ksm.co.kr</a>
+            </p>
+            <p>Tel: 010-9718-0580</p>
+          </div>
+
+          <p className="pt-2 text-[11px] text-muted-strong">© 2025 KSM. All rights reserved.</p>
         </footer>
-      </CardShell>
-    </div>
+      </CardShell>\r\n      <BackgroundControls />\r\n    </div>
   );
 }
