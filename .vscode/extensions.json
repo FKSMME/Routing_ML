@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "anthropics.claude-code",
+    "ms-python.python",
+    "ms-python.vscode-pylance"
+  ]
+}

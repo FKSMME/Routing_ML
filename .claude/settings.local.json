@@ -43,7 +43,9 @@
       "Bash(./.venv/Scripts/pip.exe install:*)",
       "Bash(./.venv/Scripts/pyinstaller.exe:*)",
       "Bash(time:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

@@ -17,7 +17,7 @@ frontend/dist/
 *.accdb
 *.mdb
 .idea/
-.vscode/
+# .vscode/ - Keep VS Code settings for Claude Code extension
 .DS_Store
 coverage/
 *.coverage
