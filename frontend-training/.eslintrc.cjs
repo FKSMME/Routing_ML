@@ -24,6 +24,8 @@ module.exports = {
     "react/react-in-jsx-scope": "off",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
+    // Allow React Three Fiber properties (Three.js attributes)
+    "react/no-unknown-property": ["error", { ignore: ["args", "attach", "array", "count", "itemSize", "position", "intensity", "castShadow", "metalness", "roughness", "emissive", "emissiveIntensity", "sizeAttenuation", "depthWrite", "vertexColors", "transparent", "map", "alphaTest"] }],
   },
   settings: {
     react: {
