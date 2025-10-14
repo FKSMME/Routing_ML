@@ -148,6 +148,8 @@ class UserAccount(Base):
     username = Column(String(150), nullable=False)
     normalized_username = Column(String(150), nullable=False, unique=True, index=True)
     display_name = Column(String(255), nullable=True)
+    full_name = Column(String(255), nullable=True)
+    email = Column(String(255), nullable=True)
     password_hash = Column(String(255), nullable=False)
     status = Column(String(32), nullable=False, default="pending")
     is_admin = Column(Boolean, nullable=False, default=False)
@@ -229,11 +231,28 @@ def bootstrap_schema() -> None:
 
     with engine.begin() as conn:
         inspector = inspect(conn)
-        columns = {column["name"] for column in inspector.get_columns("rsl_group")}
-        if "erp_required" not in columns:
+
+        # Migrate rsl_group: add erp_required column if missing
+        rsl_group_columns = {column["name"] for column in inspector.get_columns("rsl_group")}
+        if "erp_required" not in rsl_group_columns:
             conn.execute(
                 text(
                     "ALTER TABLE rsl_group ADD COLUMN erp_required BOOLEAN NOT NULL DEFAULT FALSE"
+                )
+            )
+
+        # Migrate users: add full_name and email columns if missing
+        user_columns = {column["name"] for column in inspector.get_columns("users")}
+        if "full_name" not in user_columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN full_name VARCHAR(255) NULL"
+                )
+            )
+        if "email" not in user_columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL"
                 )
             )
 

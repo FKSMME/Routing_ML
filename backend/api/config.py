@@ -104,6 +104,15 @@ class Settings(BaseSettings):
     jwt_cookie_name: str = Field(default="routing_ml_session")
     jwt_cookie_secure: bool = Field(default=False)
 
+    # Email notification settings (MS365 Outlook)
+    email_enabled: bool = Field(default=False, description="이메일 알림 사용 여부")
+    email_smtp_server: str = Field(default="smtp.office365.com", description="SMTP 서버 주소")
+    email_smtp_port: int = Field(default=587, description="SMTP 포트")
+    email_sender: Optional[str] = Field(default=None, description="발신자 이메일 주소")
+    email_password: Optional[str] = Field(default=None, description="이메일 계정 비밀번호 또는 앱 비밀번호")
+    email_admin: Optional[str] = Field(default=None, description="관리자 이메일 주소 (회원가입 알림 수신)")
+    email_use_tls: bool = Field(default=True, description="TLS 사용 여부")
+
     # Database connection settings (from environment)
     db_type: str = Field(default="MSSQL", description="데이터베이스 타입 (현재는 MSSQL만 지원)")
     mssql_server: Optional[str] = Field(default=None, description="MSSQL 서버 주소")

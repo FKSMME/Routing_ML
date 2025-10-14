@@ -20,6 +20,7 @@ from backend.api.schemas import (
     UserListResponse,
     UserStatusResponse,
 )
+from backend.api.services.email_service import email_service
 from backend.api.session_manager import JWTManager, get_jwt_manager
 from backend.database_rsl import (
     UserAccount,
@@ -67,11 +68,25 @@ class AuthService:
                     existing.password_hash = self._hasher.hash(payload.password)
                     existing.status = "pending"
                     existing.display_name = payload.display_name or existing.display_name
+                    existing.full_name = payload.full_name or existing.full_name
+                    existing.email = payload.email or existing.email
                     existing.rejected_at = None
                     session.add(existing)
                     self._logger.info(
                         "가입 재요청", extra={"username": existing.username}
                     )
+                    # 관리자에게 재가입 알림 이메일 전송
+                    try:
+                        email_service.notify_admin_new_registration(
+                            username=existing.username,
+                            full_name=existing.full_name,
+                            email=existing.email,
+                        )
+                    except Exception as e:
+                        self._logger.warning(
+                            "관리자 이메일 전송 실패",
+                            extra={"username": existing.username, "error": str(e)},
+                        )
                     return RegisterResponse(
                         username=existing.username,
                         status=existing.status,
@@ -84,11 +99,26 @@ class AuthService:
                 username=username,
                 normalized_username=normalized,
                 display_name=payload.display_name,
+                full_name=payload.full_name,
+                email=payload.email,
                 password_hash=self._hasher.hash(payload.password),
                 status="pending",
             )
             session.add(user)
             self._logger.info("가입 요청", extra={"username": username})
+
+        # 관리자에게 신규 가입 알림 이메일 전송
+        try:
+            email_service.notify_admin_new_registration(
+                username=username,
+                full_name=payload.full_name,
+                email=payload.email,
+            )
+        except Exception as e:
+            self._logger.warning(
+                "관리자 이메일 전송 실패",
+                extra={"username": username, "error": str(e)},
+            )
 
         return RegisterResponse(
             username=username,
@@ -116,6 +146,21 @@ class AuthService:
                 "사용자 승인",
                 extra={"username": user.username, "is_admin": user.is_admin},
             )
+
+            # 사용자에게 승인 알림 이메일 전송
+            if user.email:
+                try:
+                    email_service.notify_user_approved(
+                        username=user.username,
+                        email=user.email,
+                        full_name=user.full_name,
+                    )
+                except Exception as e:
+                    self._logger.warning(
+                        "승인 이메일 전송 실패",
+                        extra={"username": user.username, "error": str(e)},
+                    )
+
             return self._to_status_response(user)
 
     def reject_user(self, username: str, *, reason: Optional[str] = None) -> UserStatusResponse:
@@ -135,6 +180,22 @@ class AuthService:
                 "사용자 거절",
                 extra={"username": user.username, "reason": reason},
             )
+
+            # 사용자에게 거절 알림 이메일 전송
+            if user.email:
+                try:
+                    email_service.notify_user_rejected(
+                        username=user.username,
+                        email=user.email,
+                        full_name=user.full_name,
+                        reason=reason,
+                    )
+                except Exception as e:
+                    self._logger.warning(
+                        "거절 이메일 전송 실패",
+                        extra={"username": user.username, "error": str(e)},
+                    )
+
             return self._to_status_response(user)
 
     def get_pending_users(self) -> list[dict]:

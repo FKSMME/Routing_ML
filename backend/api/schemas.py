@@ -28,6 +28,12 @@ class RegisterRequest(BaseModel):
     display_name: Optional[str] = Field(
         default=None, description="사용자에게 표시할 이름"
     )
+    full_name: Optional[str] = Field(
+        default=None, description="사용자 전체 이름"
+    )
+    email: Optional[str] = Field(
+        default=None, description="사용자 이메일 주소 (알림 수신용)"
+    )
 
 
 class RegisterResponse(BaseModel):
