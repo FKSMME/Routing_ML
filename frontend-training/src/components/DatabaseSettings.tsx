@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Database, CheckCircle, XCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
 
 interface DatabaseConfig {
   server: string;
@@ -21,6 +21,106 @@ interface ConnectionTestPayload extends DatabaseConfig {
   password: string;
 }
 
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  type: 'alert' | 'confirm';
+  onConfirm?: () => void;
+}
+
+function Modal({ isOpen, onClose, title, message, type, onConfirm }: ModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: '#1e293b',
+          borderRadius: '12px',
+          padding: '24px',
+          maxWidth: '500px',
+          width: '90%',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+          border: '1px solid #475569',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#f1f5f9', margin: 0 }}>{title}</h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              color: '#94a3b8',
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <p style={{ color: '#cbd5e1', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>{message}</p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          {type === 'confirm' && (
+            <button
+              onClick={onClose}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#475569',
+                border: 'none',
+                borderRadius: '6px',
+                color: '#ffffff',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+              }}
+            >
+              취소
+            </button>
+          )}
+          <button
+            onClick={() => {
+              if (type === 'confirm' && onConfirm) {
+                onConfirm();
+              }
+              onClose();
+            }}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: type === 'confirm' ? '#3b82f6' : '#10b981',
+              border: 'none',
+              borderRadius: '6px',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+            }}
+          >
+            {type === 'confirm' ? '확인' : '닫기'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DatabaseSettings() {
   const [config, setConfig] = useState<DatabaseConfig>({
     server: '',
@@ -35,6 +135,43 @@ export function DatabaseSettings() {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
   const [dbInfo, setDbInfo] = useState<DatabaseInfo | null>(null);
+
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'alert' | 'confirm';
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'alert',
+  });
+
+  const showAlert = (title: string, message: string) => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      type: 'alert',
+    });
+  };
+
+  const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setModalState({
+      isOpen: true,
+      title,
+      message,
+      type: 'confirm',
+      onConfirm,
+    });
+  };
+
+  const closeModal = () => {
+    setModalState((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     loadCurrentConfig();
@@ -65,10 +202,10 @@ export function DatabaseSettings() {
     }
   };
 
-  const handleTest Connection = async () => {
+  const handleTestConnection = async () => {
     if (!password) {
-      alert('비밀번호를 입력해주세요');
-      return;
+      showAlert('입력 오류', '비밀번호를 입력해주세요');
+      return false;
     }
 
     setTesting(true);
@@ -94,17 +231,20 @@ export function DatabaseSettings() {
           message: data.message,
           details: data.details,
         });
+        return data.success;
       } else {
         setTestResult({
           success: false,
           message: data.detail || '연결 테스트 실패',
         });
+        return false;
       }
     } catch (error) {
       setTestResult({
         success: false,
         message: `연결 테스트 중 오류 발생: ${error}`,
       });
+      return false;
     } finally {
       setTesting(false);
     }
@@ -112,19 +252,31 @@ export function DatabaseSettings() {
 
   const handleSaveConfig = async () => {
     if (!password) {
-      alert('비밀번호를 입력해주세요');
+      showAlert('입력 오류', '비밀번호를 입력해주세요');
       return;
     }
 
-    // 먼저 연결 테스트
-    await handleTestConnection();
+    // 먼저 연결 테스트 실행
+    setTesting(true);
+    const testSuccess = await handleTestConnection();
+    setTesting(false);
 
-    if (testResult && !testResult.success) {
-      if (!confirm('연결 테스트가 실패했습니다. 그래도 저장하시겠습니까?')) {
-        return;
-      }
+    // 테스트 실패 시 확인
+    if (!testSuccess) {
+      showConfirm(
+        '연결 테스트 실패',
+        '연결 테스트가 실패했습니다. 그래도 저장하시겠습니까?',
+        async () => {
+          await performSave();
+        }
+      );
+      return;
     }
 
+    await performSave();
+  };
+
+  const performSave = async () => {
     setLoading(true);
 
     try {
@@ -136,14 +288,14 @@ export function DatabaseSettings() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message || '설정이 저장되었습니다. 애플리케이션을 재시작해주세요.');
+        showAlert('저장 완료', data.message || '설정이 저장되었습니다. 애플리케이션을 재시작해주세요.');
         loadDatabaseInfo();
       } else {
         const error = await response.json();
-        alert(`저장 실패: ${error.detail}`);
+        showAlert('저장 실패', `저장 실패: ${error.detail}`);
       }
     } catch (error) {
-      alert(`저장 중 오류 발생: ${error}`);
+      showAlert('오류 발생', `저장 중 오류 발생: ${error}`);
     } finally {
       setLoading(false);
     }
@@ -151,6 +303,15 @@ export function DatabaseSettings() {
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        onConfirm={modalState.onConfirm}
+      />
+
       <div style={{ marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <Database size={28} color="#3b82f6" />

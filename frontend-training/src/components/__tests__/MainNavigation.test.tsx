@@ -1,8 +1,7 @@
+import { MainNavigation, type NavigationItem } from "@components/MainNavigation";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-
-import { MainNavigation, type NavigationItem } from "@components/MainNavigation";
 
 const ITEMS: NavigationItem[] = [
   { id: "one", label: "첫번째", description: "First", icon: <span data-testid="icon-one" /> },

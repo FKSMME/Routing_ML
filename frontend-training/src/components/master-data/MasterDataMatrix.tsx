@@ -1,8 +1,6 @@
-import { useCallback, useMemo } from "react";
-
-import type { CSSProperties, ReactNode } from "react";
-
 import type { MasterDataItemResponse, MasterDataMatrixRow } from "@app-types/masterData";
+import type { CSSProperties, ReactNode } from "react";
+import { useCallback, useMemo } from "react";
 
 type MasterDataMatrixColumnConfig = MasterDataItemResponse["columns"][number] & {
   align?: "left" | "center" | "right";

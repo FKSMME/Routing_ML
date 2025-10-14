@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from "react";
-import { CardShell } from "@components/common/CardShell";
-import { LogIn, UserPlus } from "lucide-react";
-import { ThemeToggle } from "../ThemeToggle";
 import { BackgroundControls } from "@components/BackgroundControls";
+import { CardShell } from "@components/common/CardShell";
 import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
+import { LogIn, UserPlus } from "lucide-react";
+import { type FormEvent,useState } from "react";
+
+import { ThemeToggle } from "../ThemeToggle";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;

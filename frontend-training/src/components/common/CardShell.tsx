@@ -1,6 +1,5 @@
-import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
-
 import { cn } from "@lib/classNames";
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
 import styles from "./CardShell.module.css";
 

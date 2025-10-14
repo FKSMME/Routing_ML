@@ -1,6 +1,6 @@
+import { useBoxEntrance } from '@hooks/useGSAPAnimation';
 import type { ReactNode } from 'react';
 import React from 'react';
-import { useBoxEntrance } from '@hooks/useGSAPAnimation';
 
 interface AnimatedCandidateCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;

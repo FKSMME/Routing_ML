@@ -1,17 +1,16 @@
-import { create } from "zustand";
-
-import {
-  fetchTensorboardProjectorFilters,
-  fetchTensorboardProjectorPoints,
-  fetchTensorboardProjectors,
-  fetchTensorboardMetrics,
-} from "@lib/apiClient";
 import type {
   TensorboardFilterField,
   TensorboardMetricSeries,
   TensorboardPoint,
   TensorboardProjectorSummary,
 } from "@app-types/tensorboard";
+import {
+  fetchTensorboardMetrics,
+  fetchTensorboardProjectorFilters,
+  fetchTensorboardProjectorPoints,
+  fetchTensorboardProjectors,
+} from "@lib/apiClient";
+import { create } from "zustand";
 
 interface TensorboardState {
   projectors: TensorboardProjectorSummary[];

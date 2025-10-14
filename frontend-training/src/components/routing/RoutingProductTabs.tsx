@@ -1,6 +1,5 @@
+import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import type { ReactNode } from "react";
-
-import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 
 interface RoutingProductTabsProps {
   renderWorkspace: (tab: RoutingProductTab) => ReactNode;

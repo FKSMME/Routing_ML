@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { useEffect, useRef } from 'react';
 
 /**
  * 마우스 움직임 효과 Hook

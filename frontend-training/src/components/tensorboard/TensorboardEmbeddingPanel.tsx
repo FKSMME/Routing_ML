@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid } from "@react-three/drei";
-import ReactECharts from "echarts-for-react";
-import type { EChartsOption } from "echarts";
-import * as THREE from "three";
-
-import { useTensorboardStore } from "@store/tensorboardStore";
 import type { TensorboardMetricSeries } from "@app-types/tensorboard";
 import { fetchTrainingStatus } from "@lib/apiClient";
 import { exportTensorboardProjector } from "@lib/apiClient";
+import { Grid,OrbitControls } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { useTensorboardStore } from "@store/tensorboardStore";
+import type { EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import * as THREE from "three";
 
 type VisualizationMode = '3d' | 'heatmap' | 'scatter';
 

@@ -1,5 +1,5 @@
+import { Brackets,Calendar, Code2, FileCode, FolderOpen, Weight, X } from 'lucide-react';
 import React from 'react';
-import { X, FileCode, FolderOpen, Calendar, Weight, Code2, Brackets } from 'lucide-react';
 
 interface FileInfo {
   name: string;

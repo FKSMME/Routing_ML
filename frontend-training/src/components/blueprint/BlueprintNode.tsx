@@ -1,18 +1,18 @@
 // @ts-nocheck - ReactFlow v12 type compatibility issues
-import { memo } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, type NodeProps,Position } from '@xyflow/react';
 import {
-  Database,
-  Filter,
-  Sparkles,
   Brain,
+  CheckCircle,
+  Database,
+  FileOutput,
+  Filter,
   GraduationCap,
   LineChart,
-  CheckCircle,
-  Save,
-  FileOutput,
   Package,
+  Save,
+  Sparkles,
 } from 'lucide-react';
+import { memo } from 'react';
 
 export interface BlueprintNodeData {
   label: string;

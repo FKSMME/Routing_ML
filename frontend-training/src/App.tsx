@@ -1,24 +1,24 @@
+import { LoginPage } from "@components/auth/LoginPage";
+import { BackgroundControls } from "@components/BackgroundControls";
 import { BlueprintGraphPanel } from "@components/blueprint/BlueprintGraphPanel";
+import ErrorBoundary from "@components/ErrorBoundary";
+import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
 import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
-import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
-import { BackgroundControls } from "@components/BackgroundControls";
-import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
-import { LoginPage } from "@components/auth/LoginPage";
-import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
-import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
-import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
-import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
 import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
+import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
+import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
+import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
+import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
+import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
-import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
-import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings, Brain, ScatterChart } from "lucide-react";
-import { useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
+import { BarChart3, Brain, Menu, Route, ScatterChart,Settings } from "lucide-react";
+import { useEffect, useState } from "react";
 
 // 🟢 Training & Model Management Web Service
 const NAVIGATION_ITEMS = [

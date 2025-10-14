@@ -7,8 +7,8 @@ type WorkspaceSettingsResponse = any;
 
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
-  registerReferenceMatrixPersistence,
   type ReferenceMatrixColumnKey,
+  registerReferenceMatrixPersistence,
   useRoutingStore,
 } from "./routingStore";
 

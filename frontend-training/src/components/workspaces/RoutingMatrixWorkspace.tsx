@@ -1,8 +1,8 @@
 import { CardShell } from "@components/common/CardShell";
 import { useRoutingStore } from "@store/routingStore";
 import { Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useMemo } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
+import { useCallback, useMemo } from "react";
 
 interface MatrixComboSummary {
   key: string;
