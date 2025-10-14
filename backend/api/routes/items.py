@@ -51,8 +51,9 @@ async def get_purchase_order_items(
         return result
 
     except Exception as e:
-        logger.error(f"발주 품목 조회 실패: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"발주 품목 조회 실패: {str(e)}")
+        logger.warning(f"발주 품목 조회 실패 (빈 목록 반환): {e}")
+        # 에러 발생 시 빈 목록 반환 (UI에서 에러 표시하지 않음)
+        return []
 
 
 @router.get("/{item_cd}")
