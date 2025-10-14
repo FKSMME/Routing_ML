@@ -1,54 +1,34 @@
 Routing ML Service Monitor - Version Information
 ================================================
 
-Current Version: 4.0.0
-Build Date: 2025-10-14
+Current Version: 5.1.0
+Build Date: 2025-10-15
 Author: Routing ML Team
 
 Release Notes:
 --------------
 
-v4.0.0 (2025-10-14) - Cyberpunk Edition
-========================================
-MAJOR UPDATE - Complete UI/UX overhaul with cyberpunk theme
+v5.1.0 (2025-10-15) - 라우팅 자동생성 시스템
+=============================================
+MAJOR UPDATE - Node-based workflow visualization, compact 4-column design, single-row performance charts
 
-New Features:
-- ✓ Real-time performance monitoring with live charts
-  - CPU usage tracking
-  - Memory usage tracking
-  - Disk usage tracking
-  - Average response time monitoring
-
-- ✓ Backend logs viewer with filtering
-  - Real-time log display
-  - Filter by log level (ERROR, WARNING, INFO, DEBUG)
-  - Color-coded log entries
-  - Auto-refresh functionality
-
-- ✓ User management system
-  - Approve/reject user registrations
-  - Admin rights assignment
-  - User information display
-
-- ✓ Background service execution
-  - Services start without terminal windows
-  - Clean background process management
-  - No console windows cluttering taskbar
-
-- ✓ Cyberpunk UI theme
-  - Neon blue/cyan color scheme
-  - Dark background with gradients
-  - Glowing borders and accents
-  - Terminal-style fonts (Consolas)
-  - Futuristic design elements
+New Highlights:
+- ✓ 프로젝트명 변경: "MCS Server Dashboard" → "라우팅 자동생성 시스템 모니터"
+- ✓ 노드 기반 워크플로우 시각화: 폴더 선택 → 서버 시작 → 서버 정지 → 캐시 정리
+- ✓ 4-컬럼 서비스 그리드 레이아웃으로 공간 효율성 극대화
+- ✓ 단일 행 성능 차트 (CPU, 메모리, 응답시간, 디스크)
+- ✓ 표준 Windows 탭 디자인 (선택된 탭 음영 효과)
+- ✓ 마우스 휠 스크롤링 지원
+- ✓ 컴팩트한 카드 디자인으로 더 많은 정보를 한 화면에 표시
 
 Build Types:
-- Portable EXE: Single file executable (RoutingMLMonitor_v4.0.0.exe)
-  - Build command: deploy\build_server_monitor_exe.bat
+- Portable EXE: Single file executable (RoutingML_AutoGen_v5.1.0_Portable.exe)
+  - Build command: deploy\build_v5_1_complete.bat
   - Use case: Quick deployment, testing, portable usage
 
 - Installer Package: Directory-based installation
-  - Build command: deploy\build_server_monitor_installer.bat
+  - Directory: dist\RoutingML_AutoGen_v5.1.0\
+  - Executable: RoutingML_AutoGen.exe
   - Use case: Permanent installation, faster startup
 
 Bug Fixes:
@@ -76,7 +56,7 @@ System Requirements:
 
 Installation:
 1. Download the appropriate build (portable or installer)
-2. For portable: Run RoutingMLMonitor_v4.0.0.exe directly
+2. For portable: Run RoutingMLMonitor_v4.1.0.exe directly
 3. For installer: Extract folder and run the .exe inside
 4. Select your project folder on first run
 5. Click "Start All" to launch services
@@ -100,6 +80,9 @@ License:
 Previous Versions:
 ================================================
 
+v5.0.0 (2025-10-14) - MCS Server Dashboard with Material Design
+v4.1.0 (2025-10-14) - Teamcenter X inspired dashboard with persistent consoles
 v3.x - Service monitoring with basic UI
 v2.x - Console-based monitoring
 v1.x - Initial prototype
+
