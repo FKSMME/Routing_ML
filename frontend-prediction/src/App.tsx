@@ -17,6 +17,7 @@ const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/Process
 const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
+const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -28,12 +29,12 @@ import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
 import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { useTheme } from "@hooks/useTheme";
-import { Database, FileOutput, Layers, Menu, Table, Workflow } from "lucide-react";
+import { Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
 import axios from "axios";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useMemo } from "react";
 
-// 🎨 All Navigation Items (Beautiful Design)
-const NAVIGATION_ITEMS = [
+// 🎨 Base Navigation Items
+const BASE_NAVIGATION_ITEMS = [
   {
     id: "routing",
     label: "라우팅 생성",
@@ -63,6 +64,16 @@ const NAVIGATION_ITEMS = [
     label: "출력설정",
     description: "미리보기 · 내보내기",
     icon: <FileOutput size={18} />,
+  },
+];
+
+// 관리자 전용 메뉴
+const ADMIN_NAVIGATION_ITEMS = [
+  {
+    id: "data-relationship",
+    label: "데이터 관계 설정",
+    description: "학습 → 예측 → 출력 매핑",
+    icon: <Settings2 size={18} />,
   },
 ];
 
@@ -113,9 +124,16 @@ export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAdmin = useAuthStore((state) => state.user?.isAdmin ?? false);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const login = useAuthStore((state) => state.login);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
+  const NAVIGATION_ITEMS = useMemo(
+    () => (isAdmin ? [...BASE_NAVIGATION_ITEMS, ...ADMIN_NAVIGATION_ITEMS] : BASE_NAVIGATION_ITEMS),
+    [isAdmin]
+  );
 
   // All hooks must be called before any conditional returns
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
@@ -280,6 +298,9 @@ export default function App() {
       break;
     case "data-output":
       workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
+      break;
+    case "data-relationship":
+      workspace = <Suspense fallback={loadingFallback}><DataRelationshipManager /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

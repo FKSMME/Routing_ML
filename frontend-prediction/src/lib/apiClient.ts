@@ -456,5 +456,104 @@ export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
   return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
 }
 
+// ============================================================================
+// DATA MAPPING APIs (데이터 관계 설정)
+// ============================================================================
+
+export interface DataRelationshipMapping {
+  training_column: string;
+  prediction_column?: string | null;
+  output_column: string;
+  data_type: "string" | "number" | "boolean" | "date";
+  is_required: boolean;
+  default_value?: string | null;
+  transform_rule?: string | null;
+  description?: string | null;
+}
+
+export interface DataMappingProfile {
+  id: string;
+  name: string;
+  description?: string | null;
+  relationships: DataRelationshipMapping[];
+  mappings?: any[]; // Legacy field
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  is_active: boolean;
+}
+
+export interface DataMappingProfileCreate {
+  name: string;
+  description?: string | null;
+  relationships?: DataRelationshipMapping[];
+  mappings?: any[];
+}
+
+export interface DataMappingProfileUpdate {
+  name?: string | null;
+  description?: string | null;
+  relationships?: DataRelationshipMapping[] | null;
+  mappings?: any[] | null;
+  is_active?: boolean | null;
+}
+
+export interface DataMappingProfileListResponse {
+  profiles: DataMappingProfile[];
+  total: number;
+}
+
+export interface DataMappingApplyRequest {
+  profile_id: string;
+  routing_group_id: string;
+  preview_only: boolean;
+}
+
+export interface DataMappingApplyResponse {
+  profile_id: string;
+  routing_group_id: string;
+  columns: string[];
+  preview_rows: Array<Record<string, any>>;
+  total_rows: number;
+  csv_path?: string | null;
+  message: string;
+}
+
+export async function fetchDataMappingProfiles(): Promise<DataMappingProfileListResponse> {
+  const response = await api.get<DataMappingProfileListResponse>("/data-mapping/profiles");
+  return response.data;
+}
+
+export async function fetchDataMappingProfile(profileId: string): Promise<DataMappingProfile> {
+  const response = await api.get<DataMappingProfile>(`/data-mapping/profiles/${profileId}`);
+  return response.data;
+}
+
+export async function createDataMappingProfile(
+  payload: DataMappingProfileCreate
+): Promise<DataMappingProfile> {
+  const response = await api.post<DataMappingProfile>("/data-mapping/profiles", payload);
+  return response.data;
+}
+
+export async function updateDataMappingProfile(
+  profileId: string,
+  payload: DataMappingProfileUpdate
+): Promise<DataMappingProfile> {
+  const response = await api.patch<DataMappingProfile>(`/data-mapping/profiles/${profileId}`, payload);
+  return response.data;
+}
+
+export async function deleteDataMappingProfile(profileId: string): Promise<void> {
+  await api.delete(`/data-mapping/profiles/${profileId}`);
+}
+
+export async function applyDataMapping(
+  request: DataMappingApplyRequest
+): Promise<DataMappingApplyResponse> {
+  const response = await api.post<DataMappingApplyResponse>("/data-mapping/apply", request);
+  return response.data;
+}
+
 
 export default api;
