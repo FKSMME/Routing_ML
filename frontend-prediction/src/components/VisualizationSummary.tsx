@@ -1,13 +1,29 @@
 import type { PredictionMetrics } from "@app-types/routing";
+import { FileDown } from "lucide-react";
+import { useState } from "react";
 
 interface VisualizationSummaryProps {
   metrics?: PredictionMetrics;
+  onGenerateComprehensiveRouting?: () => void;
 }
 
-export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
+export function VisualizationSummary({ metrics, onGenerateComprehensiveRouting }: VisualizationSummaryProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+
   if (!metrics) {
     return null;
   }
+
+  const handleGenerateRouting = async () => {
+    if (onGenerateComprehensiveRouting) {
+      setIsGenerating(true);
+      try {
+        await onGenerateComprehensiveRouting();
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+  };
 
   const exportedFiles = metrics.exported_files ?? [];
   const exportErrors = metrics.export_errors ?? [];
@@ -103,6 +119,22 @@ export function VisualizationSummary({ metrics }: VisualizationSummaryProps) {
             </ul>
           </div>
         ) : null}
+
+        {/* 종합 라우팅 생성 버튼 */}
+        <div className="pt-4 border-t border-dark-border">
+          <button
+            type="button"
+            onClick={handleGenerateRouting}
+            disabled={isGenerating || !onGenerateComprehensiveRouting}
+            className="btn-primary neon-cyan w-full flex items-center justify-center gap-2"
+          >
+            <FileDown size={18} />
+            {isGenerating ? "생성 중..." : "종합 라우팅 생성"}
+          </button>
+          <p className="text-xs text-muted mt-2 text-center">
+            선택한 라우팅 그룹 데이터를 매핑 프로파일에 따라 CSV로 출력합니다
+          </p>
+        </div>
       </div>
     </section>
   );
