@@ -145,10 +145,23 @@ WORK_RESULT_VIEW_COLUMNS: Tuple[str, ...] = (
 # ════════════════════════════════════════════════
 # 1) 기본 연결 함수
 # ════════════════════════════════════════════════
-def _create_mssql_connection():
-    """MSSQL 서버 연결 생성"""
+def _create_mssql_connection_with_config(config: Optional[Dict[str, Any]] = None):
+    """MSSQL 서버 연결 생성 (커스텀 설정 지원)
+
+    Args:
+        config: 연결 설정 딕셔너리. None이면 MSSQL_CONFIG 사용.
+                필수 키: server, database, user, password
+                선택 키: encrypt, trust_certificate
+
+    Returns:
+        pyodbc.Connection: MSSQL 연결 객체
+    """
     if not PYODBC_AVAILABLE:
         raise ImportError("pyodbc is not available. Please install ODBC drivers.")
+
+    # 설정 결정
+    if config is None:
+        config = MSSQL_CONFIG
 
     # FreeTDS 드라이버 우선 시도, 없으면 ODBC Driver 17 사용
     available_drivers = pyodbc.drivers()
@@ -164,29 +177,36 @@ def _create_mssql_connection():
 
     conn_str = (
         f"DRIVER={{{driver_name}}};"
-        f"SERVER={MSSQL_CONFIG['server']};"
-        f"DATABASE={MSSQL_CONFIG['database']};"
-        f"UID={MSSQL_CONFIG['user']};"
-        f"PWD={MSSQL_CONFIG['password']};"
+        f"SERVER={config['server']};"
+        f"DATABASE={config['database']};"
+        f"UID={config['user']};"
+        f"PWD={config['password']};"
     )
 
     # FreeTDS는 Encrypt/TrustServerCertificate 옵션 불필요
     if driver_name != "FreeTDS":
+        encrypt = config.get('encrypt', False)
+        trust_cert = config.get('trust_certificate', True)
         conn_str += (
-            f"Encrypt={'yes' if MSSQL_CONFIG['encrypt'] else 'no'};"
-            f"TrustServerCertificate={'yes' if MSSQL_CONFIG['trust_certificate'] else 'no'};"
+            f"Encrypt={'yes' if encrypt else 'no'};"
+            f"TrustServerCertificate={'yes' if trust_cert else 'no'};"
         )
 
     logger.info(
         "MSSQL 연결 시도 (Driver: %s): %s/%s",
         driver_name,
-        MSSQL_CONFIG["server"],
-        MSSQL_CONFIG["database"],
+        config["server"],
+        config["database"],
     )
     try:
         return pyodbc.connect(conn_str, timeout=10)
     except pyodbc.Error as exc:
         raise ConnectionError(f"MSSQL DB 연결 실패 (Driver: {driver_name}): {exc}") from exc
+
+
+def _create_mssql_connection():
+    """MSSQL 서버 연결 생성 (기본 설정 사용)"""
+    return _create_mssql_connection_with_config(None)
 
 def _create_connection() -> pyodbc.Connection:
     """새로운 데이터베이스 연결 생성 (현재는 MSSQL만 지원)"""

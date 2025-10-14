@@ -1,7 +1,6 @@
 """MSSQL 데이터베이스 설정 및 연결 테스트 라우터."""
 from __future__ import annotations
 
-import importlib
 import os
 from typing import Any, Dict
 
@@ -10,8 +9,7 @@ from pydantic import BaseModel, Field
 
 from backend.api.schemas import AuthenticatedUser
 from backend.api.security import require_auth
-from backend import database as db_module
-from backend.database import MSSQL_CONFIG, get_database_info
+from backend.database import MSSQL_CONFIG, get_database_info, _create_mssql_connection_with_config, VIEW_ITEM_MASTER
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/database", tags=["database"])
@@ -121,7 +119,7 @@ async def test_database_connection(
     payload: DatabaseConnectionTest,
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> Dict[str, Any]:
-    """임시 환경 변수로 MSSQL 연결을 검증한다."""
+    """MSSQL 연결을 검증한다 (모듈 리로드 없이 직접 연결 테스트)."""
 
     logger.info(
         "데이터베이스 연결 테스트: user=%s server=%s database=%s",
@@ -130,47 +128,66 @@ async def test_database_connection(
         payload.database,
     )
 
-    original_env = {
-        key: os.getenv(key)
-        for key in [
-            "DB_TYPE",
-            "MSSQL_SERVER",
-            "MSSQL_DATABASE",
-            "MSSQL_USER",
-            "MSSQL_PASSWORD",
-            "MSSQL_ENCRYPT",
-            "MSSQL_TRUST_CERTIFICATE",
-        ]
-    }
-
     try:
-        os.environ["DB_TYPE"] = "MSSQL"
-        os.environ["MSSQL_SERVER"] = payload.server
-        os.environ["MSSQL_DATABASE"] = payload.database
-        os.environ["MSSQL_USER"] = payload.user
-        os.environ["MSSQL_PASSWORD"] = payload.password
-        os.environ["MSSQL_ENCRYPT"] = str(payload.encrypt)
-        os.environ["MSSQL_TRUST_CERTIFICATE"] = str(payload.trust_certificate)
-
-        importlib.reload(db_module)
-        success = db_module.test_connection()
-        connection_info = db_module.get_database_info() if success else {}
-
-        return {
-            "success": success,
-            "message": "데이터베이스 연결 성공" if success else "데이터베이스 연결 실패",
-            "details": connection_info,
+        # 커스텀 설정으로 연결 생성
+        test_config = {
+            "server": payload.server,
+            "database": payload.database,
+            "user": payload.user,
+            "password": payload.password,
+            "encrypt": payload.encrypt,
+            "trust_certificate": payload.trust_certificate,
         }
+
+        # 연결 테스트
+        with _create_mssql_connection_with_config(test_config) as conn:
+            cursor = conn.cursor()
+
+            # 기본 연결 테스트
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+
+            # 데이터베이스 정보 조회
+            cursor.execute("SELECT @@SERVERNAME")
+            server_name = cursor.fetchone()[0] if cursor.description else payload.server
+
+            cursor.execute("SELECT DB_NAME()")
+            database_name = cursor.fetchone()[0] if cursor.description else payload.database
+
+            # 테스트 테이블 조회 (품목 마스터 뷰)
+            try:
+                cursor.execute(f"SELECT TOP 1 * FROM {VIEW_ITEM_MASTER}")
+                cursor.fetchone()
+                view_accessible = True
+            except Exception:
+                view_accessible = False
+
+            connection_info = {
+                "connection_status": "정상",
+                "server": server_name,
+                "database": database_name,
+                "view_accessible": view_accessible,
+            }
+
+            logger.info("연결 테스트 성공: %s/%s", server_name, database_name)
+
+            return {
+                "success": True,
+                "message": "데이터베이스 연결 성공",
+                "details": connection_info,
+            }
+
     except Exception as exc:
         logger.error("연결 테스트 실패: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"연결 테스트 실패: {exc}") from exc
-    finally:
-        for key, value in original_env.items():
-            if value is None:
-                os.environ.pop(key, None)
-            else:
-                os.environ[key] = value
-        importlib.reload(db_module)
+        return {
+            "success": False,
+            "message": f"데이터베이스 연결 실패: {str(exc)}",
+            "details": {
+                "connection_status": f"오류: {exc}",
+                "server": payload.server,
+                "database": payload.database,
+            },
+        }
 
 
 @router.get("/info")
