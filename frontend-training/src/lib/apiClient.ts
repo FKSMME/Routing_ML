@@ -2,6 +2,12 @@ import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayloa
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
+import type {
+  TensorboardFilterResponse,
+  TensorboardMetricSeries,
+  TensorboardPointResponse,
+  TensorboardProjectorSummary,
+} from "@app-types/tensorboard";
 import axios from "axios";
 
 // Use relative URL to leverage Vite proxy in development
@@ -11,6 +17,60 @@ const api = axios.create({
   timeout: 60_000,
   withCredentials: true,
 });
+
+interface TensorboardProjectorSummaryDto {
+  id: string;
+  version_label?: string | null;
+  tensor_name: string;
+  sample_count: number;
+  updated_at?: string | null;
+}
+
+interface TensorboardPointDto {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  metadata: Record<string, unknown>;
+}
+
+interface TensorboardPointResponseDto {
+  projector_id: string;
+  total: number;
+  limit: number;
+  offset: number;
+  points: TensorboardPointDto[];
+}
+
+interface TensorboardFilterFieldDto {
+  name: string;
+  label: string;
+  kind: "categorical" | "numeric";
+  values?: string[];
+}
+
+interface TensorboardFilterResponseDto {
+  projector_id: string;
+  fields: TensorboardFilterFieldDto[];
+}
+
+interface TensorboardMetricPointDto {
+  step: number;
+  value: number;
+  timestamp?: string | null;
+}
+
+interface TensorboardMetricSeriesDto {
+  run_id: string;
+  metric: string;
+  points: TensorboardMetricPointDto[];
+}
+
+interface TensorboardExportResponseDto {
+  returncode: number;
+  stdout: string;
+  stderr: string;
+}
 
 // 401 Unauthorized 에러 핸들링 인터셉터
 api.interceptors.response.use(
@@ -201,6 +261,92 @@ export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
   return response.data;
 }
 
+export async function fetchTensorboardProjectors(): Promise<TensorboardProjectorSummary[]> {
+  const response = await api.get<TensorboardProjectorSummaryDto[]>("/training/tensorboard/projectors");
+  return response.data.map((item) => ({
+    id: item.id,
+    versionLabel: item.version_label ?? null,
+    tensorName: item.tensor_name,
+    sampleCount: item.sample_count,
+    updatedAt: item.updated_at ?? null,
+  }));
+}
+
+export async function fetchTensorboardProjectorPoints(
+  projectorId: string,
+  options: { limit?: number; stride?: number; sample?: number; filters?: Record<string, string[]> } = {},
+): Promise<TensorboardPointResponse> {
+  const { limit = 10000, stride, sample, filters } = options;
+  const response = await api.get<TensorboardPointResponseDto>(
+    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/points`,
+    {
+      params: {
+        limit,
+        stride,
+        sample,
+        filters: filters ? JSON.stringify(filters) : undefined,
+      },
+    },
+  );
+  const payload = response.data;
+  return {
+    projectorId: payload.projector_id,
+    total: payload.total,
+    limit: payload.limit,
+    offset: payload.offset,
+    points: payload.points.map((point) => {
+      const metadata: Record<string, string | number | null | undefined> = {};
+      Object.entries(point.metadata ?? {}).forEach(([key, value]) => {
+        if (value === null || value === undefined) {
+          metadata[key] = null;
+        } else if (typeof value === "string" || typeof value === "number") {
+          metadata[key] = value;
+        } else {
+          metadata[key] = value?.toString();
+        }
+      });
+      return {
+        id: point.id,
+        x: point.x,
+        y: point.y,
+        z: point.z,
+        metadata,
+      };
+    }),
+  };
+}
+
+export async function fetchTensorboardProjectorFilters(projectorId: string): Promise<TensorboardFilterResponse> {
+  const response = await api.get<TensorboardFilterResponseDto>(
+    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/filters`,
+  );
+  const payload = response.data;
+  return {
+    projectorId: payload.projector_id,
+    fields: payload.fields.map((field) => ({
+      name: field.name,
+      label: field.label,
+      kind: field.kind,
+      values: field.values,
+    })),
+  };
+}
+
+export async function fetchTensorboardMetrics(runId: string): Promise<TensorboardMetricSeries[]> {
+  const response = await api.get<TensorboardMetricSeriesDto[]>(
+    `/training/tensorboard/metrics/${encodeURIComponent(runId)}`
+  );
+  return response.data.map((series) => ({
+    runId: series.run_id,
+    metric: series.metric,
+    points: series.points.map((point) => ({
+      step: point.step,
+      value: point.value,
+      timestamp: point.timestamp ?? null,
+    })),
+  }));
+}
+
 export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
   const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
     "/training/features",
@@ -387,3 +533,15 @@ export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
 
 
 export default api;
+
+export async function exportTensorboardProjector(payload: {
+  sample_every?: number;
+  max_rows?: number | null;
+}): Promise<TensorboardExportResponseDto> {
+  const response = await api.post<TensorboardExportResponseDto>(
+    "/training/tensorboard/projectors/export",
+    payload
+  );
+  return response.data;
+}
+
