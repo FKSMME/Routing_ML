@@ -11,10 +11,19 @@ interface TabsProps {
   tabs: TabItem[];
   defaultTab?: string;
   className?: string;
+  activeTab?: string;
+  onTabChange?: (tabId: string) => void;
 }
 
-export function Tabs({ tabs, defaultTab, className = "" }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id);
+export function Tabs({ tabs, defaultTab, className = "", activeTab: controlledActiveTab, onTabChange }: TabsProps) {
+  const [internalActiveTab, setInternalActiveTab] = useState(defaultTab || tabs[0]?.id);
+
+  const activeTab = controlledActiveTab ?? internalActiveTab;
+
+  const handleTabChange = (tabId: string) => {
+    setInternalActiveTab(tabId);
+    onTabChange?.(tabId);
+  };
 
   const activeContent = tabs.find((tab) => tab.id === activeTab)?.content;
 
@@ -26,7 +35,7 @@ export function Tabs({ tabs, defaultTab, className = "" }: TabsProps) {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
               aria-selected={activeTab === tab.id}
               role="tab"

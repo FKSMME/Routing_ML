@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
 import { Tabs } from "../ui/Tabs";
 import { PredictionControls } from "../PredictionControls";
@@ -61,6 +61,14 @@ export function RoutingTabbedWorkspace({
   renderPredictionBanner,
   tabKey = "default",
 }: RoutingTabbedWorkspaceProps) {
+  const [activeTab, setActiveTab] = useState("control");
+
+  // 예측 성공 시 시각화 탭으로 자동 전환
+  useEffect(() => {
+    if (!loading && data?.candidates && data.candidates.length > 0) {
+      setActiveTab("visualization");
+    }
+  }, [loading, data?.candidates]);
   const tabs = [
     {
       id: "control",
@@ -160,7 +168,7 @@ export function RoutingTabbedWorkspace({
 
   return (
     <div className="routing-tabbed-workspace" data-layout-fix="v3-tabs">
-      <Tabs tabs={tabs} defaultTab="control" />
+      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 }

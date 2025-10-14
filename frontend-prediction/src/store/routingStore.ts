@@ -242,6 +242,7 @@ export interface RoutingStoreState {
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
+  updateStepTimes: (stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => void;
   clearValidation: () => void;
   setValidationErrors: (errors: string[]) => void;
   pushValidationError: (message: string) => void;
@@ -1435,6 +1436,30 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         productTabs: updatedTabs,
         history,
         dirty: computeDirty(normalized, state.lastSuccessfulTimeline, activeProductId),
+      };
+    }),
+  updateStepTimes: (stepId, times) =>
+    set((state) => {
+      const { activeProductId } = state;
+      if (!activeProductId) {
+        return state;
+      }
+      const index = state.timeline.findIndex((step) => step.id === stepId);
+      if (index === -1) {
+        return state;
+      }
+      const timeline = [...state.timeline];
+      timeline[index] = {
+        ...timeline[index],
+        setupTime: times.setupTime !== undefined ? times.setupTime : timeline[index].setupTime,
+        runTime: times.runTime !== undefined ? times.runTime : timeline[index].runTime,
+        waitTime: times.waitTime !== undefined ? times.waitTime : timeline[index].waitTime,
+      };
+      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(timeline));
+      return {
+        timeline,
+        productTabs: updatedTabs,
+        dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
       };
     }),
   clearValidation: () => set({ validationErrors: [] }),
