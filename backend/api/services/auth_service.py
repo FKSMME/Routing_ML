@@ -20,7 +20,7 @@ from backend.api.schemas import (
     UserListResponse,
     UserStatusResponse,
 )
-from backend.api.services.email_service import email_service
+from backend.api.services.email_service import email_service, OutlookNotAvailableError
 from backend.api.session_manager import JWTManager, get_jwt_manager
 from backend.database_rsl import (
     UserAccount,
@@ -82,6 +82,11 @@ class AuthService:
                             full_name=existing.full_name,
                             email=existing.email,
                         )
+                    except OutlookNotAvailableError as e:
+                        self._logger.info(
+                            "Outlook이 실행되지 않아 이메일 알림을 건너뜁니다",
+                            extra={"username": existing.username, "message": str(e)},
+                        )
                     except Exception as e:
                         self._logger.warning(
                             "관리자 이메일 전송 실패",
@@ -113,6 +118,11 @@ class AuthService:
                 username=username,
                 full_name=payload.full_name,
                 email=payload.email,
+            )
+        except OutlookNotAvailableError as e:
+            self._logger.info(
+                "Outlook이 실행되지 않아 이메일 알림을 건너뜁니다",
+                extra={"username": username, "message": str(e)},
             )
         except Exception as e:
             self._logger.warning(
@@ -155,6 +165,11 @@ class AuthService:
                         email=user.email,
                         full_name=user.full_name,
                     )
+                except OutlookNotAvailableError as e:
+                    self._logger.info(
+                        "Outlook이 실행되지 않아 승인 이메일을 건너뜁니다",
+                        extra={"username": user.username, "message": str(e)},
+                    )
                 except Exception as e:
                     self._logger.warning(
                         "승인 이메일 전송 실패",
@@ -189,6 +204,11 @@ class AuthService:
                         email=user.email,
                         full_name=user.full_name,
                         reason=reason,
+                    )
+                except OutlookNotAvailableError as e:
+                    self._logger.info(
+                        "Outlook이 실행되지 않아 거절 이메일을 건너뜁니다",
+                        extra={"username": user.username, "message": str(e)},
                     )
                 except Exception as e:
                     self._logger.warning(
