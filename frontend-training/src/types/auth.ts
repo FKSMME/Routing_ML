@@ -4,6 +4,8 @@ export interface RegisterRequestPayload {
   username: string;
   password: string;
   displayName?: string | null;
+  fullName?: string | null;
+  email?: string | null;
 }
 
 export interface RegisterResponsePayload {

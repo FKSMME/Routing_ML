@@ -13,6 +13,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,6 +36,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             username,
             password,
             display_name: displayName || undefined,
+            full_name: fullName || undefined,
+            email: email || undefined,
           }),
         });
 
@@ -43,10 +47,12 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         }
 
         await response.json();
-        setSuccess("ȸ�������� �Ϸ�Ǿ����ϴ�. ������ ���� �� �α����� �� �ֽ��ϴ�.");
+        setSuccess("회원가입이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.");
         setUsername("");
         setPassword("");
         setDisplayName("");
+        setFullName("");
+        setEmail("");
         setTimeout(() => setMode("login"), 3000);
       } else {
         const response = await fetch("/api/auth/login", {
@@ -138,20 +144,53 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </div>
 
           {mode === "register" && (
-            <div className="space-y-2">
-              <label htmlFor="displayName" className="block text-sm font-medium text-foreground">
-                ǥ�� �̸� (���û���)
-              </label>
-              <input
-                id="displayName"
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="form-control w-full"
-                placeholder="ǥ���� �̸��� �Է��ϼ���"
-                disabled={loading}
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
+                  전체 이름 (선택사항)
+                </label>
+                <input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="form-control w-full"
+                  placeholder="전체 이름을 입력하세요"
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                  이메일 주소 (선택사항)
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="form-control w-full"
+                  placeholder="email@company.com"
+                  disabled={loading}
+                />
+                <p className="text-xs text-muted">승인 알림을 받을 이메일 주소</p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="displayName" className="block text-sm font-medium text-foreground">
+                  표시 이름 (선택사항)
+                </label>
+                <input
+                  id="displayName"
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="form-control w-full"
+                  placeholder="표시할 이름을 입력하세요"
+                  disabled={loading}
+                />
+              </div>
+            </>
           )}
 
           {error ? (
