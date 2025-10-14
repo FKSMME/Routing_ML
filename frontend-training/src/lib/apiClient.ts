@@ -2,12 +2,6 @@ import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayloa
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
-import type {
-  TensorboardFilterResponse,
-  TensorboardMetricSeries,
-  TensorboardPointResponse,
-  TensorboardProjectorSummary,
-} from "@app-types/tensorboard";
 import axios from "axios";
 
 // Use relative URL to leverage Vite proxy in development
@@ -17,60 +11,6 @@ const api = axios.create({
   timeout: 60_000,
   withCredentials: true,
 });
-
-interface TensorboardProjectorSummaryDto {
-  id: string;
-  version_label?: string | null;
-  tensor_name: string;
-  sample_count: number;
-  updated_at?: string | null;
-}
-
-interface TensorboardPointDto {
-  id: string;
-  x: number;
-  y: number;
-  z: number;
-  metadata: Record<string, unknown>;
-}
-
-interface TensorboardPointResponseDto {
-  projector_id: string;
-  total: number;
-  limit: number;
-  offset: number;
-  points: TensorboardPointDto[];
-}
-
-interface TensorboardFilterFieldDto {
-  name: string;
-  label: string;
-  kind: "categorical" | "numeric";
-  values?: string[];
-}
-
-interface TensorboardFilterResponseDto {
-  projector_id: string;
-  fields: TensorboardFilterFieldDto[];
-}
-
-interface TensorboardMetricPointDto {
-  step: number;
-  value: number;
-  timestamp?: string | null;
-}
-
-interface TensorboardMetricSeriesDto {
-  run_id: string;
-  metric: string;
-  points: TensorboardMetricPointDto[];
-}
-
-interface TensorboardExportResponseDto {
-  returncode: number;
-  stdout: string;
-  stderr: string;
-}
 
 // 401 Unauthorized 에러 핸들링 인터셉터
 api.interceptors.response.use(
@@ -261,92 +201,6 @@ export async function fetchTrainingMetrics(): Promise<TrainingMetricsResponse> {
   return response.data;
 }
 
-export async function fetchTensorboardProjectors(): Promise<TensorboardProjectorSummary[]> {
-  const response = await api.get<TensorboardProjectorSummaryDto[]>("/training/tensorboard/projectors");
-  return response.data.map((item) => ({
-    id: item.id,
-    versionLabel: item.version_label ?? null,
-    tensorName: item.tensor_name,
-    sampleCount: item.sample_count,
-    updatedAt: item.updated_at ?? null,
-  }));
-}
-
-export async function fetchTensorboardProjectorPoints(
-  projectorId: string,
-  options: { limit?: number; stride?: number; sample?: number; filters?: Record<string, string[]> } = {},
-): Promise<TensorboardPointResponse> {
-  const { limit = 10000, stride, sample, filters } = options;
-  const response = await api.get<TensorboardPointResponseDto>(
-    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/points`,
-    {
-      params: {
-        limit,
-        stride,
-        sample,
-        filters: filters ? JSON.stringify(filters) : undefined,
-      },
-    },
-  );
-  const payload = response.data;
-  return {
-    projectorId: payload.projector_id,
-    total: payload.total,
-    limit: payload.limit,
-    offset: payload.offset,
-    points: payload.points.map((point) => {
-      const metadata: Record<string, string | number | null | undefined> = {};
-      Object.entries(point.metadata ?? {}).forEach(([key, value]) => {
-        if (value === null || value === undefined) {
-          metadata[key] = null;
-        } else if (typeof value === "string" || typeof value === "number") {
-          metadata[key] = value;
-        } else {
-          metadata[key] = value?.toString();
-        }
-      });
-      return {
-        id: point.id,
-        x: point.x,
-        y: point.y,
-        z: point.z,
-        metadata,
-      };
-    }),
-  };
-}
-
-export async function fetchTensorboardProjectorFilters(projectorId: string): Promise<TensorboardFilterResponse> {
-  const response = await api.get<TensorboardFilterResponseDto>(
-    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/filters`,
-  );
-  const payload = response.data;
-  return {
-    projectorId: payload.projector_id,
-    fields: payload.fields.map((field) => ({
-      name: field.name,
-      label: field.label,
-      kind: field.kind,
-      values: field.values,
-    })),
-  };
-}
-
-export async function fetchTensorboardMetrics(runId: string): Promise<TensorboardMetricSeries[]> {
-  const response = await api.get<TensorboardMetricSeriesDto[]>(
-    `/training/tensorboard/metrics/${encodeURIComponent(runId)}`
-  );
-  return response.data.map((series) => ({
-    runId: series.run_id,
-    metric: series.metric,
-    points: series.points.map((point) => ({
-      step: point.step,
-      value: point.value,
-      timestamp: point.timestamp ?? null,
-    })),
-  }));
-}
-
 export async function fetchTrainingFeatureWeights(): Promise<TrainingFeatureWeight[]> {
   const response = await api.get<TrainingFeatureWeight[] | { features?: TrainingFeatureWeight[] }>(
     "/training/features",
@@ -515,33 +369,191 @@ export async function triggerRoutingInterface(...args: any[]): Promise<any> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
-export async function fetchOutputProfiles(...args: any[]): Promise<any> {
-  return [];
+export interface OutputProfileListItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  format?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export async function fetchOutputProfileDetail(...args: any[]): Promise<any> {
-  throw new Error("Output profiles API removed - feature not available");
+export interface OutputProfileMapping {
+  source: string;
+  mapped: string;
+  type: string;
+  required: boolean;
+  default_value?: string | null;
 }
 
-export async function generateOutputPreview(...args: any[]): Promise<any> {
-  return { columns: [], rows: [] };
+export interface OutputProfileDetail {
+  id: string;
+  name: string;
+  description?: string | null;
+  format: string;
+  mappings: OutputProfileMapping[];
+  created_at?: string;
+  updated_at?: string;
+  sample?: Array<Record<string, unknown>>;
+}
+
+export interface CreateOutputProfilePayload {
+  name: string;
+  description?: string | null;
+  format?: string;
+  mappings?: OutputProfileMapping[];
+}
+
+export interface CreateOutputProfileResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  format: string;
+  created_at: string;
+  updated_at: string;
+  message: string;
+}
+
+export async function fetchOutputProfiles(): Promise<OutputProfileListItem[]> {
+  const response = await api.get<OutputProfileListItem[]>("/routing/output-profiles");
+  return response.data;
+}
+
+export async function fetchOutputProfileDetail(profileId: string): Promise<OutputProfileDetail> {
+  const response = await api.get<OutputProfileDetail>(`/routing/output-profiles/${profileId}`);
+  return response.data;
+}
+
+export async function createOutputProfile(payload: CreateOutputProfilePayload): Promise<CreateOutputProfileResponse> {
+  const response = await api.post<CreateOutputProfileResponse>("/routing/output-profiles", {
+    name: payload.name,
+    description: payload.description ?? null,
+    format: payload.format ?? "CSV",
+    mappings: payload.mappings ?? [],
+  });
+  return response.data;
+}
+
+export async function generateOutputPreview(payload: {
+  profileId?: string | null;
+  mappings: Array<{
+    source: string;
+    mapped: string;
+    type: string;
+    required: boolean;
+    default_value?: string | null;
+  }>;
+  format: string;
+}): Promise<{ rows: Array<Record<string, unknown>>; columns: string[] }> {
+  const response = await api.post<{ rows: Array<Record<string, unknown>>; columns: string[] }>(
+    "/routing/output-profiles/preview",
+    payload
+  );
+  return response.data;
 }
 
 export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
   return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
 }
 
+// ============================================================================
+// DATA MAPPING APIs (데이터 관계 설정)
+// ============================================================================
 
-export default api;
+export interface DataRelationshipMapping {
+  training_column: string;
+  prediction_column?: string | null;
+  output_column: string;
+  data_type: "string" | "number" | "boolean" | "date";
+  is_required: boolean;
+  default_value?: string | null;
+  transform_rule?: string | null;
+  description?: string | null;
+}
 
-export async function exportTensorboardProjector(payload: {
-  sample_every?: number;
-  max_rows?: number | null;
-}): Promise<TensorboardExportResponseDto> {
-  const response = await api.post<TensorboardExportResponseDto>(
-    "/training/tensorboard/projectors/export",
-    payload
-  );
+export interface DataMappingProfile {
+  id: string;
+  name: string;
+  description?: string | null;
+  relationships: DataRelationshipMapping[];
+  mappings?: any[]; // Legacy field
+  created_by?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  is_active: boolean;
+}
+
+export interface DataMappingProfileCreate {
+  name: string;
+  description?: string | null;
+  relationships?: DataRelationshipMapping[];
+  mappings?: any[];
+}
+
+export interface DataMappingProfileUpdate {
+  name?: string | null;
+  description?: string | null;
+  relationships?: DataRelationshipMapping[] | null;
+  mappings?: any[] | null;
+  is_active?: boolean | null;
+}
+
+export interface DataMappingProfileListResponse {
+  profiles: DataMappingProfile[];
+  total: number;
+}
+
+export interface DataMappingApplyRequest {
+  profile_id: string;
+  routing_group_id: string;
+  preview_only: boolean;
+}
+
+export interface DataMappingApplyResponse {
+  profile_id: string;
+  routing_group_id: string;
+  columns: string[];
+  preview_rows: Array<Record<string, any>>;
+  total_rows: number;
+  csv_path?: string | null;
+  message: string;
+}
+
+export async function fetchDataMappingProfiles(): Promise<DataMappingProfileListResponse> {
+  const response = await api.get<DataMappingProfileListResponse>("/data-mapping/profiles");
   return response.data;
 }
 
+export async function fetchDataMappingProfile(profileId: string): Promise<DataMappingProfile> {
+  const response = await api.get<DataMappingProfile>(`/data-mapping/profiles/${profileId}`);
+  return response.data;
+}
+
+export async function createDataMappingProfile(
+  payload: DataMappingProfileCreate
+): Promise<DataMappingProfile> {
+  const response = await api.post<DataMappingProfile>("/data-mapping/profiles", payload);
+  return response.data;
+}
+
+export async function updateDataMappingProfile(
+  profileId: string,
+  payload: DataMappingProfileUpdate
+): Promise<DataMappingProfile> {
+  const response = await api.patch<DataMappingProfile>(`/data-mapping/profiles/${profileId}`, payload);
+  return response.data;
+}
+
+export async function deleteDataMappingProfile(profileId: string): Promise<void> {
+  await api.delete(`/data-mapping/profiles/${profileId}`);
+}
+
+export async function applyDataMapping(
+  request: DataMappingApplyRequest
+): Promise<DataMappingApplyResponse> {
+  const response = await api.post<DataMappingApplyResponse>("/data-mapping/apply", request);
+  return response.data;
+}
+
+
+export default api;

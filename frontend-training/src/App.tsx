@@ -11,17 +11,18 @@ import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWo
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
 import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
 import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
+import { DataRelationshipManager } from "@components/admin/DataRelationshipManager";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings, Brain, ScatterChart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { BarChart3, Menu, Route, Settings, Settings2, Brain, ScatterChart } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
 
 // 🟢 Training & Model Management Web Service
-const NAVIGATION_ITEMS = [
+const BASE_NAVIGATION_ITEMS = [
   {
     id: "algorithm",
     label: "알고리즘",
@@ -54,13 +55,30 @@ const NAVIGATION_ITEMS = [
   },
 ];
 
+// 관리자 전용 메뉴
+const ADMIN_NAVIGATION_ITEMS = [
+  {
+    id: "data-relationship",
+    label: "데이터 관계 설정",
+    description: "학습 → 예측 → 출력 매핑",
+    icon: <Settings2 size={18} />,
+  },
+];
+
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
   useTheme();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAdmin = useAuthStore((state) => state.user?.isAdmin ?? false);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
+  const NAVIGATION_ITEMS = useMemo(
+    () => (isAdmin ? [...BASE_NAVIGATION_ITEMS, ...ADMIN_NAVIGATION_ITEMS] : BASE_NAVIGATION_ITEMS),
+    [isAdmin]
+  );
 
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
@@ -154,6 +172,9 @@ export default function App() {
       break;
     case "options":
       workspace = <OptionsWorkspace />;
+      break;
+    case "data-relationship":
+      workspace = <DataRelationshipManager />;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
