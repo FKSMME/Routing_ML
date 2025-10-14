@@ -241,6 +241,7 @@
   </style>
 </head>
 <body>
+  <div id="bg3d"></div>
   <div id="loading-overlay" class="loading-overlay">
     <div class="spinner"></div>
   </div>
@@ -306,7 +307,35 @@
         </div>
       </div>
 
+      <!-- SQL View Data Table -->
+      <div id="dataTableSection" class="chart-card" style="grid-column: 1 / -1; display: none;">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title" id="dataTableTitle">데이터 로딩 중...</div>
+            <div class="chart-subtitle" id="dataTableSubtitle"></div>
+          </div>
+          <div style="display: flex; gap: 1rem;">
+            <button onclick="location.href='view-explorer.html'" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">⚙️ 설정</button>
+            <button onclick="refreshDataTable()" style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">🔄 새로고침</button>
+          </div>
+        </div>
+        <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+          <table id="dataTable" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <thead id="dataTableHead" style="position: sticky; top: 0; background: #f9fafb; z-index: 10;"></thead>
+            <tbody id="dataTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="nav-section">
+        <a href="view-explorer.html" class="nav-card">
+          <div class="nav-card-icon">🔍</div>
+          <div class="nav-card-content">
+            <div class="nav-card-title">SQL View Explorer</div>
+            <div class="nav-card-desc">MSSQL 뷰 데이터 설정 및 관리</div>
+          </div>
+        </a>
+
         <a href="http://localhost:5173" class="nav-card" target="_blank">
           <div class="nav-card-icon">🎯</div>
           <div class="nav-card-content">
@@ -323,7 +352,7 @@
           </div>
         </a>
 
-        <a href="http://localhost:3000" class="nav-card" target="_blank">
+        <a href="http://10.204.2.28:5174/#tensorboard" class="nav-card" target="_blank">
           <div class="nav-card-icon">📈</div>
           <div class="nav-card-content">
             <div class="nav-card-title">TensorBoard</div>
@@ -547,8 +576,189 @@
         `마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}`;
     }
 
+    // SQL View Data Table Functions
+    let currentViewName = null;
+
+    async function loadDataTable() {
+      try {
+        // 설정된 뷰 목록 조회
+        const configsRes = await fetch(`${API_BASE}/api/view-explorer/configs`, { credentials: 'include' });
+        if (!configsRes.ok) return;
+
+        const configs = await configsRes.json();
+        if (configs.length === 0) return;
+
+        // 첫 번째 설정된 뷰 사용
+        currentViewName = configs[0].view_name;
+        await refreshDataTable();
+
+      } catch (error) {
+        console.error('Failed to load data table:', error);
+      }
+    }
+
+    async function refreshDataTable() {
+      if (!currentViewName) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/data/${encodeURIComponent(currentViewName)}?limit=100`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+
+        renderDataTable(result);
+
+      } catch (error) {
+        console.error('Failed to refresh data table:', error);
+      }
+    }
+
+    function renderDataTable(result) {
+      const section = document.getElementById('dataTableSection');
+      const titleEl = document.getElementById('dataTableTitle');
+      const subtitleEl = document.getElementById('dataTableSubtitle');
+      const headEl = document.getElementById('dataTableHead');
+      const bodyEl = document.getElementById('dataTableBody');
+
+      section.style.display = 'block';
+      titleEl.textContent = result.display_name || result.view_name;
+      subtitleEl.textContent = `${result.row_count}개 행`;
+
+      // 테이블 헤더
+      let headerHTML = '<tr>';
+      result.columns.forEach(col => {
+        headerHTML += `<th style="border: 1px solid #e5e7eb; padding: 0.75rem; text-align: left; white-space: nowrap; font-weight: 600;">${col.name}</th>`;
+      });
+
+      // 체크리스트 컬럼 추가
+      if (result.enable_checklist) {
+        headerHTML += `<th style="border: 1px solid #e5e7eb; padding: 0.75rem; text-align: center; width: 100px; font-weight: 600;">${result.checklist_column_name}</th>`;
+      }
+
+      headerHTML += '</tr>';
+      headEl.innerHTML = headerHTML;
+
+      // 테이블 바디
+      let bodyHTML = '';
+      result.data.forEach((row, rowIndex) => {
+        const rowId = row._row_id;
+        const checkers = row._checkers || [];
+        const isChecked = checkers.length > 0;
+
+        bodyHTML += `<tr style="${rowIndex % 2 === 0 ? 'background: #f9fafb;' : ''}">`;
+
+        result.columns.forEach(col => {
+          const value = row[col.name];
+          bodyHTML += `<td style="border: 1px solid #e5e7eb; padding: 0.75rem;">${value !== null && value !== undefined ? value : ''}</td>`;
+        });
+
+        // 체크리스트 셀
+        if (result.enable_checklist) {
+          const checkerNames = checkers.map(c => c.username).join(', ');
+          bodyHTML += `
+            <td style="border: 1px solid #e5e7eb; padding: 0.75rem; text-align: center;">
+              <input type="checkbox" ${isChecked ? 'checked' : ''}
+                     onclick="toggleChecklist('${rowId}', this.checked)"
+                     title="${checkerNames}"
+                     style="width: 20px; height: 20px; cursor: pointer;">
+              ${checkerNames ? `<div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">${checkerNames}</div>` : ''}
+            </td>
+          `;
+        }
+
+        bodyHTML += '</tr>';
+      });
+
+      bodyEl.innerHTML = bodyHTML;
+    }
+
+    async function toggleChecklist(rowId, checked) {
+      if (!currentViewName) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/checklist/${encodeURIComponent(currentViewName)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ row_id: rowId, checked: checked })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        // 성공 시 데이터 새로고침
+        await refreshDataTable();
+
+      } catch (error) {
+        console.error('Failed to toggle checklist:', error);
+        alert('체크리스트 업데이트 실패: ' + error.message);
+      }
+    }
+
     fetchDashboardMetrics();
+    loadDataTable();
     setInterval(fetchDashboardMetrics, 30000);
+    setInterval(loadDataTable, 60000); // 1분마다 데이터 테이블 새로고침
+  </script>
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js";
+    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/loaders/GLTFLoader.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/controls/OrbitControls.js";
+
+    const container = document.getElementById("bg3d");
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    Object.assign(renderer.domElement.style, {
+      position: "fixed",
+      inset: "0",
+      pointerEvents: "none",
+      zIndex: "-1",
+      opacity: "0.3",
+    });
+    container?.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.2, 2.8);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+    const directional = new THREE.DirectionalLight(0xffffff, 0.9);
+    directional.position.set(5, 10, 7);
+    scene.add(directional);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      "/models/background.glb",
+      (gltf) => {
+        gltf.scene.scale.setScalar(0.6);
+        scene.add(gltf.scene);
+      },
+      undefined,
+      (error) => {
+        console.warn("Failed to load 3D background model:", error);
+      }
+    );
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enablePan = false;
+    controls.enableZoom = false;
+    controls.enableRotate = false;
+
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener("resize", onResize);
+
+    const animate = () => {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    };
+    animate();
   </script>
 </body>
 </html>

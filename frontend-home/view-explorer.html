@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SQL View Explorer - 설정</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #2d3748;
+      padding: 2rem;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 1rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .section {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      color: #1f2937;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0.5rem;
+    }
+
+    .button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .button.secondary {
+      background: #6b7280;
+    }
+
+    .button.secondary:hover {
+      background: #4b5563;
+    }
+
+    .button.success {
+      background: #10b981;
+    }
+
+    .button.success:hover {
+      background: #059669;
+    }
+
+    .view-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .view-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-card:hover {
+      border-color: #3b82f6;
+      background: #f0f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .view-card.selected {
+      border-color: #3b82f6;
+      background: #eff6ff;
+    }
+
+    .view-name {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.25rem;
+    }
+
+    .view-schema {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+
+    .sample-data {
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      color: #374151;
+      white-space: nowrap;
+    }
+
+    td {
+      border: 1px solid #e5e7eb;
+      padding: 0.75rem;
+    }
+
+    tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    .column-editor {
+      margin-top: 1.5rem;
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      background: white;
+    }
+
+    .column-item:hover {
+      background: #f9fafb;
+    }
+
+    .column-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .column-item input[type="text"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .column-item input[type="number"] {
+      width: 80px;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .drag-handle {
+      cursor: move;
+      color: #9ca3af;
+      font-size: 1.5rem;
+      user-select: none;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #6b7280;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .success-message {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 SQL View Explorer</h1>
+      <p>MSSQL 뷰를 선택하고 홈 대시보드에 표시할 데이터를 설정하세요</p>
+    </div>
+
+    <!-- Step 1: View 선택 -->
+    <div class="section">
+      <div class="section-title">Step 1: MSSQL View 선택</div>
+      <button class="button" onclick="loadViews()">뷰 목록 불러오기</button>
+      <div id="viewList" class="view-list"></div>
+    </div>
+
+    <!-- Step 2: 샘플 데이터 미리보기 -->
+    <div class="section" id="sampleSection" style="display: none;">
+      <div class="section-title">Step 2: 샘플 데이터 미리보기</div>
+      <div id="sampleData"></div>
+    </div>
+
+    <!-- Step 3: 컬럼 설정 -->
+    <div class="section" id="configSection" style="display: none;">
+      <div class="section-title">Step 3: 컬럼 설정 (드래그로 순서 변경 가능)</div>
+
+      <div class="form-group">
+        <label class="form-label">표시 이름</label>
+        <input type="text" id="displayName" class="form-input" placeholder="예: 대시보드 작업 목록">
+      </div>
+
+      <div class="form-group">
+        <div class="checkbox-group">
+          <input type="checkbox" id="enableChecklist">
+          <label class="form-label" style="margin: 0;">체크리스트 활성화</label>
+        </div>
+        <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+          활성화하면 각 행에 체크박스가 표시되고, 체크한 사용자 이름이 기록됩니다.
+        </p>
+      </div>
+
+      <div class="form-group" id="checklistNameGroup" style="display: none;">
+        <label class="form-label">체크리스트 컬럼 이름</label>
+        <input type="text" id="checklistColumnName" class="form-input" value="확인" placeholder="예: 확인, 체크">
+      </div>
+
+      <div class="column-editor" id="columnEditor"></div>
+
+      <div class="button-group">
+        <button class="button success" onclick="saveConfig()">설정 저장</button>
+        <button class="button secondary" onclick="location.href='index.html'">홈으로 돌아가기</button>
+      </div>
+
+      <div id="successMessage" class="success-message">
+        ✓ 설정이 저장되었습니다! 홈 페이지를 새로고침하면 데이터가 표시됩니다.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8000';
+    let selectedView = null;
+    let sampleColumns = [];
+    let columnConfigs = [];
+
+    // 뷰 목록 불러오기
+    async function loadViews() {
+      const container = document.getElementById('viewList');
+      container.innerHTML = '<div class="loading"><div class="spinner"></div><p>뷰 목록을 불러오는 중...</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/views`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const views = await response.json();
+
+        if (views.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #6b7280;">사용 가능한 뷰가 없습니다.</p>';
+          return;
+        }
+
+        container.innerHTML = views.map(view => `
+          <div class="view-card" onclick="selectView('${view.full_name}')">
+            <div class="view-name">${view.view_name}</div>
+            <div class="view-schema">스키마: ${view.schema_name}</div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Failed to load views:', error);
+        container.innerHTML = `<p style="color: #ef4444; text-align: center;">뷰 목록 불러오기 실패: ${error.message}</p>`;
+      }
+    }
+
+    // 뷰 선택
+    async function selectView(viewName) {
+      selectedView = viewName;
+
+      // 선택 상태 표시
+      document.querySelectorAll('.view-card').forEach(card => {
+        card.classList.remove('selected');
+        if (card.textContent.includes(viewName.split('.')[1])) {
+          card.classList.add('selected');
+        }
+      });
+
+      // 샘플 데이터 불러오기
+      await loadSampleData(viewName);
+    }
+
+    // 샘플 데이터 불러오기
+    async function loadSampleData(viewName) {
+      const section = document.getElementById('sampleSection');
+      const container = document.getElementById('sampleData');
+
+      section.style.display = 'block';
+      container.innerHTML = '<div class="loading"><div class="spinner"></div><p>샘플 데이터를 불러오는 중...</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/views/${encodeURIComponent(viewName)}/sample?limit=10`, {
+          credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+
+        sampleColumns = result.columns;
+
+        // 테이블 생성
+        let html = '<div class="sample-data"><table><thead><tr>';
+        result.columns.forEach(col => {
+          html += `<th>${col.name}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+
+        result.data.slice(0, 10).forEach(row => {
+          html += '<tr>';
+          result.columns.forEach(col => {
+            const value = row[col.name];
+            html += `<td>${value !== null && value !== undefined ? value : ''}</td>`;
+          });
+          html += '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+        html += `<p style="margin-top: 1rem; color: #6b7280;">총 ${result.row_count}개 행 (미리보기: 10개)</p>`;
+
+        container.innerHTML = html;
+
+        // 컬럼 설정 섹션 표시
+        showColumnEditor();
+
+      } catch (error) {
+        console.error('Failed to load sample data:', error);
+        container.innerHTML = `<p style="color: #ef4444;">샘플 데이터 불러오기 실패: ${error.message}</p>`;
+      }
+    }
+
+    // 컬럼 에디터 표시
+    function showColumnEditor() {
+      document.getElementById('configSection').style.display = 'block';
+
+      columnConfigs = sampleColumns.map((col, index) => ({
+        name: col.name,
+        display_name: col.name,
+        visible: true,
+        order: index,
+        width: 150
+      }));
+
+      renderColumnEditor();
+    }
+
+    // 컬럼 에디터 렌더링
+    function renderColumnEditor() {
+      const container = document.getElementById('columnEditor');
+
+      container.innerHTML = columnConfigs.map((col, index) => `
+        <div class="column-item" draggable="true" data-index="${index}">
+          <span class="drag-handle">☰</span>
+          <input type="checkbox" ${col.visible ? 'checked' : ''} onchange="toggleColumnVisible(${index})">
+          <input type="text" value="${col.display_name}" onchange="updateColumnName(${index}, this.value)" placeholder="표시 이름">
+          <input type="number" value="${col.width}" onchange="updateColumnWidth(${index}, this.value)" placeholder="너비">
+          <span style="font-size: 0.875rem; color: #6b7280;">${col.name}</span>
+        </div>
+      `).join('');
+
+      // 드래그 앤 드롭 이벤트 추가
+      setupDragAndDrop();
+    }
+
+    // 드래그 앤 드롭 설정
+    function setupDragAndDrop() {
+      const items = document.querySelectorAll('.column-item');
+      let draggedItem = null;
+
+      items.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+          draggedItem = this;
+          this.style.opacity = '0.5';
+        });
+
+        item.addEventListener('dragend', function(e) {
+          this.style.opacity = '1';
+        });
+
+        item.addEventListener('dragover', function(e) {
+          e.preventDefault();
+        });
+
+        item.addEventListener('drop', function(e) {
+          e.preventDefault();
+          if (draggedItem !== this) {
+            const draggedIndex = parseInt(draggedItem.dataset.index);
+            const targetIndex = parseInt(this.dataset.index);
+
+            // 배열 재정렬
+            const [removed] = columnConfigs.splice(draggedIndex, 1);
+            columnConfigs.splice(targetIndex, 0, removed);
+
+            // order 업데이트
+            columnConfigs.forEach((col, idx) => col.order = idx);
+
+            renderColumnEditor();
+          }
+        });
+      });
+    }
+
+    function toggleColumnVisible(index) {
+      columnConfigs[index].visible = !columnConfigs[index].visible;
+    }
+
+    function updateColumnName(index, value) {
+      columnConfigs[index].display_name = value;
+    }
+
+    function updateColumnWidth(index, value) {
+      columnConfigs[index].width = parseInt(value) || 150;
+    }
+
+    // 체크리스트 활성화 토글
+    document.getElementById('enableChecklist').addEventListener('change', function(e) {
+      document.getElementById('checklistNameGroup').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // 설정 저장
+    async function saveConfig() {
+      if (!selectedView) {
+        alert('뷰를 먼저 선택해주세요.');
+        return;
+      }
+
+      const displayName = document.getElementById('displayName').value || selectedView;
+      const enableChecklist = document.getElementById('enableChecklist').checked;
+      const checklistColumnName = document.getElementById('checklistColumnName').value || '확인';
+
+      const config = {
+        view_name: selectedView,
+        display_name: displayName,
+        columns: columnConfigs,
+        enable_checklist: enableChecklist,
+        checklist_column_name: checklistColumnName
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/configs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(config)
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const successMsg = document.getElementById('successMessage');
+        successMsg.classList.add('show');
+        setTimeout(() => successMsg.classList.remove('show'), 5000);
+
+      } catch (error) {
+        console.error('Failed to save config:', error);
+        alert(`설정 저장 실패: ${error.message}`);
+      }
+    }
+  </script>
+</body>
+</html>

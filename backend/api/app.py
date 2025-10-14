@@ -35,6 +35,7 @@ from backend.api.routes.rsl import router as rsl_router
 from backend.api.routes.trainer import router as trainer_router
 from backend.api.routes.training import router as training_router
 from backend.api.routes.tensorboard_projector import router as tensorboard_router
+from backend.api.routes.view_explorer import router as view_explorer_router
 # from backend.api.routes.weekly_report import router as weekly_report_router  # TODO: weekly_report_service 미구현
 from backend.api.routes.workflow import router as workflow_router
 from backend.api.routes.workspace import router as workspace_router
@@ -78,6 +79,7 @@ def create_app() -> FastAPI:
     app.include_router(mssql_router)
     app.include_router(rsl_router)
     app.include_router(algorithm_viz_router)
+    app.include_router(view_explorer_router)
 
     get_logger("api.app").info("FastAPI 애플리케이션 초기화 완료")
     return app
