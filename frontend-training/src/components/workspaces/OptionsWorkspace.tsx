@@ -1,5 +1,6 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
+import { DatabaseSettings } from "@components/DatabaseSettings";
 import { fetchWorkflowConfig, fetchWorkspaceSettings, postUiAudit } from "@lib/apiClient";
 
 type WorkspaceSettingsResponse = any;
@@ -717,6 +718,10 @@ export function OptionsWorkspace() {
             </div>
           </div>
         </div>
+      </CardShell>
+
+      <CardShell as="section" innerClassName="options-card" tone="soft">
+        <DatabaseSettings />
       </CardShell>
 
       <footer className="options-footer">

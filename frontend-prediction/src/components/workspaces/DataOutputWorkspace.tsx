@@ -10,9 +10,10 @@ import {
 } from "@lib/apiClient";
 
 type OutputProfileColumn = any;
-import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload, X } from "lucide-react";
+import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload, X, Database } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { TabContainer, type Tab } from "@components/TabContainer";
+import { DatabaseSettings } from "@components/DatabaseSettings";
 
 import {
   OutputMappingRow as MappingRow,
@@ -1004,6 +1005,13 @@ export function DataOutputWorkspace() {
     </div>
   );
 
+  // Tab 4: Database Settings
+  const databaseTab = (
+    <div className="max-w-4xl mx-auto">
+      <DatabaseSettings />
+    </div>
+  );
+
   const tabs: Tab[] = [
     {
       id: 'profiles',
@@ -1022,6 +1030,12 @@ export function DataOutputWorkspace() {
       label: 'Preview & Export',
       icon: <Eye size={16} />,
       content: previewTab,
+    },
+    {
+      id: 'database',
+      label: 'Database Settings',
+      icon: <Database size={16} />,
+      content: databaseTab,
     },
   ];
 
