@@ -65,10 +65,10 @@ export function DatabaseSettings() {
     }
   };
 
-  const handleTest Connection = async () => {
+  const handleTestConnection = async () => {
     if (!password) {
       alert('비밀번호를 입력해주세요');
-      return;
+      return false;
     }
 
     setTesting(true);
@@ -94,17 +94,20 @@ export function DatabaseSettings() {
           message: data.message,
           details: data.details,
         });
+        return data.success;
       } else {
         setTestResult({
           success: false,
           message: data.detail || '연결 테스트 실패',
         });
+        return false;
       }
     } catch (error) {
       setTestResult({
         success: false,
         message: `연결 테스트 중 오류 발생: ${error}`,
       });
+      return false;
     } finally {
       setTesting(false);
     }
@@ -116,10 +119,13 @@ export function DatabaseSettings() {
       return;
     }
 
-    // 먼저 연결 테스트
-    await handleTestConnection();
+    // 먼저 연결 테스트 실행
+    setTesting(true);
+    const testSuccess = await handleTestConnection();
+    setTesting(false);
 
-    if (testResult && !testResult.success) {
+    // 테스트 실패 시 확인
+    if (!testSuccess) {
       if (!confirm('연결 테스트가 실패했습니다. 그래도 저장하시겠습니까?')) {
         return;
       }
