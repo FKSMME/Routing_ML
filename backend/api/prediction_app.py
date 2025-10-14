@@ -12,6 +12,7 @@ from backend.api.config import get_settings
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.blueprint import router as blueprint_router
+from backend.api.routes.data_mapping import router as data_mapping_router
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.items import router as items_router
 from backend.api.routes.prediction import router as prediction_router
@@ -43,6 +44,7 @@ def create_prediction_app() -> FastAPI:
     # 라우팅 생성 관련 라우터만 등록
     app.include_router(auth_router)
     app.include_router(blueprint_router)
+    app.include_router(data_mapping_router)
     app.include_router(database_config_router)
     app.include_router(items_router)
     app.include_router(prediction_router)

@@ -904,6 +904,14 @@ __all__ = [
     "RslImportRequest",
     "RslImportResult",
     "RslExportBundle",
+    "DataRelationshipMapping",
+    "DataMappingRule",
+    "DataMappingProfile",
+    "DataMappingProfileCreate",
+    "DataMappingProfileUpdate",
+    "DataMappingProfileListResponse",
+    "DataMappingApplyRequest",
+    "DataMappingApplyResponse",
 ]
 
 class DatabaseMetadataColumn(BaseModel):
@@ -1039,3 +1047,127 @@ class BulkUploadResponse(BaseModel):
 
 
 MasterDataTreeNode.update_forward_refs()
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Data Relationship Mapping (학습 데이터 ↔ 예측 데이터 ↔ 출력 데이터 관계 설정)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+class DataRelationshipMapping(BaseModel):
+    """3단계 데이터 관계 매핑 (학습 → 예측 → 출력)."""
+
+    # 1단계: 학습 데이터 (TRAIN_FEATURES)
+    training_column: str = Field(
+        ..., min_length=1, description="학습 데이터 컬럼명 (예: ITEM_CD, PART_TYPE)"
+    )
+
+    # 2단계: 예측 결과 컬럼 (Prediction Output)
+    prediction_column: Optional[str] = Field(
+        None, description="예측 결과 컬럼명 (예: JOB_NM, RES_CD) - 없으면 학습 컬럼 사용"
+    )
+
+    # 3단계: 최종 출력 컬럼 (Output CSV/Excel)
+    output_column: str = Field(
+        ..., min_length=1, description="출력 파일 컬럼명 (예: 공정명, 자원코드)"
+    )
+
+    # 메타데이터
+    data_type: Literal["string", "number", "boolean", "date"] = Field(
+        "string", description="데이터 타입"
+    )
+    is_required: bool = Field(False, description="필수 필드 여부")
+    default_value: Optional[str] = Field(None, description="기본값 (값이 없을 때)")
+    transform_rule: Optional[str] = Field(
+        None, description="변환 규칙 (예: uppercase, lowercase, trim)"
+    )
+    description: Optional[str] = Field(None, description="매핑 설명")
+
+
+class DataMappingRule(BaseModel):
+    """
+    하위 호환성을 위한 기존 매핑 규칙.
+
+    Deprecated: DataRelationshipMapping 사용 권장.
+    """
+
+    routing_field: str = Field(..., min_length=1, description="라우팅 그룹 필드명 (예: 공정명)")
+    db_column: str = Field(..., min_length=1, description="DB 컬럼명 (예: JOB_NM)")
+    display_name: Optional[str] = Field(None, description="사용자에게 표시할 이름")
+    data_type: Literal["string", "number", "boolean", "date"] = Field(
+        "string", description="데이터 타입"
+    )
+    is_required: bool = Field(False, description="필수 필드 여부")
+    default_value: Optional[str] = Field(None, description="기본값")
+    description: Optional[str] = Field(None, description="매핑 설명")
+
+
+class DataMappingProfile(BaseModel):
+    """데이터 매핑 프로파일 (여러 규칙의 집합)."""
+
+    id: Optional[str] = Field(None, description="프로파일 ID")
+    name: str = Field(..., min_length=1, description="프로파일 이름")
+    description: Optional[str] = Field(None, description="프로파일 설명")
+
+    # 새로운 3단계 관계 매핑 (학습 → 예측 → 출력)
+    relationships: List[DataRelationshipMapping] = Field(
+        default_factory=list, description="데이터 관계 매핑 목록 (학습-예측-출력)"
+    )
+
+    # 하위 호환성을 위한 기존 매핑
+    mappings: List[DataMappingRule] = Field(
+        default_factory=list, description="레거시 매핑 규칙 목록 (Deprecated)"
+    )
+
+    created_by: Optional[str] = Field(None, description="생성자")
+    created_at: Optional[datetime] = Field(None, description="생성 시각")
+    updated_at: Optional[datetime] = Field(None, description="수정 시각")
+    is_active: bool = Field(True, description="활성화 여부")
+
+
+class DataMappingProfileCreate(BaseModel):
+    """데이터 매핑 프로파일 생성 요청."""
+
+    name: str = Field(..., min_length=1, description="프로파일 이름")
+    description: Optional[str] = Field(None, description="프로파일 설명")
+    mappings: List[DataMappingRule] = Field(
+        default_factory=list, description="매핑 규칙 목록"
+    )
+
+
+class DataMappingProfileUpdate(BaseModel):
+    """데이터 매핑 프로파일 수정 요청."""
+
+    name: Optional[str] = Field(None, min_length=1, description="프로파일 이름")
+    description: Optional[str] = Field(None, description="프로파일 설명")
+    mappings: Optional[List[DataMappingRule]] = Field(None, description="매핑 규칙 목록")
+    is_active: Optional[bool] = Field(None, description="활성화 여부")
+
+
+class DataMappingProfileListResponse(BaseModel):
+    """데이터 매핑 프로파일 목록 응답."""
+
+    profiles: List[DataMappingProfile] = Field(default_factory=list)
+    total: int = Field(..., ge=0, description="전체 프로파일 수")
+
+
+class DataMappingApplyRequest(BaseModel):
+    """데이터 매핑 적용 요청 (라우팅 그룹 데이터 → CSV 변환)."""
+
+    profile_id: str = Field(..., min_length=1, description="적용할 매핑 프로파일 ID")
+    routing_group_id: str = Field(..., min_length=1, description="라우팅 그룹 ID")
+    preview_only: bool = Field(True, description="미리보기만 할지 여부")
+
+
+class DataMappingApplyResponse(BaseModel):
+    """데이터 매핑 적용 결과."""
+
+    profile_id: str = Field(..., description="적용한 매핑 프로파일 ID")
+    routing_group_id: str = Field(..., description="라우팅 그룹 ID")
+    columns: List[str] = Field(default_factory=list, description="출력 컬럼명 목록")
+    preview_rows: List[Dict[str, Any]] = Field(
+        default_factory=list, description="미리보기 데이터 (최대 10행)"
+    )
+    total_rows: int = Field(..., ge=0, description="전체 데이터 행 수")
+    csv_path: Optional[str] = Field(None, description="생성된 CSV 파일 경로")
+    message: str = Field(default="매핑 적용 완료", description="결과 메시지")
