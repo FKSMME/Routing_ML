@@ -731,7 +731,7 @@
 
     const loader = new GLTFLoader();
     loader.load(
-      "/models/background.glb",
+      "./models/background.glb",
       (gltf) => {
         gltf.scene.scale.setScalar(0.6);
         scene.add(gltf.scene);

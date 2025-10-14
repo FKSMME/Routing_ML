@@ -21,7 +21,9 @@ export type NavigationKey =
   | "data-output"
   | "algorithm"
   | "algorithm-viz"
+  | "model-training"
   | "training-status"
+  | "tensorboard"
   | "options";
 
 type ExportDestination = "local" | "clipboard" | "server";

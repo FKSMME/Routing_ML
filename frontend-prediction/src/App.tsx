@@ -2,7 +2,7 @@ import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
 import { MainNavigation } from "@components/MainNavigation";
-import { ParticleBackground } from "@components/ParticleBackground";
+import { FullScreen3DBackground } from "@components/FullScreen3DBackground";\r\nimport { BackgroundControls } from "@components/BackgroundControls";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
 import { MetricsPanel } from "@components/MetricsPanel";
@@ -289,15 +289,7 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
-      <div className="rainbow-balls-container">
-        <div className="rainbow-ball rainbow-ball-1"></div>
-        <div className="rainbow-ball rainbow-ball-2"></div>
-        <div className="rainbow-ball rainbow-ball-3"></div>
-        <div className="rainbow-ball rainbow-ball-4"></div>
-        <div className="rainbow-ball rainbow-ball-5"></div>
-        <div className="rainbow-ball rainbow-ball-6"></div>
-      </div>
-      <ParticleBackground />
+      <FullScreen3DBackground />
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
@@ -338,5 +330,4 @@ export default function App() {
     </div>
   );
 }
-
 

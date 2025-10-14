@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 interface TrainingStatus {
   job_id: string | null;
@@ -74,8 +74,8 @@ export const ModelTrainingPanel: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+    <div className="mx-auto max-w-4xl p-6">
+      <div className="rounded-lg bg-white p-6 shadow-lg dark:bg-gray-800">
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
