@@ -2,10 +2,18 @@
 from __future__ import annotations
 
 import os
+import sys
+import tempfile
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+# Windows/Unix 파일 잠금 처리
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 from backend.api.schemas import AuthenticatedUser
 from backend.api.security import require_auth
@@ -58,7 +66,7 @@ async def update_database_config(
     config: DatabaseConfig,
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> Dict[str, Any]:
-    """MSSQL 환경 변수를 갱신하고 .env 파일에 반영한다."""
+    """MSSQL 환경 변수를 갱신하고 .env 파일에 반영한다 (파일 잠금 및 원자적 쓰기 지원)."""
 
     logger.info(
         "데이터베이스 설정 업데이트: user=%s server=%s database=%s",
@@ -68,6 +76,7 @@ async def update_database_config(
     )
 
     try:
+        # 환경 변수 업데이트
         os.environ["DB_TYPE"] = "MSSQL"
         os.environ["MSSQL_SERVER"] = config.server
         os.environ["MSSQL_DATABASE"] = config.database
@@ -76,11 +85,28 @@ async def update_database_config(
         os.environ["MSSQL_TRUST_CERTIFICATE"] = str(config.trust_certificate)
 
         env_path = ".env"
+        env_dir = os.path.dirname(os.path.abspath(env_path)) or "."
+
+        # 기존 파일 읽기 (파일 잠금)
         lines: list[str] = []
         if os.path.exists(env_path):
-            with open(env_path, "r", encoding="utf-8") as handle:
-                lines = handle.readlines()
+            with open(env_path, "r+", encoding="utf-8") as handle:
+                # 파일 잠금 획득
+                if sys.platform == "win32":
+                    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                else:
+                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
 
+                try:
+                    lines = handle.readlines()
+                finally:
+                    # 파일 잠금 해제
+                    if sys.platform == "win32":
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+        # 기존 DB 설정 제거
         filtered = [
             line
             for line in lines
@@ -97,6 +123,7 @@ async def update_database_config(
             )
         ]
 
+        # 새 설정 추가
         filtered.append("\nDB_TYPE=MSSQL\n")
         filtered.append(f"MSSQL_SERVER={config.server}\n")
         filtered.append(f"MSSQL_DATABASE={config.database}\n")
@@ -104,13 +131,38 @@ async def update_database_config(
         filtered.append(f"MSSQL_ENCRYPT={config.encrypt}\n")
         filtered.append(f"MSSQL_TRUST_CERTIFICATE={config.trust_certificate}\n")
 
-        with open(env_path, "w", encoding="utf-8") as handle:
-            handle.writelines(filtered)
+        # 원자적 쓰기 (임시 파일 → 이동)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=env_dir,
+            delete=False,
+            suffix=".tmp",
+        ) as tmp_handle:
+            tmp_path = tmp_handle.name
+            tmp_handle.writelines(filtered)
 
-        logger.info("데이터베이스 설정 저장 완료")
+        # 임시 파일을 원본 파일로 교체 (원자적 연산)
+        if sys.platform == "win32":
+            # Windows: replace() 사용
+            if os.path.exists(env_path):
+                os.replace(tmp_path, env_path)
+            else:
+                os.rename(tmp_path, env_path)
+        else:
+            # Unix: rename()은 원자적
+            os.rename(tmp_path, env_path)
+
+        logger.info("데이터베이스 설정 저장 완료 (원자적 쓰기)")
         return {"message": "설정이 저장되었습니다. 애플리케이션을 재시작해주세요."}
     except Exception as exc:
         logger.error("데이터베이스 설정 업데이트 실패: %s", exc, exc_info=True)
+        # 임시 파일 정리
+        if "tmp_path" in locals() and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
         raise HTTPException(status_code=500, detail=f"설정 업데이트 실패: {exc}") from exc
 
 
