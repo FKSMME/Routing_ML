@@ -69,12 +69,21 @@ models/tb_projector/*.tsv
 models/tb_projector/*.ckpt*
 models/tb_projector/events.out.*
 models/tb_projector/*.pbtxt
+models/tb_projector/checkpoint
 
 # Model training artifacts and generated data
 models/default/*.json
 models/default/*.pkl
 models/default/*.bin
 
+# 3D model files (large binary files)
+frontend-*/public/models/*.glb
+frontend-*/public/models/*.gltf
+*.glb
+*.gltf
+
+# Windows null file
+nul
+
 # SQLite memory database
-:memory:
 :memory:
