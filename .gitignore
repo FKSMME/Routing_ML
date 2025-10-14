@@ -61,3 +61,20 @@ deliverables/exports/
 
 # Session logs
 작업이력_*_Session*.md
+.venv/
+.venv_old/
+
+# TensorBoard projector data (large TSV files)
+models/tb_projector/*.tsv
+models/tb_projector/*.ckpt*
+models/tb_projector/events.out.*
+models/tb_projector/*.pbtxt
+
+# Model training artifacts and generated data
+models/default/*.json
+models/default/*.pkl
+models/default/*.bin
+
+# SQLite memory database
+:memory:
+:memory:
