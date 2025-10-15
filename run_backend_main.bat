@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Routing-ML Main Backend Service
-echo   통합 백엔드 서비스 (훈련 + 예측)
+echo   Integrated Backend Service (Training + Prediction)
 echo   Port: 8000
 echo ========================================
 echo.
@@ -17,8 +18,7 @@ if not exist ".venv\Scripts\python.exe" (
 
 echo Starting Main Backend Service on http://0.0.0.0:8000
 echo API Docs: http://localhost:8000/docs
-echo.
-echo 내부망 접속 주소: http://10.204.2.28:8000
+echo Internal Network: http://10.204.2.28:8000
 echo.
 
 REM Set environment variables from .env

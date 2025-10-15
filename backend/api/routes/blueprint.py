@@ -388,13 +388,62 @@ def generate_class(node: BlueprintNode, edges: List[BlueprintEdge]) -> str:
 @router.websocket("/realtime")
 async def realtime_execution_tracking(websocket: WebSocket):
     """
-    WebSocket for real-time execution tracking
+    WebSocket for real-time execution tracking with JWT authentication
 
     Sends execution events as functions are called during runtime
+
+    Authentication: Send JWT token as first message {"token": "your_jwt_token"}
     """
     await websocket.accept()
-    logger.info("WebSocket connection established for execution tracking")
+    logger.info("WebSocket connection established, awaiting authentication")
 
+    # Authenticate user with JWT token
+    try:
+        # Wait for authentication message
+        auth_message = await websocket.receive_json()
+        token = auth_message.get("token")
+
+        if not token:
+            await websocket.send_json({
+                "type": "error",
+                "message": "Authentication required: send {\"token\": \"your_jwt_token\"}"
+            })
+            await websocket.close(code=1008)  # Policy violation
+            return
+
+        # Verify JWT token
+        from backend.api.session_manager import get_jwt_manager
+        jwt_manager = get_jwt_manager()
+
+        try:
+            payload = jwt_manager.decode_token(token)
+            username = payload.get("sub")
+
+            if not username:
+                raise ValueError("Invalid token payload")
+
+            logger.info(f"WebSocket authenticated for user: {username}")
+
+            await websocket.send_json({
+                "type": "authenticated",
+                "username": username
+            })
+
+        except Exception as e:
+            logger.warning(f"WebSocket authentication failed: {e}")
+            await websocket.send_json({
+                "type": "error",
+                "message": "Authentication failed: invalid or expired token"
+            })
+            await websocket.close(code=1008)  # Policy violation
+            return
+
+    except Exception as e:
+        logger.error(f"WebSocket authentication error: {e}")
+        await websocket.close(code=1011)  # Internal error
+        return
+
+    # Main WebSocket loop (authenticated)
     try:
         while True:
             # In a real implementation, this would hook into Python's trace system
@@ -404,16 +453,18 @@ async def realtime_execution_tracking(websocket: WebSocket):
             if message == "ping":
                 await websocket.send_json({
                     "type": "pong",
-                    "timestamp": "2025-10-02T12:00:00Z"
+                    "timestamp": datetime.now().isoformat(),
+                    "user": username
                 })
             elif message == "start_tracking":
                 await websocket.send_json({
                     "type": "tracking_started",
-                    "modules": ["trainer_ml", "predictor_ml", "database"]
+                    "modules": ["trainer_ml", "predictor_ml", "database"],
+                    "user": username
                 })
 
     except WebSocketDisconnect:
-        logger.info("WebSocket disconnected")
+        logger.info(f"WebSocket disconnected for user: {username}")
 
 
 __all__ = ["router"]
