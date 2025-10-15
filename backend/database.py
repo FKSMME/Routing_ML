@@ -19,6 +19,12 @@ from backend.demo_data import (
 
 import pandas as pd
 
+try:
+    from common.config_store import DataSourceConfig, workflow_config_store
+except Exception:  # pragma: no cover - configuration store may not be available in some contexts
+    DataSourceConfig = None  # type: ignore[assignment]
+    workflow_config_store = None  # type: ignore[assignment]
+
 # pyodbc를 optional로 import (ODBC 라이브러리가 없을 때 대비)
 try:
     import pyodbc
@@ -29,9 +35,18 @@ except ImportError:
 
 from common.datetime_utils import utc_isoformat_z
 from common.logger import get_logger
+from common.datetime_utils import utc_isoformat_z
 from backend.constants import TRAIN_FEATURES
 
 logger = get_logger("database")
+
+_VIEW_CACHE: Dict[str, str] | None = None
+_VIEW_ENV_KEYS: Dict[str, str] = {
+    "item": "MSSQL_ITEM_VIEW",
+    "routing": "MSSQL_ROUTING_VIEW",
+    "work_result": "MSSQL_WORK_RESULT_VIEW",
+    "purchase_order": "MSSQL_PURCHASE_ORDER_VIEW",
+}
 
 _DEMO_MODE = demo_mode_enabled()
 
@@ -275,6 +290,182 @@ class ConnectionPool:
 
 # 전역 연결 풀
 _connection_pool = ConnectionPool()
+
+
+def _load_data_source_config() -> Optional["DataSourceConfig"]:
+    store = globals().get("workflow_config_store")
+    if store is None:
+        return None
+    try:
+        return store.get_data_source_config()
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.warning("workflow_config_store 로부터 데이터 소스 구성을 불러오지 못했습니다: %s", exc)
+        return None
+
+
+def _build_view_cache_from_config(config: Optional["DataSourceConfig"]) -> Dict[str, str]:
+    def _normalize(value: Optional[str], default: str) -> str:
+        text = (value or "").strip()
+        return text or default
+
+    return {
+        "item": _normalize(getattr(config, "item_view", None), VIEW_ITEM_MASTER),
+        "routing": _normalize(getattr(config, "routing_view", None), VIEW_ROUTING),
+        "work_result": _normalize(getattr(config, "work_result_view", None), VIEW_WORK_RESULT),
+        "purchase_order": _normalize(
+            getattr(config, "purchase_order_view", None), VIEW_PURCHASE_ORDER
+        ),
+    }
+
+
+def _update_view_cache(config: Optional["DataSourceConfig"]) -> None:
+    global _VIEW_CACHE
+    _VIEW_CACHE = _build_view_cache_from_config(config)
+
+
+def _ensure_view_cache() -> Dict[str, str]:
+    global _VIEW_CACHE
+    if _VIEW_CACHE is None:
+        refresh_view_names()
+    return _VIEW_CACHE or _build_view_cache_from_config(None)
+
+
+def refresh_view_names() -> None:
+    """Rebuild cached MSSQL view names from the workflow configuration store."""
+
+    config = _load_data_source_config()
+    if config is None and DataSourceConfig is not None:
+        config = DataSourceConfig()
+    _update_view_cache(config)
+
+
+def get_item_view_name() -> str:
+    return _ensure_view_cache()["item"]
+
+
+def get_routing_view_name() -> str:
+    return _ensure_view_cache()["routing"]
+
+
+def get_work_result_view_name() -> str:
+    return _ensure_view_cache()["work_result"]
+
+
+def get_purchase_order_view_name() -> str:
+    return _ensure_view_cache()["purchase_order"]
+
+
+def _apply_runtime_config(config: Optional["DataSourceConfig"]) -> None:
+    if config is None and DataSourceConfig is not None:
+        config = DataSourceConfig()
+
+    def _pick(attr: str, default):
+        value = getattr(config, attr, default) if config is not None else default
+        if isinstance(value, str):
+            value = value.strip()
+        return value if value not in (None, "") else default
+
+    server = _pick("mssql_server", MSSQL_CONFIG["server"])
+    database_name = _pick("mssql_database", MSSQL_CONFIG["database"])
+    user = _pick("mssql_user", MSSQL_CONFIG["user"])
+    password = _pick("mssql_password", MSSQL_CONFIG.get("password", ""))
+    encrypt = bool(_pick("mssql_encrypt", MSSQL_CONFIG.get("encrypt", False)))
+    trust_certificate = bool(
+        _pick("mssql_trust_certificate", MSSQL_CONFIG.get("trust_certificate", True))
+    )
+
+    MSSQL_CONFIG.update(
+        {
+            "server": server,
+            "database": database_name,
+            "user": user,
+            "password": password,
+            "encrypt": encrypt,
+            "trust_certificate": trust_certificate,
+        }
+    )
+
+    os.environ["DB_TYPE"] = "MSSQL"
+    os.environ["MSSQL_SERVER"] = server
+    os.environ["MSSQL_DATABASE"] = database_name
+    os.environ["MSSQL_USER"] = user
+    os.environ["MSSQL_PASSWORD"] = password
+    os.environ["MSSQL_ENCRYPT"] = str(encrypt)
+    os.environ["MSSQL_TRUST_CERTIFICATE"] = str(trust_certificate)
+
+    view_cache = _build_view_cache_from_config(config)
+    for key, env_name in _VIEW_ENV_KEYS.items():
+        os.environ[env_name] = view_cache[key]
+
+    _update_view_cache(config)
+
+    # Reset pooled connections so new settings take effect immediately.
+    with _connection_pool.lock:
+        for conn in list(_connection_pool.connections):
+            try:
+                conn.close()
+            except Exception:  # pragma: no cover - best effort cleanup
+                pass
+        _connection_pool.connections.clear()
+
+
+def update_mssql_runtime_config(
+    *,
+    server: str,
+    database: str,
+    user: str,
+    password: str = "",
+    encrypt: bool = False,
+    trust_certificate: bool = True,
+    item_view: Optional[str] = None,
+    routing_view: Optional[str] = None,
+    work_result_view: Optional[str] = None,
+    purchase_order_view: Optional[str] = None,
+    persist: bool = True,
+) -> None:
+    """Update MSSQL runtime configuration and optionally persist it to the workflow store."""
+
+    normalized_server = (server or "").strip()
+    if not normalized_server:
+        raise ValueError("MSSQL server must not be blank.")
+
+    config: Optional["DataSourceConfig"] = None
+    if DataSourceConfig is not None:
+        if persist and workflow_config_store is not None:
+            try:
+                config = workflow_config_store.get_data_source_config()
+            except Exception as exc:  # pragma: no cover - defensive logging
+                logger.warning("데이터 소스 구성을 불러오지 못했습니다: %s", exc)
+        if config is None:
+            config = DataSourceConfig()
+
+        config.mssql_server = normalized_server
+        config.mssql_database = (database or config.mssql_database).strip() or config.mssql_database
+        config.mssql_user = (user or config.mssql_user).strip() or config.mssql_user
+        config.mssql_password = password or ""
+        config.mssql_encrypt = bool(encrypt)
+        config.mssql_trust_certificate = bool(trust_certificate)
+
+        if item_view is not None:
+            config.item_view = (item_view or "").strip() or VIEW_ITEM_MASTER
+        if routing_view is not None:
+            config.routing_view = (routing_view or "").strip() or VIEW_ROUTING
+        if work_result_view is not None:
+            config.work_result_view = (work_result_view or "").strip() or VIEW_WORK_RESULT
+        if purchase_order_view is not None:
+            config.purchase_order_view = (purchase_order_view or "").strip() or VIEW_PURCHASE_ORDER
+
+        if persist and workflow_config_store is not None:
+            workflow_config_store.update_data_source_config(config)
+
+    _apply_runtime_config(config)
+
+
+def _bootstrap_runtime_config_from_store() -> None:
+    """Synchronise runtime configuration with persisted workflow settings."""
+
+    config = _load_data_source_config()
+    _apply_runtime_config(config)
 
 
 class CacheStats:

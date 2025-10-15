@@ -1,0 +1,848 @@
+{
+  "id": "fksm-proc-detail-profile",
+  "name": "FKSM P_BOP_PROC_DETAIL 프로파일",
+  "description": "FKSM 라우팅 데이터구조.xlsx의 P_BOP_PROC_DETAIL 시트 형식 (93개 컬럼)",
+  "mappings": [
+    {
+      "routing_field": "id",
+      "db_column": "ID",
+      "display_name": "ID",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "company_code",
+      "db_column": "CoCd",
+      "display_name": "CoCd",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "1000",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "plant_code",
+      "db_column": "PlantCd",
+      "display_name": "PlantCd",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "FKSM",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "item_code",
+      "db_column": "ITEM_CD",
+      "display_name": "ITEM_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "routing_no",
+      "db_column": "ROUT_NO",
+      "display_name": "ROUT_NO",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "seq",
+      "db_column": "PROC_SEQ",
+      "display_name": "PROC_SEQ",
+      "data_type": "number",
+      "is_required": true,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "WC_CD",
+      "db_column": "WC_CD",
+      "display_name": "WC_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "INSIDE_FLG",
+      "db_column": "INSIDE_FLG",
+      "display_name": "INSIDE_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "Y",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RES_CD",
+      "db_column": "RES_CD",
+      "display_name": "RES_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ROUT_ORDER",
+      "db_column": "ROUT_ORDER",
+      "display_name": "ROUT_ORDER",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "JOB_CD",
+      "db_column": "JOB_CD",
+      "display_name": "JOB_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MFG_LT",
+      "db_column": "MFG_LT",
+      "display_name": "MFG_LT",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "TIME_UNIT",
+      "db_column": "TIME_UNIT",
+      "display_name": "TIME_UNIT",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "run_time",
+      "db_column": "RUN_TIME",
+      "display_name": "RUN_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "setup_time",
+      "db_column": "SETUP_TIME",
+      "display_name": "SETUP_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "wait_time",
+      "db_column": "WAIT_TIME",
+      "display_name": "WAIT_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MOVE_TIME",
+      "db_column": "MOVE_TIME",
+      "display_name": "MOVE_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MOVE_QTY",
+      "db_column": "MOVE_QTY",
+      "display_name": "MOVE_QTY",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "QUEUE_TIME",
+      "db_column": "QUEUE_TIME",
+      "display_name": "QUEUE_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_QTY",
+      "db_column": "RUN_TIME_QTY",
+      "display_name": "RUN_TIME_QTY",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_UNIT",
+      "db_column": "RUN_TIME_UNIT",
+      "display_name": "RUN_TIME_UNIT",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MILESTONE_FLG",
+      "db_column": "MILESTONE_FLG",
+      "display_name": "MILESTONE_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "INSP_FLG",
+      "db_column": "INSP_FLG",
+      "display_name": "INSP_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OVERLAP_OPR",
+      "db_column": "OVERLAP_OPR",
+      "display_name": "OVERLAP_OPR",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OVERLAP_LT",
+      "db_column": "OVERLAP_LT",
+      "display_name": "OVERLAP_LT",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SUBCONTRACT_PRC",
+      "db_column": "SUBCONTRACT_PRC",
+      "display_name": "SUBCONTRACT_PRC",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "CUR_CD",
+      "db_column": "CUR_CD",
+      "display_name": "CUR_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "BP_CD",
+      "db_column": "BP_CD",
+      "display_name": "BP_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "TAX_TYPE",
+      "db_column": "TAX_TYPE",
+      "display_name": "TAX_TYPE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_RULE_PLAN",
+      "db_column": "RUN_TIME_RULE_PLAN",
+      "display_name": "RUN_TIME_RULE_PLAN",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_RULE_SCHL",
+      "db_column": "RUN_TIME_RULE_SCHL",
+      "display_name": "RUN_TIME_RULE_SCHL",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_PLAN",
+      "db_column": "RUN_TIME_PLAN",
+      "display_name": "RUN_TIME_PLAN",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RUN_TIME_SCHL",
+      "db_column": "RUN_TIME_SCHL",
+      "display_name": "RUN_TIME_SCHL",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_TIME_IN_HOUR_PLAN",
+      "db_column": "SETUP_TIME_IN_HOUR_PLAN",
+      "display_name": "SETUP_TIME_IN_HOUR_PLAN",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_TIME_IN_HOUR",
+      "db_column": "SETUP_TIME_IN_HOUR",
+      "display_name": "SETUP_TIME_IN_HOUR",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_TIME_RULE",
+      "db_column": "SETUP_TIME_RULE",
+      "display_name": "SETUP_TIME_RULE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "WHEN_TO_SETUP_RULE",
+      "db_column": "WHEN_TO_SETUP_RULE",
+      "display_name": "WHEN_TO_SETUP_RULE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "WAIT_TIME_IN_HOUR",
+      "db_column": "WAIT_TIME_IN_HOUR",
+      "display_name": "WAIT_TIME_IN_HOUR",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MOVE_TIME_IN_HOUR",
+      "db_column": "MOVE_TIME_IN_HOUR",
+      "display_name": "MOVE_TIME_IN_HOUR",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "QUEUE_TIME_IN_HOUR",
+      "db_column": "QUEUE_TIME_IN_HOUR",
+      "display_name": "QUEUE_TIME_IN_HOUR",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ALLOC_RULE",
+      "db_column": "ALLOC_RULE",
+      "display_name": "ALLOC_RULE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SELECT_RULE",
+      "db_column": "SELECT_RULE",
+      "display_name": "SELECT_RULE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "FREE_CHECK_FLG",
+      "db_column": "FREE_CHECK_FLG",
+      "display_name": "FREE_CHECK_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "HOLD_TEMP_FLG",
+      "db_column": "HOLD_TEMP_FLG",
+      "display_name": "HOLD_TEMP_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NEXT_PROC_SEQ",
+      "db_column": "NEXT_PROC_SEQ",
+      "display_name": "NEXT_PROC_SEQ",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OPR_SEQ",
+      "db_column": "OPR_SEQ",
+      "display_name": "OPR_SEQ",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_BASE_CD",
+      "db_column": "SETUP_BASE_CD",
+      "display_name": "SETUP_BASE_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "CROSS_BREAK_RULE",
+      "db_column": "CROSS_BREAK_RULE",
+      "display_name": "CROSS_BREAK_RULE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OVERLAP_TYPE",
+      "db_column": "OVERLAP_TYPE",
+      "display_name": "OVERLAP_TYPE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OVERLAP_VALUE",
+      "db_column": "OVERLAP_VALUE",
+      "display_name": "OVERLAP_VALUE",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "PROD_RATE",
+      "db_column": "PROD_RATE",
+      "display_name": "PROD_RATE",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_RSC_GRP_CD",
+      "db_column": "SETUP_RSC_GRP_CD",
+      "display_name": "SETUP_RSC_GRP_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "SETUP_RSC_CD",
+      "db_column": "SETUP_RSC_CD",
+      "display_name": "SETUP_RSC_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RSC_SCHEDULED_FLG",
+      "db_column": "RSC_SCHEDULED_FLG",
+      "display_name": "RSC_SCHEDULED_FLG",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "AttachNo",
+      "db_column": "AttachNo",
+      "display_name": "AttachNo",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ROUT_DOC",
+      "db_column": "ROUT_DOC",
+      "display_name": "ROUT_DOC",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "OP_DRAW_NO",
+      "db_column": "OP_DRAW_NO",
+      "display_name": "OP_DRAW_NO",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ROUT_SIZE",
+      "db_column": "ROUT_SIZE",
+      "display_name": "ROUT_SIZE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_RUN_COST_PER_HR",
+      "db_column": "STD_RUN_COST_PER_HR",
+      "display_name": "STD_RUN_COST_PER_HR",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_SUBCONTRACT_PRC",
+      "db_column": "STD_SUBCONTRACT_PRC",
+      "display_name": "STD_SUBCONTRACT_PRC",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_LABOR_COST",
+      "db_column": "STD_LABOR_COST",
+      "display_name": "STD_LABOR_COST",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_DIR_EXPENSE",
+      "db_column": "STD_DIR_EXPENSE",
+      "display_name": "STD_DIR_EXPENSE",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_INDIR_LABOR_COST",
+      "db_column": "STD_INDIR_LABOR_COST",
+      "display_name": "STD_INDIR_LABOR_COST",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "STD_INDIR_EXPENSE",
+      "db_column": "STD_INDIR_EXPENSE",
+      "display_name": "STD_INDIR_EXPENSE",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "VALID_FROM_DT",
+      "db_column": "VALID_FROM_DT",
+      "display_name": "VALID_FROM_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "VALID_TO_DT",
+      "db_column": "VALID_TO_DT",
+      "display_name": "VALID_TO_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_PROGRAM",
+      "db_column": "NC_PROGRAM",
+      "display_name": "NC_PROGRAM",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_PROGRAM_WRITER",
+      "db_column": "NC_PROGRAM_WRITER",
+      "display_name": "NC_PROGRAM_WRITER",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_WRITE_DATE",
+      "db_column": "NC_WRITE_DATE",
+      "display_name": "NC_WRITE_DATE",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_REVIEWER",
+      "db_column": "NC_REVIEWER",
+      "display_name": "NC_REVIEWER",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_REVIEW_DT",
+      "db_column": "NC_REVIEW_DT",
+      "display_name": "NC_REVIEW_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "PRESSURE_USE",
+      "db_column": "PRESSURE_USE",
+      "display_name": "PRESSURE_USE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "INSRT_USER_ID",
+      "db_column": "INSRT_USER_ID",
+      "display_name": "INSRT_USER_ID",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "INSRT_DT",
+      "db_column": "INSRT_DT",
+      "display_name": "INSRT_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "UPDT_USER_ID",
+      "db_column": "UPDT_USER_ID",
+      "display_name": "UPDT_USER_ID",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "UPDT_DT",
+      "db_column": "UPDT_DT",
+      "display_name": "UPDT_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "FIX_RUN_TIME",
+      "db_column": "FIX_RUN_TIME",
+      "display_name": "FIX_RUN_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "REMARK",
+      "db_column": "REMARK",
+      "display_name": "REMARK",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "CUST_SIZE",
+      "db_column": "CUST_SIZE",
+      "display_name": "CUST_SIZE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "MTMG_NUMB",
+      "db_column": "MTMG_NUMB",
+      "display_name": "MTMG_NUMB",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "D_ITEM_CD",
+      "db_column": "D_ITEM_CD",
+      "display_name": "D_ITEM_CD",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RAW_MATL_SIZE",
+      "db_column": "RAW_MATL_SIZE",
+      "display_name": "RAW_MATL_SIZE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "JAW_SIZE",
+      "db_column": "JAW_SIZE",
+      "display_name": "JAW_SIZE",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "VALIDITY",
+      "db_column": "VALIDITY",
+      "display_name": "VALIDITY",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "PROGRAM_REMARK",
+      "db_column": "PROGRAM_REMARK",
+      "display_name": "PROGRAM_REMARK",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "BATCH_OPER",
+      "db_column": "BATCH_OPER",
+      "display_name": "BATCH_OPER",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ACT_RUN_TIME",
+      "db_column": "ACT_RUN_TIME",
+      "display_name": "ACT_RUN_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "ACT_SETUP_TIME",
+      "db_column": "ACT_SETUP_TIME",
+      "display_name": "ACT_SETUP_TIME",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "DocYn",
+      "db_column": "DocYn",
+      "display_name": "DocYn",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "PROC_REMARK",
+      "db_column": "PROC_REMARK",
+      "display_name": "PROC_REMARK",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_UPDATER",
+      "db_column": "NC_UPDATER",
+      "display_name": "NC_UPDATER",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "NC_UPDATE_DT",
+      "db_column": "NC_UPDATE_DT",
+      "display_name": "NC_UPDATE_DT",
+      "data_type": "date",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "GROSS_WEIGHT",
+      "db_column": "GROSS_WEIGHT",
+      "display_name": "GROSS_WEIGHT",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": null,
+      "transform_rule": null
+    }
+  ],
+  "created_by": "system",
+  "created_at": "2025-10-15T00:00:00",
+  "updated_at": "2025-10-15T00:00:00",
+  "is_active": true
+}

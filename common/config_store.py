@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
+from common.datetime_utils import utc_isoformat
 from common.sql_schema import (
     DEFAULT_POWER_QUERY_PROFILES,
     DEFAULT_SQL_OUTPUT_COLUMNS,
@@ -417,6 +418,16 @@ class DataSourceConfig:
             ),
         ]
     )
+    mssql_server: str = "K3-DB.ksm.co.kr,1433"
+    mssql_database: str = "KsmErp"
+    mssql_user: str = "FKSM_BI"
+    mssql_password: str = ""
+    mssql_encrypt: bool = False
+    mssql_trust_certificate: bool = True
+    item_view: str = "dbo.BI_ITEM_INFO_VIEW"
+    routing_view: str = "dbo.BI_ROUTING_HIS_VIEW"
+    work_result_view: str = "dbo.BI_WORK_ORDER_RESULTS"
+    purchase_order_view: str = "dbo.BI_PUR_PO_VIEW"
     version_hint: str = "datasource-config-v2"
 
     def to_dict(self) -> Dict[str, Any]:
@@ -425,6 +436,16 @@ class DataSourceConfig:
             "default_table": self.default_table,
             "backup_paths": list(self.backup_paths),
             "table_profiles": list(self.table_profiles),
+            "mssql_server": self.mssql_server,
+            "mssql_database": self.mssql_database,
+            "mssql_user": self.mssql_user,
+            "mssql_password": self.mssql_password,
+            "mssql_encrypt": self.mssql_encrypt,
+            "mssql_trust_certificate": self.mssql_trust_certificate,
+            "item_view": self.item_view,
+            "routing_view": self.routing_view,
+            "work_result_view": self.work_result_view,
+            "purchase_order_view": self.purchase_order_view,
             "column_overrides": {k: list(v) for k, v in self.column_overrides.items()},
             "allow_gui_override": self.allow_gui_override,
             "shading_palette": dict(self.shading_palette),
@@ -448,6 +469,16 @@ class DataSourceConfig:
             default_table=data.get("default_table", "dbo_BI_ITEM_INFO_VIEW"),
             backup_paths=data.get("backup_paths", []),
             table_profiles=data.get("table_profiles", cls().table_profiles),
+            mssql_server=str(data.get("mssql_server", "K3-DB.ksm.co.kr,1433")),
+            mssql_database=str(data.get("mssql_database", "KsmErp")),
+            mssql_user=str(data.get("mssql_user", "FKSM_BI")),
+            mssql_password=str(data.get("mssql_password", "")),
+            mssql_encrypt=bool(data.get("mssql_encrypt", False)),
+            mssql_trust_certificate=bool(data.get("mssql_trust_certificate", True)),
+            item_view=str(data.get("item_view", "dbo.BI_ITEM_INFO_VIEW")),
+            routing_view=str(data.get("routing_view", "dbo.BI_ROUTING_HIS_VIEW")),
+            work_result_view=str(data.get("work_result_view", "dbo.BI_WORK_ORDER_RESULTS")),
+            purchase_order_view=str(data.get("purchase_order_view", "dbo.BI_PUR_PO_VIEW")),
             column_overrides={k: list(v) for k, v in data.get("column_overrides", {}).items()},
             allow_gui_override=bool(data.get("allow_gui_override", True)),
             shading_palette=data.get("shading_palette", cls().shading_palette),

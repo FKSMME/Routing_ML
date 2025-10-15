@@ -1,6 +1,6 @@
-import { useState } from \"react\";
-import { SlidersHorizontal } from \"lucide-react\";
-import { useBackgroundSettings } from \"@store/backgroundSettings\";
+import { useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
+import { useBackgroundSettings } from "@store/backgroundSettings";
 
 export function BackgroundControls() {
   const {

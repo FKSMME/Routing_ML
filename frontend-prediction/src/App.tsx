@@ -2,7 +2,8 @@ import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
 import { MainNavigation } from "@components/MainNavigation";
-import { FullScreen3DBackground } from "@components/FullScreen3DBackground";\r\nimport { BackgroundControls } from "@components/BackgroundControls";
+import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
+import { BackgroundControls } from "@components/BackgroundControls";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";
 import { MetricsPanel } from "@components/MetricsPanel";
@@ -18,6 +19,7 @@ const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/Routing
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
+const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
 import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { TimelinePanel } from "@components/TimelinePanel";
@@ -73,6 +75,12 @@ const ADMIN_NAVIGATION_ITEMS = [
     id: "data-relationship",
     label: "데이터 관계 설정",
     description: "학습 → 예측 → 출력 매핑",
+    icon: <Settings2 size={18} />,
+  },
+  {
+    id: "profile-management",
+    label: "프로파일 관리",
+    description: "데이터 매핑 프로파일 편집",
     icon: <Settings2 size={18} />,
   },
 ];
@@ -301,6 +309,9 @@ export default function App() {
       break;
     case "data-relationship":
       workspace = <Suspense fallback={loadingFallback}><DataRelationshipManager /></Suspense>;
+      break;
+    case "profile-management":
+      workspace = <Suspense fallback={loadingFallback}><ProfileManagementWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

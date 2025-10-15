@@ -279,18 +279,95 @@ class DataMappingService:
             # 외부 소스에서 가져옴 (공정그룹 관리 등)
             source_config = getattr(rule, 'source_config', None)
             if source_config and isinstance(source_config, dict):
-                # TODO: 공정그룹 관리 등 외부 소스 연동 구현
-                # 현재는 row_data에서 먼저 찾고, 없으면 default_value 사용
-                external_field = source_config.get('field', rule.routing_field)
-                value = row_data.get(external_field)
-                if value is not None:
-                    return value
+                source_cfg_type = source_config.get('type')
+
+                if source_cfg_type == 'process_group':
+                    # 프로세스 그룹에서 값 가져오기
+                    value = self._get_value_from_process_group(
+                        source_config=source_config,
+                        row_data=row_data,
+                    )
+                    if value is not None:
+                        return value
+                else:
+                    # 다른 external_source 타입은 row_data에서 먼저 찾음
+                    external_field = source_config.get('field', rule.routing_field)
+                    value = row_data.get(external_field)
+                    if value is not None:
+                        return value
 
             # 외부 소스 연동이 안 되어 있으면 기본값 사용
             return rule.default_value
 
         # 알 수 없는 타입은 ml_prediction과 동일하게 처리
         return row_data.get(rule.routing_field, rule.default_value)
+
+    def _get_value_from_process_group(
+        self,
+        source_config: Dict[str, Any],
+        row_data: Dict[str, Any],
+    ) -> Optional[Any]:
+        """
+        프로세스 그룹에서 값을 가져옵니다.
+
+        Args:
+            source_config: 소스 설정 {'type': 'process_group', 'group_id': '...', 'field': '...'}
+            row_data: 현재 행 데이터
+
+        Returns:
+            프로세스 그룹에서 가져온 값 또는 None
+        """
+        try:
+            from backend.models.process_groups import ProcessGroup, session_scope
+
+            group_id = source_config.get('group_id')
+            field_key = source_config.get('field')
+
+            if not group_id or not field_key:
+                logger.warning(
+                    f"Invalid process_group source_config: {source_config}"
+                )
+                return None
+
+            # 프로세스 그룹 조회
+            with session_scope() as session:
+                group = (
+                    session.query(ProcessGroup)
+                    .filter(
+                        ProcessGroup.id == group_id,
+                        ProcessGroup.deleted_at.is_(None),
+                        ProcessGroup.is_active == True,
+                    )
+                    .first()
+                )
+
+                if not group:
+                    logger.warning(f"Process group not found: {group_id}")
+                    return None
+
+                # fixed_values에서 값 찾기
+                fixed_values = group.fixed_values or {}
+                if field_key in fixed_values:
+                    return fixed_values[field_key]
+
+                # 컬럼 정의에서 기본값 찾기
+                default_columns = group.default_columns or []
+                for col in default_columns:
+                    if col.get('key') == field_key:
+                        # 컬럼이 존재하지만 fixed_values에 없으면 None 반환
+                        return None
+
+                logger.debug(
+                    f"Field '{field_key}' not found in process group {group_id}"
+                )
+                return None
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get value from process group: {e}",
+                exc_info=True,
+            )
+            return None
 
     def _convert_value(self, value: Any, data_type: str) -> Any:
         """값을 지정된 데이터 타입으로 변환합니다."""
