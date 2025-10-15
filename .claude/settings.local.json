@@ -45,7 +45,9 @@
       "Bash(time:*)",
       "Bash(git log:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(then echo \".env exists\")",
+      "Bash(else echo \".env does not exist\")"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,7 @@
 import { CardShell } from "@components/common/CardShell";
 import { useRoutingStore } from "@store/routingStore";
-import { Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 
 interface MatrixComboSummary {
@@ -37,6 +37,8 @@ const cellStyle: CSSProperties = {
   borderBottom: "1px solid var(--border-subtle)",
 };
 
+const ITEMS_PER_PAGE = 20;
+
 export function RoutingMatrixWorkspace() {
   const definitions = useRoutingStore((state) => state.routingMatrixDefinitions);
   const timeline = useRoutingStore((state) => state.timeline);
@@ -45,7 +47,13 @@ export function RoutingMatrixWorkspace() {
   const removeDefinition = useRoutingStore((state) => state.removeRoutingMatrixDefinition);
   const setDefinitions = useRoutingStore((state) => state.setRoutingMatrixDefinitions);
 
+  const [currentPage, setCurrentPage] = useState(1);
+
   const hasDefinitions = definitions.length > 0;
+  const totalPages = Math.max(1, Math.ceil(definitions.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedDefinitions = definitions.slice(startIndex, endIndex);
 
   const timelineCombos = useMemo<MatrixComboSummary[]>(() => {
     const combos = new Map<string, MatrixComboSummary>();
@@ -73,6 +81,13 @@ export function RoutingMatrixWorkspace() {
   }, [timeline]);
 
   const hasTimelineCombos = timelineCombos.length > 0;
+
+  // Reset to page 1 when definitions length changes
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   const handleAddRow = useCallback(() => {
     addDefinition();
@@ -169,7 +184,7 @@ export function RoutingMatrixWorkspace() {
                     </td>
                   </tr>
                 ) : (
-                  definitions.map((row) => (
+                  paginatedDefinitions.map((row) => (
                     <tr key={row.id}>
                       <td style={cellStyle}>
                         <input
@@ -217,6 +232,45 @@ export function RoutingMatrixWorkspace() {
                 )}
               </tbody>
             </table>
+
+            {hasDefinitions && totalPages > 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "1rem 0.5rem",
+                  borderTop: "1px solid var(--border-subtle)",
+                }}
+              >
+                <span style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+                  전체 {definitions.length}개 중 {startIndex + 1}-{Math.min(endIndex, definitions.length)}
+                </span>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button
+                    type="button"
+                    className="workspace-toolbar__btn"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    title="이전 페이지"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span style={{ padding: "0 0.5rem", fontSize: "0.875rem" }}>
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    className="workspace-toolbar__btn"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    title="다음 페이지"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </CardShell>
       </section>

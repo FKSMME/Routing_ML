@@ -30,11 +30,13 @@ from backend.api.routes.mssql import router as mssql_router
 from backend.api.routes.metrics import router as metrics_router
 from backend.api.routes.onprem_nlp import router as onprem_nlp_router
 from backend.api.routes.prediction import router as prediction_router
+from backend.api.routes.process_groups import router as process_groups_router
 from backend.api.routes.routing import router as routing_router
 from backend.api.routes.rsl import router as rsl_router
 from backend.api.routes.trainer import router as trainer_router
 from backend.api.routes.training import router as training_router
 from backend.api.routes.tensorboard_projector import router as tensorboard_router
+from backend.api.routes.system_overview import router as system_overview_router
 from backend.api.routes.view_explorer import router as view_explorer_router
 # from backend.api.routes.weekly_report import router as weekly_report_router  # TODO: weekly_report_service 미구현
 from backend.api.routes.workflow import router as workflow_router
@@ -74,11 +76,13 @@ def create_app() -> FastAPI:
     app.include_router(workspace_router)
     app.include_router(audit_router)
     app.include_router(routing_groups_router)
+    app.include_router(process_groups_router)
     app.include_router(routing_router)
     app.include_router(master_data_router)
     app.include_router(mssql_router)
     app.include_router(rsl_router)
     app.include_router(algorithm_viz_router)
+    app.include_router(system_overview_router)
     app.include_router(view_explorer_router)
 
     get_logger("api.app").info("FastAPI 애플리케이션 초기화 완료")

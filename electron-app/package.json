@@ -22,8 +22,12 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
-      "!node_modules/**/*"
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "index.html",
+      "styles.css",
+      "package.json"
     ],
     "win": {
       "target": [
@@ -40,7 +44,8 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico"
+      "icon": "build/assets/icon.ico",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,

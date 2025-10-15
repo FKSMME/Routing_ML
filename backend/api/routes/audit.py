@@ -139,6 +139,43 @@ def read_persisted_ui_audit_events(limit: int | None = None) -> list[dict[str, A
     return events
 
 
+@router.get("/ui/events")
+async def get_ui_audit_events(
+    limit: int | None = None,
+    action_filter: str | None = None,
+    username_filter: str | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Retrieve persisted UI audit events.
+
+    Args:
+        limit: Maximum number of events to return (most recent)
+        action_filter: Filter events by action name (case-insensitive substring match)
+        username_filter: Filter events by username (case-insensitive substring match)
+
+    Returns:
+        List of audit event records
+    """
+    events = read_persisted_ui_audit_events(limit=limit)
+
+    # Apply filters if provided
+    if action_filter:
+        action_lower = action_filter.lower()
+        events = [
+            e for e in events
+            if e.get("action") and action_lower in e["action"].lower()
+        ]
+
+    if username_filter:
+        username_lower = username_filter.lower()
+        events = [
+            e for e in events
+            if e.get("username") and username_lower in e["username"].lower()
+        ]
+
+    return events
+
+
 @router.post(
     "/ui/batch",
     status_code=status.HTTP_202_ACCEPTED,

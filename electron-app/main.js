@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const os = require('os');
 const http = require('http');
@@ -8,6 +9,33 @@ let mainWindow;
 let projectPath = null;
 let serverProcesses = {};
 let statusCheckInterval = null;
+
+// 설정 파일 경로
+const configPath = path.join(app.getPath('userData'), 'config.json');
+
+// 설정 로드
+function loadConfig() {
+  try {
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Failed to load config:', error);
+  }
+  return { projectPath: null, windowSize: null };
+}
+
+// 설정 저장
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Failed to save config:', error);
+    return false;
+  }
+}
 
 // 서비스 설정
 const SERVICES = {
@@ -50,9 +78,13 @@ const SERVICES = {
 };
 
 function createWindow() {
+  // 저장된 설정 불러오기
+  const config = loadConfig();
+  const windowSize = config.windowSize || { width: 1400, height: 900 };
+
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: windowSize.width,
+    height: windowSize.height,
     minWidth: 1200,
     minHeight: 700,
     backgroundColor: '#1e3c72',
@@ -68,6 +100,29 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  // 저장된 프로젝트 경로 복원
+  if (config.projectPath) {
+    projectPath = config.projectPath;
+  }
+
+  // 창 크기 변경 시 저장
+  mainWindow.on('resize', () => {
+    const [width, height] = mainWindow.getSize();
+    saveConfig({
+      projectPath: projectPath,
+      windowSize: { width, height }
+    });
+  });
+
+  // 앱 종료 시 설정 저장
+  mainWindow.on('close', () => {
+    const [width, height] = mainWindow.getSize();
+    saveConfig({
+      projectPath: projectPath,
+      windowSize: { width, height }
+    });
+  });
 
   // 개발자 도구 (개발 시에만)
   // mainWindow.webContents.openDevTools();
