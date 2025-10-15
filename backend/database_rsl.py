@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
 
 from typing import Generator, Iterable, Optional
 
@@ -29,6 +28,7 @@ from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
 from sqlalchemy.sql import expression, sqltypes
 
 from backend.api.config import get_settings
+from common.datetime_utils import utc_now_naive
 
 
 Base = declarative_base()
@@ -67,9 +67,9 @@ class RslGroup(Base):
     last_validated_at = Column(DateTime, nullable=True)
     released_at = Column(DateTime, nullable=True)
     released_by = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now_naive, onupdate=utc_now_naive, nullable=False
     )
 
     steps = relationship(
@@ -96,9 +96,9 @@ class RslStep(Base):
     status = Column(String(32), nullable=False, default="draft")
     tags = Column(MutableList.as_mutable(_json_type()), default=list, nullable=False)
     config = Column(MutableDict.as_mutable(_json_type()), default=dict, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now_naive, onupdate=utc_now_naive, nullable=False
     )
 
     group = relationship("RslGroup", back_populates="steps")
@@ -130,7 +130,7 @@ class RslRuleRef(Base):
         "metadata", MutableDict.as_mutable(_json_type()), default=dict, nullable=False
     )
     is_optional = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False)
 
     step = relationship("RslStep", back_populates="rules")
 
@@ -153,9 +153,9 @@ class UserAccount(Base):
     password_hash = Column(String(255), nullable=False)
     status = Column(String(32), nullable=False, default="pending")
     is_admin = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, default=utc_now_naive, onupdate=utc_now_naive, nullable=False
     )
     approved_at = Column(DateTime, nullable=True)
     rejected_at = Column(DateTime, nullable=True)
@@ -280,4 +280,3 @@ __all__ = [
     "iter_groups",
     "normalize_username",
 ]
-

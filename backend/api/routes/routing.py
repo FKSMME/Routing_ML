@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import os
 import uuid
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -13,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from backend.api.schemas import AuthenticatedUser
 from backend.api.security import require_auth
+from common.datetime_utils import utc_isoformat_z
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/routing", tags=["routing"])
@@ -147,7 +147,7 @@ async def create_output_profile(
 
     # 프로파일 ID 생성
     profile_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat() + "Z"
+    now = utc_isoformat_z()
 
     # 프로파일 데이터 구성
     profile_data = {

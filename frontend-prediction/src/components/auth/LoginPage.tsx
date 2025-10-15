@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LogIn, UserPlus } from "lucide-react";
-import { ThemeToggle } from "../ThemeToggle";\r\nimport { BackgroundControls } from "@components/BackgroundControls";
+import { ThemeToggle } from "../ThemeToggle";
+import { BackgroundControls } from "@components/BackgroundControls";
 import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
 
 interface LoginPageProps {
@@ -234,6 +235,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <p className="pt-2 text-[11px] text-muted-strong">© 2025 KSM. All rights reserved.</p>
         </footer>
-      </CardShell>\r\n      <BackgroundControls />\r\n    </div>
+      </CardShell>
+      <BackgroundControls />
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 """FastAPI 라우터 정의."""
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -31,6 +30,7 @@ from backend.api.schemas import (
 from backend.api.services.prediction_service import prediction_service
 from backend.api.security import require_auth
 from backend.models.routing_groups import RoutingGroup, session_scope
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api", tags=["routing-ml"])
@@ -265,7 +265,7 @@ async def trigger_routing_interface(
             similarity_tier="manual",
             operations=cloned_ops,
         )
-        summary.generated_at = datetime.utcnow().isoformat()
+        summary.generated_at = utc_isoformat()
         routings.append(summary)
 
     formats = [fmt for fmt in (payload.export_formats or []) if isinstance(fmt, str) and fmt.strip()]

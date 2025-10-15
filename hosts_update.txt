@@ -1,0 +1,7 @@
+# FKSM ML Routing System Domain Configuration
+# Copy these lines to C:\Windows\System32\drivers\etc\hosts
+
+10.204.2.28  FKSMMLRT.co.kr
+10.204.2.28  Prediction.FKSMMLRT.co.kr
+10.204.2.28  Training.FKSMMLRT.co.kr
+10.204.2.28  Docs.FKSMMLRT.co.kr
