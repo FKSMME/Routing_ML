@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 
@@ -93,8 +93,9 @@ class ChangePasswordRequest(BaseModel):
     current_password: str = Field(..., min_length=1, description="현재 비밀번호")
     new_password: str = Field(..., min_length=6, description="새 비밀번호 (최소 6자)")
 
-    @validator("new_password")
-    def _validate_password_strength(cls, value: str) -> str:  # noqa: N805
+    @field_validator("new_password")
+    @classmethod
+    def _validate_password_strength(cls, value: str) -> str:
         if len(value) < 6:
             raise ValueError("비밀번호는 최소 6자 이상이어야 합니다")
         return value
@@ -161,12 +162,16 @@ class PredictionRequest(BaseModel):
         description="Whether to include visualization artifacts (TensorBoard, Neo4j)",
     )
 
-    @validator("item_codes", each_item=True, allow_reuse=True)
-    def _strip_item_code(cls, value: str) -> str:  # noqa: N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("item code cannot be empty")
-        return cleaned
+    @field_validator("item_codes")
+    @classmethod
+    def _strip_item_codes(cls, values: List[str]) -> List[str]:
+        cleaned_list: List[str] = []
+        for value in values:
+            trimmed = value.strip()
+            if not trimmed:
+                raise ValueError("item code cannot be empty")
+            cleaned_list.append(trimmed)
+        return cleaned_list
 
 
 
@@ -219,8 +224,9 @@ class OperationStep(BaseModel):
 
     model_config = {"populate_by_name": True}
 
-    @validator("*", pre=True)
-    def _convert_nan_to_none(cls, value):  # noqa: N805
+    @field_validator("*", mode="before")
+    @classmethod
+    def _convert_nan_to_none(cls, value):
         """Convert NaN/nan values from MSSQL to None for all fields."""
         import math
         if value is None:
@@ -348,12 +354,16 @@ class SimilaritySearchRequest(BaseModel):
         False, description="매니페스트의 추가 메타데이터 포함 여부"
     )
 
-    @validator("item_codes", each_item=True)
-    def _strip_search_codes(cls, value: str) -> str:  # noqa: N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("item code cannot be empty")
-        return cleaned
+    @field_validator("item_codes")
+    @classmethod
+    def _strip_search_codes(cls, values: List[str]) -> List[str]:
+        cleaned_list: List[str] = []
+        for value in values:
+            trimmed = value.strip()
+            if not trimmed:
+                raise ValueError("item code cannot be empty")
+            cleaned_list.append(trimmed)
+        return cleaned_list
 
 
 class SimilaritySearchResponse(BaseModel):
@@ -743,12 +753,16 @@ class RslStepCreate(BaseModel):
     config: Dict[str, Any] = Field(default_factory=dict)
     rules: List[RslRuleRefCreate] = Field(default_factory=list)
 
-    @validator("tags", each_item=True)
-    def _strip_tag(cls, value: str) -> str:  # noqa: N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("태그는 비어 있을 수 없습니다")
-        return cleaned
+    @field_validator("tags")
+    @classmethod
+    def _strip_tag(cls, values: List[str]) -> List[str]:
+        cleaned_list: List[str] = []
+        for value in values:
+            trimmed = value.strip()
+            if not trimmed:
+                raise ValueError("태그는 비어 있을 수 없습니다")
+            cleaned_list.append(trimmed)
+        return cleaned_list
 
 
 class RslStepUpdate(BaseModel):
@@ -790,12 +804,16 @@ class RslGroupCreate(BaseModel):
         description="ERP 인터페이스 필요 여부",
     )
 
-    @validator("tags", each_item=True)
-    def _validate_tag(cls, value: str) -> str:  # noqa: N805
-        cleaned = value.strip()
-        if not cleaned:
-            raise ValueError("태그는 비어 있을 수 없습니다")
-        return cleaned
+    @field_validator("tags")
+    @classmethod
+    def _validate_tag(cls, values: List[str]) -> List[str]:
+        cleaned_list: List[str] = []
+        for value in values:
+            trimmed = value.strip()
+            if not trimmed:
+                raise ValueError("태그는 비어 있을 수 없습니다")
+            cleaned_list.append(trimmed)
+        return cleaned_list
 
 
 class RslGroupUpdate(BaseModel):
@@ -1086,19 +1104,36 @@ class DataRelationshipMapping(BaseModel):
 
 class DataMappingRule(BaseModel):
     """
-    하위 호환성을 위한 기존 매핑 규칙.
+    데이터 매핑 규칙.
 
-    Deprecated: DataRelationshipMapping 사용 권장.
+    데이터 소스 타입:
+    - ml_prediction: ML 예측 결과에서 가져옴 (timeline 데이터)
+    - admin_input: 관리자가 직접 입력한 고정 값 (default_value 사용)
+    - external_source: 외부 소스 연결 (공정그룹 관리 등, source_config 사용)
+    - constant: 모든 행에 동일한 고정 값
     """
 
-    routing_field: str = Field(..., min_length=1, description="라우팅 그룹 필드명 (예: 공정명)")
-    db_column: str = Field(..., min_length=1, description="DB 컬럼명 (예: JOB_NM)")
+    routing_field: str = Field(..., min_length=1, description="라우팅 그룹 필드명 (예: seq, process_code)")
+    db_column: str = Field(..., min_length=1, description="DB 컬럼명 (예: PROC_SEQ, JOB_NM)")
     display_name: Optional[str] = Field(None, description="사용자에게 표시할 이름")
     data_type: Literal["string", "number", "boolean", "date"] = Field(
         "string", description="데이터 타입"
     )
     is_required: bool = Field(False, description="필수 필드 여부")
-    default_value: Optional[str] = Field(None, description="기본값")
+    default_value: Optional[str] = Field(None, description="기본값 (admin_input 타입에서 사용)")
+
+    # 데이터 소스 정보
+    source_type: Literal["ml_prediction", "admin_input", "external_source", "constant"] = Field(
+        "ml_prediction", description="데이터 소스 타입"
+    )
+    source_config: Optional[Dict[str, Any]] = Field(
+        None,
+        description="외부 소스 설정 (예: {'type': 'process_group', 'field': 'RES_CD'})"
+    )
+
+    transform_rule: Optional[str] = Field(
+        None, description="변환 규칙 (예: uppercase, lowercase, trim)"
+    )
     description: Optional[str] = Field(None, description="매핑 설명")
 
 
@@ -1152,11 +1187,15 @@ class DataMappingProfileListResponse(BaseModel):
 
 
 class DataMappingApplyRequest(BaseModel):
-    """데이터 매핑 적용 요청 (라우팅 그룹 데이터 → CSV 변환)."""
+    """데이터 매핑 적용 요청 (라우팅 그룹 데이터 → CSV/XLSX 변환)."""
 
     profile_id: str = Field(..., min_length=1, description="적용할 매핑 프로파일 ID")
     routing_group_id: str = Field(..., min_length=1, description="라우팅 그룹 ID")
+    routing_group_data: List[Dict[str, Any]] = Field(
+        ..., description="라우팅 그룹 데이터 (각 행은 dictionary 형식)"
+    )
     preview_only: bool = Field(True, description="미리보기만 할지 여부")
+    export_format: Literal["csv", "xlsx"] = Field("csv", description="출력 파일 형식")
 
 
 class DataMappingApplyResponse(BaseModel):
@@ -1169,5 +1208,5 @@ class DataMappingApplyResponse(BaseModel):
         default_factory=list, description="미리보기 데이터 (최대 10행)"
     )
     total_rows: int = Field(..., ge=0, description="전체 데이터 행 수")
-    csv_path: Optional[str] = Field(None, description="생성된 CSV 파일 경로")
+    csv_path: Optional[str] = Field(None, description="생성된 CSV/XLSX 파일 경로")
     message: str = Field(default="매핑 적용 완료", description="결과 메시지")

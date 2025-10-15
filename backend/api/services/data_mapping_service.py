@@ -195,8 +195,9 @@ class DataMappingService:
 
             for rule in profile.mappings:
                 col_name = rule.display_name or rule.db_column
-                # 라우팅 필드에서 값 추출
-                value = row_data.get(rule.routing_field, rule.default_value)
+
+                # source_type에 따라 값 추출
+                value = self._extract_value_by_source_type(rule, row_data)
 
                 # 데이터 타입 변환
                 if value is not None:
@@ -211,13 +212,23 @@ class DataMappingService:
 
         csv_path: Optional[str] = None
         if not request.preview_only:
-            # CSV 파일 생성
-            csv_path = self._export_to_csv(
-                columns=columns,
-                rows=transformed_rows,
-                routing_group_id=request.routing_group_id,
-                profile_id=request.profile_id,
-            )
+            # 파일 생성 (CSV 또는 XLSX)
+            export_format = getattr(request, 'export_format', 'csv')
+
+            if export_format == 'xlsx':
+                csv_path = self._export_to_xlsx(
+                    columns=columns,
+                    rows=transformed_rows,
+                    routing_group_id=request.routing_group_id,
+                    profile_id=request.profile_id,
+                )
+            else:
+                csv_path = self._export_to_csv(
+                    columns=columns,
+                    rows=transformed_rows,
+                    routing_group_id=request.routing_group_id,
+                    profile_id=request.profile_id,
+                )
 
         return DataMappingApplyResponse(
             profile_id=request.profile_id,
@@ -229,9 +240,55 @@ class DataMappingService:
             message=(
                 f"미리보기 생성 완료 ({len(transformed_rows)}행)"
                 if request.preview_only
-                else f"CSV 파일 생성 완료: {csv_path}"
+                else f"{'XLSX' if export_format == 'xlsx' else 'CSV'} 파일 생성 완료: {csv_path}"
             ),
         )
+
+    def _extract_value_by_source_type(
+        self,
+        rule: DataMappingRule,
+        row_data: Dict[str, Any],
+    ) -> Any:
+        """
+        데이터 소스 타입에 따라 값을 추출합니다.
+
+        Args:
+            rule: 매핑 규칙
+            row_data: 라우팅 그룹 데이터 행
+
+        Returns:
+            추출된 값
+        """
+        source_type = getattr(rule, 'source_type', 'ml_prediction')
+
+        if source_type == 'ml_prediction':
+            # ML 예측 결과에서 가져옴 (timeline 데이터)
+            return row_data.get(rule.routing_field, rule.default_value)
+
+        elif source_type == 'admin_input':
+            # 관리자가 설정한 고정 값 사용
+            return rule.default_value
+
+        elif source_type == 'constant':
+            # 모든 행에 동일한 고정 값
+            return rule.default_value
+
+        elif source_type == 'external_source':
+            # 외부 소스에서 가져옴 (공정그룹 관리 등)
+            source_config = getattr(rule, 'source_config', None)
+            if source_config and isinstance(source_config, dict):
+                # TODO: 공정그룹 관리 등 외부 소스 연동 구현
+                # 현재는 row_data에서 먼저 찾고, 없으면 default_value 사용
+                external_field = source_config.get('field', rule.routing_field)
+                value = row_data.get(external_field)
+                if value is not None:
+                    return value
+
+            # 외부 소스 연동이 안 되어 있으면 기본값 사용
+            return rule.default_value
+
+        # 알 수 없는 타입은 ml_prediction과 동일하게 처리
+        return row_data.get(rule.routing_field, rule.default_value)
 
     def _convert_value(self, value: Any, data_type: str) -> Any:
         """값을 지정된 데이터 타입으로 변환합니다."""
@@ -284,6 +341,103 @@ class DataMappingService:
                 "routing_group_id": routing_group_id,
                 "profile_id": profile_id,
                 "rows": len(rows),
+            },
+        )
+        return str(file_path)
+
+    def _export_to_xlsx(
+        self,
+        columns: List[str],
+        rows: List[Dict[str, Any]],
+        routing_group_id: str,
+        profile_id: str,
+    ) -> str:
+        """
+        데이터를 XLSX 파일로 내보냅니다 (4개 시트 분할).
+
+        시트 구조:
+        - 병합1: 전체 181개 컬럼 (MASTER + DETAIL + CHILD + RES)
+        - P_BOP_PROC_MASTER: 컬럼 1-28
+        - P_BOP_PROC_DETAIL: 컬럼 29-121 (93개)
+        - P_BOP_PROC_CHILD: 컬럼 122-142 (21개)
+        - P_BOP_PROC_RES: 컬럼 143-181 (39개)
+        """
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+
+        # 출력 디렉토리 생성
+        output_dir = Path("output/comprehensive_routing")
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # 파일명 생성
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"routing_{routing_group_id}_{timestamp}.xlsx"
+        file_path = output_dir / filename
+
+        # Workbook 생성
+        wb = Workbook()
+
+        # 시트 분할 정의 (컬럼 인덱스 기준)
+        sheet_config = {
+            "병합1": {"start": 0, "end": len(columns), "columns": columns},
+            "P_BOP_PROC_MASTER": {"start": 0, "end": 28, "columns": columns[0:28]},
+            "P_BOP_PROC_DETAIL": {"start": 28, "end": 121, "columns": columns[28:121]},
+            "P_BOP_PROC_CHILD": {"start": 121, "end": 142, "columns": columns[121:142]},
+            "P_BOP_PROC_RES": {"start": 142, "end": 181, "columns": columns[142:181]},
+        }
+
+        # 헤더 스타일
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+
+        # 각 시트 생성
+        for sheet_idx, (sheet_name, config) in enumerate(sheet_config.items()):
+            if sheet_idx == 0:
+                # 첫 번째 시트는 기본 시트 이름 변경
+                ws = wb.active
+                ws.title = sheet_name
+            else:
+                # 새 시트 추가
+                ws = wb.create_sheet(title=sheet_name)
+
+            sheet_columns = config["columns"]
+            if len(sheet_columns) == 0:
+                # 빈 시트는 건너뛰기
+                continue
+
+            # 헤더 작성
+            for col_idx, col_name in enumerate(sheet_columns, start=1):
+                cell = ws.cell(row=1, column=col_idx, value=col_name)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+
+            # 데이터 작성
+            for row_idx, row_data in enumerate(rows, start=2):
+                for col_idx, col_name in enumerate(sheet_columns, start=1):
+                    value = row_data.get(col_name, "")
+                    # None이나 "nan"을 빈 문자열로 변환
+                    if value is None or value == "nan" or value == "NULL":
+                        value = ""
+                    ws.cell(row=row_idx, column=col_idx, value=value)
+
+            # 컬럼 너비 자동 조정
+            for col_idx, col_name in enumerate(sheet_columns, start=1):
+                # 컬럼명 길이 기준으로 너비 설정 (최소 10, 최대 50)
+                col_width = min(max(len(str(col_name)) + 2, 10), 50)
+                ws.column_dimensions[ws.cell(row=1, column=col_idx).column_letter].width = col_width
+
+        # 파일 저장
+        wb.save(file_path)
+
+        logger.info(
+            f"Exported XLSX: {file_path} ({len(rows)} rows, {len(sheet_config)} sheets)",
+            extra={
+                "routing_group_id": routing_group_id,
+                "profile_id": profile_id,
+                "rows": len(rows),
+                "sheets": len(sheet_config),
             },
         )
         return str(file_path)
