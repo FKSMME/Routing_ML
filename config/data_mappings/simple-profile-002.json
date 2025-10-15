@@ -1,0 +1,47 @@
+{
+  "id": "simple-profile-002",
+  "name": "간단 라우팅 프로파일",
+  "description": "필수 필드만 포함한 간단한 라우팅 프로파일",
+  "mappings": [
+    {
+      "routing_field": "seq",
+      "db_column": "SEQ",
+      "display_name": "순번",
+      "data_type": "number",
+      "is_required": true,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "process_code",
+      "db_column": "PROCESS_CODE",
+      "display_name": "공정",
+      "data_type": "string",
+      "is_required": true,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "run_time",
+      "db_column": "TIME",
+      "display_name": "시간",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": "0",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "JOB_NM",
+      "db_column": "JOB",
+      "display_name": "작업",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "-",
+      "transform_rule": null
+    }
+  ],
+  "created_by": "system",
+  "created_at": "2025-01-15T00:00:00",
+  "updated_at": "2025-01-15T00:00:00",
+  "is_active": true
+}

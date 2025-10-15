@@ -191,3 +191,40 @@ export interface RoutingGroupDetail extends RoutingGroupSummary {
   metadata?: Record<string, unknown> | null;
   owner: string;
 }
+
+// Data Mapping Types
+export type DataMappingSourceType = 'ml_prediction' | 'admin_input' | 'external_source' | 'constant';
+export type DataMappingDataType = 'string' | 'number' | 'boolean' | 'date';
+
+export interface DataMappingRule {
+  routing_field: string;
+  db_column: string;
+  display_name?: string | null;
+  data_type: DataMappingDataType;
+  is_required: boolean;
+  default_value?: string | null;
+  source_type: DataMappingSourceType;
+  source_config?: {
+    type?: string;
+    field?: string;
+    [key: string]: unknown;
+  } | null;
+  transform_rule?: string | null;
+  description?: string | null;
+}
+
+export interface DataMappingProfile {
+  id: string;
+  name: string;
+  description?: string | null;
+  mappings: DataMappingRule[];
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface DataMappingProfileListResponse {
+  profiles: DataMappingProfile[];
+  total: number;
+}

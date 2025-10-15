@@ -1,0 +1,110 @@
+{
+  "id": "sample-profile-001",
+  "name": "기본 라우팅 프로파일",
+  "description": "공정 라우팅 데이터를 DB 형식으로 변환하는 기본 프로파일",
+  "mappings": [
+    {
+      "routing_field": "seq",
+      "db_column": "PROC_SEQ",
+      "display_name": "공정순번",
+      "data_type": "number",
+      "is_required": true,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "process_code",
+      "db_column": "PROC_CD",
+      "display_name": "공정코드",
+      "data_type": "string",
+      "is_required": true,
+      "default_value": null,
+      "transform_rule": null
+    },
+    {
+      "routing_field": "description",
+      "db_column": "PROC_DESC",
+      "display_name": "공정설명",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "run_time",
+      "db_column": "RUN_TIME_MIN",
+      "display_name": "가공시간(분)",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": "0",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "setup_time",
+      "db_column": "SETUP_TIME_MIN",
+      "display_name": "준비시간(분)",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": "0",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "wait_time",
+      "db_column": "WAIT_TIME_MIN",
+      "display_name": "대기시간(분)",
+      "data_type": "number",
+      "is_required": false,
+      "default_value": "0",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "routing_set_code",
+      "db_column": "ROUTING_SET_CD",
+      "display_name": "라우팅셋코드",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "variant_code",
+      "db_column": "VARIANT_CD",
+      "display_name": "변종코드",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "item_code",
+      "db_column": "ITEM_CD",
+      "display_name": "품목코드",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "JOB_NM",
+      "db_column": "JOB_NAME",
+      "display_name": "작업명",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    },
+    {
+      "routing_field": "RES_CD",
+      "db_column": "RESOURCE_CD",
+      "display_name": "자원코드",
+      "data_type": "string",
+      "is_required": false,
+      "default_value": "",
+      "transform_rule": null
+    }
+  ],
+  "created_by": "system",
+  "created_at": "2025-01-15T00:00:00",
+  "updated_at": "2025-01-15T00:00:00",
+  "is_active": true
+}

@@ -22,7 +22,9 @@ export type NavigationKey =
   | "algorithm"
   | "algorithm-viz"
   | "training-status"
-  | "options";
+  | "options"
+  | "data-relationship"
+  | "profile-management";
 
 type ExportDestination = "local" | "clipboard" | "server";
 
