@@ -10,6 +10,7 @@ import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 
 from backend.api.config import Settings, get_settings
+from common.datetime_utils import utc_now_naive
 
 
 @dataclass(slots=True)
@@ -34,7 +35,7 @@ class JWTManager:
         subject: str,
         claims: Dict[str, Any] | None = None,
     ) -> TokenBundle:
-        now = datetime.utcnow()
+        now = utc_now_naive()
         expires = now + timedelta(seconds=self.settings.jwt_access_token_ttl_seconds)
         payload: Dict[str, Any] = {
             "sub": subject,

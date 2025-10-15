@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 from typing import Iterator
 
@@ -14,6 +13,7 @@ from backend.api.config import Settings, get_settings
 from backend.api.schemas import LoginRequest, RegisterRequest
 from backend.api.services.auth_service import AuthService
 from backend.database_rsl import Base, UserAccount, get_engine, session_scope
+from common.datetime_utils import utc_now_naive
 
 
 @pytest.fixture()
@@ -78,7 +78,7 @@ def test_approve_and_login_success(isolated_settings: Settings) -> None:
 
     assert response.status == "approved"
     assert response.token
-    assert response.issued_at <= datetime.utcnow()
+    assert response.issued_at <= utc_now_naive()
     assert response.expires_at > response.issued_at
 
 

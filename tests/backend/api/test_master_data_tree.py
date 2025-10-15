@@ -16,6 +16,7 @@ from backend.api.app import create_app
 from backend.api.routes.master_data import require_auth
 from backend.api.schemas import AuthenticatedUser
 from backend.api.services.master_data_service import MasterDataService
+from common.datetime_utils import utc_now_naive
 
 
 @pytest.fixture()
@@ -92,7 +93,7 @@ def master_data_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     app = create_app()
 
     def fake_user() -> AuthenticatedUser:
-        now = datetime.utcnow()
+        now = utc_now_naive()
         return AuthenticatedUser(
             username="tester",
             display_name="Test User",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -13,6 +13,7 @@ ensure_forward_ref_compat()
 from backend.api.routes import workflow as workflow_module
 from backend.api.schemas import AuthenticatedUser, WorkflowConfigPatch
 from common.config_store import WorkflowConfigStore
+from common.datetime_utils import utc_now_naive
 
 
 @pytest.fixture
@@ -83,7 +84,7 @@ def workflow_sync_context(tmp_path, monkeypatch):
         }
     )
 
-    now = datetime.utcnow()
+    now = utc_now_naive()
     user = AuthenticatedUser(
         username="tester",
         display_name="Tester",

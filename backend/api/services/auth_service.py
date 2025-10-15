@@ -28,6 +28,7 @@ from backend.database_rsl import (
     normalize_username,
     session_scope,
 )
+from common.datetime_utils import utc_now_naive
 from common.logger import get_logger
 
 
@@ -148,7 +149,7 @@ class AuthService:
             if not user:
                 raise ValueError("사용자를 찾을 수 없습니다")
             user.status = "approved"
-            user.approved_at = datetime.utcnow()
+            user.approved_at = utc_now_naive()
             if make_admin:
                 user.is_admin = True
             session.add(user)
@@ -189,7 +190,7 @@ class AuthService:
             if not user:
                 raise ValueError("사용자를 찾을 수 없습니다")
             user.status = "rejected"
-            user.rejected_at = datetime.utcnow()
+            user.rejected_at = utc_now_naive()
             session.add(user)
             self._logger.info(
                 "사용자 거절",
@@ -266,7 +267,7 @@ class AuthService:
                 )
                 raise PermissionError("비밀번호가 일치하지 않습니다") from exc
 
-            user.last_login_at = datetime.utcnow()
+            user.last_login_at = utc_now_naive()
             session.add(user)
 
         bundle = self._jwt_manager.create_access_token(
@@ -371,7 +372,7 @@ class AuthService:
 
         return ChangePasswordResponse(
             username=user.username,
-            changed_at=datetime.utcnow(),
+            changed_at=utc_now_naive(),
         )
 
     # ------------------------------------------------------------------

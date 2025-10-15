@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime
 from typing import Dict, Any
 
 from fastapi import APIRouter, Response
 from pydantic import BaseModel
 
 from backend.api.schemas import HealthResponse
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 
 logger = get_logger("api.health")
@@ -53,7 +53,7 @@ async def health_check() -> HealthResponse:
         status="healthy",
         version="4.0.0",
         uptime_seconds=round(uptime, 2),
-        timestamp=datetime.utcnow().isoformat()
+        timestamp=utc_isoformat()
     )
 
 

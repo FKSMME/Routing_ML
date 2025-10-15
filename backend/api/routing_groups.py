@@ -19,6 +19,7 @@ from backend.models.routing_groups import (
     bootstrap_schema,
     session_scope,
 )
+from common.datetime_utils import utc_now_naive
 from backend.schemas.routing_groups import (
     PaginationMeta,
     RoutingGroupCreate,
@@ -192,7 +193,7 @@ def _merge_snapshot(
         )
         metadata["workspace_state"] = workspace_state
         group.metadata_payload = metadata
-        group.updated_at = datetime.utcnow()
+        group.updated_at = utc_now_naive()
         session.add(group)
         updates[group_id] = RoutingSnapshotGroupResult(
             group_id=group.id,
@@ -455,7 +456,7 @@ async def update_routing_group(
         if payload.metadata is not None:
             group.metadata_payload = dict(payload.metadata)
         group.version += 1
-        group.updated_at = datetime.utcnow()
+        group.updated_at = utc_now_naive()
         try:
             session.flush()
         except IntegrityError as exc:
@@ -531,9 +532,9 @@ async def delete_routing_group(
                 correlation_id=_get_correlation_id(request),
             )
             raise
-        group.deleted_at = datetime.utcnow()
+        group.deleted_at = utc_now_naive()
         group.version += 1
-        group.updated_at = datetime.utcnow()
+        group.updated_at = utc_now_naive()
         session.flush()
     duration_ms = round((time.perf_counter() - start) * 1000, 2)
     audit_routing_event(

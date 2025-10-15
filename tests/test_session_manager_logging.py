@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -9,6 +9,7 @@ import jwt
 
 from backend.api.config import get_settings
 from backend.api.session_manager import JWTManager
+from common.datetime_utils import utc_now_naive
 
 
 @pytest.fixture(autouse=True)
@@ -24,7 +25,7 @@ def test_jwt_manager_generates_signed_token() -> None:
     bundle = manager.create_access_token(subject="tester", claims={"scope": "user"})
 
     assert bundle.token
-    assert bundle.issued_at <= datetime.utcnow()
+    assert bundle.issued_at <= utc_now_naive()
     assert bundle.expires_at > bundle.issued_at
 
     payload = manager.verify(bundle.token)
@@ -46,7 +47,7 @@ def test_jwt_manager_rejects_tampered_token() -> None:
 
 def test_jwt_manager_rejects_expired_token(monkeypatch: pytest.MonkeyPatch) -> None:
     manager = JWTManager()
-    now = datetime.utcnow()
+    now = utc_now_naive()
     expired_payload = {
         "sub": "tester",
         "iat": now,

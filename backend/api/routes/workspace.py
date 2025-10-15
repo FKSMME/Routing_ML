@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
@@ -13,6 +12,7 @@ from backend.api.config import get_settings
 from backend.api.routes.audit import AuditEvent, persist_ui_audit_events
 from backend.api.security import require_auth
 from backend.api.schemas import AuthenticatedUser
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api", tags=["workspace"])
@@ -55,7 +55,7 @@ async def get_workspace_settings(user: AuthenticatedUser = Depends(require_auth)
 
     return WorkspaceSettingsResponse(
         **data,
-        updated_at=data.get("updated_at", datetime.utcnow().isoformat()),
+        updated_at=data.get("updated_at", utc_isoformat()),
         user=data.get("user", user.username),
     )
 
@@ -69,7 +69,7 @@ async def save_workspace_settings(
     file_path = _settings_file(settings.audit_log_dir)
 
     record = payload.dict()
-    record["updated_at"] = datetime.utcnow().isoformat()
+    record["updated_at"] = utc_isoformat()
     record["user"] = user.username
     record["ip_address"] = request.client.host if request.client else None
 

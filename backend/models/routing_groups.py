@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
 from typing import Generator, Optional
 
 from sqlalchemy import (
@@ -24,6 +23,7 @@ from sqlalchemy.sql import sqltypes
 from uuid import uuid4
 
 from backend.api.config import get_settings
+from common.datetime_utils import utc_now_naive
 
 Base = declarative_base()
 
@@ -58,9 +58,9 @@ class RoutingGroup(Base):
         nullable=True,
     )
     version = Column(Integer, nullable=False, default=1)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=utc_now_naive)
     updated_at = Column(
-        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, nullable=False, default=utc_now_naive, onupdate=utc_now_naive
     )
     deleted_at = Column(DateTime, nullable=True)
 

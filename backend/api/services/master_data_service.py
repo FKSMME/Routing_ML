@@ -11,6 +11,7 @@ import pandas as pd
 
 from backend import database
 from backend.api.config import get_settings
+from common.datetime_utils import utc_isoformat, utc_timestamp
 from common.logger import get_logger
 
 # Access 파일 확장자 (하위 호환성)
@@ -359,7 +360,7 @@ class MasterDataService:
                 "status": "connected",
                 "server": info.get("server") or database.MSSQL_CONFIG["server"],
                 "database": info.get("database") or database.MSSQL_CONFIG["database"],
-                "last_checked": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                "last_checked": utc_timestamp("%Y-%m-%d %H:%M:%S"),
             }
         except Exception as exc:
             logger.warning("MSSQL 연결 상태 확인 실패: %s", exc)
@@ -404,7 +405,7 @@ class MasterDataService:
             "columns": columns,
             "server": database.MSSQL_CONFIG["server"],
             "database": database.MSSQL_CONFIG["database"],
-            "updated_at": datetime.utcnow().isoformat(),
+            "updated_at": utc_isoformat(),
         }
 
     def readonly_log_file(self) -> Path:

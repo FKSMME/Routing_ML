@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Sequence
 
+from common.datetime_utils import utc_isoformat_z
+
 MANIFEST_FILENAME = "manifest.json"
 MANIFEST_SCHEMA_VERSION = "routing-ml/manifest@1"
 HASH_ALGORITHM = "sha256"
@@ -92,7 +94,7 @@ def build_manifest(
 
     payload: Dict[str, Any] = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
-        "generated_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "generated_at": utc_isoformat_z(),
         "hash_algorithm": HASH_ALGORITHM,
         "artifacts": artifacts,
     }

@@ -8,12 +8,12 @@ profiles that the predictor consumes during inference.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 import pandas as pd
 
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 
 logger = get_logger("time_aggregator")
@@ -185,7 +185,7 @@ def generate_time_profiles(
         profile_values["SAFE"][column] = sigma_stats["safe"]
 
     result = {
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": utc_isoformat(),
         "strategy": config.strategy,
         "time_columns": present_columns,
         "columns": column_results,

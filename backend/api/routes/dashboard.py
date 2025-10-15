@@ -12,6 +12,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from backend.api.security import require_auth
+from common.datetime_utils import utc_isoformat
 from backend.database import (
     get_db_connection,
     test_connection,
@@ -81,14 +82,14 @@ async def get_dashboard_status():
 
         return {
             "status": "healthy" if db_connected else "degraded",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_isoformat(),
             "database_connected": db_connected,
         }
     except Exception as e:
         logger.error(f"Dashboard status check failed: {e}")
         return {
             "status": "error",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utc_isoformat(),
             "error": str(e),
         }
 
@@ -109,7 +110,7 @@ async def get_database_status():
             connected=connected,
             server=server,
             database=database,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=utc_isoformat(),
             error=None if connected else "Connection failed"
         )
     except Exception as e:
@@ -118,7 +119,7 @@ async def get_database_status():
             connected=False,
             server=server,
             database=database,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=utc_isoformat(),
             error=str(e)
         )
 

@@ -2,12 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 import json
 from pathlib import Path
 from threading import RLock
 from typing import Any, Dict, List, Optional
 
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 from common.sql_schema import (
     DEFAULT_POWER_QUERY_PROFILES,
@@ -577,7 +577,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "data_source": DataSourceConfig().to_dict(),
     "export": ExportFormatConfig().to_dict(),
     "visualization": VisualizationConfig().to_dict(),
-    "updated_at": datetime.utcnow().isoformat(),
+    "updated_at": utc_isoformat(),
 }
 
 
@@ -642,7 +642,7 @@ class WorkflowConfigStore:
 
     def _write_snapshot_locked(self, snapshot: Dict[str, Any]) -> Dict[str, Any]:
         prepared = json.loads(json.dumps(snapshot))
-        prepared["updated_at"] = datetime.utcnow().isoformat()
+        prepared["updated_at"] = utc_isoformat()
         self.path.write_text(
             json.dumps(prepared, indent=2, ensure_ascii=False),
             encoding="utf-8",
@@ -691,7 +691,7 @@ class WorkflowConfigStore:
         return self.update_config({"visualization": config.to_dict()})
 
     def update_graph(self, graph: WorkflowGraphConfig) -> Dict[str, Any]:
-        graph.last_saved = datetime.utcnow().isoformat()
+        graph.last_saved = utc_isoformat()
         return self.update_config({"graph": graph.to_dict()})
 
     def update_trainer_runtime(self, runtime: TrainerRuntimeConfig) -> Dict[str, Any]:
