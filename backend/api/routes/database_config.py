@@ -1,19 +1,10 @@
 """MSSQL 데이터베이스 설정 및 연결 테스트 라우터."""
 from __future__ import annotations
 
-import os
-import sys
-import tempfile
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
-
-# Windows/Unix 파일 잠금 처리
-if sys.platform == "win32":
-    import msvcrt
-else:
-    import fcntl
 
 from backend.api.schemas import AuthenticatedUser
 from backend.api.security import require_auth
@@ -141,7 +132,7 @@ async def update_database_config(
     config: DatabaseConfig,
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> Dict[str, Any]:
-    """MSSQL 환경 변수를 갱신하고 .env 파일에 반영한다 (파일 잠금 및 원자적 쓰기 지원)."""
+    """MSSQL 설정을 workflow_config_store에 저장합니다 (.env 파일 쓰기 대신 config_store 사용)."""
 
     logger.info(
         "데이터베이스 설정 업데이트: user=%s server=%s database=%s",
@@ -152,11 +143,12 @@ async def update_database_config(
 
     server = config.server.strip()
     password = (config.password or "").strip()
-    item_view = (config.item_view or "").strip() or None
-    routing_view = (config.routing_view or "").strip() or None
-    work_result_view = (config.work_result_view or "").strip() or None
-    purchase_order_view = (config.purchase_order_view or "").strip() or None
+    item_view = (config.item_view or "").strip() or VIEW_ITEM_MASTER
+    routing_view = (config.routing_view or "").strip() or VIEW_ROUTING
+    work_result_view = (config.work_result_view or "").strip() or VIEW_WORK_RESULT
+    purchase_order_view = (config.purchase_order_view or "").strip() or VIEW_PURCHASE_ORDER
 
+    # Step 1: Update runtime config (in-memory)
     try:
         update_mssql_runtime_config(
             server=server,
@@ -169,94 +161,52 @@ async def update_database_config(
             routing_view=routing_view,
             work_result_view=work_result_view,
             purchase_order_view=purchase_order_view,
-            persist=True,
+            persist=False,  # Don't write to .env - use config_store instead
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:  # pragma: no cover - unexpected errors
-        logger.error("데이터베이스 설정 업데이트 실패: %s", exc, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"설정 업데이트 실패: {exc}") from exc
+        logger.error("런타임 설정 업데이트 실패: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"런타임 설정 업데이트 실패: {exc}") from exc
 
-    env_path = ".env"
-    env_dir = os.path.dirname(os.path.abspath(env_path)) or "."
+    # Step 2: Save to workflow_config_store for persistence
+    if workflow_config_store is not None:
+        try:
+            current_data_source = workflow_config_store.get_data_source_config()
 
-    try:
-        lines: list[str] = []
-        if os.path.exists(env_path):
-            with open(env_path, "r+", encoding="utf-8") as handle:
-                if sys.platform == "win32":
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-                else:
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-                try:
-                    handle.seek(0)
-                    lines = handle.readlines()
-                finally:
-                    if sys.platform == "win32":
-                        handle.seek(0)
-                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                    else:
-                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            # Update only database-related fields
+            current_data_source.mssql_server = server
+            current_data_source.mssql_database = config.database
+            current_data_source.mssql_user = config.user
+            current_data_source.mssql_password = password
+            current_data_source.mssql_encrypt = config.encrypt
+            current_data_source.mssql_trust_certificate = config.trust_certificate
+            current_data_source.item_view = item_view
+            current_data_source.routing_view = routing_view
+            current_data_source.work_result_view = work_result_view
+            current_data_source.purchase_order_view = purchase_order_view
 
-        prefixes = (
-            "DB_TYPE=",
-            "MSSQL_SERVER=",
-            "MSSQL_DATABASE=",
-            "MSSQL_USER=",
-            "MSSQL_PASSWORD=",
-            "MSSQL_ENCRYPT=",
-            "MSSQL_TRUST_CERTIFICATE=",
-            "MSSQL_ITEM_VIEW=",
-            "MSSQL_ROUTING_VIEW=",
-            "MSSQL_WORK_RESULT_VIEW=",
-            "MSSQL_PURCHASE_ORDER_VIEW=",
-        )
-        filtered = [line for line in lines if not any(line.startswith(prefix) for prefix in prefixes)]
+            workflow_config_store.update_data_source_config(current_data_source)
 
-        filtered.extend(
-            [
-                "\nDB_TYPE=MSSQL\n",
-                f"MSSQL_SERVER={os.environ.get('MSSQL_SERVER', server)}\n",
-                f"MSSQL_DATABASE={os.environ.get('MSSQL_DATABASE', config.database)}\n",
-                f"MSSQL_USER={os.environ.get('MSSQL_USER', config.user)}\n",
-                f"MSSQL_PASSWORD={os.environ.get('MSSQL_PASSWORD', password)}\n",
-                f"MSSQL_ENCRYPT={os.environ.get('MSSQL_ENCRYPT', str(config.encrypt))}\n",
-                f"MSSQL_TRUST_CERTIFICATE={os.environ.get('MSSQL_TRUST_CERTIFICATE', str(config.trust_certificate))}\n",
-                f"MSSQL_ITEM_VIEW={get_item_view_name()}\n",
-                f"MSSQL_ROUTING_VIEW={get_routing_view_name()}\n",
-                f"MSSQL_WORK_RESULT_VIEW={get_work_result_view_name()}\n",
-                f"MSSQL_PURCHASE_ORDER_VIEW={get_purchase_order_view_name()}\n",
-            ]
-        )
-
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=env_dir,
-            delete=False,
-            suffix=".tmp",
-        ) as tmp_handle:
-            tmp_path = tmp_handle.name
-            tmp_handle.writelines(filtered)
-
-        if sys.platform == "win32":
-            if os.path.exists(env_path):
-                os.replace(tmp_path, env_path)
-            else:
-                os.rename(tmp_path, env_path)
-        else:
-            os.rename(tmp_path, env_path)
-
-        logger.info("데이터베이스 설정 저장 완료 (원자적 쓰기)")
-        return {"message": "설정이 저장되었습니다. 애플리케이션을 재시작해주세요."}
-    except Exception as exc:
-        logger.error("데이터베이스 설정 업데이트 실패: %s", exc, exc_info=True)
-        if "tmp_path" in locals() and os.path.exists(tmp_path):
-            try:
-                os.unlink(tmp_path)
-            except Exception:
-                pass
-        raise HTTPException(status_code=500, detail=f"설정 업데이트 실패: {exc}") from exc
+            logger.info("데이터베이스 설정 저장 완료 (config_store)")
+            return {
+                "message": "설정이 저장되었습니다.",
+                "storage": "config_store",
+                "requires_restart": False,
+            }
+        except Exception as exc:
+            logger.error("config_store 저장 실패: %s", exc, exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail=f"config_store 저장 실패: {exc}"
+            ) from exc
+    else:
+        logger.warning("workflow_config_store not available, configuration only applied to runtime")
+        return {
+            "message": "설정이 런타임에만 적용되었습니다 (재시작 시 초기화됨).",
+            "storage": "runtime_only",
+            "requires_restart": False,
+        }
 
 
 @router.post("/test-connection")
