@@ -39,6 +39,43 @@ function resolveRequestPath(urlPath) {
   return path.join(BASE_DIR, normalised);
 }
 
+/**
+ * Security headers for HTTP responses
+ *
+ * IMPORTANT: These headers assume the server is behind an HTTPS reverse proxy.
+ * In production, ensure you have:
+ * - HTTPS termination at reverse proxy level (nginx, Apache, Caddy, etc.)
+ * - Proper SSL/TLS certificate configuration
+ * - HSTS enabled on the proxy if needed
+ *
+ * This Node.js server serves HTTP only - HTTPS should be handled by the proxy.
+ */
+function getSecurityHeaders(contentType) {
+  return {
+    "Content-Type": contentType,
+    // Prevent MIME type sniffing
+    "X-Content-Type-Options": "nosniff",
+    // Enable XSS filter in browsers
+    "X-XSS-Protection": "1; mode=block",
+    // Control iframe embedding (SAMEORIGIN allows same-domain framing)
+    "X-Frame-Options": "SAMEORIGIN",
+    // Referrer policy - only send origin on cross-origin requests
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    // Content Security Policy - adjust as needed for your app
+    "Content-Security-Policy": [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Allow inline scripts (adjust for production)
+      "style-src 'self' 'unsafe-inline'", // Allow inline styles
+      "img-src 'self' data: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' http://localhost:* http://10.204.2.28:* ws://localhost:* ws://10.204.2.28:*", // Allow local API calls
+      "frame-ancestors 'self'",
+    ].join("; "),
+    // Permissions Policy (formerly Feature-Policy)
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+  };
+}
+
 function serveFile(filePath, res) {
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || "application/octet-stream";
@@ -48,16 +85,19 @@ function serveFile(filePath, res) {
   fs.readFile(filePath, encoding, (error, data) => {
     if (error) {
       if (error.code === "ENOENT") {
-        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        const headers = getSecurityHeaders("text/plain; charset=utf-8");
+        res.writeHead(404, headers);
         res.end("404 Not Found");
         return;
       }
-      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      const headers = getSecurityHeaders("text/plain; charset=utf-8");
+      res.writeHead(500, headers);
       res.end("500 Internal Server Error");
       return;
     }
 
-    res.writeHead(200, { "Content-Type": contentType });
+    const headers = getSecurityHeaders(contentType);
+    res.writeHead(200, headers);
     res.end(data);
   });
 }

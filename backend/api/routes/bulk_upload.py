@@ -248,26 +248,103 @@ async def execute_bulk_upload(
             detail=f"검증 오류가 발생했습니다. 총 {len(all_errors)}개 오류",
         )
 
-    # TODO: 실제 라우팅 그룹 생성 로직
-    # 현재는 mock 응답 반환
-    created = len(rows)
-    created_ids = [f"routing_{i}" for i in range(created)]
+    # 실제 라우팅 그룹 생성
+    from backend.models.routing_groups import session_scope, RoutingGroup
+    from backend.schemas.routing_groups import RoutingStep
+
+    # 라우팅 코드별로 그룹화
+    routing_groups: Dict[str, List[Dict[str, Any]]] = {}
+    for row in rows:
+        routing_code = str(row.get('라우팅명', '')).strip()
+        if routing_code:
+            if routing_code not in routing_groups:
+                routing_groups[routing_code] = []
+            routing_groups[routing_code].append(row)
+
+    created_ids: List[str] = []
+    created = 0
+    skipped = 0
+    creation_errors: List[BulkUploadValidationError] = []
+
+    with session_scope() as session:
+        for routing_code, steps_data in routing_groups.items():
+            try:
+                # 품목 코드 추출
+                item_codes = []
+                for col_name in ['품목코드', '품목_코드', 'ITEM_CD', 'ITEM_CODE']:
+                    if col_name in steps_data[0] and not pd.isna(steps_data[0][col_name]):
+                        code = str(steps_data[0][col_name]).strip()
+                        if code and code not in item_codes:
+                            item_codes.append(code)
+
+                # 스텝 데이터 변환
+                steps = []
+                for idx, step_data in enumerate(steps_data):
+                    seq = int(step_data.get('순서', idx + 1))
+                    step = RoutingStep(
+                        seq=seq,
+                        operation=str(step_data.get('작업', '')).strip(),
+                        work_center=str(step_data.get('작업장', '')).strip() if '작업장' in step_data else None,
+                        duration_minutes=int(step_data.get('소요시간', 0)) if '소요시간' in step_data else None,
+                        notes=str(step_data.get('비고', '')).strip() if '비고' in step_data else None,
+                    )
+                    steps.append(step)
+
+                # 라우팅 그룹 생성
+                group = RoutingGroup(
+                    group_name=routing_code,
+                    owner=current_user.username,
+                    item_codes=item_codes,
+                    steps=[step.dict() for step in sorted(steps, key=lambda s: s.seq)],
+                    erp_required=False,
+                    metadata_payload={"bulk_upload": True, "filename": file.filename},
+                )
+
+                session.add(group)
+                session.flush()
+                session.refresh(group)
+
+                created_ids.append(group.id)
+                created += 1
+
+                logger.info(
+                    f"라우팅 그룹 생성: {routing_code}",
+                    extra={
+                        "group_id": group.id,
+                        "item_codes": item_codes,
+                        "step_count": len(steps),
+                    },
+                )
+
+            except Exception as e:
+                skipped += 1
+                creation_errors.append(
+                    BulkUploadValidationError(
+                        row=0,
+                        column="라우팅명",
+                        error=f"라우팅 그룹 생성 실패: {str(e)}",
+                        value=routing_code,
+                    )
+                )
+                logger.error(f"라우팅 그룹 생성 실패: {routing_code} - {e}", exc_info=True)
 
     audit_routing_event(
         "대량_업로드_실행",
         payload={
             "filename": file.filename,
+            "total_groups": len(routing_groups),
             "created": created,
+            "skipped": skipped,
         },
-        result="success",
+        result="success" if created > 0 else "partial",
         username=current_user.username,
     )
 
     return BulkUploadResponse(
         created=created,
         updated=0,
-        skipped=0,
-        errors=[],
+        skipped=skipped,
+        errors=creation_errors,
         created_ids=created_ids,
     )
 

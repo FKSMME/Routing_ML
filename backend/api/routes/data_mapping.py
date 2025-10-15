@@ -163,7 +163,7 @@ def delete_profile(
 )
 def apply_mapping(
     request: DataMappingApplyRequest,
-    _user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(get_current_user),
 ) -> DataMappingApplyResponse:
     """
     라우팅 그룹 데이터에 매핑 프로파일을 적용합니다.
@@ -171,15 +171,51 @@ def apply_mapping(
     - preview_only=True: 미리보기만 생성 (최대 10행)
     - preview_only=False: CSV 파일 생성
 
-    **주의**: 이 엔드포인트는 라우팅 그룹 데이터를 인자로 받아야 하므로,
-    실제로는 프론트엔드에서 그룹 데이터를 함께 전송해야 합니다.
-    현재는 데모용으로 빈 데이터를 사용합니다.
+    라우팅 그룹 ID를 사용하여 실제 데이터베이스에서 그룹 데이터를 조회합니다.
     """
     service = get_data_mapping_service()
 
-    # TODO: 실제로는 request.routing_group_id로 그룹 데이터를 조회해야 합니다
-    # 현재는 데모용 빈 데이터 사용
+    # Load routing group data from database
+    from backend.models.routing_groups import session_scope, RoutingGroup
+
     routing_group_data: List[dict] = []
+
+    if request.routing_group_id:
+        try:
+            with session_scope() as session:
+                group = session.get(RoutingGroup, request.routing_group_id)
+                if group is None or group.deleted_at is not None:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Routing group not found: {request.routing_group_id}"
+                    )
+
+                # Check ownership
+                if group.owner != user.username and not user.is_admin:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Access denied to routing group"
+                    )
+
+                # Convert steps to routing_group_data format
+                if group.steps:
+                    routing_group_data = list(group.steps)
+
+                logger.info(
+                    f"Loaded routing group data: {len(routing_group_data)} steps",
+                    extra={
+                        "group_id": request.routing_group_id,
+                        "step_count": len(routing_group_data),
+                    },
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to load routing group: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to load routing group data"
+            )
 
     try:
         result = service.apply_mapping(
@@ -192,6 +228,7 @@ def apply_mapping(
                 "profile_id": request.profile_id,
                 "routing_group_id": request.routing_group_id,
                 "preview_only": request.preview_only,
+                "data_rows": len(routing_group_data),
             },
         )
         return result
