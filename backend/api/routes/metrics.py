@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import psutil
+import threading
 import time
 from typing import Dict
 
@@ -13,16 +14,53 @@ router = APIRouter(prefix="/metrics", tags=["metrics"])
 # Startup time for uptime calculation
 _START_TIME = time.time()
 
+# Cached CPU metrics for non-blocking access
+_cpu_metrics_lock = threading.Lock()
+_cached_process_cpu = 0.0
+_cached_system_cpu = 0.0
+_last_cpu_update = 0.0
+_CPU_CACHE_SECONDS = 2.0  # Cache CPU values for 2 seconds
+
+
+def _update_cpu_metrics() -> None:
+    """Update cached CPU metrics in a non-blocking way."""
+    global _cached_process_cpu, _cached_system_cpu, _last_cpu_update
+
+    now = time.time()
+    with _cpu_metrics_lock:
+        # Only update if cache is stale
+        if now - _last_cpu_update < _CPU_CACHE_SECONDS:
+            return
+
+        try:
+            process = psutil.Process(os.getpid())
+            # Use interval=None for non-blocking calls
+            _cached_process_cpu = process.cpu_percent(interval=None)
+            _cached_system_cpu = psutil.cpu_percent(interval=None)
+            _last_cpu_update = now
+        except Exception:
+            # Keep previous values on error
+            pass
+
 
 def get_system_metrics() -> Dict[str, float]:
-    """Collect system-level metrics."""
+    """Collect system-level metrics without blocking.
+
+    CPU metrics are cached and updated periodically to avoid blocking calls.
+    """
+    _update_cpu_metrics()
+
     process = psutil.Process(os.getpid())
 
+    with _cpu_metrics_lock:
+        process_cpu = _cached_process_cpu
+        system_cpu = _cached_system_cpu
+
     return {
-        "process_cpu_percent": process.cpu_percent(interval=0.1),
+        "process_cpu_percent": process_cpu,
         "process_memory_mb": process.memory_info().rss / 1024 / 1024,
         "process_threads": process.num_threads(),
-        "system_cpu_percent": psutil.cpu_percent(interval=0.1),
+        "system_cpu_percent": system_cpu,
         "system_memory_percent": psutil.virtual_memory().percent,
         "system_disk_percent": psutil.disk_usage("/").percent,
         "uptime_seconds": time.time() - _START_TIME,
