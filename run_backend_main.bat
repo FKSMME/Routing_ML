@@ -21,6 +21,11 @@ echo.
 echo 내부망 접속 주소: http://10.204.2.28:8000
 echo.
 
+REM Set environment variables from .env
+set JWT_SECRET_KEY=2wyfu6bayRPtzyJCpyYOnTub7nqB7zyJNKOhNBMvaNE
+set JWT_ALGORITHM=HS256
+set JWT_ACCESS_TOKEN_TTL_SECONDS=3600
+
 .venv\Scripts\python.exe -m uvicorn backend.api.app:app --host 0.0.0.0 --port 8000 --reload
 
 pause

@@ -9,6 +9,7 @@ from typing_extensions import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
+from common.datetime_utils import utc_now_naive
 
 ensure_forward_ref_compat()
 
@@ -271,7 +272,7 @@ class RoutingSummary(BaseModel):
     similarity_tier: Optional[str] = Field(None, alias="SIMILARITY_TIER")
     similarity_score: Optional[float] = Field(None, alias="SIMILARITY_SCORE")
     reference_item_cd: Optional[str] = Field(None, alias="REFERENCE_ITEM_CD")
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=utc_now_naive)
     operations: List[OperationStep] = Field(default_factory=list)
 
     model_config = {"populate_by_name": True}

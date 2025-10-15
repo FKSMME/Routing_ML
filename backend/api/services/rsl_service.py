@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
+from common.datetime_utils import utc_now_naive
 
 ensure_forward_ref_compat()
 
@@ -473,7 +474,7 @@ class RslService:
 
         is_valid = len(errors) == 0
         group.validation_errors = errors
-        group.last_validated_at = datetime.utcnow()
+        group.last_validated_at = utc_now_naive()
         return is_valid, errors
 
     def run_validation(self, group_id: int, *, owner: str) -> RslValidationResponse:
@@ -488,7 +489,7 @@ class RslService:
                 group_id=group.id,
                 is_valid=ok,
                 errors=errors,
-                validated_at=group.last_validated_at or datetime.utcnow(),
+                validated_at=group.last_validated_at or utc_now_naive(),
             )
 
     def release_group(self, group_id: int, *, owner: str) -> RslGroupModel:
@@ -499,7 +500,7 @@ class RslService:
             if not ok:
                 raise ValueError("검증 실패로 인해 배포할 수 없습니다: " + "; ".join(errors))
             group.status = "released"
-            group.released_at = datetime.utcnow()
+            group.released_at = utc_now_naive()
             group.released_by = owner
             session.add(group)
             session.flush()
@@ -806,4 +807,3 @@ rsl_service = RslService()
 
 
 __all__ = ["RslService", "rsl_service"]
-

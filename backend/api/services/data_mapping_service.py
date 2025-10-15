@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
+from common.datetime_utils import utc_now_naive
+
 from backend.api.schemas import (
     DataMappingApplyRequest,
     DataMappingApplyResponse,
@@ -91,7 +93,7 @@ class DataMappingService:
         created_by: str,
     ) -> DataMappingProfile:
         """새 프로파일을 생성합니다."""
-        now = datetime.utcnow()
+        now = utc_now_naive()
         profile_id = str(uuid4())
 
         profile = DataMappingProfile(
@@ -124,7 +126,7 @@ class DataMappingService:
         if not profile:
             return None
 
-        now = datetime.utcnow()
+        now = utc_now_naive()
 
         # 수정할 필드만 업데이트
         if payload.name is not None:

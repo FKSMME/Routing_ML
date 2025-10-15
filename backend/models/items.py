@@ -1,11 +1,10 @@
 """품목(Item) 모델 정의."""
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
-
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import declarative_base
+
+from common.datetime_utils import utc_now_naive
 
 Base = declarative_base()
 
@@ -41,8 +40,8 @@ class Item(Base):
     remarks = Column(Text)
 
     # 메타데이터
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=utc_now_naive, nullable=False, index=True)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive, nullable=False, index=True)
     deleted_at = Column(DateTime, nullable=True)  # Soft delete support
 
     # 데이터 품질

@@ -3,7 +3,6 @@ from __future__ import annotations
 import atexit
 import time
 from dataclasses import dataclass
-from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 import threading
@@ -28,6 +27,7 @@ except ImportError:
     pyodbc = None
     PYODBC_AVAILABLE = False
 
+from common.datetime_utils import utc_isoformat_z
 from common.logger import get_logger
 from backend.constants import TRAIN_FEATURES
 
@@ -324,7 +324,7 @@ _last_cache_fetch: Dict[str, Dict[str, Any]] = {"item_master": {}, "routing": {}
 
 
 def _snapshot_time() -> str:
-    return datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    return utc_isoformat_z()
 
 
 def _sanitize_columns(

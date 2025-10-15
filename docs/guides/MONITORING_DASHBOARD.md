@@ -440,7 +440,7 @@ rate(routing_ml_prediction_requests_total{status="error"}[5m])
 ```python
 # backend/api/middleware/cloudwatch.py
 import boto3
-from datetime import datetime
+from common.datetime_utils import utc_now
 
 cloudwatch = boto3.client('cloudwatch', region_name='us-east-1')
 
@@ -453,7 +453,7 @@ def send_metric(metric_name: str, value: float, unit: str = 'None'):
                 'MetricName': metric_name,
                 'Value': value,
                 'Unit': unit,
-                'Timestamp': datetime.utcnow()
+                'Timestamp': utc_now()
             }
         ]
     )

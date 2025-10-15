@@ -38,6 +38,7 @@ from backend.api.schemas import (
 )
 
 from backend.api.schemas import CandidateRouting, CandidateSaveResponse, RoutingSummary
+from common.datetime_utils import utc_isoformat, utc_now_naive, utc_timestamp
 from backend.maintenance.model_registry import get_active_version, initialize_schema
 
 from backend.predictor_ml import predict_items_with_ml_optimized
@@ -653,7 +654,7 @@ class PredictionService:
             "returned_routings": len(routing_payload),
             "returned_candidates": len(candidate_payload),
             "threshold": similarity_threshold,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": utc_isoformat(),
         }
         if weight_snapshot:
             metrics["feature_weights"] = weight_snapshot
@@ -1205,7 +1206,7 @@ class PredictionService:
         if not self.settings.enable_candidate_persistence:
             raise RuntimeError("후보 저장이 비활성화되어 있습니다")
 
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        timestamp = utc_timestamp("%Y%m%d%H%M%S")
         safe_item = item_code.replace("/", "-")
         filename = f"{safe_item}_{candidate_id}_{timestamp}.json"
         save_path = self.settings.candidate_store_dir / filename
@@ -1254,7 +1255,7 @@ class PredictionService:
         data = {
             "item_code": item_code,
             "candidate_id": candidate_id,
-            "saved_at": datetime.utcnow().isoformat(),
+            "saved_at": utc_isoformat(),
             "summary": payload.get("summary"),
             "operations": df.to_dict(orient="records"),
             "warnings": warnings,
@@ -1274,7 +1275,7 @@ class PredictionService:
             item_code=item_code,
             candidate_id=candidate_id,
             saved_path=str(save_path),
-            saved_at=datetime.utcnow(),
+            saved_at=utc_now_naive(),
             sql_preview=sql_preview,
             warnings=warnings,
         )
@@ -1294,7 +1295,7 @@ class PredictionService:
 
         export_dir = Path(export_cfg.export_directory)
         export_dir.mkdir(parents=True, exist_ok=True)
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        timestamp = utc_timestamp("%Y%m%d%H%M%S")
 
         routing_records: List[Dict[str, Any]] = []
         for summary in routings:
@@ -1438,7 +1439,7 @@ class PredictionService:
         from xml.dom import minidom
 
         root = ET.Element("RoutingExport")
-        root.set("generated_at", datetime.utcnow().isoformat())
+        root.set("generated_at", utc_isoformat())
         root.set("record_count", str(len(routing_records)))
 
         # Candidates section
@@ -1522,7 +1523,7 @@ class PredictionService:
     ) -> Dict[str, Any]:
         viz_cfg = workflow_config_store.get_visualization_config()
         snapshot: Dict[str, Any] = {}
-        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        timestamp = utc_timestamp("%Y%m%d%H%M%S")
 
         def _safe_dataframe(df: Optional[pd.DataFrame]) -> pd.DataFrame:
             if df is None or df.empty:
@@ -1654,7 +1655,7 @@ class PredictionService:
             "priority": _meta("PRIORITY"),
             "similarity_tier": _meta("SIMILARITY_TIER"),
             "reference_item_cd": _meta("REFERENCE_ITEM_CD"),
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": utc_isoformat(),
         }
 
         for field_key, label in {

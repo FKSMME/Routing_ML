@@ -9,6 +9,8 @@ import sqlite3
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional
 
+from common.datetime_utils import utc_isoformat
+
 
 class RegistryError(RuntimeError):
     """Base error for registry operations."""
@@ -123,7 +125,7 @@ def register_version(
     """Insert a new pending model version row."""
 
     initialize_schema(db_path)
-    created_at = datetime.utcnow().isoformat()
+    created_at = utc_isoformat()
     trained_at_str = trained_at.isoformat() if trained_at else None
 
     with connect(db_path) as conn:
@@ -213,7 +215,7 @@ def activate_version(*, db_path: Path, version_name: str) -> ModelVersion:
     """Mark the provided version as active and retire the previous active version."""
 
     initialize_schema(db_path)
-    activated_at = datetime.utcnow().isoformat()
+    activated_at = utc_isoformat()
 
     with connect(db_path) as conn:
         target = conn.execute(
@@ -275,4 +277,3 @@ __all__ = [
     "list_versions",
     "register_version",
 ]
-

@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 from copy import deepcopy
-from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -45,6 +44,7 @@ from common.config_store import (
     WorkflowGraphConfig,
     workflow_config_store,
 )
+from common.datetime_utils import utc_isoformat
 from common.sql_schema import DEFAULT_SQL_OUTPUT_COLUMNS, ensure_default_aliases
 from common.workflow_codegen import generate_workflow_modules
 from common.logger import get_logger
@@ -102,7 +102,7 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
         ),
         export=ExportConfigModel(**export_cfg.to_dict()),
         visualization=VisualizationConfigModel(**viz_cfg.to_dict()),
-        updated_at=snapshot.get("updated_at", datetime.utcnow().isoformat()),
+        updated_at=snapshot.get("updated_at", utc_isoformat()),
     )
 
 
@@ -146,7 +146,7 @@ async def patch_workflow_graph(
             graph_cfg.edges = [edge.dict() for edge in payload.graph.edges]
         if payload.graph.design_refs is not None:
             graph_cfg.design_refs = payload.graph.design_refs
-        graph_cfg.last_saved = datetime.utcnow().isoformat()
+        graph_cfg.last_saved = utc_isoformat()
         working_snapshot["graph"] = graph_cfg.to_dict()
         any_changes = True
         pending_logs.append(
@@ -589,7 +589,7 @@ async def regenerate_workflow_code(
             for artifact in artifacts
         ],
         tensorboard_paths=tensorboard_paths,
-        updated_at=datetime.utcnow().isoformat(),
+        updated_at=utc_isoformat(),
     )
 
 

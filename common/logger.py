@@ -10,6 +10,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping, Union
 
+from common.datetime_utils import utc_isoformat
+
 
 class JSONFormatter(logging.Formatter):
     """로그 레코드를 JSON 문자열로 직렬화한다."""
@@ -209,7 +211,7 @@ def audit_routing_event(
         audit_logger = get_logger("routing.audit", use_json=True)
 
     event_payload: MutableMapping[str, Any] = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": utc_isoformat(),
         "action": action,
         "result": result,
     }

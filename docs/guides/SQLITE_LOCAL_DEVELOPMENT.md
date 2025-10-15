@@ -163,7 +163,7 @@ EOF
 # scripts/seed_test_data.py
 from backend.database_rsl import get_session_factory
 from backend.models.items import Item
-from datetime import datetime
+from common.datetime_utils import utc_now_naive
 
 session_factory = get_session_factory()
 session = session_factory()
@@ -174,16 +174,16 @@ test_items = [
         item_name="Test Assembly",
         material_code="MAT-001",
         part_type="ASSEMBLY",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=utc_now_naive(),
+        updated_at=utc_now_naive(),
     ),
     Item(
         item_code="TEST-002",
         item_name="Test Part",
         material_code="MAT-002",
         part_type="PART",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=utc_now_naive(),
+        updated_at=utc_now_naive(),
     ),
 ]
 

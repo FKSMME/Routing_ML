@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
@@ -13,6 +13,7 @@ from fastapi import HTTPException, status
 from backend.api.schemas import AuthenticatedUser, WorkflowConfigPatch
 from backend.api.routes import workflow as workflow_module
 from common.config_store import WorkflowConfigStore
+from common.datetime_utils import utc_now_naive
 
 
 @pytest.fixture
@@ -48,7 +49,7 @@ def workflow_test_context(tmp_path, monkeypatch):
         _fake_predictor_apply,
     )
 
-    now = datetime.utcnow()
+    now = utc_now_naive()
     user = AuthenticatedUser(
         username="tester",
         display_name="Tester",

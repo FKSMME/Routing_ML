@@ -1,6 +1,5 @@
 import hashlib
 import json
-from datetime import datetime
 from pathlib import Path
 import sys
 
@@ -10,6 +9,7 @@ import pytest
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from backend.feature_weights import FeatureWeightManager
+from common.datetime_utils import utc_isoformat_z
 from models.manifest import MANIFEST_SCHEMA_VERSION, ModelManifest
 
 
@@ -45,7 +45,7 @@ def _build_payload(root: Path):
 
     payload = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
-        "generated_at": datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "generated_at": utc_isoformat_z(),
         "hash_algorithm": "sha256",
         "artifacts": {
             "feature_weights_state": {
@@ -93,4 +93,3 @@ def test_feature_weight_manager_reads_from_manifest(tmp_path: Path, use_manifest
     assert pytest.approx(manager.feature_weights["FEATURE_C"], rel=1e-6) == 2.5
     assert manager.active_features["FEATURE_B"] is True
     assert manager.active_features["FEATURE_D"] is False
-

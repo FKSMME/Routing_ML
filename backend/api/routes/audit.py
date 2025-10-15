@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
+from common.datetime_utils import utc_isoformat
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/audit", tags=["audit"])
@@ -94,7 +95,7 @@ def persist_ui_audit_events(
         with log_file.open("a", encoding="utf-8") as fp:
             for event in events:
                 record = {
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": utc_isoformat(),
                     "batch_id": batch_identifier,
                     "source": source,
                     "action": event.action,
