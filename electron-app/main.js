@@ -9,13 +9,19 @@ let mainWindow;
 let projectPath = null;
 let serverProcesses = {};
 let statusCheckInterval = null;
+let configPath = null;
 
-// 설정 파일 경로
-const configPath = path.join(app.getPath('userData'), 'config.json');
+// 설정 파일 경로 초기화 (앱 준비 후 호출)
+function initConfigPath() {
+  if (!configPath) {
+    configPath = path.join(app.getPath('userData'), 'config.json');
+  }
+}
 
 // 설정 로드
 function loadConfig() {
   try {
+    initConfigPath();
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8');
       return JSON.parse(data);
@@ -29,6 +35,7 @@ function loadConfig() {
 // 설정 저장
 function saveConfig(config) {
   try {
+    initConfigPath();
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
     return true;
   } catch (error) {
