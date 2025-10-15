@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM =============================================================================
 REM  Build script for Routing ML Service Monitor - PORTABLE EXECUTABLE
 REM  Version: 4.0.0

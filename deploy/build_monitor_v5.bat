@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM ============================================================================
 REM MCS Server Dashboard v5.0.0 Build Script
 REM Modern UI with Material Design 3 + Fluent Design

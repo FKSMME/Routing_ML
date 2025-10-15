@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM ============================================================================
 REM Routing ML Auto-Generation System Monitor v5.1.0 - Complete Build
 REM - Move old builds to 'old' folder
@@ -10,7 +11,7 @@ setlocal enabledelayedexpansion
 
 echo.
 echo ============================================================================
-echo  라우팅 자동생성 시스템 모니터 v5.1.0 빌드
+echo  Routing ML Auto-Generation System Monitor v5.1.0 Build
 echo  Node-based Workflow + Compact Design
 echo ============================================================================
 echo.
@@ -21,7 +22,7 @@ REM ============================================================================
 REM Step 1: Move old builds to 'old' folder
 REM ============================================================================
 
-echo [Step 1/8] 기존 빌드를 old 폴더로 이동...
+echo [Step 1/8] Moving old builds to old folder...
 echo.
 
 if not exist "dist\old" mkdir "dist\old"
@@ -53,18 +54,18 @@ if exist "dist\installer" (
     )
 )
 
-echo [OK] 기존 빌드 이동 완료
+echo [OK] Old builds moved successfully
 echo.
 
 REM ============================================================================
 REM Step 2: Activate virtual environment
 REM ============================================================================
 
-echo [Step 2/8] 가상환경 활성화...
+echo [Step 2/8] Activating virtual environment...
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
-    echo [ERROR] 가상환경을 찾을 수 없습니다!
+    echo [ERROR] Virtual environment not found!
     pause
     exit /b 1
 )
@@ -75,29 +76,29 @@ REM ============================================================================
 REM Step 3: Check dependencies
 REM ============================================================================
 
-echo [Step 3/8] 의존성 확인...
+echo [Step 3/8] Checking dependencies...
 echo.
 
 pip show pyinstaller >nul 2>&1
 if errorlevel 1 (
-    echo [INFO] PyInstaller 설치 중...
+    echo [INFO] Installing PyInstaller...
     pip install pyinstaller
 )
 
 pip show psutil >nul 2>&1
 if errorlevel 1 (
-    echo [INFO] psutil 설치 중...
+    echo [INFO] Installing psutil...
     pip install psutil
 )
 
-echo [OK] 의존성 확인 완료
+echo [OK] Dependencies checked
 echo.
 
 REM ============================================================================
 REM Step 4: Clean build artifacts
 REM ============================================================================
 
-echo [Step 4/8] 빌드 아티팩트 정리...
+echo [Step 4/8] Cleaning build artifacts...
 echo.
 
 if exist "build\" (
@@ -115,19 +116,19 @@ if exist "dist\" (
     )
 )
 
-echo [OK] 정리 완료
+echo [OK] Cleanup complete
 echo.
 
 REM ============================================================================
 REM Step 5: Update version in VERSION.txt
 REM ============================================================================
 
-echo [Step 5/8] 버전 정보 업데이트...
+echo [Step 5/8] Updating version info...
 echo.
 
 echo 5.1.0 > VERSION.txt
 
-echo [OK] 버전 정보 업데이트 완료
+echo [OK] Version info updated
 echo.
 
 REM ============================================================================
@@ -136,34 +137,34 @@ REM ============================================================================
 
 echo.
 echo ============================================================================
-echo  Portable 버전 빌드 (실행형)
+echo  Building Portable version (Executable)
 echo ============================================================================
 echo.
 
-echo [Step 6/8] PyInstaller 실행 중...
+echo [Step 6/8] Running PyInstaller...
 echo.
 
 pyinstaller --clean --noconfirm RoutingMLMonitor_v5_1_Portable.spec
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] Portable 빌드 실패!
+    echo [ERROR] Portable build failed!
     pause
     exit /b 1
 )
 
 echo.
-echo [OK] Portable 빌드 완료
+echo [OK] Portable build complete
 echo.
 
 if exist "dist\RoutingML_AutoGen_v5.1.0_Portable.exe" (
-    echo [OK] 실행 파일 생성: dist\RoutingML_AutoGen_v5.1.0_Portable.exe
+    echo [OK] Executable created: dist\RoutingML_AutoGen_v5.1.0_Portable.exe
 
     for %%F in ("dist\RoutingML_AutoGen_v5.1.0_Portable.exe") do set size=%%~zF
     set /a sizeMB=!size! / 1048576
-    echo [INFO] 파일 크기: !sizeMB! MB
+    echo [INFO] File size: !sizeMB! MB
 ) else (
-    echo [ERROR] 실행 파일을 찾을 수 없습니다!
+    echo [ERROR] Executable not found!
     pause
     exit /b 1
 )
@@ -174,11 +175,11 @@ REM ============================================================================
 
 echo.
 echo ============================================================================
-echo  Installer 버전 빌드 (설치형)
+echo  Building Installer version (Directory)
 echo ============================================================================
 echo.
 
-echo [Step 7/8] PyInstaller 실행 중...
+echo [Step 7/8] Running PyInstaller...
 echo.
 
 if exist "build\" (
@@ -189,22 +190,22 @@ pyinstaller --clean --noconfirm RoutingMLMonitor_v5_1_Installer.spec
 
 if errorlevel 1 (
     echo.
-    echo [ERROR] Installer 빌드 실패!
+    echo [ERROR] Installer build failed!
     pause
     exit /b 1
 )
 
 echo.
-echo [OK] Installer 빌드 완료
+echo [OK] Installer build complete
 echo.
 
 if exist "dist\RoutingML_AutoGen_v5.1.0\" (
-    echo [OK] 설치 디렉토리 생성: dist\RoutingML_AutoGen_v5.1.0\
+    echo [OK] Installation directory created: dist\RoutingML_AutoGen_v5.1.0\
 
     for /f %%A in ('dir /b /s "dist\RoutingML_AutoGen_v5.1.0\*" ^| find /c /v ""') do set filecount=%%A
-    echo [INFO] 파일 수: !filecount!개
+    echo [INFO] File count: !filecount! files
 ) else (
-    echo [ERROR] 설치 디렉토리를 찾을 수 없습니다!
+    echo [ERROR] Installation directory not found!
     pause
     exit /b 1
 )
@@ -214,43 +215,43 @@ REM Step 8: Summary
 REM ============================================================================
 
 echo.
-echo [Step 8/8] 빌드 요약
+echo [Step 8/8] Build summary
 echo.
 
 echo ============================================================================
-echo  빌드 완료!
+echo  Build Complete!
 echo ============================================================================
 echo.
 
-echo 생성된 파일:
+echo Generated files:
 echo.
 
 if exist "dist\RoutingML_AutoGen_v5.1.0_Portable.exe" (
-    echo 1. Portable 버전 (실행형):
+    echo 1. Portable version (Executable):
     echo    dist\RoutingML_AutoGen_v5.1.0_Portable.exe
-    echo    - 파일 크기: !sizeMB! MB
-    echo    - 설치 불필요, 더블클릭으로 실행
+    echo    - File size: !sizeMB! MB
+    echo    - No installation required, double-click to run
     echo.
 )
 
 if exist "dist\RoutingML_AutoGen_v5.1.0\" (
-    echo 2. Installer 버전 (설치형):
+    echo 2. Installer version (Directory):
     echo    dist\RoutingML_AutoGen_v5.1.0\
-    echo    - 파일 수: !filecount!개
-    echo    - 디렉토리 단위 배포
+    echo    - File count: !filecount! files
+    echo    - Deploy entire directory
     echo.
 )
 
-echo 기존 빌드:
-echo    dist\old\ 폴더에 보관됨
+echo Old builds:
+echo    Saved in dist\old\ folder
 echo.
 
 echo ============================================================================
 echo.
 
-echo 빠른 시작:
-echo   실행형: dist\RoutingML_AutoGen_v5.1.0_Portable.exe
-echo   설치형: dist\RoutingML_AutoGen_v5.1.0\RoutingML_AutoGen.exe
+echo Quick start:
+echo   Portable: dist\RoutingML_AutoGen_v5.1.0_Portable.exe
+echo   Installer: dist\RoutingML_AutoGen_v5.1.0\RoutingML_AutoGen.exe
 echo.
 
 echo ============================================================================

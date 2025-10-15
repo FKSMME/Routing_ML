@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Frontend Training UI
-echo   모델 학습 인터페이스
+echo   Model Training Interface
 echo   Port: 5174
 echo ========================================
 echo.

@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo Starting MCS Server Dashboard v5.0.0 Test...
 echo.
 
