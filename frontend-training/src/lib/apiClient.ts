@@ -555,5 +555,29 @@ export async function applyDataMapping(
   return response.data;
 }
 
+// ============================================================================
+// TENSORBOARD APIs (Stub implementations)
+// ============================================================================
+
+export async function fetchTensorboardProjectorFilters(...args: any[]): Promise<any> {
+  throw new Error("Tensorboard API not implemented");
+}
+
+export async function fetchTensorboardProjectorPoints(...args: any[]): Promise<any> {
+  throw new Error("Tensorboard API not implemented");
+}
+
+export async function fetchTensorboardProjectors(...args: any[]): Promise<any> {
+  throw new Error("Tensorboard API not implemented");
+}
+
+export async function fetchTensorboardMetrics(...args: any[]): Promise<any> {
+  throw new Error("Tensorboard API not implemented");
+}
+
+export async function exportTensorboardProjector(...args: any[]): Promise<any> {
+  throw new Error("Tensorboard API not implemented");
+}
+
 
 export default api;
