@@ -64,7 +64,7 @@ function getSecurityHeaders(contentType) {
     // Content Security Policy - adjust as needed for your app
     "Content-Security-Policy": [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Allow inline scripts (adjust for production)
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net", // Allow inline scripts and CDN
       "style-src 'self' 'unsafe-inline'", // Allow inline styles
       "img-src 'self' data: https:",
       "font-src 'self' data:",
