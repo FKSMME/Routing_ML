@@ -68,10 +68,9 @@ class ChecklistUpdate(BaseModel):
 @router.get("/views", response_model=List[ViewInfo])
 async def list_views(
     schema: Optional[str] = Query(None, description="스키마 필터"),
-    current_user: AuthenticatedUser = Depends(require_auth),
 ) -> List[ViewInfo]:
     """MSSQL 뷰 목록을 조회한다."""
-    logger.info(f"뷰 목록 조회: user={current_user.username}, schema={schema}")
+    logger.info(f"뷰 목록 조회: schema={schema}")
 
     try:
         query = """
@@ -115,10 +114,9 @@ async def list_views(
 async def get_view_sample_data(
     view_name: str,
     limit: int = Query(100, ge=1, le=1000, description="조회할 행 수"),
-    current_user: AuthenticatedUser = Depends(require_auth),
 ) -> Dict[str, Any]:
     """뷰의 샘플 데이터를 조회한다."""
-    logger.info(f"뷰 샘플 데이터 조회: user={current_user.username}, view={view_name}, limit={limit}")
+    logger.info(f"뷰 샘플 데이터 조회: view={view_name}, limit={limit}")
 
     try:
         # 컬럼 정보 조회

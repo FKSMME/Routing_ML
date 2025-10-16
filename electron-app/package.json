@@ -1,6 +1,6 @@
 {
   "name": "routing-ml-autogen-monitor",
-  "version": "5.2.3",
+  "version": "5.2.5",
   "description": "라우팅 자동생성 시스템 모니터 - Electron Edition",
   "main": "main.js",
   "scripts": {

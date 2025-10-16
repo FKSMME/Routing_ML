@@ -92,7 +92,7 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
     try {
       const projectors = await fetchTensorboardProjectors();
       let selectedId = state.selectedId;
-      if (!selectedId || !projectors.some((projector) => projector.id === selectedId)) {
+      if (!selectedId || !projectors.some((projector: TensorboardProjectorSummary) => projector.id === selectedId)) {
         selectedId = projectors.length > 0 ? projectors[0].id : null;
       }
       set({

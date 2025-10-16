@@ -24,7 +24,8 @@ export type NavigationKey =
   | "model-training"
   | "training-status"
   | "tensorboard"
-  | "options";
+  | "options"
+  | "data-relationship";
 
 type ExportDestination = "local" | "clipboard" | "server";
 

@@ -356,7 +356,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
           size: 49880,
           functions: 54,
           classes: 0,
-          type: 'common' as const,
+          type: 'utility' as const,
         },
         {
           id: 'feature_weights',
@@ -366,7 +366,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
           size: 27911,
           functions: 24,
           classes: 0,
-          type: 'common' as const,
+          type: 'utility' as const,
         },
       ];
     } else {
