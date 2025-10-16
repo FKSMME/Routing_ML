@@ -37,8 +37,10 @@ npm run build
 
 ### Python Monitor
 ```bash
-# Already built - no changes needed
+# ✅ Rebuilt - workflow node state tracking fixed
 # File: dist/RoutingMLMonitor_v5.2.0.exe (12 MB)
+# Build time: ~15s
+# Fix: Server start button now activates correctly on launch
 ```
 
 ---
@@ -90,6 +92,14 @@ npm run build
 5. fetchMasterDataTree: Object → individual params
 6. TensorboardStore: Added type annotation
 7. App component: Fixed all property access
+
+### 6. Python Monitor Workflow Fix ✅
+- **Issue**: 서버 일괄 시작 버튼이 초기 실행 시 비활성화됨
+- **Fix**: Initial workflow node state update 추가 (100ms delay)
+- **Logic**:
+  - Start button: 모든 서비스 offline일 때만 활성화
+  - Stop button: 하나라도 online이면 활성화
+- **Build**: RoutingMLMonitor_v5.2.0.exe 재빌드 완료
 
 ---
 
@@ -255,7 +265,7 @@ npm run preview  # Port 5174
 
 All components built successfully. Documentation complete. Ready to start services.
 
-**Last Updated**: 2025-10-16 13:00
+**Last Updated**: 2025-10-16 13:30
 **By**: Claude Code
 
 ---
