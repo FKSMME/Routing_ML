@@ -49,19 +49,19 @@ const SERVICES = {
   backend: {
     name: 'Backend Main',
     port: 8000,
-    url: 'http://localhost:8000/health',
+    url: 'http://localhost:8000/api/health',
     command: 'run_backend_main.bat'
   },
   backendTraining: {
     name: 'Backend Training',
     port: 8001,
-    url: 'http://localhost:8001/health',
+    url: 'http://localhost:8001/api/health',
     command: 'run_training_service.bat'
   },
   backendPrediction: {
     name: 'Backend Prediction',
     port: 8002,
-    url: 'http://localhost:8002/health',
+    url: 'http://localhost:8002/api/health',
     command: 'run_prediction_service.bat'
   },
   frontendHome: {
@@ -209,6 +209,11 @@ ipcMain.handle('start-servers', async () => {
 function startService(key, service) {
   const commandPath = path.join(projectPath, service.command);
 
+  if (!fs.existsSync(commandPath)) {
+    sendLog('ERROR', `${service.name} 실행 스크립트를 찾을 수 없습니다: ${commandPath}`);
+    return;
+  }
+
   try {
     const process = spawn('cmd.exe', ['/c', 'start', 'cmd', '/k', commandPath], {
       cwd: projectPath,
@@ -294,13 +299,19 @@ ipcMain.handle('clear-cache', async () => {
   }
 });
 
-// 상태 확인
+// ���� Ȯ��
 ipcMain.handle('check-status', async () => {
-  const status = {};
+  return collectStatusSnapshot();
+});
 
-  for (const [key, service] of Object.entries(SERVICES)) {
-    status[key] = await checkServiceStatus(key, service);
-  }
+async function collectStatusSnapshot() {
+  // 모든 서비스를 병렬로 체크 (순차 처리 대신)
+  const statusPromises = Object.entries(SERVICES).map(([key, service]) =>
+    checkServiceStatus(key, service).then(result => [key, result])
+  );
+
+  const statusResults = await Promise.all(statusPromises);
+  const status = Object.fromEntries(statusResults);
 
   // 시스템 성능 정보
   const performance = {
@@ -313,7 +324,7 @@ ipcMain.handle('check-status', async () => {
     services: status,
     performance: performance
   };
-});
+}
 
 async function checkServiceStatus(key, service) {
   return new Promise((resolve) => {
@@ -324,7 +335,7 @@ async function checkServiceStatus(key, service) {
       hostname: urlObj.hostname,
       port: urlObj.port || 80,
       path: urlObj.pathname,
-      timeout: 2000
+      timeout: 3000
     }, (res) => {
       const latency = Date.now() - startTime;
 
@@ -369,14 +380,19 @@ ipcMain.handle('open-url', async (event, url) => {
   return { success: true };
 });
 
-// 주기적 상태 확인 (2초마다)
+// 주기적 상태 확인 (5초마다 - 성능 최적화)
 function startStatusChecking() {
   statusCheckInterval = setInterval(async () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
-      const status = await ipcMain.invoke('check-status');
-      mainWindow.webContents.send('server-status', status);
+      try {
+        const status = await collectStatusSnapshot();
+        mainWindow.webContents.send('server-status', status);
+      } catch (error) {
+        const message = (error && error.message) ? error.message : String(error);
+        sendLog('ERROR', 'Status update failed: ' + message);
+      }
     }
-  }, 2000);
+  }, 5000);
 }
 
 // 로그 전송
@@ -394,9 +410,9 @@ function sendLog(level, message) {
 ipcMain.handle('get-app-info', async () => {
   return {
     name: '라우팅 자동생성 시스템 모니터',
-    version: '5.2.0',
+    version: '5.2.3',
     author: 'Routing ML Team',
-    buildDate: '2025-10-15'
+    buildDate: '2025-10-16'
   };
 });
 

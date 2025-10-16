@@ -39,5 +39,4 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
-    version='5.1.0',
 )
