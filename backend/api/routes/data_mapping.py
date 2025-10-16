@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from backend.api.dependencies import get_current_user_admin_only, get_current_user
+from backend.api.security import get_current_user, require_admin
 from backend.api.schemas import (
     AuthenticatedUser,
     DataMappingApplyRequest,
@@ -75,7 +75,7 @@ def get_profile(
 )
 def create_profile(
     payload: DataMappingProfileCreate,
-    user: AuthenticatedUser = Depends(get_current_user_admin_only),
+    user: AuthenticatedUser = Depends(require_admin),
 ) -> DataMappingProfile:
     """
     새 데이터 매핑 프로파일을 생성합니다.
@@ -105,7 +105,7 @@ def create_profile(
 def update_profile(
     profile_id: str,
     payload: DataMappingProfileUpdate,
-    user: AuthenticatedUser = Depends(get_current_user_admin_only),
+    user: AuthenticatedUser = Depends(require_admin),
 ) -> DataMappingProfile:
     """
     기존 프로파일을 수정합니다.
@@ -135,8 +135,8 @@ def update_profile(
 )
 def delete_profile(
     profile_id: str,
-    user: AuthenticatedUser = Depends(get_current_user_admin_only),
-) -> None:
+    user: AuthenticatedUser = Depends(require_admin),
+) -> Response:
     """
     프로파일을 삭제합니다.
 
@@ -154,6 +154,8 @@ def delete_profile(
             "deleted_by": user.username,
         },
     )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
