@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Frontend Home Dashboard
-echo   통합 대시보드
+echo   Integrated Dashboard
 echo   Port: 3000
 echo ========================================
 echo.

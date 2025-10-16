@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Frontend Prediction UI
-echo   라우팅 생성 인터페이스
+echo   Routing Creation Interface
 echo   Port: 5173
 echo ========================================
 echo.

@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Routing-ML Prediction Service
-echo   라우팅 생성 및 예측 서비스
+echo   Routing Creation and Prediction
 echo   Port: 8002
 echo ========================================
 echo.

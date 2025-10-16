@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Routing-ML Training Service
-echo   모델 훈련 및 데이터 관리 서비스
+echo   Model Training and Data Management
 echo   Port: 8001
 echo ========================================
 echo.

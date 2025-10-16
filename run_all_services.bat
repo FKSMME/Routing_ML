@@ -1,7 +1,8 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo   Routing-ML All Services
-echo   모든 서비스 동시 실행
+echo   Start all services simultaneously
 echo ========================================
 echo.
 echo Starting services...
@@ -11,7 +12,7 @@ echo.
 
 cd /d "%~dp0"
 
-REM 새 콘솔 창에서 각 서비스 실행
+REM Launch each service in a new console window
 start "Training Service (Port 8001)" cmd /k "run_training_service.bat"
 timeout /t 2 /nobreak >nul
 

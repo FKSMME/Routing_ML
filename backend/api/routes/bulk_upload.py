@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 from typing import Any, Dict, List
 
+import pandas as pd
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from backend.api.schemas import (
@@ -23,14 +24,6 @@ logger = get_logger("api.bulk_upload")
 def parse_excel_file(file_content: bytes) -> List[Dict[str, Any]]:
     """엑셀 파일 파싱"""
     try:
-        import pandas as pd
-    except ImportError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="pandas 라이브러리가 설치되지 않았습니다",
-        ) from exc
-
-    try:
         df = pd.read_excel(io.BytesIO(file_content))
         return df.to_dict('records')
     except Exception as e:
@@ -43,14 +36,6 @@ def parse_excel_file(file_content: bytes) -> List[Dict[str, Any]]:
 
 def parse_csv_file(file_content: bytes, encoding: str = 'utf-8') -> List[Dict[str, Any]]:
     """CSV 파일 파싱"""
-    try:
-        import pandas as pd
-    except ImportError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="pandas 라이브러리가 설치되지 않았습니다",
-        ) from exc
-
     try:
         df = pd.read_csv(io.BytesIO(file_content), encoding=encoding)
         return df.to_dict('records')
@@ -347,14 +332,6 @@ async def execute_bulk_upload(
         errors=creation_errors,
         created_ids=created_ids,
     )
-
-
-# pandas 사용을 위해 import
-try:
-    import pandas as pd
-except ImportError:
-    logger.warning("pandas 라이브러리가 설치되지 않았습니다. 대량 업로드 기능이 제한됩니다.")
-    pd = None  # type: ignore
 
 
 __all__ = ["router"]

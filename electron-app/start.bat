@@ -1,6 +1,7 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
-echo 라우팅 자동생성 시스템 모니터 v5.2.0
+echo Routing ML Auto-Generation Monitor v5.2.0
 echo Electron Edition
 echo ========================================
 echo.
