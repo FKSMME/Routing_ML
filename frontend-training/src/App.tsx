@@ -70,7 +70,7 @@ export default function App() {
   useTheme();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isAdmin = useAuthStore((state) => state.user?.isAdmin ?? false);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -85,8 +85,8 @@ export default function App() {
   const setWorkspaceLayout = useWorkspaceStore((state) => state.setLayout);
 
   useEffect(() => {
-    const normalizedLayout = layout === "mobile" ? "mobile" : layout === "tablet" ? "tablet" : "desktop";
-    setWorkspaceLayout(normalizedLayout);
+    // Currently only desktop layout is supported in workspaceStore
+    setWorkspaceLayout("desktop");
   }, [layout, setWorkspaceLayout]);
 
   // 인증 확인

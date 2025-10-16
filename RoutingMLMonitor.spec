@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# Routing ML Monitor v5.1.0 - PyInstaller Spec File
+# Routing ML Monitor v5.2.0 - PyInstaller Spec File
 # Build Date: 2025-10-16
 
 block_cipher = None
@@ -25,7 +25,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='RoutingMLMonitor_v5.1.0',
+    name='RoutingMLMonitor_v5.2.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

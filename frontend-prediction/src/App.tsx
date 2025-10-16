@@ -132,7 +132,7 @@ export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isAdmin = useAuthStore((state) => state.user?.isAdmin ?? false);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const login = useAuthStore((state) => state.login);
   const [authLoading, setAuthLoading] = useState(true);
