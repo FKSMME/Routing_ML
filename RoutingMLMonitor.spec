@@ -1,11 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-# Routing ML Monitor v4.0.0 - PyInstaller Spec File
-# Build Date: 2025-10-14
+# Routing ML Monitor v5.1.0 - PyInstaller Spec File
+# Build Date: 2025-10-16
 
 block_cipher = None
 
 a = Analysis(
-    ['scripts\\server_monitor_dashboard.py'],
+    ['scripts\\server_monitor_dashboard_v5_1.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -25,7 +25,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='RoutingMLMonitor_v4.0.0',
+    name='RoutingMLMonitor_v5.1.0',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -39,5 +39,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=None,
-    version='4.0.0',
+    version='5.1.0',
 )

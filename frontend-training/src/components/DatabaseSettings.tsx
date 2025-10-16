@@ -65,7 +65,7 @@ export function DatabaseSettings() {
     }
   };
 
-  const handleTest Connection = async () => {
+  const handleTestConnection = async () => {
     if (!password) {
       alert('비밀번호를 입력해주세요');
       return;

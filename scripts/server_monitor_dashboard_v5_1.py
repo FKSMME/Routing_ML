@@ -65,6 +65,9 @@ STATUS_OFFLINE = "#6e7681"
 NODE_DEFAULT = "#2d333b"
 NODE_SELECTED = "#1f6feb"
 NODE_ACTIVE = "#3fb950"
+NODE_DISABLED = "#1a1f24"  # Darker gray for disabled nodes
+NODE_ENABLED = "#2d4a5d"   # Brighter blue-gray for enabled nodes
+NODE_READY = "#3fb950"     # Green for ready/online state
 
 
 def blend_color(hex_a: str, hex_b: str, t: float) -> str:
@@ -309,12 +312,12 @@ class WorkflowCanvas(tk.Canvas):
         self.nodes = []
         self.selected_node = None
 
-        # Workflow nodes
+        # Workflow nodes with state tracking
         self.workflow_nodes = [
-            {"id": "folder", "label": "📁\n폴더 선택", "color": NODE_DEFAULT},
-            {"id": "start", "label": "▶\n서버 시작", "color": NODE_DEFAULT},
-            {"id": "stop", "label": "⏹\n일괄 정지", "color": NODE_DEFAULT},
-            {"id": "clear", "label": "🗑\n캐시 정리", "color": NODE_DEFAULT},
+            {"id": "folder", "label": "📁\n폴더 선택", "color": NODE_ENABLED, "enabled": True},
+            {"id": "start", "label": "▶\n서버 시작", "color": NODE_DISABLED, "enabled": False},
+            {"id": "stop", "label": "⏹\n일괄 정지", "color": NODE_DISABLED, "enabled": False},
+            {"id": "clear", "label": "🗑\n캐시 정리", "color": NODE_ENABLED, "enabled": True},
         ]
 
         self.bind("<Configure>", self._on_resize)
@@ -394,16 +397,47 @@ class WorkflowCanvas(tk.Canvas):
             tags = self.gettags(clicked[0])
             for tag in tags:
                 if tag.startswith(("folder", "start", "stop", "clear")):
-                    self.highlight_node(tag)
-                    self.event_generate("<<NodeClicked>>", data=tag)
+                    # Check if node is enabled before triggering action
+                    node_enabled = True
+                    for workflow_node in self.workflow_nodes:
+                        if workflow_node["id"] == tag:
+                            node_enabled = workflow_node.get("enabled", True)
+                            break
+
+                    if node_enabled:
+                        self.highlight_node(tag)
+                        self.event_generate("<<NodeClicked>>", data=tag)
                     break
 
     def highlight_node(self, node_id: str):
         """Highlight a node temporarily"""
-        for node in self.nodes:
-            if node["id"] == node_id:
-                self.itemconfig(node["rect"], fill=NODE_ACTIVE)
-                self.after(300, lambda: self.itemconfig(node["rect"], fill=NODE_DEFAULT))
+        for i, workflow_node in enumerate(self.workflow_nodes):
+            if workflow_node["id"] == node_id:
+                for node in self.nodes:
+                    if node["id"] == node_id:
+                        original_color = workflow_node["color"]
+                        self.itemconfig(node["rect"], fill=NODE_ACTIVE)
+                        self.after(300, lambda n=node, c=original_color: self.itemconfig(n["rect"], fill=c))
+                        break
+                break
+
+    def update_node_state(self, node_id: str, enabled: bool, color: str = None):
+        """Update node enabled state and color"""
+        for i, workflow_node in enumerate(self.workflow_nodes):
+            if workflow_node["id"] == node_id:
+                workflow_node["enabled"] = enabled
+                if color:
+                    workflow_node["color"] = color
+
+                # Update visual representation
+                for node in self.nodes:
+                    if node["id"] == node_id:
+                        self.itemconfig(node["rect"], fill=workflow_node["color"])
+                        # Update cursor based on enabled state
+                        cursor = "hand2" if enabled else "arrow"
+                        self.itemconfig(node["rect"], cursor=cursor)
+                        self.itemconfig(node["text"], cursor=cursor)
+                        break
                 break
 
 
@@ -498,6 +532,9 @@ class RoutingMLDashboard:
         self.services = services
         self.queue: Queue[Tuple[str, str, str]] = Queue()
         self.selected_folder = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        # Service status tracking for workflow nodes
+        self.service_states: Dict[str, str] = {service.key: "offline" for service in services}
 
         # Create main window
         self.root = tk.Tk()
@@ -1058,16 +1095,52 @@ class RoutingMLDashboard:
 
     def _drain_queue(self):
         """Process status updates"""
+        status_changed = False
         try:
             while True:
                 key, state, message = self.queue.get_nowait()
                 card = self.cards.get(key)
                 if card:
                     card.update_status(state, message)
+
+                # Track service state changes
+                if self.service_states.get(key) != state:
+                    self.service_states[key] = state
+                    status_changed = True
         except Empty:
             pass
 
+        # Update workflow nodes if service states changed
+        if status_changed:
+            self._update_workflow_nodes()
+
         self.root.after(200, self._drain_queue)
+
+    def _update_workflow_nodes(self):
+        """Update workflow node states based on service status"""
+        # Count service states
+        online_count = sum(1 for state in self.service_states.values() if state == "online")
+        offline_count = sum(1 for state in self.service_states.values() if state == "offline")
+        total_count = len(self.service_states)
+
+        all_online = online_count == total_count
+        all_offline = offline_count == total_count
+        any_online = online_count > 0
+
+        # Update "start" node: enabled only when all services are offline
+        if all_offline:
+            self.workflow_canvas.update_node_state("start", enabled=True, color=NODE_ENABLED)
+        else:
+            self.workflow_canvas.update_node_state("start", enabled=False, color=NODE_DISABLED)
+
+        # Update "stop" node: enabled only when at least one service is online
+        if any_online:
+            self.workflow_canvas.update_node_state("stop", enabled=True, color=NODE_ENABLED)
+        else:
+            self.workflow_canvas.update_node_state("stop", enabled=False, color=NODE_DISABLED)
+
+        # "folder" and "clear" nodes are always enabled
+        # (already set in initial state, but we can refresh if needed)
 
     def _update_performance_charts(self):
         """Update performance charts"""
