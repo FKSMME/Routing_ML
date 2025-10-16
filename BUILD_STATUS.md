@@ -1,7 +1,8 @@
 # Build Status Report
-**Date**: 2025-10-16 13:00
+**Date**: 2025-10-17 (Updated)
+**Previous Update**: 2025-10-16 13:00
 **Branch**: 251014
-**Status**: ✅ ALL BUILDS SUCCESSFUL
+**Status**: ✅ ALL BUILDS SUCCESSFUL + PENDING DEPLOYMENT
 
 ---
 
@@ -100,6 +101,31 @@ npm run build
   - Start button: 모든 서비스 offline일 때만 활성화
   - Stop button: 하나라도 online이면 활성화
 - **Build**: RoutingMLMonitor_v5.2.0.exe 재빌드 완료
+
+### 7. UI Refactoring & Menu Reorganization ✅ (2025-10-16 16:20)
+- **API Fix**: 중복된 `/api` prefix 제거 → 404 에러 해결
+- **New Menu**: "데이터 매핑 설정" 추가 (관리자 전용)
+- **Menu Migration**: "공정 그룹 정의" → "데이터 관계 설정"으로 이동
+- **Bug Fixes**:
+  - 프로필 생성 후 리스트 자동 업데이트
+  - 기준정보 검색 바 너비 확대 (20% → minmax(300px, 28%))
+- **Files**: 9개 프론트엔드, 1개 백엔드 파일 수정
+
+### 8. Server Monitor Start Button Always Enabled ✅ (2025-10-16 17:00)
+- **Problem**: 서버 비정상 종료 시 시작 버튼 비활성화
+- **Solution**: 시작 버튼 항상 활성화 로직으로 변경
+- **Reason**: 사용자 자유도 향상, 오류 복구 개선
+- **Build**: RoutingMLMonitor_v5.2.0.exe 최종 재빌드 (17:48)
+
+### 9. View Explorer & Algorithm Map Improvements ✅ (2025-10-16 17:16)
+- **Backend**: `execute_query` 헬퍼 추가, 시스템 개요 API 확장
+- **Frontend**: algorithm-map.html 레이아웃 재설계
+- **Monitor**: Electron & Python 모니터 포트 기반 강제 종료 보강
+
+### 10. Workflow Visualization Expansion ✅ (2025-10-16)
+- **Config**: 23개 모듈 노드 추가 (workflow_settings.json)
+- **UI**: Area 노드, 와이어 효과, 그라디언트 스타일 추가
+- **Flow**: UI → 상태 → 백엔드 → 런타임 4단계 가시화
 
 ---
 
