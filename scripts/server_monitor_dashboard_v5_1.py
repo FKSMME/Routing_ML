@@ -1,5 +1,5 @@
 """
-Routing ML Auto-Generation Dashboard v5.1.0
+Routing ML Auto-Generation Dashboard v5.2.0
 Node-based Workflow Visualization
 Modern Compact Design
 """
@@ -27,8 +27,8 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.1.0"
-__build_date__ = "2025-01-15"
+__version__ = "5.2.0"
+__build_date__ = "2025-10-16"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
 
@@ -154,7 +154,7 @@ def check_service(service: Service) -> Tuple[str, str]:
 
     request = urllib.request.Request(
         service.check_url,
-        headers={"User-Agent": "RoutingML-Monitor/5.1", "Connection": "close"},
+        headers={"User-Agent": "RoutingML-Monitor/5.2", "Connection": "close"},
     )
     start = time.perf_counter()
 
@@ -917,7 +917,7 @@ class RoutingMLDashboard:
         try:
             request = urllib.request.Request(
                 "http://localhost:8000/api/auth/admin/pending-users",
-                headers={"User-Agent": "RoutingML-Monitor/5.1"}
+                headers={"User-Agent": "RoutingML-Monitor/5.2"}
             )
 
             with urllib.request.urlopen(request, timeout=5) as response:
@@ -1051,7 +1051,7 @@ class RoutingMLDashboard:
             request = urllib.request.Request(
                 "http://localhost:8000/api/auth/admin/approve",
                 data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.1"},
+                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
                 method="POST"
             )
 
@@ -1074,7 +1074,7 @@ class RoutingMLDashboard:
             request = urllib.request.Request(
                 "http://localhost:8000/api/auth/admin/reject",
                 data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.1"},
+                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
                 method="POST"
             )
 
