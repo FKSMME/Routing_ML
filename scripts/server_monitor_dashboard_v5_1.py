@@ -553,6 +553,10 @@ class RoutingMLDashboard:
         # Start monitoring
         self.root.after(200, self._drain_queue)
         self.root.after(1000, self._update_performance_charts)
+
+        # Initial workflow node update (assume all services offline at start)
+        self.root.after(100, self._update_workflow_nodes)
+
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
 
