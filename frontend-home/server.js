@@ -5,10 +5,15 @@ const path = require("path");
 const { URL } = require("url");
 
 const PORT = Number(process.env.PORT || 3000);
+const USE_HTTPS = process.env.USE_HTTPS === "true" || false;
 const HOST = "0.0.0.0";
 const BASE_DIR = __dirname;
 const API_TARGET = process.env.API_TARGET || "http://localhost:8000";
 const API_URL = new URL(API_TARGET);
+
+// SSL Certificate paths
+const SSL_KEY = path.join(__dirname, "../certs/rtml.ksm.co.kr.key");
+const SSL_CERT = path.join(__dirname, "../certs/rtml.ksm.co.kr.crt");
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -126,7 +131,7 @@ function proxyToApi(req, res, requestUrl) {
   req.pipe(proxyReq, { end: true });
 }
 
-const server = http.createServer((req, res) => {
+const requestHandler = (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
   if (requestUrl.pathname.startsWith("/api/")) {
@@ -149,10 +154,26 @@ const server = http.createServer((req, res) => {
   }
 
   serveFile(filePath, res);
-});
+};
+
+let server;
+
+if (USE_HTTPS && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
+  const options = {
+    key: fs.readFileSync(SSL_KEY),
+    cert: fs.readFileSync(SSL_CERT),
+  };
+  server = https.createServer(options, requestHandler);
+  console.log("[home] HTTPS enabled with self-signed certificate");
+} else {
+  server = http.createServer(requestHandler);
+  console.log("[home] Running in HTTP mode");
+}
 
 server.listen(PORT, HOST, () => {
-  console.log(`[home] listening on http://localhost:${PORT}`);
-  console.log("        algorithm map:    http://localhost:3000/algorithm-map.html");
-  console.log("        sql view explorer: http://localhost:3000/view-explorer.html");
+  const protocol = USE_HTTPS ? "https" : "http";
+  console.log(`[home] listening on ${protocol}://localhost:${PORT}`);
+  console.log(`        algorithm map:    ${protocol}://localhost:${PORT}/algorithm-map.html`);
+  console.log(`        sql view explorer: ${protocol}://localhost:${PORT}/view-explorer.html`);
+  console.log(`        domain access:    ${protocol}://rtml.ksm.co.kr:${PORT}`);
 });

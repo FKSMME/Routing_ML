@@ -28,7 +28,7 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.2.1"
+__version__ = "5.2.2"
 __build_date__ = "2025-10-17"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
@@ -111,19 +111,19 @@ SERVICES: Tuple[Service, ...] = (
         check_url="http://localhost:8000/api/health",
         start_command="run_backend_main.bat",
         links=(
-            ("API Docs", "http://localhost:8000/docs"),
-            ("HTTPS Docs", "https://localhost:8000/docs"),
+            ("Local", "http://localhost:8000/docs"),
+            ("Domain", "http://rtml.ksm.co.kr:8000/docs"),
         ),
     ),
     Service(
         key="home",
         name="Home",
         icon="🏠",
-        check_url="http://localhost:3000/",
+        check_url="https://localhost:3000/",
         start_command="run_frontend_home.bat",
         links=(
-            ("HTTP", "http://localhost:3000"),
-            ("HTTPS", "https://localhost:3000"),
+            ("Local", "https://localhost:3000"),
+            ("Domain", "https://rtml.ksm.co.kr:3000"),
         ),
     ),
     Service(
@@ -133,8 +133,8 @@ SERVICES: Tuple[Service, ...] = (
         check_url="https://localhost:5173/",
         start_command="run_frontend_prediction.bat",
         links=(
-            ("Open HTTPS", "https://localhost:5173"),
-            ("Open HTTP", "http://localhost:5173"),
+            ("Local", "https://localhost:5173"),
+            ("Domain", "https://rtml.ksm.co.kr:5173"),
         ),
     ),
     Service(
@@ -144,8 +144,8 @@ SERVICES: Tuple[Service, ...] = (
         check_url="https://localhost:5174/",
         start_command="run_frontend_training.bat",
         links=(
-            ("Open HTTPS", "https://localhost:5174"),
-            ("Open HTTP", "http://localhost:5174"),
+            ("Local", "https://localhost:5174"),
+            ("Domain", "https://rtml.ksm.co.kr:5174"),
         ),
     ),
 )

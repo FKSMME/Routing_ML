@@ -10,15 +10,30 @@ echo.
 cd /d "%~dp0\frontend-home"
 
 if not exist "node_modules" (
-    echo ERROR: node_modules not found!
-    echo Please run: npm install
-    pause
-    exit /b 1
+    if exist "package.json" (
+        echo node_modules not found. Running npm install...
+        echo.
+        call npm install
+        if errorlevel 1 (
+            echo.
+            echo ERROR: npm install failed.
+            pause
+            exit /b 1
+        )
+    ) else (
+        echo [INFO] node_modules directory not found, but no package.json present.
+        echo [INFO] Skipping dependency install and starting static server directly.
+        echo.
+    )
 )
 
-echo Starting Home Dashboard on http://localhost:3000
+echo Starting Home Dashboard with HTTPS support
+echo   - HTTP:  http://localhost:3000
+echo   - HTTPS: https://localhost:3000
+echo   - Domain: https://rtml.ksm.co.kr:3000
 echo.
 
+set USE_HTTPS=true
 node server.js
 
 pause
