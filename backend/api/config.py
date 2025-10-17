@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     )
     allowed_origins: List[str] = Field(
         default_factory=lambda: [
+            # HTTP - Localhost
             "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:5173",
@@ -50,15 +51,35 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5175",
             "http://localhost:5176",
             "http://127.0.0.1:5176",
+            # HTTPS - Localhost
+            "https://localhost:3000",
+            "https://127.0.0.1:3000",
+            "https://localhost:5173",
+            "https://127.0.0.1:5173",
+            "https://localhost:5174",
+            "https://127.0.0.1:5174",
+            # HTTP - IP Address
             "http://10.204.2.28:3000",
             "http://10.204.2.28:5173",
             "http://10.204.2.28:5174",
+            # HTTPS - IP Address
+            "https://10.204.2.28:3000",
+            "https://10.204.2.28:5173",
+            "https://10.204.2.28:5174",
+            # HTTP - Production Domains
             "http://rtml.ksm.co.kr:3000",
             "http://rtml.ksm.co.kr:5173",
             "http://rtml.ksm.co.kr:5174",
             "http://mcs.ksm.co.kr:3000",
             "http://mcs.ksm.co.kr:5173",
             "http://mcs.ksm.co.kr:5174",
+            # HTTPS - Production Domains
+            "https://rtml.ksm.co.kr:3000",
+            "https://rtml.ksm.co.kr:5173",
+            "https://rtml.ksm.co.kr:5174",
+            "https://mcs.ksm.co.kr:3000",
+            "https://mcs.ksm.co.kr:5173",
+            "https://mcs.ksm.co.kr:5174",
         ],
     )
 
