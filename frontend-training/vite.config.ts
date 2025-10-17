@@ -1,4 +1,6 @@
 ﻿import { fileURLToPath, URL } from "node:url";
+import fs from "node:fs";
+import path from "node:path";
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -63,6 +65,10 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5174,
     open: false,
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key")),
+      cert: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt")),
+    },
     fs: {
       allow: ["..", "../tests"],
     },
@@ -70,6 +76,7 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
+        secure: false,
       },
     },
     headers: {
@@ -81,6 +88,10 @@ export default defineConfig({
   preview: {
     host: "0.0.0.0",
     port: 5174,
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key")),
+      cert: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt")),
+    },
   },
   test: {
     environment: "jsdom",
