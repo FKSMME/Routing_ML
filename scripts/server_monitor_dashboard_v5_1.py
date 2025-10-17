@@ -12,6 +12,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import ssl
 import webbrowser
 import json
 import subprocess
@@ -27,8 +28,8 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.2.0"
-__build_date__ = "2025-10-16"
+__version__ = "5.2.1"
+__build_date__ = "2025-10-17"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
 
@@ -111,6 +112,7 @@ SERVICES: Tuple[Service, ...] = (
         start_command="run_backend_main.bat",
         links=(
             ("API Docs", "http://localhost:8000/docs"),
+            ("HTTPS Docs", "https://localhost:8000/docs"),
         ),
     ),
     Service(
@@ -120,27 +122,30 @@ SERVICES: Tuple[Service, ...] = (
         check_url="http://localhost:3000/",
         start_command="run_frontend_home.bat",
         links=(
-            ("Open", "http://localhost:3000"),
+            ("HTTP", "http://localhost:3000"),
+            ("HTTPS", "https://localhost:3000"),
         ),
     ),
     Service(
         key="prediction",
         name="Routing",
         icon="🎯",
-        check_url="http://localhost:5173/",
+        check_url="https://localhost:5173/",
         start_command="run_frontend_prediction.bat",
         links=(
-            ("Open", "http://localhost:5173"),
+            ("Open HTTPS", "https://localhost:5173"),
+            ("Open HTTP", "http://localhost:5173"),
         ),
     ),
     Service(
         key="training",
         name="Training",
         icon="🧠",
-        check_url="http://localhost:5174/",
+        check_url="https://localhost:5174/",
         start_command="run_frontend_training.bat",
         links=(
-            ("Open", "http://localhost:5174"),
+            ("Open HTTPS", "https://localhost:5174"),
+            ("Open HTTP", "http://localhost:5174"),
         ),
     ),
 )
@@ -158,8 +163,13 @@ def check_service(service: Service) -> Tuple[str, str]:
     )
     start = time.perf_counter()
 
+    # Create SSL context that doesn't verify self-signed certificates
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
     try:
-        with urllib.request.urlopen(request, timeout=service.timeout) as response:
+        with urllib.request.urlopen(request, timeout=service.timeout, context=ssl_context) as response:
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             code = response.getcode()
             state = "online" if 200 <= code < 400 else "warning"
@@ -315,7 +325,7 @@ class WorkflowCanvas(tk.Canvas):
         # Workflow nodes with state tracking
         self.workflow_nodes = [
             {"id": "folder", "label": "📁\n폴더 선택", "color": NODE_ENABLED, "enabled": True},
-            {"id": "start", "label": "▶\n서버 시작", "color": NODE_DISABLED, "enabled": False},
+            {"id": "start", "label": "▶\n서버 시작", "color": NODE_ENABLED, "enabled": True},
             {"id": "stop", "label": "⏹\n일괄 정지", "color": NODE_DISABLED, "enabled": False},
             {"id": "clear", "label": "🗑\n캐시 정리", "color": NODE_ENABLED, "enabled": True},
         ]
@@ -857,15 +867,60 @@ class RoutingMLDashboard:
 
     def _stop_all_services(self):
         """Stop all services"""
-        result = messagebox.askyesno("확인", "모든 서비스를 종료하시겠습니까?")
+        result = messagebox.askyesno("확인", "모든 서비스를 중지하시겠습니까?")
 
         if not result:
             return
 
         try:
-            subprocess.run(["taskkill", "/F", "/IM", "node.exe"], capture_output=True)
-            subprocess.run(["taskkill", "/F", "/IM", "python.exe", "/FI", "WINDOWTITLE eq *uvicorn*"], capture_output=True)
-            messagebox.showinfo("서비스 중지", "모든 서비스가 종료되었습니다.")
+            target_ports = set()
+            for service in self.services:
+                parsed = urllib.parse.urlparse(service.check_url)
+                if parsed.port:
+                    target_ports.add(parsed.port)
+
+            target_ports.update({8000, 8001, 8002, 3000, 5173, 5174})
+
+            active_pids = set()
+            for conn in psutil.net_connections(kind="inet"):
+                try:
+                    if conn.laddr and conn.laddr.port in target_ports and conn.pid:
+                        active_pids.add(conn.pid)
+                except Exception:
+                    continue
+
+            expanded_pids = set()
+            for pid in active_pids:
+                if pid == os.getpid():
+                    continue
+                expanded_pids.add(pid)
+                try:
+                    proc = psutil.Process(pid)
+                    for child in proc.children(recursive=True):
+                        if child.pid != os.getpid():
+                            expanded_pids.add(child.pid)
+                    for parent in proc.parents():
+                        if parent and parent.pid and parent.pid != os.getpid():
+                            expanded_pids.add(parent.pid)
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+
+            terminated = []
+            for pid in sorted(expanded_pids):
+                if pid == os.getpid():
+                    continue
+                try:
+                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
+                    terminated.append(pid)
+                except Exception:
+                    continue
+
+            if not terminated:
+                message = "종료할 서버 프로세스를 찾지 못했습니다. 이미 내려가 있거나 다른 계정에서 실행 중일 수 있습니다."
+            else:
+                message = "다음 PID를 포함한 프로세스를 종료했습니다:\n" + ", ".join(str(pid) for pid in terminated)
+            message += "\n대상 포트: " + ", ".join(str(port) for port in sorted(target_ports))
+            messagebox.showinfo("서버 정지", message)
         except Exception as e:
             messagebox.showerror("오류", f"서비스 중지 실패:\n{e}")
 
@@ -914,13 +969,18 @@ class RoutingMLDashboard:
         for widget in self.user_list_frame.winfo_children():
             widget.destroy()
 
+        # Create SSL context for self-signed certificates
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         try:
             request = urllib.request.Request(
                 "http://localhost:8000/api/auth/admin/pending-users",
                 headers={"User-Agent": "RoutingML-Monitor/5.2"}
             )
 
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 users = data.get("users", [])
                 count = data.get("count", 0)
@@ -1046,6 +1106,11 @@ class RoutingMLDashboard:
         if not confirm:
             return
 
+        # Create SSL context for self-signed certificates
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         try:
             payload = json.dumps({"username": username, "make_admin": make_admin}).encode("utf-8")
             request = urllib.request.Request(
@@ -1055,7 +1120,7 @@ class RoutingMLDashboard:
                 method="POST"
             )
 
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 messagebox.showinfo("승인 완료", f"'{username}' 회원이 승인되었습니다.")
                 self._load_pending_users()
 
@@ -1069,6 +1134,11 @@ class RoutingMLDashboard:
         if reason is None:
             return
 
+        # Create SSL context for self-signed certificates
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
         try:
             payload = json.dumps({"username": username, "reason": reason or "사유 없음"}).encode("utf-8")
             request = urllib.request.Request(
@@ -1078,7 +1148,7 @@ class RoutingMLDashboard:
                 method="POST"
             )
 
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 messagebox.showinfo("거절 완료", f"'{username}' 회원 가입이 거절되었습니다.")
                 self._load_pending_users()
 
@@ -1131,11 +1201,9 @@ class RoutingMLDashboard:
         all_offline = offline_count == total_count
         any_online = online_count > 0
 
-        # Update "start" node: enabled only when all services are offline
-        if all_offline:
-            self.workflow_canvas.update_node_state("start", enabled=True, color=NODE_ENABLED)
-        else:
-            self.workflow_canvas.update_node_state("start", enabled=False, color=NODE_DISABLED)
+        # Update "start" node: ALWAYS enabled for user convenience
+        # User can try to start services anytime
+        self.workflow_canvas.update_node_state("start", enabled=True, color=NODE_ENABLED)
 
         # Update "stop" node: enabled only when at least one service is online
         if any_online:
