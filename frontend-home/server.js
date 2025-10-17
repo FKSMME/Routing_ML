@@ -1,10 +1,14 @@
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
+const { URL } = require("url");
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = Number(process.env.PORT || 3000);
 const HOST = "0.0.0.0";
 const BASE_DIR = __dirname;
+const API_TARGET = process.env.API_TARGET || "http://localhost:8000";
+const API_URL = new URL(API_TARGET);
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -39,39 +43,22 @@ function resolveRequestPath(urlPath) {
   return path.join(BASE_DIR, normalised);
 }
 
-/**
- * Security headers for HTTP responses
- *
- * IMPORTANT: These headers assume the server is behind an HTTPS reverse proxy.
- * In production, ensure you have:
- * - HTTPS termination at reverse proxy level (nginx, Apache, Caddy, etc.)
- * - Proper SSL/TLS certificate configuration
- * - HSTS enabled on the proxy if needed
- *
- * This Node.js server serves HTTP only - HTTPS should be handled by the proxy.
- */
 function getSecurityHeaders(contentType) {
   return {
     "Content-Type": contentType,
-    // Prevent MIME type sniffing
     "X-Content-Type-Options": "nosniff",
-    // Enable XSS filter in browsers
     "X-XSS-Protection": "1; mode=block",
-    // Control iframe embedding (SAMEORIGIN allows same-domain framing)
     "X-Frame-Options": "SAMEORIGIN",
-    // Referrer policy - only send origin on cross-origin requests
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    // Content Security Policy - adjust as needed for your app
     "Content-Security-Policy": [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net", // Allow inline scripts and CDN
-      "style-src 'self' 'unsafe-inline'", // Allow inline styles
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+      "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:* http://10.204.2.28:* ws://localhost:* ws://10.204.2.28:*", // Allow local API calls
+      "connect-src 'self' http://localhost:* http://10.204.2.28:* http://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*",
       "frame-ancestors 'self'",
     ].join("; "),
-    // Permissions Policy (formerly Feature-Policy)
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
   };
 }
@@ -84,13 +71,12 @@ function serveFile(filePath, res) {
 
   fs.readFile(filePath, encoding, (error, data) => {
     if (error) {
+      const headers = getSecurityHeaders("text/plain; charset=utf-8");
       if (error.code === "ENOENT") {
-        const headers = getSecurityHeaders("text/plain; charset=utf-8");
         res.writeHead(404, headers);
         res.end("404 Not Found");
         return;
       }
-      const headers = getSecurityHeaders("text/plain; charset=utf-8");
       res.writeHead(500, headers);
       res.end("500 Internal Server Error");
       return;
@@ -102,8 +88,52 @@ function serveFile(filePath, res) {
   });
 }
 
+function proxyToApi(req, res, requestUrl) {
+  const isHttps = API_URL.protocol === "https:";
+  const client = isHttps ? https : http;
+  const headers = { ...req.headers };
+
+  headers.host = API_URL.host;
+  headers.origin = `${API_URL.protocol}//${API_URL.host}`;
+  delete headers["accept-encoding"];
+
+  const options = {
+    hostname: API_URL.hostname,
+    port: API_URL.port || (isHttps ? 443 : 80),
+    path: requestUrl.pathname + requestUrl.search,
+    method: req.method,
+    headers,
+  };
+
+  const proxyReq = client.request(options, (proxyRes) => {
+    const upstreamHeaders = { ...proxyRes.headers };
+    delete upstreamHeaders["content-security-policy"];
+    const securityHeaders = getSecurityHeaders(upstreamHeaders["content-type"] || "application/json; charset=utf-8");
+
+    res.writeHead(proxyRes.statusCode || 500, { ...upstreamHeaders, ...securityHeaders });
+    proxyRes.pipe(res, { end: true });
+  });
+
+  proxyReq.on("error", (error) => {
+    const headers = getSecurityHeaders("application/json; charset=utf-8");
+    res.writeHead(502, headers);
+    res.end(JSON.stringify({
+      success: false,
+      message: error.code ? `API proxy error: ${error.code}` : "API proxy error",
+    }));
+  });
+
+  req.pipe(proxyReq, { end: true });
+}
+
 const server = http.createServer((req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+
+  if (requestUrl.pathname.startsWith("/api/")) {
+    proxyToApi(req, res, requestUrl);
+    return;
+  }
+
   let filePath = resolveRequestPath(requestUrl.pathname);
 
   try {
@@ -122,8 +152,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`🚀 Unified Homepage Server running at http://localhost:${PORT}`);
-  console.log("   - Algorithm Overview: http://localhost:3000/algorithm-map.html");
-  console.log("   - Prediction Frontend: http://localhost:5173");
-  console.log("   - Training Frontend:   http://localhost:5174");
+  console.log(`[home] listening on http://localhost:${PORT}`);
+  console.log("        algorithm map:    http://localhost:3000/algorithm-map.html");
+  console.log("        sql view explorer: http://localhost:3000/view-explorer.html");
 });

@@ -61,8 +61,6 @@ interface APIEdge {
   label?: string;
 }
 
-const API_BASE_URL = 'http://localhost:8000';
-
 // 커스텀 노드 컴포넌트
 const FunctionNode = memo(({ data }: NodeProps<FunctionNodeData>) => {
   const isClass = data.type === 'class';
@@ -288,7 +286,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/files`, {
+        const response = await axios.get('/api/algorithm-viz/files', {
           params: {
             directory: 'backend',
             include_training: true,
@@ -381,7 +379,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
 
     setIsAnalyzing(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/analyze`, {
+      const response = await axios.get('/api/algorithm-viz/analyze', {
         params: {
           file_path: selectedFile.full_path || selectedFile.path,
         },
@@ -653,7 +651,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     setViewMode('summary');
     setIsAnalyzing(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/algorithm-viz/summary`);
+      const response = await axios.get('/api/algorithm-viz/summary');
       const apiNodes: Node[] = response.data.nodes;
       const apiEdges: Edge[] = response.data.edges;
 

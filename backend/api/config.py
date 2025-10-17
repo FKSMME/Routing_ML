@@ -50,9 +50,17 @@ class Settings(BaseSettings):
             "http://127.0.0.1:5175",
             "http://localhost:5176",
             "http://127.0.0.1:5176",
+            "http://10.204.2.28:3000",
+            "http://10.204.2.28:5173",
+            "http://10.204.2.28:5174",
+            "http://rtml.ksm.co.kr:3000",
+            "http://rtml.ksm.co.kr:5173",
+            "http://rtml.ksm.co.kr:5174",
+            "http://mcs.ksm.co.kr:3000",
+            "http://mcs.ksm.co.kr:5173",
+            "http://mcs.ksm.co.kr:5174",
         ],
     )
-
 
     sql_table_candidates: str = Field(default="routing_candidates")
     sql_table_operations: str = Field(default="routing_candidate_operations")
