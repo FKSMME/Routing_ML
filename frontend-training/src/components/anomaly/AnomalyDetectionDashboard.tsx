@@ -60,14 +60,12 @@ export const AnomalyDetectionDashboard: React.FC = () => {
   const [contamination, setContamination] = useState(0.1);
   const [threshold, setThreshold] = useState(-0.5);
 
-  const API_BASE = 'http://localhost:8000';
-
   // 통계 조회
   const fetchStats = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<AnomalyStats>(`${API_BASE}/api/anomaly/stats`);
+      const response = await axios.get<AnomalyStats>('/api/anomaly/stats');
       setStats(response.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || '통계 조회 중 오류가 발생했습니다');
@@ -83,7 +81,7 @@ export const AnomalyDetectionDashboard: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        `${API_BASE}/api/anomaly/train`,
+        '/api/anomaly/train',
         null,
         {
           params: {
