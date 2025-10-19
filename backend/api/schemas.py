@@ -136,18 +136,19 @@ class ChangePasswordResponse(BaseModel):
 
 
 class UserListItem(BaseModel):
-    """사용자 목록 아이템."""
+    """����� ��� ������."""
 
     username: str
     display_name: Optional[str] = None
     status: Literal["pending", "approved", "rejected"]
     is_admin: bool = False
+    must_change_password: bool = False
+    invited_by: Optional[str] = None
     created_at: Optional[datetime] = None
     last_login_at: Optional[datetime] = None
     approved_at: Optional[datetime] = None
     rejected_at: Optional[datetime] = None
-
-
+    initial_password_sent_at: Optional[datetime] = None
 class UserListResponse(BaseModel):
     """사용자 목록 응답."""
 
@@ -157,6 +158,56 @@ class UserListResponse(BaseModel):
     offset: int = Field(..., ge=0, description="오프셋")
 
 
+class BulkRegisterUser(BaseModel):
+    username: str = Field(..., min_length=1)
+    display_name: Optional[str] = None
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = Field(
+        default=None,
+        min_length=6,
+        description="지정하지 않으면 임시 비밀번호가 자동 생성됩니다.",
+    )
+    make_admin: bool = False
+
+
+class BulkRegisterRequest(BaseModel):
+    users: List[BulkRegisterUser]
+    auto_approve: bool = Field(
+        default=True,
+        description="등록 즉시 승인할지 여부",
+    )
+    force_password_change: bool = Field(
+        default=True,
+        description="최초 로그인 시 비밀번호 변경 강제",
+    )
+    overwrite_existing: bool = Field(
+        default=False,
+        description="기존 사용자를 덮어쓸지 여부",
+    )
+    notify: bool = Field(
+        default=False,
+        description="등록 후 이메일 통지를 시도할지 여부",
+    )
+    invited_by: Optional[str] = Field(
+        default=None,
+        description="일괄 등록 실행자 식별자 (감사용)",
+    )
+
+
+class BulkRegisterResult(BaseModel):
+    username: str
+    status: Literal["created", "updated", "skipped", "failed"]
+    is_admin: bool = False
+    approved: bool = False
+    temporary_password: Optional[str] = None
+    message: Optional[str] = None
+
+
+class BulkRegisterResponse(BaseModel):
+    successes: List[BulkRegisterResult] = Field(default_factory=list)
+    failures: List[BulkRegisterResult] = Field(default_factory=list)
+    total: int = 0
 class PredictionRequest(BaseModel):
     """Payload for routing prediction requests."""
 
@@ -1236,3 +1287,5 @@ class DataMappingApplyResponse(BaseModel):
     total_rows: int = Field(..., ge=0, description="전체 데이터 행 수")
     csv_path: Optional[str] = Field(None, description="생성된 CSV/XLSX 파일 경로")
     message: str = Field(default="매핑 적용 완료", description="결과 메시지")
+
+
