@@ -15,6 +15,7 @@ export default defineConfig({
       "@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
       "@app-types": fileURLToPath(new URL("./src/types", import.meta.url)),
       "@store": fileURLToPath(new URL("./src/store", import.meta.url)),
+      "@routing-ml/shared": fileURLToPath(new URL("../frontend-shared/src", import.meta.url)),
     },
   },
   build: {

@@ -1,8 +1,8 @@
+import { FullScreen3DBackground } from "@routing-ml/shared";
 import { BlueprintGraphPanel } from "@components/blueprint/BlueprintGraphPanel";
 import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
-import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
 import { BackgroundControls } from "@components/BackgroundControls";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { LoginPage } from "@components/auth/LoginPage";

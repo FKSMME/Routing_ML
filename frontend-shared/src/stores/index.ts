@@ -1,0 +1,1 @@
+export { useBackgroundSettings } from './backgroundSettings';

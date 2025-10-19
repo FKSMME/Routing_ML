@@ -1,13 +1,13 @@
+import { FullScreen3DBackground } from "@routing-ml/shared";
+import { LoginPage } from "@components/auth/LoginPage";
+import { BackgroundControls } from "@components/BackgroundControls";
 import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
 import { MainNavigation } from "@components/MainNavigation";
-import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
-import { BackgroundControls } from "@components/BackgroundControls";
-import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
-import { LoginPage } from "@components/auth/LoginPage";
 import { MetricsPanel } from "@components/MetricsPanel";
 import { PredictionControls } from "@components/PredictionControls";
+import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
 import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
@@ -20,20 +20,20 @@ const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/Mast
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
-import { HeroBanner } from "@components/HeroBanner";
 import ErrorBoundary from "@components/ErrorBoundary";
+import { HeroBanner } from "@components/HeroBanner";
+import { RoutingExplanationPanel } from "@components/routing/RoutingExplanationPanel";
 import { TimelinePanel } from "@components/TimelinePanel";
 import { VisualizationSummary } from "@components/VisualizationSummary";
-import { RoutingExplanationPanel } from "@components/routing/RoutingExplanationPanel";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
-import { useRoutingStore, type RoutingProductTab } from "@store/routingStore";
-import { useWorkspaceStore, type NavigationKey } from "@store/workspaceStore";
-import { useAuthStore } from "@store/authStore";
 import { useTheme } from "@hooks/useTheme";
-import { Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
+import { useAuthStore } from "@store/authStore";
+import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
+import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
-import { useEffect, useState, Suspense, useMemo } from "react";
+import { Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
+import { Suspense, useEffect, useMemo,useState } from "react";
 
 // 🎨 Base Navigation Items
 const BASE_NAVIGATION_ITEMS = [
