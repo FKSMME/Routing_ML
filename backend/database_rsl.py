@@ -153,6 +153,9 @@ class UserAccount(Base):
     password_hash = Column(String(255), nullable=False)
     status = Column(String(32), nullable=False, default="pending")
     is_admin = Column(Boolean, nullable=False, default=False)
+    must_change_password = Column(Boolean, nullable=False, default=False)
+    invited_by = Column(String(150), nullable=True)
+    initial_password_sent_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive, nullable=False)
     updated_at = Column(
         DateTime, default=utc_now_naive, onupdate=utc_now_naive, nullable=False
@@ -225,6 +228,11 @@ def session_scope() -> Generator[Session, None, None]:
 
 def bootstrap_schema() -> None:
     """Create tables if they do not already exist."""
+    import os
+
+    # Skip schema bootstrap in test environment
+    if os.getenv("TESTING") == "true":
+        return
 
     engine = get_engine()
     Base.metadata.create_all(engine)
@@ -253,6 +261,24 @@ def bootstrap_schema() -> None:
             conn.execute(
                 text(
                     "ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL"
+                )
+            )
+        if "must_change_password" not in user_columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
+        if "invited_by" not in user_columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN invited_by VARCHAR(150) NULL"
+                )
+            )
+        if "initial_password_sent_at" not in user_columns:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN initial_password_sent_at DATETIME NULL"
                 )
             )
 

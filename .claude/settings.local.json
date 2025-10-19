@@ -83,7 +83,8 @@
       "Bash(ping:*)",
       "Bash(nslookup:*)",
       "Bash(npm install:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(./../.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)"
     ],
     "deny": [],
     "ask": []
