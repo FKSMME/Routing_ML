@@ -18,8 +18,8 @@
 
 ## 3. 기능상 취약점
 1. **테스트 환경 경로 고정** (`backend/api/services/auth_service.py:439`, `backend/database_rsl.py`)<br>
-   - `auth_service`가 모듈 임포트 시점에 SQLite 파일을 열도록 고정되어 있어, 테스트용 임시 경로 설정이 불가능합니다.<br>
-   - 개선: 서비스 인스턴스를 지연 생성하고, 테스트 시 `RSL_DATABASE_URL`을 `sqlite:///./logs/test_rsl.db` 등으로 덮어쓰는 구성 추가.
+   - `auth_service`가 모듈 임포트 시점에 SQLite 파일을 열도록 고정되어 백엔드 자동 테스트가 즉시 실패합니다.<br>
+   - 개선: 서비스 인스턴스를 지연 생성하고, PoC 환경에서는 불필요한 테스트 모듈 임포트를 비활성화하거나 실제 MSSQL 연결 설정을 사용하도록 조정.
 
 2. **GLTF 로더 타입 가드 누락** (`frontend-prediction/src/components/FullScreen3DBackground.tsx`)<br>
    - `useGLTF` 반환값이 배열일 가능성을 고려하지 않아 `.scene` 접근 시 TypeScript/런타임 오류가 발생합니다.<br>
@@ -57,4 +57,3 @@
 
 ---
 작성: 2025-10-20 07:40:42 KST
-
