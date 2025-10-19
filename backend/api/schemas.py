@@ -81,6 +81,31 @@ class AdminRejectRequest(BaseModel):
     reason: Optional[str] = None
 
 
+class AdminResetPasswordRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    temp_password: Optional[str] = Field(
+        default=None,
+        min_length=6,
+        description="지정하지 않으면 임시 비밀번호 자동 생성",
+    )
+    force_change: bool = Field(
+        default=True,
+        description="다음 로그인 시 비밀번호 변경을 강제할지 여부",
+    )
+    notify: bool = Field(
+        default=False,
+        description="임시 비밀번호를 이메일로 전송할지 여부",
+    )
+
+
+class AdminResetPasswordResponse(BaseModel):
+    username: str
+    temporary_password: str
+    force_change: bool
+    notified: bool
+    updated_at: datetime
+
+
 class UserStatusResponse(BaseModel):
     username: str
     display_name: Optional[str] = None

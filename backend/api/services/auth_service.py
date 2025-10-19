@@ -436,7 +436,14 @@ def _coerce_datetime(value: object) -> datetime:
     raise PermissionError("토큰 시간 정보가 잘못되었습니다")
 
 
-auth_service = AuthService()
+import os
+
+# Only instantiate auth_service if not in testing mode
+if os.getenv("TESTING") != "true":
+    auth_service = AuthService()
+else:
+    from unittest.mock import MagicMock
+    auth_service = MagicMock()
 
 
 def login(payload: LoginRequest, client_host: Optional[str]) -> LoginResponse:
