@@ -2,6 +2,12 @@ import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayloa
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
+import type {
+  TensorboardFilterResponse,
+  TensorboardMetricSeries,
+  TensorboardPointResponse,
+  TensorboardProjectorSummary,
+} from "@app-types/tensorboard";
 import axios from "axios";
 
 // Use relative URL to leverage Vite proxy in development
@@ -38,6 +44,52 @@ const toUserSession = (payload: AuthenticatedUserPayload): UserSession => ({
   isAdmin: payload.is_admin,
   issuedAt: payload.issued_at,
   expiresAt: payload.expires_at,
+});
+
+type TensorboardProjectorPointRequestOptions = {
+  filters?: Record<string, string[]>;
+  limit?: number;
+  offset?: number;
+  stride?: number;
+  sample?: number;
+};
+
+interface ExportTensorboardProjectorPayload {
+  sample_every?: number;
+  max_rows?: number;
+}
+
+const mapProjectorSummary = (payload: Record<string, any>): TensorboardProjectorSummary => ({
+  id: payload.id,
+  versionLabel: payload.version_label ?? payload.versionLabel ?? null,
+  tensorName: payload.tensor_name ?? payload.tensorName ?? "",
+  sampleCount: payload.sample_count ?? payload.sampleCount ?? 0,
+  updatedAt: payload.updated_at ?? payload.updatedAt ?? null,
+});
+
+const mapFilterResponse = (payload: Record<string, any>): TensorboardFilterResponse => ({
+  projectorId: payload.projector_id ?? payload.projectorId ?? "",
+  fields: Array.isArray(payload.fields) ? payload.fields : [],
+});
+
+const mapPointResponse = (payload: Record<string, any>): TensorboardPointResponse => ({
+  projectorId: payload.projector_id ?? payload.projectorId ?? "",
+  total: payload.total ?? 0,
+  limit: payload.limit ?? 0,
+  offset: payload.offset ?? 0,
+  points: Array.isArray(payload.points) ? payload.points : [],
+});
+
+const mapMetricSeries = (series: Record<string, any>): TensorboardMetricSeries => ({
+  runId: series.run_id ?? series.runId ?? "",
+  metric: series.metric ?? "",
+  points: Array.isArray(series.points)
+    ? series.points.map((point: Record<string, any>) => ({
+        step: point.step ?? 0,
+        value: point.value ?? 0,
+        timestamp: point.timestamp ?? null,
+      }))
+    : [],
 });
 
 export async function registerUser(payload: RegisterRequestPayload): Promise<RegisterResponsePayload> {
@@ -559,24 +611,56 @@ export async function applyDataMapping(
 // TENSORBOARD APIs (Stub implementations)
 // ============================================================================
 
-export async function fetchTensorboardProjectorFilters(...args: any[]): Promise<any> {
-  throw new Error("Tensorboard API not implemented");
+export async function fetchTensorboardProjectors(): Promise<TensorboardProjectorSummary[]> {
+  const response = await api.get<Array<Record<string, any>>>("/training/tensorboard/projectors");
+  return response.data.map(mapProjectorSummary);
 }
 
-export async function fetchTensorboardProjectorPoints(...args: any[]): Promise<any> {
-  throw new Error("Tensorboard API not implemented");
+export async function fetchTensorboardProjectorFilters(projectorId: string): Promise<TensorboardFilterResponse> {
+  const response = await api.get<Record<string, any>>(
+    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/filters`
+  );
+  return mapFilterResponse(response.data);
 }
 
-export async function fetchTensorboardProjectors(...args: any[]): Promise<any> {
-  throw new Error("Tensorboard API not implemented");
+export async function fetchTensorboardProjectorPoints(
+  projectorId: string,
+  options: TensorboardProjectorPointRequestOptions = {}
+): Promise<TensorboardPointResponse> {
+  const params: Record<string, any> = {};
+  if (typeof options.limit === "number") {
+    params.limit = options.limit;
+  }
+  if (typeof options.offset === "number") {
+    params.offset = options.offset;
+  }
+  if (typeof options.stride === "number") {
+    params.stride = options.stride;
+  }
+  if (typeof options.sample === "number") {
+    params.sample = options.sample;
+  }
+  if (options.filters && Object.keys(options.filters).length > 0) {
+    params.filters = JSON.stringify(options.filters);
+  }
+
+  const response = await api.get<Record<string, any>>(
+    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/points`,
+    { params }
+  );
+  return mapPointResponse(response.data);
 }
 
-export async function fetchTensorboardMetrics(...args: any[]): Promise<any> {
-  throw new Error("Tensorboard API not implemented");
+export async function fetchTensorboardMetrics(runId: string): Promise<TensorboardMetricSeries[]> {
+  const response = await api.get<Array<Record<string, any>>>(`/training/tensorboard/metrics/${encodeURIComponent(runId)}`);
+  return response.data.map(mapMetricSeries);
 }
 
-export async function exportTensorboardProjector(...args: any[]): Promise<any> {
-  throw new Error("Tensorboard API not implemented");
+export async function exportTensorboardProjector(
+  payload: ExportTensorboardProjectorPayload = {}
+): Promise<Record<string, any>> {
+  const response = await api.post<Record<string, any>>("/training/tensorboard/projectors/export", payload);
+  return response.data;
 }
 
 

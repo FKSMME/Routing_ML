@@ -7,6 +7,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import ssl
 from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Dict, Tuple, List, Optional
@@ -43,37 +44,37 @@ SERVICES: Tuple[Service, ...] = (
     Service(
         key="backend",
         name="Backend API",
-        check_url="http://localhost:8000/api/health",
+        check_url="https://localhost:8000/api/health",
         links=(
-            ("Local", "http://localhost:8000/docs"),
-            ("LAN", "http://10.204.2.28:8000/docs"),
+            ("Local", "https://localhost:8000/docs"),
+            ("LAN", "https://10.204.2.28:8000/docs"),
         ),
     ),
     Service(
         key="home",
         name="Home Dashboard",
-        check_url="http://localhost:3000/",
+        check_url="https://localhost:3000/",
         links=(
-            ("Local", "http://localhost:3000"),
-            ("LAN", "http://10.204.2.28:3000"),
+            ("Local", "https://localhost:3000"),
+            ("LAN", "https://10.204.2.28:3000"),
         ),
     ),
     Service(
         key="prediction",
         name="Routing Creation UI",
-        check_url="http://localhost:5173/",
+        check_url="https://localhost:5173/",
         links=(
-            ("Local", "http://localhost:5173"),
-            ("LAN", "http://10.204.2.28:5173"),
+            ("Local", "https://localhost:5173"),
+            ("LAN", "https://10.204.2.28:5173"),
         ),
     ),
     Service(
         key="training",
         name="Model Training UI",
-        check_url="http://localhost:5174/",
+        check_url="https://localhost:5174/",
         links=(
-            ("Local", "http://localhost:5174"),
-            ("LAN", "http://10.204.2.28:5174"),
+            ("Local", "https://localhost:5174"),
+            ("LAN", "https://10.204.2.28:5174"),
         ),
     ),
 )
@@ -90,9 +91,14 @@ def check_service(service: Service) -> Tuple[str, str]:
         headers={"User-Agent": "RoutingML-Monitor/1.0", "Connection": "close"},
     )
     start = time.perf_counter()
+    ssl_context = None
+    if parsed.scheme == "https":
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
 
     try:
-        with urllib.request.urlopen(request, timeout=service.timeout) as response:
+        with urllib.request.urlopen(request, timeout=service.timeout, context=ssl_context) as response:
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             code = response.getcode()
             state = "online" if 200 <= code < 400 else "warning"
@@ -1091,11 +1097,15 @@ class MonitorApp:
             import urllib.request
             import json
 
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/pending-users",
+                "https://localhost:8000/api/auth/admin/pending-users",
                 headers={"User-Agent": "RoutingML-Monitor/1.0"},
             )
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 users = data.get("users", [])
                 count = data.get("count", 0)
@@ -1263,8 +1273,12 @@ class MonitorApp:
                 "make_admin": make_admin
             }).encode("utf-8")
 
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/approve",
+                "https://localhost:8000/api/auth/admin/approve",
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
@@ -1273,7 +1287,7 @@ class MonitorApp:
                 method="POST",
             )
 
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 result = json.loads(response.read().decode("utf-8"))
                 messagebox.showinfo(
                     "승인 완료",
@@ -1293,12 +1307,14 @@ class MonitorApp:
             messagebox.showerror("오류", f"회원 승인 중 오류가 발생했습니다:\n\n{str(e)}")
 
     def _reject_user(self, username: str) -> None:
-        """회원 거절"""
+        """ȸ�� ����"""
         from tkinter import messagebox, simpledialog
 
         reason = simpledialog.askstring(
-            "회원 거절",
-            f"'{username}' 회원 가입을 거절하시겠습니까?\n\n거절 사유를 입력하세요 (선택사항):",
+            "ȸ�� ����",
+            f"'{username}' ȸ�� ������ �����Ͻðڽ��ϱ�?
+
+���� ������ �Է��ϼ��� (���û���):",
         )
         if reason is None:  # User clicked cancel
             return
@@ -1309,11 +1325,15 @@ class MonitorApp:
 
             payload = json.dumps({
                 "username": username,
-                "reason": reason if reason else "사유 없음"
+                "reason": reason if reason else "���� ����"
             }).encode("utf-8")
 
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/reject",
+                "https://localhost:8000/api/auth/admin/reject",
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
@@ -1322,11 +1342,13 @@ class MonitorApp:
                 method="POST",
             )
 
-            with urllib.request.urlopen(request, timeout=5) as response:
+            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
                 result = json.loads(response.read().decode("utf-8"))
                 messagebox.showinfo(
-                    "거절 완료",
-                    f"'{username}' 회원 가입이 거절되었습니다.\n\n{result.get('message', '')}"
+                    "���� �Ϸ�",
+                    f"'{username}' ȸ�� ������ �����Ǿ����ϴ�.
+
+{result.get('message', '')}"
                 )
                 self._load_pending_users()
 
@@ -1337,11 +1359,15 @@ class MonitorApp:
                 error_msg = error_data.get("detail", str(e))
             except:
                 error_msg = str(e)
-            messagebox.showerror("거절 실패", f"회원 거절 중 오류가 발생했습니다:\n\n{error_msg}")
-        except Exception as e:
-            messagebox.showerror("오류", f"회원 거절 중 오류가 발생했습니다:\n\n{str(e)}")
+            messagebox.showerror("���� ����", f"ȸ�� ���� �� ������ �߻��߽��ϴ�:
 
-    def _poll_loop(self) -> None:
+{error_msg}")
+        except Exception as e:
+            messagebox.showerror("����", f"ȸ�� ���� �� ������ �߻��߽��ϴ�:
+
+{str(e)}")
+
+def _poll_loop(self) -> None:
         while True:
             for service in self.services:
                 state, message = check_service(service)

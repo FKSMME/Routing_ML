@@ -1,15 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-# Routing ML Monitor v5.2.4 - PyInstaller Spec File
-# Build Date: 2025-10-20
 
-block_cipher = None
 
 a = Analysis(
     ['scripts\\server_monitor_dashboard_v5_1.py'],
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=['psutil'],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -17,7 +14,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
@@ -25,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='RoutingMLMonitor_v5.2.4',
+    name='RoutingMLMonitor_v5.2.3',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -38,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon='NONE',
 )

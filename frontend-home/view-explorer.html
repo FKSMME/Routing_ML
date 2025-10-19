@@ -46,6 +46,118 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
+    .callout {
+      display: none;
+      border-radius: 12px;
+      border: 1px solid #c4d7ff;
+      background: linear-gradient(135deg, rgba(224, 231, 255, 0.95), rgba(237, 233, 254, 0.9));
+      color: #312e81;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 18px 38px -26px rgba(79, 70, 229, 0.55);
+    }
+
+    .callout strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .callout p {
+      margin: 0.25rem 0;
+      line-height: 1.6;
+    }
+
+    .callout-list {
+      margin: 0.75rem 0 0;
+      padding-left: 1.2rem;
+      color: #3730a3;
+    }
+
+    .callout-list li {
+      margin-bottom: 0.35rem;
+    }
+
+    .callout-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .callout-actions .button {
+      background: #4338ca;
+    }
+
+    .callout-actions .button:hover {
+      background: #312e81;
+    }
+
+    .callout-actions .button.secondary {
+      background: rgba(49, 46, 129, 0.15);
+      color: #312e81;
+      border: 1px solid rgba(49, 46, 129, 0.35);
+    }
+
+    .callout-actions .button.secondary:hover {
+      background: rgba(49, 46, 129, 0.25);
+    }
+
+    .callout-footnote {
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
+      opacity: 0.75;
+    }
+
+    .callout.is-demo {
+      border-color: #6ee7b7;
+      background: linear-gradient(135deg, rgba(209, 250, 229, 0.95), rgba(236, 253, 245, 0.92));
+      color: #065f46;
+      box-shadow: 0 18px 38px -26px rgba(16, 185, 129, 0.45);
+    }
+
+    .callout.is-demo .callout-actions .button {
+      background: #059669;
+    }
+
+    .callout.is-demo .callout-actions .button:hover {
+      background: #047857;
+    }
+
+    .callout.is-demo .callout-actions .button.secondary {
+      background: rgba(5, 150, 105, 0.1);
+      color: #065f46;
+      border-color: rgba(5, 150, 105, 0.4);
+    }
+
+    .badge-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(6, 95, 70, 0.12);
+      color: #047857;
+      font-size: 0.75rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      border: 1px dashed #cbd5f5;
+      border-radius: 12px;
+      background: rgba(224, 231, 255, 0.35);
+      color: #312e81;
+    }
+
+    .empty-state p {
+      margin: 0.75rem 0 1.25rem;
+      line-height: 1.6;
+    }
+
     .section-title {
       font-size: 1.5rem;
       font-weight: 600;
@@ -289,6 +401,38 @@
       <p>MSSQL 뷰를 선택하고 홈 대시보드에 표시할 데이터를 설정하세요</p>
     </div>
 
+
+
+    <div id="connectionNotice" class="callout" role="alert">
+
+      <strong>데이터베이스 연결이 필요합니다</strong>
+
+      <p id="connectionNoticeMessage">MSSQL 서버에 연결하지 못했습니다. 환경 변수와 네트워크(VPN 등)를 확인한 뒤 다시 시도해 주세요.</p>
+
+      <ul class="callout-list">
+
+        <li><code>MSSQL_SERVER</code>, <code>MSSQL_DATABASE</code>, <code>MSSQL_USER</code> 설정을 점검합니다.</li>
+
+        <li>SQL Server ODBC 드라이버가 설치되어 있는지 확인합니다.</li>
+
+        <li>사내 네트워크 또는 VPN 연결이 필요한 경우 접속 상태를 확인합니다.</li>
+
+      </ul>
+
+      <div class="callout-actions">
+
+        <button type="button" class="button secondary" onclick="loadViews()">다시 시도</button>
+
+        <button type="button" class="button" onclick="useDemoViews()">데모 데이터로 미리보기</button>
+
+      </div>
+
+      <p class="callout-footnote">최근 오류 코드: <span id="connectionNoticeCode">없음</span></p>
+
+    </div>
+
+
+
     <!-- Step 1: View 선택 -->
     <div class="section">
       <div class="section-title">Step 1: MSSQL View 선택</div>
@@ -340,128 +484,284 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:8000';
+    const API_BASE = '';
+    const DEMO_VIEWS = [
+      {
+        schema_name: 'demo',
+        view_name: 'DEMO_ROUTING_SUMMARY',
+        full_name: 'demo.DEMO_ROUTING_SUMMARY',
+        definition: 'Routing ML 데모용 라우팅 요약 뷰',
+      },
+      {
+        schema_name: 'demo',
+        view_name: 'DEMO_WORK_RESULT',
+        full_name: 'demo.DEMO_WORK_RESULT',
+        definition: 'Routing ML 데모용 작업 실적 뷰',
+      },
+    ];
+
+    const DEMO_SAMPLES = {
+      'demo.DEMO_ROUTING_SUMMARY': {
+        columns: [
+          { name: 'ITEM_CD' },
+          { name: 'ROUTING_STEPS' },
+          { name: 'LAST_REVIEWED_AT' },
+        ],
+        data: [
+          { ITEM_CD: 'RM1001', ROUTING_STEPS: 12, LAST_REVIEWED_AT: '2025-10-10' },
+          { ITEM_CD: 'RM1024', ROUTING_STEPS: 8, LAST_REVIEWED_AT: '2025-10-09' },
+          { ITEM_CD: 'RM2048', ROUTING_STEPS: 15, LAST_REVIEWED_AT: '2025-10-08' },
+        ],
+        row_count: 3,
+      },
+      'demo.DEMO_WORK_RESULT': {
+        columns: [
+          { name: 'REPORT_DT' },
+          { name: 'WORK_CENTER' },
+          { name: 'GOOD_QTY' },
+          { name: 'BAD_QTY' },
+        ],
+        data: [
+          { REPORT_DT: '2025-10-13', WORK_CENTER: 'MILL-01', GOOD_QTY: 420, BAD_QTY: 3 },
+          { REPORT_DT: '2025-10-13', WORK_CENTER: 'MILL-02', GOOD_QTY: 380, BAD_QTY: 1 },
+          { REPORT_DT: '2025-10-12', WORK_CENTER: 'MILL-01', GOOD_QTY: 405, BAD_QTY: 2 },
+        ],
+        row_count: 3,
+      },
+    };
+
+    let usingDemoData = false;
     let selectedView = null;
     let sampleColumns = [];
     let columnConfigs = [];
 
-    // 뷰 목록 불러오기
-    async function loadViews() {
-      const container = document.getElementById('viewList');
-      container.innerHTML = '<div class="loading"><div class="spinner"></div><p>뷰 목록을 불러오는 중...</p></div>';
+    const viewListEl = document.getElementById('viewList');
+    const sampleSection = document.getElementById('sampleSection');
+    const sampleDataEl = document.getElementById('sampleData');
+    const configSection = document.getElementById('configSection');
+    const columnEditorEl = document.getElementById('columnEditor');
+    const connectionNotice = document.getElementById('connectionNotice');
+    const connectionNoticeMessage = document.getElementById('connectionNoticeMessage');
+    const connectionNoticeCode = document.getElementById('connectionNoticeCode');
+    const displayNameInput = document.getElementById('displayName');
+    const enableChecklistInput = document.getElementById('enableChecklist');
+    const checklistNameGroup = document.getElementById('checklistNameGroup');
+    const checklistColumnNameInput = document.getElementById('checklistColumnName');
 
-      try {
-        const response = await fetch(`${API_BASE}/api/view-explorer/views`, {
-          credentials: 'include'
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const views = await response.json();
-
-        if (views.length === 0) {
-          container.innerHTML = '<p style="text-align: center; color: #6b7280;">사용 가능한 뷰가 없습니다.</p>';
-          return;
+    function setConnectionNotice({ visible, message, code, demo } = {}) {
+      if (!connectionNotice) return;
+      if (visible) {
+        connectionNotice.style.display = 'block';
+        if (message) {
+          connectionNoticeMessage.textContent = message;
         }
-
-        container.innerHTML = views.map(view => `
-          <div class="view-card" onclick="selectView('${view.full_name}')">
-            <div class="view-name">${view.view_name}</div>
-            <div class="view-schema">스키마: ${view.schema_name}</div>
-          </div>
-        `).join('');
-
-      } catch (error) {
-        console.error('Failed to load views:', error);
-        container.innerHTML = `<p style="color: #ef4444; text-align: center;">뷰 목록 불러오기 실패: ${error.message}</p>`;
+        if (code) {
+          connectionNoticeCode.textContent = code;
+        }
+        connectionNotice.classList.toggle('is-demo', Boolean(demo));
+      } else {
+        connectionNotice.style.display = 'none';
+        connectionNotice.classList.remove('is-demo');
       }
     }
 
-    // 뷰 선택
-    async function selectView(viewName) {
-      selectedView = viewName;
+    function renderViewCards(views, { demo = false } = {}) {
+      if (!Array.isArray(views) || views.length === 0) {
+        viewListEl.innerHTML = `
+          <div class="empty-state">
+            <strong>표시할 View가 없습니다.</strong>
+            <p>데이터베이스에 View를 생성한 뒤 다시 불러오기를 시도해 주세요.</p>
+          </div>
+        `;
+        return;
+      }
 
-      // 선택 상태 표시
-      document.querySelectorAll('.view-card').forEach(card => {
-        card.classList.remove('selected');
-        if (card.textContent.includes(viewName.split('.')[1])) {
-          card.classList.add('selected');
-        }
-      });
-
-      // 샘플 데이터 불러오기
-      await loadSampleData(viewName);
+      viewListEl.innerHTML = views.map((view) => `
+        <div class="view-card" data-view="${view.full_name}" onclick="selectView('${view.full_name}')">
+          <div class="view-name">${view.view_name}${demo ? ' <span class="badge-demo">demo</span>' : ''}</div>
+          <div class="view-schema">스키마: ${view.schema_name}</div>
+        </div>
+      `).join('');
     }
 
-    // 샘플 데이터 불러오기
-    async function loadSampleData(viewName) {
-      const section = document.getElementById('sampleSection');
-      const container = document.getElementById('sampleData');
+    function renderSampleTable(result) {
+      const columns = result.columns || [];
+      const rows = result.data || [];
+      let html = '<div class="sample-data"><table><thead><tr>';
+      columns.forEach((col) => {
+        html += `<th>${col.name}</th>`;
+      });
+      html += '</tr></thead><tbody>';
 
-      section.style.display = 'block';
-      container.innerHTML = '<div class="loading"><div class="spinner"></div><p>샘플 데이터를 불러오는 중...</p></div>';
-
-      try {
-        const response = await fetch(`${API_BASE}/api/view-explorer/views/${encodeURIComponent(viewName)}/sample?limit=10`, {
-          credentials: 'include'
-        });
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const result = await response.json();
-
-        sampleColumns = result.columns;
-
-        // 테이블 생성
-        let html = '<div class="sample-data"><table><thead><tr>';
-        result.columns.forEach(col => {
-          html += `<th>${col.name}</th>`;
-        });
-        html += '</tr></thead><tbody>';
-
-        result.data.slice(0, 10).forEach(row => {
+      if (rows.length === 0) {
+        html += `<tr><td colspan="${columns.length}" style="text-align: center; color: #6b7280;">표시할 행이 없습니다.</td></tr>`;
+      } else {
+        rows.slice(0, 10).forEach((row) => {
           html += '<tr>';
-          result.columns.forEach(col => {
+          columns.forEach((col) => {
             const value = row[col.name];
             html += `<td>${value !== null && value !== undefined ? value : ''}</td>`;
           });
           html += '</tr>';
         });
+      }
 
-        html += '</tbody></table></div>';
-        html += `<p style="margin-top: 1rem; color: #6b7280;">총 ${result.row_count}개 행 (미리보기: 10개)</p>`;
+      html += '</tbody></table></div>';
+      html += `<p style="margin-top: 1rem; color: #6b7280;">총 ${result.row_count ?? rows.length}건 중 최대 10건을 미리봅니다.</p>`;
+      return html;
+    }
 
-        container.innerHTML = html;
+    function applySampleResult(result, demoMode = false) {
+      sampleColumns = (result.columns || []).map((col, index) => ({
+        name: col.name,
+        index,
+      }));
 
-        // 컬럼 설정 섹션 표시
-        showColumnEditor();
+      sampleDataEl.innerHTML = renderSampleTable(result);
 
+      if (demoMode) {
+        sampleDataEl.insertAdjacentHTML(
+          'afterbegin',
+          '<span class="badge-demo" style="margin-bottom: 0.75rem; display: inline-flex;">demo sample</span>',
+        );
+      } else {
+        setConnectionNotice({ visible: false });
+      }
+
+      showColumnEditor();
+    }
+
+    // 뷰 목록 불러오기
+    
+    async function loadViews() {
+      usingDemoData = false;
+      setConnectionNotice({ visible: false });
+      sampleSection.style.display = 'none';
+      configSection.style.display = 'none';
+      viewListEl.innerHTML = '<div class="loading"><div class="spinner"></div><p>뷰 목록을 불러오는 중...</p></div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/views`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const views = await response.json();
+        renderViewCards(views);
+      } catch (error) {
+        console.error('Failed to load views:', error);
+        setConnectionNotice({
+          visible: true,
+          message: `뷰 목록을 가져오지 못했습니다: ${error.message}`,
+          code: error.message,
+        });
+        viewListEl.innerHTML = `
+          <div class="empty-state">
+            <strong>뷰 목록을 불러오지 못했습니다.</strong>
+            <p>환경 설정을 점검하거나 아래 버튼을 눌러 데모 데이터를 확인해 보세요.</p>
+            <button class="button" type="button" onclick="useDemoViews()">데모 데이터 사용</button>
+          </div>
+        `;
+      }
+    }
+
+    function useDemoViews() {
+      usingDemoData = true;
+      renderViewCards(DEMO_VIEWS, { demo: true });
+      sampleSection.style.display = 'none';
+      configSection.style.display = 'none';
+      setConnectionNotice({
+        visible: true,
+        message: '실제 MSSQL 대신 데모 데이터를 표시하고 있습니다.',
+        code: 'DEMO',
+        demo: true,
+      });
+    }
+
+            // 뷰 선택
+    
+    async function selectView(viewName) {
+      selectedView = viewName;
+      document.querySelectorAll('.view-card').forEach((card) => {
+        card.classList.toggle('selected', card.dataset.view === viewName);
+      });
+      await loadSampleData(viewName);
+    }
+
+    async function loadSampleData(viewName) {
+      sampleSection.style.display = 'block';
+      sampleDataEl.innerHTML = '<div class="loading"><div class="spinner"></div><p>샘플 데이터를 불러오는 중...</p></div>';
+
+      if (usingDemoData || DEMO_SAMPLES[viewName]) {
+        const sample = DEMO_SAMPLES[viewName] || DEMO_SAMPLES[Object.keys(DEMO_SAMPLES)[0]];
+        applySampleResult(sample, true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/view-explorer/views/${encodeURIComponent(viewName)}/sample?limit=10`, {
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+        applySampleResult(result, false);
       } catch (error) {
         console.error('Failed to load sample data:', error);
-        container.innerHTML = `<p style="color: #ef4444;">샘플 데이터 불러오기 실패: ${error.message}</p>`;
+        setConnectionNotice({
+          visible: true,
+          message: `샘플 데이터를 가져오지 못했습니다: ${error.message}`,
+          code: error.message,
+        });
+
+        if (DEMO_SAMPLES[viewName]) {
+          usingDemoData = true;
+          applySampleResult(DEMO_SAMPLES[viewName], true);
+        } else {
+          sampleDataEl.innerHTML = `<p style="color: #ef4444;">샘플 데이터를 불러오지 못했습니다: ${error.message}</p>`;
+          configSection.style.display = 'none';
+        }
       }
     }
 
     // 컬럼 에디터 표시
+    
+    
     function showColumnEditor() {
-      document.getElementById('configSection').style.display = 'block';
+      configSection.style.display = 'block';
 
       columnConfigs = sampleColumns.map((col, index) => ({
         name: col.name,
         display_name: col.name,
         visible: true,
         order: index,
-        width: 150
+        width: 150,
       }));
+
+      enableChecklistInput.checked = false;
+      checklistNameGroup.style.display = 'none';
+      if (selectedView) {
+        const [, viewNameOnly = selectedView] = selectedView.split('.');
+        displayNameInput.value = viewNameOnly;
+      }
 
       renderColumnEditor();
     }
 
-    // 컬럼 에디터 렌더링
-    function renderColumnEditor() {
-      const container = document.getElementById('columnEditor');
 
-      container.innerHTML = columnConfigs.map((col, index) => `
+
+    // 컬럼 에디터 렌더링
+    
+    function renderColumnEditor() {
+      columnEditorEl.innerHTML = columnConfigs.map((col, index) => `
         <div class="column-item" draggable="true" data-index="${index}">
-          <span class="drag-handle">☰</span>
+          <span class="drag-handle">?</span>
           <input type="checkbox" ${col.visible ? 'checked' : ''} onchange="toggleColumnVisible(${index})">
           <input type="text" value="${col.display_name}" onchange="updateColumnName(${index}, this.value)" placeholder="표시 이름">
           <input type="number" value="${col.width}" onchange="updateColumnWidth(${index}, this.value)" placeholder="너비">
@@ -469,9 +769,10 @@
         </div>
       `).join('');
 
-      // 드래그 앤 드롭 이벤트 추가
+      // Drag & drop handlers
       setupDragAndDrop();
     }
+
 
     // 드래그 앤 드롭 설정
     function setupDragAndDrop() {
@@ -524,27 +825,33 @@
     }
 
     // 체크리스트 활성화 토글
-    document.getElementById('enableChecklist').addEventListener('change', function(e) {
-      document.getElementById('checklistNameGroup').style.display = e.target.checked ? 'block' : 'none';
+    enableChecklistInput.addEventListener('change', function(e) {
+      checklistNameGroup.style.display = e.target.checked ? 'block' : 'none';
     });
 
     // 설정 저장
+    
     async function saveConfig() {
       if (!selectedView) {
-        alert('뷰를 먼저 선택해주세요.');
+        alert('뷰를 먼저 선택해 주세요.');
         return;
       }
 
-      const displayName = document.getElementById('displayName').value || selectedView;
-      const enableChecklist = document.getElementById('enableChecklist').checked;
-      const checklistColumnName = document.getElementById('checklistColumnName').value || '확인';
+      if (usingDemoData) {
+        alert('데모 데이터 모드에서는 설정을 저장할 수 없습니다. 실제 DB에 연결한 뒤 다시 시도해 주세요.');
+        return;
+      }
+
+      const displayName = (displayNameInput.value || selectedView).trim();
+      const enableChecklist = enableChecklistInput.checked;
+      const checklistColumnName = (checklistColumnNameInput.value || '확인').trim();
 
       const config = {
         view_name: selectedView,
         display_name: displayName,
         columns: columnConfigs,
         enable_checklist: enableChecklist,
-        checklist_column_name: checklistColumnName
+        checklist_column_name: checklistColumnName,
       };
 
       try {
@@ -552,7 +859,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(config)
+          body: JSON.stringify(config),
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -560,12 +867,12 @@
         const successMsg = document.getElementById('successMessage');
         successMsg.classList.add('show');
         setTimeout(() => successMsg.classList.remove('show'), 5000);
-
       } catch (error) {
         console.error('Failed to save config:', error);
-        alert(`설정 저장 실패: ${error.message}`);
+        alert(`설정을 저장하지 못했습니다: ${error.message}`);
       }
     }
+
   </script>
 </body>
 </html>

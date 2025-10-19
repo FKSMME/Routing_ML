@@ -16,10 +16,10 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo Starting Training Service on http://localhost:8001
-echo API Docs: http://localhost:8001/docs
+echo Starting Training Service on https://localhost:8001
+echo API Docs: https://localhost:8001/docs
 echo.
 
-.venv\Scripts\python.exe -m uvicorn backend.api.training_app:app --host 0.0.0.0 --port 8001 --reload
+.venv\Scripts\python.exe -m uvicorn backend.api.training_app:app --host 0.0.0.0 --port 8001 --ssl-keyfile=certs/rtml.ksm.co.kr.key --ssl-certfile=certs/rtml.ksm.co.kr.crt --reload
 
 pause

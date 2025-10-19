@@ -16,7 +16,7 @@ if not exist "node_modules" (
     exit /b 1
 )
 
-echo Starting Prediction Frontend on http://localhost:5173
+echo Starting Prediction Frontend on https://localhost:5173
 echo.
 
 npm run dev

@@ -2,14 +2,12 @@ import React, { useState, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
 import { Tabs } from "../ui/Tabs";
 import { PredictionControls } from "../PredictionControls";
-import { ReferenceMatrixPanel } from "../routing/ReferenceMatrixPanel";
 import { TimelinePanel } from "../TimelinePanel";
 import { VisualizationSummary } from "../VisualizationSummary";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
 import { CandidatePanel } from "../CandidatePanel";
-import { RoutingGroupControls } from "../RoutingGroupControls";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls
@@ -75,40 +73,23 @@ export function RoutingTabbedWorkspace({
       label: "제어판",
       icon: null,
       content: (
-        <div className="routing-control-tab" style={{ maxWidth: '1200px', margin: '0 auto', padding: '1rem' }}>
+        <div className="routing-control-tab" style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
           {renderPredictionBanner?.()}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-            {/* 좌측: 제어판 */}
-            <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 제어판</h3>
-              <PredictionControls
-                itemCodes={itemCodes}
-                onChangeItemCodes={onChangeItemCodes}
-                topK={topK}
-                onChangeTopK={onChangeTopK}
-                threshold={threshold}
-                onChangeThreshold={onChangeThreshold}
-                loading={loading}
-                onSubmit={onSubmit}
-                errorMessage={errorMessage}
-              />
-            </div>
-
-            {/* 우측: MSSQL 행렬 프리뷰 */}
-            <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-xl font-semibold mb-4 text-slate-200">🗄️ MSSQL 행렬 프리뷰</h3>
-              <ReferenceMatrixPanel key={`reference-${tabKey}`} />
-            </div>
-          </div>
-
-          {/* 하단: 공정 그룹 정의 */}
+          {/* 제어판 */}
           <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-xl font-semibold mb-4 text-slate-200">📦 공정 그룹 정의</h3>
-            <p className="text-sm text-slate-400 mb-4">
-              워크스페이스에서 공정 그룹을 만들어 놓으면 시각화에 있는 라우팅 순서를 출력할때 공정 그룹이 부 라우팅으로 같이 출력됩니다.
-            </p>
-            <RoutingGroupControls variant="embedded" />
+            <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 제어판</h3>
+            <PredictionControls
+              itemCodes={itemCodes}
+              onChangeItemCodes={onChangeItemCodes}
+              topK={topK}
+              onChangeTopK={onChangeTopK}
+              threshold={threshold}
+              onChangeThreshold={onChangeThreshold}
+              loading={loading}
+              onSubmit={onSubmit}
+              errorMessage={errorMessage}
+            />
           </div>
         </div>
       ),

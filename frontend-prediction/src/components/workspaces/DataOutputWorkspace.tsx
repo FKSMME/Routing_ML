@@ -672,13 +672,13 @@ export function DataOutputWorkspace() {
 
       const result = await createOutputProfile(payload);
 
+      // 프로파일 목록 새로고침
+      await profilesQuery.refresh();
+
       // 성공 시 모달 닫고, 새 프로파일 선택
       setShowNewProfileModal(false);
       setSelectedProfileId(result.id);
       setStatusMessage(result.message || "프로파일이 생성되었습니다.");
-
-      // 프로파일 목록 새로고침
-      await profilesQuery.refresh();
 
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || error.message || "프로파일 생성 중 오류가 발생했습니다.";

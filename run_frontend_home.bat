@@ -27,9 +27,8 @@ if not exist "node_modules" (
     )
 )
 
-echo Starting Home Dashboard with HTTPS support
-echo   - HTTP:  http://localhost:3000
-echo   - HTTPS: https://localhost:3000
+echo Starting Home Dashboard (HTTPS enforced)
+echo   - Local:  https://localhost:3000
 echo   - Domain: https://rtml.ksm.co.kr:3000
 echo.
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
-import { apiClient } from '../lib/apiClient';
+import apiClient from '../lib/apiClient';
 import type { DataMappingProfile } from '../types';
 
 interface ProfileManagementProps {
@@ -24,7 +24,7 @@ export function ProfileManagement({ onSelectProfile, selectedProfileId }: Profil
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get('/api/data-mapping/profiles');
+      const response = await apiClient.get('/data-mapping/profiles');
       setProfiles(response.data.profiles || []);
     } catch (err) {
       console.error('Failed to load profiles:', err);
@@ -42,7 +42,7 @@ export function ProfileManagement({ onSelectProfile, selectedProfileId }: Profil
 
     try {
       setError(null);
-      const response = await apiClient.post('/api/data-mapping/profiles', {
+      const response = await apiClient.post('/data-mapping/profiles', {
         name: newProfileName.trim(),
         description: newProfileDesc.trim() || undefined,
         mappings: [], // Empty mappings, will be edited later
@@ -69,7 +69,7 @@ export function ProfileManagement({ onSelectProfile, selectedProfileId }: Profil
     }
 
     try {
-      await apiClient.delete(`/api/data-mapping/profiles/${profileId}`);
+      await apiClient.delete(`/data-mapping/profiles/${profileId}`);
       setProfiles(profiles.filter((p) => p.id !== profileId));
     } catch (err: any) {
       console.error('Failed to delete profile:', err);

@@ -61,12 +61,7 @@ const BASE_NAVIGATION_ITEMS = [
     description: "대체 경로 관리",
     icon: <Layers size={18} />,
   },
-  {
-    id: "data-output",
-    label: "출력설정",
-    description: "미리보기 · 내보내기",
-    icon: <FileOutput size={18} />,
-  },
+  // "출력설정" 메뉴 삭제됨 (프로파일 관리로 기능 이관)
 ];
 
 // 관리자 전용 메뉴
@@ -307,6 +302,7 @@ export default function App() {
     case "data-output":
       workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
       break;
+    case "data-mapping":
     case "data-relationship":
       workspace = <Suspense fallback={loadingFallback}><DataRelationshipManager /></Suspense>;
       break;

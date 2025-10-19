@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import type { DataMappingRule } from '../types';
+import type { DataMappingRule, DataMappingSourceType } from '../types';
 
 interface MappingRuleEditorProps {
   mapping: DataMappingRule;
@@ -10,7 +10,7 @@ interface MappingRuleEditorProps {
 export function MappingRuleEditor({ mapping, onUpdate }: MappingRuleEditorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const sourceTypeColors = {
+  const sourceTypeColors: Record<DataMappingSourceType, { bg: string; border: string; text: string }> = {
     ml_prediction: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
     admin_input: { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
     external_source: {
@@ -21,7 +21,7 @@ export function MappingRuleEditor({ mapping, onUpdate }: MappingRuleEditorProps)
     constant: { bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-700' },
   };
 
-  const colors = sourceTypeColors[mapping.source_type];
+  const colors = sourceTypeColors[mapping.source_type] ?? sourceTypeColors.ml_prediction;
 
   const handleFieldChange = (field: keyof DataMappingRule, value: any) => {
     onUpdate({

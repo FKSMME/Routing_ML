@@ -10,6 +10,7 @@ import {
 } from "@lib/apiClient";
 import { AlertCircle, ArrowRight, Plus, Save, Settings, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { RoutingGroupControls } from "../RoutingGroupControls";
 
 const DATA_TYPES = [
   { value: "string", label: "Text" },
@@ -522,6 +523,17 @@ export function DataRelationshipManager() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* 공정 그룹 정의 섹션 */}
+        <div className="mt-8">
+          <div className="glass-morphism p-6 rounded-xl">
+            <h2 className="heading-2 mb-4">📦 공정 그룹 정의</h2>
+            <p className="body-text-secondary mb-6">
+              워크스페이스에서 공정 그룹을 만들어 놓으면 시각화에 있는 라우팅 순서를 출력할때 공정 그룹이 부 라우팅으로 같이 출력됩니다.
+            </p>
+            <RoutingGroupControls variant="embedded" />
           </div>
         </div>
       </div>

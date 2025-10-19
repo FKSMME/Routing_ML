@@ -10,7 +10,7 @@ interface HeroBannerProps {
   onNavigate: (menuId: NavigationKey) => void;
 }
 
-const DEFAULT_MODEL_URL = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/main/2.0/ToyCar/glTF-Binary/ToyCar.glb";
+const DEFAULT_MODEL_URL = "/models/background.glb";
 
 export function HeroBanner({ activeMenu, onNavigate }: HeroBannerProps) {
   const heroModelUrl = import.meta.env.VITE_HERO_MODEL_URL ?? DEFAULT_MODEL_URL;

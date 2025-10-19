@@ -1,19 +1,24 @@
-import { useRef } from "react";
+import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Box } from "@react-three/drei";
+import { Box, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useBackgroundSettings } from "@store/backgroundSettings";
+
+const MODEL_URL = import.meta.env.VITE_BACKGROUND_MODEL_URL ?? "/models/background.glb";
+
+useGLTF.preload(MODEL_URL);
 
 function RotatingBox() {
   const meshRef = useRef<THREE.Mesh>(null);
   const { autoRotate, rotateSpeed, modelScale } = useBackgroundSettings();
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!meshRef.current) return;
 
     if (autoRotate) {
-      meshRef.current.rotation.x += rotateSpeed * 0.01;
-      meshRef.current.rotation.y += rotateSpeed * 0.015;
+      const speed = Math.max(0.01, rotateSpeed * 0.1);
+      meshRef.current.rotation.x += speed * delta * 60 * 0.5;
+      meshRef.current.rotation.y += speed * delta * 60 * 0.75;
     }
 
     // Floating effect
@@ -31,6 +36,44 @@ function RotatingBox() {
       />
     </Box>
   );
+}
+
+function BackgroundModel() {
+  const { autoRotate, rotateSpeed, modelScale } = useBackgroundSettings();
+  const groupRef = useRef<THREE.Group>(null);
+  const gltf = useGLTF(MODEL_URL, true);
+  const scene = useMemo(() => {
+    const cloned = gltf.scene.clone(true);
+    const applyToneMapping = (material: THREE.Material) => {
+      if ("toneMapped" in material) {
+        (material as THREE.MeshStandardMaterial).toneMapped = true;
+      }
+    };
+    cloned.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (!mesh.material) return;
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((material) => material && applyToneMapping(material));
+      } else {
+        applyToneMapping(mesh.material);
+      }
+    });
+    return cloned;
+  }, [gltf.scene]);
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+
+    if (autoRotate) {
+      const speed = rotateSpeed * 0.6;
+      groupRef.current.rotation.y += speed * delta;
+      groupRef.current.rotation.x += speed * 0.3 * delta;
+    }
+
+    groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.3;
+  });
+
+  return <primitive ref={groupRef} object={scene} scale={[modelScale, modelScale, modelScale]} />;
 }
 
 export function FullScreen3DBackground() {
@@ -55,7 +98,9 @@ export function FullScreen3DBackground() {
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} intensity={1} />
         <pointLight position={[-10, -10, -10]} intensity={0.5} color="#a855f7" />
-        <RotatingBox />
+        <Suspense fallback={<RotatingBox />}>
+          <BackgroundModel />
+        </Suspense>
       </Canvas>
     </div>
   );
