@@ -32,7 +32,16 @@ echo   - Local:  https://localhost:3000
 echo   - Domain: https://rtml.ksm.co.kr:3000
 echo.
 
+REM Set SSL certificate paths (relative to project root)
+set SSL_KEY_PATH=%~dp0certs\rtml.ksm.co.kr.key
+set SSL_CERT_PATH=%~dp0certs\rtml.ksm.co.kr.crt
+
+REM Enable HTTPS
 set USE_HTTPS=true
+
+REM Set API target to match protocol
+set API_TARGET=https://localhost:8000
+
 node server.js
 
 pause

@@ -343,7 +343,7 @@
           </div>
         </a>
 
-        <a href="http://localhost:5173" class="nav-card" target="_blank">
+        <a href="" class="nav-card" data-service="prediction" target="_blank">
           <div class="nav-card-icon">🎯</div>
           <div class="nav-card-content">
             <div class="nav-card-title">라우팅 생성</div>
@@ -351,7 +351,7 @@
           </div>
         </a>
 
-        <a href="https://localhost:5174" class="nav-card" target="_blank">
+        <a href="" class="nav-card" data-service="training" target="_blank">
           <div class="nav-card-icon">📊</div>
           <div class="nav-card-content">
             <div class="nav-card-title">모델 학습</div>
@@ -359,7 +359,7 @@
           </div>
         </a>
 
-        <a href="https://10.204.2.28:5174/#tensorboard" class="nav-card" target="_blank">
+        <a href="" class="nav-card" data-service="tensorboard" target="_blank">
           <div class="nav-card-icon">📈</div>
           <div class="nav-card-content">
             <div class="nav-card-title">TensorBoard</div>
@@ -367,7 +367,7 @@
           </div>
         </a>
 
-        <a href="http://10.204.2.28:8000/docs" class="nav-card" target="_blank">
+        <a href="" class="nav-card" data-service="api-docs" target="_blank">
           <div class="nav-card-icon">⚙️</div>
           <div class="nav-card-content">
             <div class="nav-card-title">시스템 설정</div>
@@ -379,7 +379,13 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:8000';
+    // Dynamic API base URL based on current protocol
+    const API_BASE = (() => {
+      const protocol = window.location.protocol; // 'http:' or 'https:'
+      const hostname = window.location.hostname || 'localhost';
+      const port = '8000';
+      return `${protocol}//${hostname}:${port}`;
+    })();
     let charts = {};
     Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
     Chart.defaults.font.size = 12;
@@ -703,6 +709,28 @@
       }
     }
 
+    // Initialize service URLs dynamically
+    function initializeServiceUrls() {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname || 'localhost';
+
+      const serviceUrls = {
+        'prediction': `${protocol}//${hostname}:5173`,
+        'training': `${protocol}//${hostname}:5174`,
+        'tensorboard': `${protocol}//${hostname}:5174/#tensorboard`,
+        'api-docs': `${protocol}//${hostname}:8000/docs`
+      };
+
+      document.querySelectorAll('.nav-card[data-service]').forEach(card => {
+        const service = card.getAttribute('data-service');
+        if (serviceUrls[service]) {
+          card.setAttribute('href', serviceUrls[service]);
+        }
+      });
+    }
+
+    // Initialize on page load
+    initializeServiceUrls();
     fetchDashboardMetrics();
     loadDataTable();
     setInterval(fetchDashboardMetrics, 30000);
