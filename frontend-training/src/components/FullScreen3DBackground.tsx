@@ -42,14 +42,19 @@ function BackgroundModel() {
   const { autoRotate, rotateSpeed, modelScale } = useBackgroundSettings();
   const groupRef = useRef<THREE.Group>(null);
   const gltf = useGLTF(MODEL_URL, true);
+
   const scene = useMemo(() => {
-    const cloned = gltf.scene.clone(true);
+    // Type guard: handle both single GLTF and array cases
+    const gltfData = Array.isArray(gltf) ? gltf[0] : gltf;
+    if (!gltfData?.scene) return new THREE.Group();
+
+    const cloned = gltfData.scene.clone(true);
     const applyToneMapping = (material: THREE.Material) => {
       if ("toneMapped" in material) {
         (material as THREE.MeshStandardMaterial).toneMapped = true;
       }
     };
-    cloned.traverse((object) => {
+    cloned.traverse((object: THREE.Object3D) => {
       const mesh = object as THREE.Mesh;
       if (!mesh.material) return;
       if (Array.isArray(mesh.material)) {
@@ -59,7 +64,7 @@ function BackgroundModel() {
       }
     });
     return cloned;
-  }, [gltf.scene]);
+  }, [gltf]);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
