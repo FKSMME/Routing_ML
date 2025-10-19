@@ -1,15 +1,22 @@
 """로컬 사용자 인증 서비스."""
 from __future__ import annotations
 
+import secrets
+import string
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 
 from backend.api.config import Settings, get_settings
 from backend.api.schemas import (
+    AdminResetPasswordRequest,
+    AdminResetPasswordResponse,
     AuthenticatedUser,
+    BulkRegisterRequest,
+    BulkRegisterResponse,
+    BulkRegisterResult,
     ChangePasswordRequest,
     ChangePasswordResponse,
     LoginRequest,
@@ -30,6 +37,10 @@ from backend.database_rsl import (
 )
 from common.datetime_utils import utc_now_naive
 from common.logger import get_logger
+from sqlalchemy import or_
+
+
+_PASSWORD_ALPHABET = string.ascii_letters + string.digits
 
 
 class AuthService:
@@ -48,6 +59,10 @@ class AuthService:
             "auth.service", log_dir=self.settings.audit_log_dir, use_json=True
         )
         bootstrap_schema()
+
+    def _generate_temporary_password(self, length: int = 12) -> str:
+        """임시 비밀번호 문자열 생성"""
+        return "".join(secrets.choice(_PASSWORD_ALPHABET) for _ in range(length))
 
     # ------------------------------------------------------------------
     # 사용자 등록/조회
@@ -364,6 +379,7 @@ class AuthService:
 
             # 새 비밀번호로 변경
             user.password_hash = self._hasher.hash(payload.new_password)
+            user.must_change_password = False
             session.add(user)
 
             self._logger.info(
@@ -451,3 +467,10 @@ def login(payload: LoginRequest, client_host: Optional[str]) -> LoginResponse:
 
 
 __all__ = ["auth_service", "AuthService", "login"]
+
+
+
+
+
+
+
