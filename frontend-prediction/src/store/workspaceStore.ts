@@ -23,6 +23,7 @@ export type NavigationKey =
   | "algorithm-viz"
   | "training-status"
   | "options"
+  | "data-mapping"
   | "data-relationship"
   | "profile-management";
 

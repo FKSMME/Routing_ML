@@ -5,15 +5,39 @@ const path = require("path");
 const { URL } = require("url");
 
 const PORT = Number(process.env.PORT || 3000);
-const USE_HTTPS = process.env.USE_HTTPS === "true" || false;
+const envHttps = process.env.USE_HTTPS;
+const USE_HTTPS = envHttps === undefined ? true : envHttps.toLowerCase() === "true";
 const HOST = "0.0.0.0";
 const BASE_DIR = __dirname;
-const API_TARGET = process.env.API_TARGET || "http://localhost:8000";
+const API_TARGET = process.env.API_TARGET || "https://localhost:8000";
 const API_URL = new URL(API_TARGET);
 
 // SSL Certificate paths
-const SSL_KEY = path.join(__dirname, "../certs/rtml.ksm.co.kr.key");
-const SSL_CERT = path.join(__dirname, "../certs/rtml.ksm.co.kr.crt");
+const CERT_SEARCH_PATHS = [
+  path.join(__dirname, "../certs"),
+  path.join(__dirname, "certs"),
+  path.join(process.cwd(), "certs"),
+];
+
+const resolveCertPath = (explicitPath, filename) => {
+  if (explicitPath) {
+    const resolved = path.resolve(explicitPath);
+    if (fs.existsSync(resolved)) {
+      return resolved;
+    }
+  }
+
+  for (const base of CERT_SEARCH_PATHS) {
+    const candidate = path.join(base, filename);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+};
+
+const SSL_KEY = resolveCertPath(process.env.SSL_KEY_PATH, "rtml.ksm.co.kr.key");
+const SSL_CERT = resolveCertPath(process.env.SSL_CERT_PATH, "rtml.ksm.co.kr.crt");
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -61,7 +85,7 @@ function getSecurityHeaders(contentType) {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:* http://10.204.2.28:* http://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*",
+      "connect-src 'self' http://localhost:* https://localhost:* http://10.204.2.28:* https://10.204.2.28:* http://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* ws://localhost:* wss://localhost:* ws://10.204.2.28:* wss://10.204.2.28:* ws://rtml.ksm.co.kr:* wss://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:* wss://mcs.ksm.co.kr:*",
       "frame-ancestors 'self'",
     ].join("; "),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
@@ -108,6 +132,7 @@ function proxyToApi(req, res, requestUrl) {
     path: requestUrl.pathname + requestUrl.search,
     method: req.method,
     headers,
+    rejectUnauthorized: false, // Allow self-signed certificates
   };
 
   const proxyReq = client.request(options, (proxyRes) => {
@@ -156,22 +181,34 @@ const requestHandler = (req, res) => {
   serveFile(filePath, res);
 };
 
+const HTTPS_READY = USE_HTTPS && SSL_KEY && SSL_CERT;
+
+if (USE_HTTPS && !HTTPS_READY) {
+  console.warn("[home] Requested HTTPS but certificate files were not found. Falling back to HTTP.");
+  if (!SSL_KEY) {
+    console.warn("        Missing key file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.key")).join(", "));
+  }
+  if (!SSL_CERT) {
+    console.warn("        Missing certificate file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.crt")).join(", "));
+  }
+}
+
 let server;
 
-if (USE_HTTPS && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
+if (HTTPS_READY) {
   const options = {
     key: fs.readFileSync(SSL_KEY),
     cert: fs.readFileSync(SSL_CERT),
   };
   server = https.createServer(options, requestHandler);
-  console.log("[home] HTTPS enabled with self-signed certificate");
+  console.log("[home] HTTPS enabled with certificate:", SSL_CERT);
 } else {
   server = http.createServer(requestHandler);
   console.log("[home] Running in HTTP mode");
 }
 
 server.listen(PORT, HOST, () => {
-  const protocol = USE_HTTPS ? "https" : "http";
+  const protocol = HTTPS_READY ? "https" : "http";
   console.log(`[home] listening on ${protocol}://localhost:${PORT}`);
   console.log(`        algorithm map:    ${protocol}://localhost:${PORT}/algorithm-map.html`);
   console.log(`        sql view explorer: ${protocol}://localhost:${PORT}/view-explorer.html`);

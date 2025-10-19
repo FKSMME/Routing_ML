@@ -128,44 +128,44 @@ SERVICES: Tuple[Service, ...] = (
         key="backend",
         name="Backend API",
         icon="🔧",
-        check_url="http://localhost:8000/api/health",
+        check_url="https://localhost:8000/api/health",
         start_command="run_backend_main.bat",
         links=(
-            ("API Docs", "http://localhost:8000/docs"),
-            ("Health Check", "http://localhost:8000/api/health"),
+            ("API Docs", "https://localhost:8000/docs"),
+            ("Health Check", "https://localhost:8000/api/health"),
         ),
     ),
     Service(
         key="home",
         name="Home Dashboard",
         icon="🏠",
-        check_url="http://localhost:3000/",
+        check_url="https://localhost:3000/",
         start_command="run_frontend_home.bat",
         links=(
-            ("Local", "http://localhost:3000"),
-            ("LAN", "http://10.204.2.28:3000"),
+            ("Local", "https://localhost:3000"),
+            ("LAN", "https://10.204.2.28:3000"),
         ),
     ),
     Service(
         key="prediction",
         name="Routing Creation",
         icon="🎯",
-        check_url="http://localhost:5173/",
+        check_url="https://localhost:5173/",
         start_command="run_frontend_prediction.bat",
         links=(
-            ("Local", "http://localhost:5173"),
-            ("LAN", "http://10.204.2.28:5173"),
+            ("Local", "https://localhost:5173"),
+            ("LAN", "https://10.204.2.28:5173"),
         ),
     ),
     Service(
         key="training",
         name="Model Training",
         icon="🧠",
-        check_url="http://localhost:5174/",
+        check_url="https://localhost:5174/",
         start_command="run_frontend_training.bat",
         links=(
-            ("Local", "http://localhost:5174"),
-            ("LAN", "http://10.204.2.28:5174"),
+            ("Local", "https://localhost:5174"),
+            ("LAN", "https://10.204.2.28:5174"),
         ),
     ),
 )
@@ -1097,7 +1097,7 @@ class ModernMonitorApp:
 
         try:
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/pending-users",
+                "https://localhost:8000/api/auth/admin/pending-users",
                 headers={"User-Agent": "RoutingML-Monitor/5.0"}
             )
 
@@ -1249,7 +1249,7 @@ class ModernMonitorApp:
             }).encode("utf-8")
 
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/approve",
+                "https://localhost:8000/api/auth/admin/approve",
                 data=payload,
                 headers={
                     "Content-Type": "application/json",
@@ -1283,7 +1283,7 @@ class ModernMonitorApp:
             }).encode("utf-8")
 
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/reject",
+                "https://localhost:8000/api/auth/admin/reject",
                 data=payload,
                 headers={
                     "Content-Type": "application/json",

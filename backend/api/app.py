@@ -20,6 +20,7 @@ from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
 from backend.api.routes.dashboard import router as dashboard_router
 from backend.api.routes.data_quality import router as data_quality_router
+from backend.api.routes.data_mapping import router as data_mapping_router
 from backend.api.routes.database_config import router as database_config_router
 from backend.api.routes.drift import router as drift_router
 from backend.api.routes.health import router as health_router
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
     app.include_router(data_quality_router)
     app.include_router(anomaly_router)  # ✅ PyODBC 리팩토링 완료
     # app.include_router(weekly_report_router)  # TODO: weekly_report_service 미구현
+    app.include_router(data_mapping_router)
     app.include_router(database_config_router)
     app.include_router(items_router)
     app.include_router(onprem_nlp_router)

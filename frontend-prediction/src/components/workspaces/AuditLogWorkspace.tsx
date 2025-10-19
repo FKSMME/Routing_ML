@@ -136,7 +136,11 @@ export function AuditLogWorkspace() {
   const uniqueUsers = new Set(events.map((e) => e.username).filter(Boolean)).size;
 
   return (
-    <CardShell title="감사 로그" icon={<ClipboardList size={18} />}>
+    <CardShell innerClassName="space-y-3">
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <ClipboardList size={18} style={{ color: "var(--text-muted)" }} />
+        <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-default)" }}>감사 로그</h2>
+      </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
         {/* Filter Controls */}
         <div style={filterContainerStyle}>

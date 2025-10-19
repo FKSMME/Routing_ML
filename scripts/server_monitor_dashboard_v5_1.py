@@ -18,8 +18,9 @@ import json
 import subprocess
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from queue import Empty, Queue
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Set
 from collections import deque
 from functools import partial
 
@@ -28,8 +29,8 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.2.2"
-__build_date__ = "2025-10-17"
+__version__ = "5.2.4"
+__build_date__ = "2025-10-20"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
 
@@ -108,11 +109,11 @@ SERVICES: Tuple[Service, ...] = (
         key="backend",
         name="Backend API",
         icon="🔧",
-        check_url="http://localhost:8000/api/health",
+        check_url="https://localhost:8000/api/health",
         start_command="run_backend_main.bat",
         links=(
-            ("Local", "http://localhost:8000/docs"),
-            ("Domain", "http://rtml.ksm.co.kr:8000/docs"),
+            ("Local", "https://localhost:8000/docs"),
+            ("Domain", "https://rtml.ksm.co.kr:8000/docs"),
         ),
     ),
     Service(
@@ -889,24 +890,46 @@ class RoutingMLDashboard:
                 except Exception:
                     continue
 
-            expanded_pids = set()
-            for pid in active_pids:
+            project_root = Path(self.selected_folder).resolve()
+            allowed_names = {
+                "python.exe",
+                "python",
+                "uvicorn.exe",
+                "uvicorn",
+                "node.exe",
+                "npm.cmd",
+                "cmd.exe",
+                "powershell.exe",
+                "pwsh.exe",
+            }
+
+            candidate_pids = set()
+            for pid in sorted(active_pids):
                 if pid == os.getpid():
                     continue
-                expanded_pids.add(pid)
                 try:
                     proc = psutil.Process(pid)
+                    exe_path = None
+                    try:
+                        exe_path = Path(proc.exe())
+                    except (psutil.AccessDenied, psutil.NoSuchProcess, OSError):
+                        exe_path = None
+
+                    name = (proc.name() or "").lower()
+                    within_project = bool(exe_path and project_root in exe_path.parents)
+                    allowed = within_project or name in allowed_names
+                    if not allowed:
+                        continue
+
+                    candidate_pids.add(pid)
                     for child in proc.children(recursive=True):
                         if child.pid != os.getpid():
-                            expanded_pids.add(child.pid)
-                    for parent in proc.parents():
-                        if parent and parent.pid and parent.pid != os.getpid():
-                            expanded_pids.add(parent.pid)
+                            candidate_pids.add(child.pid)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
             terminated = []
-            for pid in sorted(expanded_pids):
+            for pid in sorted(candidate_pids):
                 if pid == os.getpid():
                     continue
                 try:
@@ -976,7 +999,7 @@ class RoutingMLDashboard:
 
         try:
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/pending-users",
+                "https://localhost:8000/api/auth/admin/pending-users",
                 headers={"User-Agent": "RoutingML-Monitor/5.2"}
             )
 
@@ -1114,7 +1137,7 @@ class RoutingMLDashboard:
         try:
             payload = json.dumps({"username": username, "make_admin": make_admin}).encode("utf-8")
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/approve",
+                "https://localhost:8000/api/auth/admin/approve",
                 data=payload,
                 headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
                 method="POST"
@@ -1142,7 +1165,7 @@ class RoutingMLDashboard:
         try:
             payload = json.dumps({"username": username, "reason": reason or "사유 없음"}).encode("utf-8")
             request = urllib.request.Request(
-                "http://localhost:8000/api/auth/admin/reject",
+                "https://localhost:8000/api/auth/admin/reject",
                 data=payload,
                 headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
                 method="POST"
@@ -1265,3 +1288,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+

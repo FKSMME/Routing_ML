@@ -292,6 +292,35 @@ class ConnectionPool:
 _connection_pool = ConnectionPool()
 
 
+def execute_query(query: str, params: Sequence[Any] | None = None) -> List[Tuple[Any, ...]]:
+    """Run a raw SQL query using the shared MSSQL connection pool."""
+    prepared_params = _prepare_params(params)
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query, prepared_params)
+            rows: List[Tuple[Any, ...]] = []
+            if cursor.description:
+                rows = [tuple(row) for row in cursor.fetchall()]
+
+            if not getattr(conn, "autocommit", False):
+                conn.commit()
+
+            return rows
+        except Exception:
+            if not getattr(conn, "autocommit", False):
+                try:
+                    conn.rollback()
+                except Exception as rollback_exc:
+                    logger.warning(f"Failed to rollback query: {rollback_exc}")
+            raise
+        finally:
+            try:
+                cursor.close()
+            except Exception:
+                pass
+
+
 def _load_data_source_config() -> Optional["DataSourceConfig"]:
     store = globals().get("workflow_config_store")
     if store is None:

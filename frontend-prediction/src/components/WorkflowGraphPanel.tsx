@@ -11,7 +11,14 @@ import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { cn } from "@lib/classNames";
 import { ExternalLink } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+} from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -26,7 +33,16 @@ import { regenerateWorkflowCode } from "@lib/apiClient";
 
 const NODE_TYPES = {
   module: ModuleNode,
+  area: AreaNode,
 };
+
+interface AreaNodeData {
+  label: string;
+  description?: string;
+  gradientFrom: string;
+  gradientTo: string;
+  borderColor: string;
+}
 
 interface ModuleNodeData {
   label: string;
@@ -35,6 +51,23 @@ interface ModuleNodeData {
   description?: string;
   metrics?: Record<string, unknown>;
   docRefs: string[];
+}
+
+function AreaNode({ data }: NodeProps<AreaNodeData>) {
+  return (
+    <div
+      className="workflow-area-node"
+      style={{
+        background: `linear-gradient(135deg, ${data.gradientFrom} 0%, ${data.gradientTo} 100%)`,
+        borderColor: data.borderColor,
+      }}
+    >
+      <span className="workflow-area-node__title">{data.label}</span>
+      {data.description ? (
+        <p className="workflow-area-node__description">{data.description}</p>
+      ) : null}
+    </div>
+  );
 }
 
 export function ModuleNode({ data }: NodeProps<ModuleNodeData>) {
@@ -158,40 +191,175 @@ const INITIAL_FORM: NodeFormState = {
   sqlTrainingMappings: [],
 };
 
-function createReactFlowNodes(nodes: WorkflowGraphNode[]): Node<ModuleNodeData>[] {
-  return nodes.map((node) => ({
-    id: node.id,
-    type: "module",
-    position: node.position ?? { x: 0, y: 0 },
-    data: {
-      label: node.label,
-      category: node.category,
-      status: node.status,
-      description: typeof node.settings?.description === "string" ? (node.settings.description as string) : undefined,
-      metrics: node.metrics,
-      docRefs: node.doc_refs ?? [],
-    },
-    sourcePosition: Position.Right,
-    targetPosition: Position.Left,
-  }));
+function createReactFlowNodes(nodes: WorkflowGraphNode[]): Node<ModuleNodeData | AreaNodeData>[] {
+  return nodes.map((node) => {
+    if (node.type === "area") {
+      const areaSettings = (node.settings ?? {}) as Record<string, unknown>;
+      const widthRaw = areaSettings?.width;
+      const heightRaw = areaSettings?.height;
+      const width =
+        typeof widthRaw === "number" ? widthRaw : Number(typeof widthRaw === "string" ? widthRaw : 520);
+      const height =
+        typeof heightRaw === "number" ? heightRaw : Number(typeof heightRaw === "string" ? heightRaw : 360);
+      const gradientFrom =
+        typeof areaSettings?.gradient_from === "string" ? (areaSettings.gradient_from as string) : "rgba(56,189,248,0.18)";
+      const gradientTo =
+        typeof areaSettings?.gradient_to === "string" ? (areaSettings.gradient_to as string) : "rgba(15,23,42,0.02)";
+      const borderColor =
+        typeof areaSettings?.border_color === "string" ? (areaSettings.border_color as string) : "rgba(125,211,252,0.32)";
+      const description =
+        typeof areaSettings?.description === "string" ? (areaSettings.description as string) : undefined;
+
+      return {
+        id: node.id,
+        type: "area" as const,
+        position: node.position ?? { x: 0, y: 0 },
+        data: {
+          label: node.label,
+          description,
+          gradientFrom,
+          gradientTo,
+          borderColor,
+        },
+        draggable: false,
+        selectable: false,
+        connectable: false,
+        focusable: false,
+        style: {
+          width,
+          height,
+          pointerEvents: "none",
+          zIndex: 0,
+        } as CSSProperties,
+      };
+    }
+
+    const moduleSettings = (node.settings ?? {}) as Record<string, unknown>;
+
+    return {
+      id: node.id,
+      type: "module" as const,
+      position: node.position ?? { x: 0, y: 0 },
+      data: {
+        label: node.label,
+        category: node.category,
+        status: node.status,
+        description:
+          typeof moduleSettings?.description === "string" ? (moduleSettings.description as string) : undefined,
+        metrics: node.metrics,
+        docRefs: node.doc_refs ?? [],
+      },
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
+      style: { zIndex: 2 } as CSSProperties,
+    };
+  });
 }
 
+const EDGE_STYLE_MAP: Record<
+  string,
+  {
+    color: string;
+    animated?: boolean;
+    dash?: string;
+    labelBg?: string;
+    labelStroke?: string;
+    labelText?: string;
+  }
+> = {
+  "ui-flow": {
+    color: "#38bdf8",
+    animated: true,
+    labelBg: "rgba(14, 165, 233, 0.16)",
+    labelStroke: "rgba(125, 211, 252, 0.4)",
+    labelText: "#e0f2fe",
+  },
+  "visual-flow": {
+    color: "#f472b6",
+    animated: true,
+    dash: "6 3",
+    labelBg: "rgba(236, 72, 153, 0.16)",
+    labelStroke: "rgba(244, 114, 182, 0.35)",
+    labelText: "#fce7f3",
+  },
+  "state-flow": {
+    color: "#c084fc",
+    animated: true,
+    labelBg: "rgba(192, 132, 252, 0.16)",
+    labelStroke: "rgba(196, 181, 253, 0.35)",
+    labelText: "#f5f3ff",
+  },
+  "data-flow": {
+    color: "#34d399",
+    animated: false,
+    labelBg: "rgba(52, 211, 153, 0.18)",
+    labelStroke: "rgba(16, 185, 129, 0.35)",
+    labelText: "#ecfdf5",
+  },
+  "control-flow": {
+    color: "#f97316",
+    animated: true,
+    dash: "5 5",
+    labelBg: "rgba(249, 115, 22, 0.18)",
+    labelStroke: "rgba(251, 146, 60, 0.35)",
+    labelText: "#fff7ed",
+  },
+  "model-flow": {
+    color: "#facc15",
+    animated: true,
+    labelBg: "rgba(250, 204, 21, 0.18)",
+    labelStroke: "rgba(253, 224, 71, 0.35)",
+    labelText: "#fefce8",
+  },
+  "feedback-flow": {
+    color: "#0ea5e9",
+    animated: true,
+    dash: "2 6",
+    labelBg: "rgba(14, 165, 233, 0.12)",
+    labelStroke: "rgba(59, 130, 246, 0.3)",
+    labelText: "#e0f2fe",
+  },
+  default: {
+    color: "#0ea5e9",
+    animated: false,
+    labelBg: "rgba(15, 23, 42, 0.8)",
+    labelStroke: "rgba(56, 189, 248, 0.4)",
+    labelText: "#e0f2fe",
+  },
+};
+
 function createReactFlowEdges(edges: WorkflowGraphEdge[]): Edge[] {
-  return edges.map((edge) => ({
-    id: edge.id,
-    source: edge.source,
-    target: edge.target,
-    label: edge.label,
-    animated: edge.kind !== "data-flow",
-    style: {
-      stroke: edge.kind === "ui-flow" ? "#34d399" : edge.kind === "model-flow" ? "#38bdf8" : "#0ea5e9",
+  return edges.map((edge) => {
+    const styleConfig = EDGE_STYLE_MAP[edge.kind] ?? EDGE_STYLE_MAP.default;
+    const style: CSSProperties = {
+      stroke: styleConfig.color,
       strokeWidth: 2,
-    },
-    labelBgPadding: [6, 3],
-    labelBgBorderRadius: 8,
-    labelBgStyle: { fill: "rgba(15, 23, 42, 0.8)", stroke: "rgba(56, 189, 248, 0.4)" },
-    labelStyle: { fill: "#e0f2fe", fontSize: 12, fontWeight: 600 },
-  }));
+    };
+
+    if (styleConfig.dash) {
+      style.strokeDasharray = styleConfig.dash;
+    }
+
+    return {
+      id: edge.id,
+      source: edge.source,
+      target: edge.target,
+      label: edge.label,
+      animated: Boolean(styleConfig.animated),
+      style,
+      labelBgPadding: [6, 3],
+      labelBgBorderRadius: 8,
+      labelBgStyle: {
+        fill: styleConfig.labelBg ?? EDGE_STYLE_MAP.default.labelBg,
+        stroke: styleConfig.labelStroke ?? EDGE_STYLE_MAP.default.labelStroke,
+      },
+      labelStyle: {
+        fill: styleConfig.labelText ?? EDGE_STYLE_MAP.default.labelText,
+        fontSize: 12,
+        fontWeight: 600,
+      },
+    };
+  });
 }
 
 interface NodeSettingsDialogProps {
@@ -1318,7 +1486,14 @@ export function WorkflowGraphPanel() {
             proOptions={{ hideAttribution: true }}
             className="blueprint-flow"
           >
-            <MiniMap pannable zoomable className="!bg-transparent" nodeColor={() => "#38bdf8"} maskColor="rgba(15,23,42,0.7)" />
+            <MiniMap
+              pannable
+              zoomable
+              className="!bg-transparent"
+              nodeColor={(node) => (node.type === "area" ? "#1f2937" : "#38bdf8")}
+              maskColor="rgba(15,23,42,0.7)"
+              nodeStrokeColor={(node) => (node.type === "area" ? "#334155" : "#38bdf8")}
+            />
             <Controls className="surface-card-overlay text-foreground" showInteractive={false} />
             <Background color="rgba(56,189,248,0.25)" gap={28} />
           </ReactFlow>

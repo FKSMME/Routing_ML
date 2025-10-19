@@ -2,90 +2,790 @@
   "graph": {
     "nodes": [
       {
-        "id": "source",
-        "label": "Data Source",
-        "type": "start",
-        "category": null,
-        "status": null,
+        "id": "area-ui-layer",
+        "label": "UI Layer",
+        "type": "area",
+        "category": "stage",
+        "status": "visual",
         "position": {
-          "x": 0.0,
-          "y": 0.0
+          "x": -400,
+          "y": -200
         },
-        "settings": {},
+        "settings": {
+          "width": 560,
+          "height": 420,
+          "gradient_from": "rgba(56, 189, 248, 0.18)",
+          "gradient_to": "rgba(15, 23, 42, 0.02)",
+          "border_color": "rgba(125, 211, 252, 0.35)",
+          "description": "React components, layout shells, and CSS layers that render the workflow editor."
+        },
         "metrics": {},
-        "doc_refs": []
+        "doc_refs": [
+          "frontend-prediction/src/App.tsx",
+          "frontend-prediction/src/index.css#blueprint-node"
+        ]
       },
       {
-        "id": "trainer",
-        "label": "Model Trainer",
-        "type": "process",
-        "category": null,
-        "status": null,
+        "id": "area-state-orchestration",
+        "label": "State Orchestration",
+        "type": "area",
+        "category": "stage",
+        "status": "stable",
         "position": {
-          "x": 0.0,
-          "y": 0.0
+          "x": 220,
+          "y": -200
         },
-        "settings": {},
+        "settings": {
+          "width": 560,
+          "height": 420,
+          "gradient_from": "rgba(168, 85, 247, 0.16)",
+          "gradient_to": "rgba(30, 27, 75, 0.02)",
+          "border_color": "rgba(196, 181, 253, 0.38)",
+          "description": "Zustand stores, hooks, and side-effects that coordinate workflow graph state."
+        },
         "metrics": {},
-        "doc_refs": []
+        "doc_refs": [
+          "frontend-prediction/src/store/workflowGraphStore.ts",
+          "frontend-prediction/src/hooks/useWorkflowConfig.ts"
+        ]
       },
       {
-        "id": "validator",
-        "label": "Quality Gate",
-        "type": "process",
-        "category": null,
-        "status": null,
+        "id": "area-backend-workflow",
+        "label": "Workflow API Backend",
+        "type": "area",
+        "category": "stage",
+        "status": "active",
         "position": {
-          "x": 0.0,
-          "y": 0.0
+          "x": 840,
+          "y": -200
         },
-        "settings": {},
+        "settings": {
+          "width": 560,
+          "height": 420,
+          "gradient_from": "rgba(14, 165, 233, 0.14)",
+          "gradient_to": "rgba(12, 74, 110, 0.05)",
+          "border_color": "rgba(59, 130, 246, 0.32)",
+          "description": "FastAPI routes, config stores, and audit logging that persist workflow edits."
+        },
         "metrics": {},
-        "doc_refs": []
+        "doc_refs": [
+          "backend/api/routes/workflow.py",
+          "common/config_store.py"
+        ]
       },
       {
-        "id": "deployer",
-        "label": "Deployer",
-        "type": "end",
-        "category": null,
-        "status": null,
+        "id": "area-runtime-execution",
+        "label": "Runtime & Codegen",
+        "type": "area",
+        "category": "stage",
+        "status": "active",
         "position": {
-          "x": 0.0,
-          "y": 0.0
+          "x": 1460,
+          "y": -200
         },
-        "settings": {},
+        "settings": {
+          "width": 560,
+          "height": 420,
+          "gradient_from": "rgba(234, 179, 8, 0.14)",
+          "gradient_to": "rgba(23, 37, 84, 0.04)",
+          "border_color": "rgba(250, 204, 21, 0.32)",
+          "description": "Generated modules and runtime configuration applied to trainer and predictor services."
+        },
         "metrics": {},
-        "doc_refs": []
+        "doc_refs": [
+          "common/workflow_codegen.py",
+          "backend/trainer_ml.py",
+          "backend/predictor_ml.py"
+        ]
+      },
+      {
+        "id": "ui-app-shell",
+        "label": "App.tsx Layout",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "stable",
+        "position": {
+          "x": -360,
+          "y": -150
+        },
+        "settings": {
+          "description": "Initialises the dashboard shell, theme providers, and mounts the workflow tab."
+        },
+        "metrics": {
+          "component": "React.FC",
+          "file": "App.tsx"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/App.tsx#L1-L160"
+        ]
+      },
+      {
+        "id": "ui-workflow-panel",
+        "label": "WorkflowGraphPanel",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "active",
+        "position": {
+          "x": -120,
+          "y": -150
+        },
+        "settings": {
+          "description": "Hosts the React Flow canvas, node editor dialogs, and save controls."
+        },
+        "metrics": {
+          "component": "ReactFlow",
+          "file": "WorkflowGraphPanel.tsx"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/components/WorkflowGraphPanel.tsx#L1-L220"
+        ]
+      },
+      {
+        "id": "ui-module-node",
+        "label": "ModuleNode Component",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "stable",
+        "position": {
+          "x": -360,
+          "y": 10
+        },
+        "settings": {
+          "description": "Reusable node renderer that displays badges, documentation hints, and metrics."
+        },
+        "metrics": {
+          "component": "ModuleNode",
+          "badges": "status, docs"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/components/WorkflowGraphPanel.tsx#L28-L104"
+        ]
+      },
+      {
+        "id": "ui-css-blueprint",
+        "label": "Blueprint CSS Tokens",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "stable",
+        "position": {
+          "x": -120,
+          "y": 10
+        },
+        "settings": {
+          "description": "Gradients, rounded geometry, and badge styling defined in index.css."
+        },
+        "metrics": {
+          "layers": "glass, badge",
+          "selectors": 18
+        },
+        "doc_refs": [
+          "frontend-prediction/src/index.css#L954-L1066"
+        ]
+      },
+      {
+        "id": "ui-fullscreen-bg",
+        "label": "FullScreen3DBackground",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "visual",
+        "position": {
+          "x": -360,
+          "y": 170
+        },
+        "settings": {
+          "description": "GPU friendly gradient mesh and camera drift that provide ambient depth."
+        },
+        "metrics": {
+          "three": "useFrame",
+          "file": "FullScreen3DBackground.tsx"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/components/FullScreen3DBackground.tsx"
+        ]
+      },
+      {
+        "id": "ui-particle-engine",
+        "label": "ParticleBackground",
+        "type": "module",
+        "category": "UI Layer",
+        "status": "visual",
+        "position": {
+          "x": -120,
+          "y": 170
+        },
+        "settings": {
+          "description": "Canvas-based sparkle layer that responds to workflow activity."
+        },
+        "metrics": {
+          "particles": "128",
+          "file": "ParticleBackground.tsx"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/components/ParticleBackground.tsx"
+        ]
+      },
+      {
+        "id": "state-workflow-store",
+        "label": "workflowGraphStore",
+        "type": "module",
+        "category": "State",
+        "status": "stable",
+        "position": {
+          "x": 260,
+          "y": -150
+        },
+        "settings": {
+          "description": "Zustand store managing nodes, edges, and undoable graph history."
+        },
+        "metrics": {
+          "snapshots": "40",
+          "file": "workflowGraphStore.ts"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/store/workflowGraphStore.ts#L1-L160"
+        ]
+      },
+      {
+        "id": "state-history-snapshots",
+        "label": "History Snapshots",
+        "type": "module",
+        "category": "State",
+        "status": "active",
+        "position": {
+          "x": 500,
+          "y": -150
+        },
+        "settings": {
+          "description": "Provides undo/redo friendly graph snapshots for layout experiments."
+        },
+        "metrics": {
+          "maxLength": 40,
+          "api": "pushSnapshot"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/store/workflowGraphStore.ts#L44-L117"
+        ]
+      },
+      {
+        "id": "state-config-hook",
+        "label": "useWorkflowConfig",
+        "type": "module",
+        "category": "State",
+        "status": "stable",
+        "position": {
+          "x": 260,
+          "y": 10
+        },
+        "settings": {
+          "description": "Fetches workflow configuration from the API and exposes loading state."
+        },
+        "metrics": {
+          "hook": "useQuery",
+          "file": "useWorkflowConfig.ts"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/hooks/useWorkflowConfig.ts"
+        ]
+      },
+      {
+        "id": "state-api-client",
+        "label": "apiClient.workflow",
+        "type": "module",
+        "category": "State",
+        "status": "active",
+        "position": {
+          "x": 500,
+          "y": 10
+        },
+        "settings": {
+          "description": "Axios instance with workflow graph GET/PATCH endpoints and code regeneration call."
+        },
+        "metrics": {
+          "http": "axios",
+          "file": "apiClient.ts"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/lib/apiClient.ts#L1-L220"
+        ]
+      },
+      {
+        "id": "state-toast-system",
+        "label": "useToast",
+        "type": "module",
+        "category": "State",
+        "status": "stable",
+        "position": {
+          "x": 260,
+          "y": 170
+        },
+        "settings": {
+          "description": "Routes backend success and failure signals to user notifications."
+        },
+        "metrics": {
+          "hook": "useToast",
+          "file": "useToast.ts"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/hooks/useToast.ts"
+        ]
+      },
+      {
+        "id": "state-layout-sync",
+        "label": "handleSaveLayout",
+        "type": "module",
+        "category": "State",
+        "status": "active",
+        "position": {
+          "x": 500,
+          "y": 170
+        },
+        "settings": {
+          "description": "Persists dragged node positions by PATCHing the workflow graph."
+        },
+        "metrics": {
+          "payload": "WorkflowGraphPatch",
+          "file": "WorkflowGraphPanel.tsx"
+        },
+        "doc_refs": [
+          "frontend-prediction/src/components/WorkflowGraphPanel.tsx#handleSaveLayout"
+        ]
+      },
+      {
+        "id": "backend-build-response",
+        "label": "_build_response",
+        "type": "module",
+        "category": "Backend",
+        "status": "stable",
+        "position": {
+          "x": 880,
+          "y": -150
+        },
+        "settings": {
+          "description": "Normalises stored snapshot dictionaries into Pydantic workflow models."
+        },
+        "metrics": {
+          "returns": "WorkflowConfigResponse",
+          "file": "workflow.py"
+        },
+        "doc_refs": [
+          "backend/api/routes/workflow.py#L58-L105"
+        ]
+      },
+      {
+        "id": "backend-get-workflow",
+        "label": "get_workflow_graph",
+        "type": "module",
+        "category": "Backend",
+        "status": "active",
+        "position": {
+          "x": 1120,
+          "y": -150
+        },
+        "settings": {
+          "description": "Serves the latest workflow snapshot with authentication enforcement."
+        },
+        "metrics": {
+          "method": "GET",
+          "route": "/api/workflow/graph"
+        },
+        "doc_refs": [
+          "backend/api/routes/workflow.py#L111-L124"
+        ]
+      },
+      {
+        "id": "backend-patch-workflow",
+        "label": "patch_workflow_graph",
+        "type": "module",
+        "category": "Backend",
+        "status": "active",
+        "position": {
+          "x": 880,
+          "y": 10
+        },
+        "settings": {
+          "description": "Applies workflow graph edits and validates SQL, trainer, and predictor patches."
+        },
+        "metrics": {
+          "method": "PATCH",
+          "route": "/api/workflow/graph"
+        },
+        "doc_refs": [
+          "backend/api/routes/workflow.py#L126-L450"
+        ]
+      },
+      {
+        "id": "backend-regenerate-code",
+        "label": "regenerate_workflow_code",
+        "type": "module",
+        "category": "Backend",
+        "status": "active",
+        "position": {
+          "x": 1120,
+          "y": 10
+        },
+        "settings": {
+          "description": "Triggers common.workflow_codegen to synchronise generated modules after updates."
+        },
+        "metrics": {
+          "method": "POST",
+          "route": "/api/workflow/regenerate"
+        },
+        "doc_refs": [
+          "backend/api/routes/workflow.py#L559-L618"
+        ]
+      },
+      {
+        "id": "backend-config-store",
+        "label": "workflow_config_store",
+        "type": "module",
+        "category": "Backend",
+        "status": "stable",
+        "position": {
+          "x": 880,
+          "y": 170
+        },
+        "settings": {
+          "description": "Persists workflow snapshots to disk and reloads them for future sessions."
+        },
+        "metrics": {
+          "storage": "JSON",
+          "module": "common.config_store"
+        },
+        "doc_refs": [
+          "common/config_store.py#L260-L362"
+        ]
+      },
+      {
+        "id": "backend-workflow-audit",
+        "label": "workflow.audit logger",
+        "type": "module",
+        "category": "Backend",
+        "status": "active",
+        "position": {
+          "x": 1120,
+          "y": 170
+        },
+        "settings": {
+          "description": "Structured audit logger that records workflow mutations to the audit log directory."
+        },
+        "metrics": {
+          "sink": "JSON",
+          "file": "workflow.py"
+        },
+        "doc_refs": [
+          "backend/api/routes/workflow.py#L44-L57"
+        ]
+      },
+      {
+        "id": "runtime-codegen-modules",
+        "label": "generate_workflow_modules",
+        "type": "module",
+        "category": "Runtime",
+        "status": "active",
+        "position": {
+          "x": 1500,
+          "y": -130
+        },
+        "settings": {
+          "description": "Builds python modules for the current workflow snapshot and returns file paths."
+        },
+        "metrics": {
+          "module": "common.workflow_codegen",
+          "outputs": "WorkflowCodeModule[]"
+        },
+        "doc_refs": [
+          "common/workflow_codegen.py#L30-L220"
+        ]
+      },
+      {
+        "id": "runtime-trainer-config",
+        "label": "apply_trainer_runtime_config",
+        "type": "module",
+        "category": "Runtime",
+        "status": "active",
+        "position": {
+          "x": 1740,
+          "y": -130
+        },
+        "settings": {
+          "description": "Applies saved trainer thresholds, trimming rules, and time-profile hints."
+        },
+        "metrics": {
+          "module": "backend.trainer_ml",
+          "log": "trainer_ml.py"
+        },
+        "doc_refs": [
+          "backend/trainer_ml.py#L150-L210"
+        ]
+      },
+      {
+        "id": "runtime-predictor-config",
+        "label": "apply_runtime_config",
+        "type": "module",
+        "category": "Runtime",
+        "status": "active",
+        "position": {
+          "x": 1500,
+          "y": 30
+        },
+        "settings": {
+          "description": "Updates predictor thresholds, variants, and encoding cache parameters."
+        },
+        "metrics": {
+          "module": "backend.predictor_ml",
+          "log": "predictor_ml.py"
+        },
+        "doc_refs": [
+          "backend/predictor_ml.py#L1710-L1745"
+        ]
+      },
+      {
+        "id": "runtime-encoding-cache",
+        "label": "encoding_cache manager",
+        "type": "module",
+        "category": "Runtime",
+        "status": "stable",
+        "position": {
+          "x": 1740,
+          "y": 30
+        },
+        "settings": {
+          "description": "Configurable LRU cache for predictor embeddings keyed by request payloads."
+        },
+        "metrics": {
+          "maxsize": 20000,
+          "ttl": 900
+        },
+        "doc_refs": [
+          "backend/predictor_ml.py#L73-L176"
+        ]
+      },
+      {
+        "id": "runtime-audit-channel",
+        "label": "Runtime Audit Channel",
+        "type": "module",
+        "category": "Runtime",
+        "status": "active",
+        "position": {
+          "x": 1620,
+          "y": 190
+        },
+        "settings": {
+          "description": "Routes workflow audit entries to user notifications and log sinks."
+        },
+        "metrics": {
+          "logger": "common.logger",
+          "format": "json"
+        },
+        "doc_refs": [
+          "common/logger.py#L1-L160"
+        ]
       }
     ],
     "edges": [
       {
-        "id": "e1",
-        "source": "source",
-        "target": "trainer",
-        "kind": "direct",
-        "label": null
+        "id": "ui-flow-01",
+        "source": "ui-app-shell",
+        "target": "ui-workflow-panel",
+        "kind": "ui-flow",
+        "label": "mount panel"
       },
       {
-        "id": "e2",
-        "source": "trainer",
-        "target": "validator",
-        "kind": "direct",
-        "label": null
+        "id": "ui-flow-02",
+        "source": "ui-workflow-panel",
+        "target": "ui-module-node",
+        "kind": "ui-flow",
+        "label": "render modules"
       },
       {
-        "id": "e3",
-        "source": "validator",
-        "target": "deployer",
-        "kind": "direct",
-        "label": null
+        "id": "ui-flow-03",
+        "source": "ui-workflow-panel",
+        "target": "ui-css-blueprint",
+        "kind": "visual-flow",
+        "label": "apply blueprint theme"
+      },
+      {
+        "id": "ui-flow-04",
+        "source": "ui-fullscreen-bg",
+        "target": "ui-workflow-panel",
+        "kind": "visual-flow",
+        "label": "ambient gradient"
+      },
+      {
+        "id": "ui-flow-05",
+        "source": "ui-particle-engine",
+        "target": "ui-workflow-panel",
+        "kind": "visual-flow",
+        "label": "canvas particles"
+      },
+      {
+        "id": "ui-flow-06",
+        "source": "ui-css-blueprint",
+        "target": "ui-module-node",
+        "kind": "visual-flow",
+        "label": "style tokens"
+      },
+      {
+        "id": "control-01",
+        "source": "ui-workflow-panel",
+        "target": "state-config-hook",
+        "kind": "control-flow",
+        "label": "load config"
+      },
+      {
+        "id": "state-01",
+        "source": "state-config-hook",
+        "target": "state-workflow-store",
+        "kind": "state-flow",
+        "label": "hydrate store"
+      },
+      {
+        "id": "state-02",
+        "source": "state-workflow-store",
+        "target": "state-history-snapshots",
+        "kind": "state-flow",
+        "label": "snapshot"
+      },
+      {
+        "id": "state-03",
+        "source": "state-workflow-store",
+        "target": "state-layout-sync",
+        "kind": "state-flow",
+        "label": "persist layout"
+      },
+      {
+        "id": "state-04",
+        "source": "state-toast-system",
+        "target": "state-workflow-store",
+        "kind": "state-flow",
+        "label": "feedback toasts"
+      },
+      {
+        "id": "control-02",
+        "source": "state-layout-sync",
+        "target": "state-api-client",
+        "kind": "control-flow",
+        "label": "issue patch"
+      },
+      {
+        "id": "control-05",
+        "source": "ui-module-node",
+        "target": "state-workflow-store",
+        "kind": "control-flow",
+        "label": "node drag updates"
+      },
+      {
+        "id": "data-01",
+        "source": "state-api-client",
+        "target": "backend-get-workflow",
+        "kind": "data-flow",
+        "label": "GET /graph"
+      },
+      {
+        "id": "control-03",
+        "source": "state-api-client",
+        "target": "backend-patch-workflow",
+        "kind": "control-flow",
+        "label": "PATCH /graph"
+      },
+      {
+        "id": "data-02",
+        "source": "backend-get-workflow",
+        "target": "backend-build-response",
+        "kind": "data-flow",
+        "label": "compose response"
+      },
+      {
+        "id": "data-03",
+        "source": "backend-build-response",
+        "target": "state-workflow-store",
+        "kind": "data-flow",
+        "label": "update front-end"
+      },
+      {
+        "id": "data-04",
+        "source": "backend-patch-workflow",
+        "target": "backend-config-store",
+        "kind": "data-flow",
+        "label": "persist snapshot"
+      },
+      {
+        "id": "control-04",
+        "source": "backend-config-store",
+        "target": "backend-regenerate-code",
+        "kind": "control-flow",
+        "label": "trigger rebuild"
+      },
+      {
+        "id": "feedback-01",
+        "source": "backend-regenerate-code",
+        "target": "backend-workflow-audit",
+        "kind": "feedback-flow",
+        "label": "audit entry"
+      },
+      {
+        "id": "model-01",
+        "source": "backend-regenerate-code",
+        "target": "runtime-codegen-modules",
+        "kind": "model-flow",
+        "label": "generate modules"
+      },
+      {
+        "id": "model-02",
+        "source": "runtime-codegen-modules",
+        "target": "runtime-trainer-config",
+        "kind": "model-flow",
+        "label": "trainer update"
+      },
+      {
+        "id": "model-03",
+        "source": "runtime-codegen-modules",
+        "target": "runtime-predictor-config",
+        "kind": "model-flow",
+        "label": "predictor update"
+      },
+      {
+        "id": "model-04",
+        "source": "runtime-predictor-config",
+        "target": "runtime-encoding-cache",
+        "kind": "model-flow",
+        "label": "refresh cache"
+      },
+      {
+        "id": "feedback-02",
+        "source": "runtime-trainer-config",
+        "target": "state-history-snapshots",
+        "kind": "feedback-flow",
+        "label": "emit metrics"
+      },
+      {
+        "id": "feedback-03",
+        "source": "runtime-predictor-config",
+        "target": "state-api-client",
+        "kind": "feedback-flow",
+        "label": "status broadcast"
+      },
+      {
+        "id": "feedback-04",
+        "source": "backend-workflow-audit",
+        "target": "runtime-audit-channel",
+        "kind": "feedback-flow",
+        "label": "log channel"
+      },
+      {
+        "id": "feedback-05",
+        "source": "runtime-audit-channel",
+        "target": "state-toast-system",
+        "kind": "feedback-flow",
+        "label": "surface notifications"
       }
     ],
     "design_refs": [
-      "main/1.jpg",
-      "main/2.jpg"
+      "design/system/workflow-stage-sketch.png",
+      "design/system/node-palette.png",
+      "design/system/effects-legend.png"
     ],
-    "last_saved": "2025-09-29T08:59:07.750265"
+    "last_saved": "2025-10-16T13:14:27"
   },
   "trainer": {
     "similarity_threshold": 0.85,

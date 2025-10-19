@@ -16,7 +16,7 @@ if not exist "node_modules" (
     exit /b 1
 )
 
-echo Starting Training Frontend on http://localhost:5174
+echo Starting Training Frontend on https://localhost:5174
 echo.
 
 npm run dev

@@ -5,9 +5,9 @@ echo   Routing-ML All Services
 echo   Start all services simultaneously
 echo ========================================
 echo.
-echo Starting services...
-echo   - Training Service: http://localhost:8001
-echo   - Prediction Service: http://localhost:8002
+echo Starting services (HTTPS)...
+echo   - Training Service: https://localhost:8001
+echo   - Prediction Service: https://localhost:8002
 echo.
 
 cd /d "%~dp0"

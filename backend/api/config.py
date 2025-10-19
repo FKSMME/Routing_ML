@@ -138,7 +138,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256")
     jwt_access_token_ttl_seconds: int = Field(default=3600, ge=300)
     jwt_cookie_name: str = Field(default="routing_ml_session")
-    jwt_cookie_secure: bool = Field(default=False)
+    jwt_cookie_secure: bool = Field(default=True)  # HTTPS 환경에서 True로 변경
 
     # Email notification settings (MS365 Outlook)
     email_enabled: bool = Field(default=False, description="이메일 알림 사용 여부")

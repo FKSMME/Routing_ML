@@ -2,8 +2,7 @@ import { useState, type FormEvent } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LogIn, UserPlus } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { BackgroundControls } from "@components/BackgroundControls";
-import { FullScreen3DBackground } from "@components/FullScreen3DBackground";
+import { HyperspeedBackground } from "@components/HyperspeedBackground";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -43,8 +42,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: "ȸ������ ����" }));
-          throw new Error(errorData.detail || "ȸ�����Կ� �����߽��ϴ�");
+          const errorData = await response.json().catch(() => ({ detail: "회원가입 실패" }));
+          throw new Error(errorData.detail || "회원가입에 실패했습니다");
         }
 
         await response.json();
@@ -66,19 +65,19 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ detail: "�α��� ����" }));
-          throw new Error(errorData.detail || "�α��ο� �����߽��ϴ�");
+          const errorData = await response.json().catch(() => ({ detail: "로그인 실패" }));
+          throw new Error(errorData.detail || "로그인에 실패했습니다");
         }
 
         const data = await response.json();
         if (data.status !== "approved") {
-          throw new Error("������ ���ε��� �ʾҽ��ϴ�. �����ڿ��� �����ϼ���.");
+          throw new Error("계정이 승인되지 않았습니다. 관리자에게 문의하세요.");
         }
 
         onLoginSuccess();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "������ �߻��߽��ϴ�");
+      setError(err instanceof Error ? err.message : "오류가 발생했습니다");
     } finally {
       setLoading(false);
     }
@@ -86,7 +85,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center surface-base p-6 overflow-hidden">
-      <FullScreen3DBackground />
+      <HyperspeedBackground />
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
@@ -106,14 +105,14 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </div>
           <h1 className="text-2xl font-semibold text-accent-strong">Routing ML Console</h1>
           <p className="text-sm text-muted">
-            {mode === "login" ? "�α����Ͽ� �ý��ۿ� �����ϼ���" : "�� ������ �����ϼ���"}
+            {mode === "login" ? "로그인하여 시스템에 접근하세요" : "새 계정을 생성하세요"}
           </p>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="username" className="block text-sm font-medium text-foreground">
-              ����� ID
+              사용자 ID
             </label>
             <input
               id="username"
@@ -121,7 +120,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="form-control w-full"
-              placeholder="����� ID�� �Է��ϼ���"
+              placeholder="사용자 ID를 입력하세요"
               required
               autoFocus
               disabled={loading}
@@ -130,7 +129,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <div className="space-y-2">
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
-              ��й�ȣ
+              비밀번호
             </label>
             <input
               id="password"
@@ -138,7 +137,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="form-control w-full"
-              placeholder="��й�ȣ�� �Է��ϼ���"
+              placeholder="비밀번호를 입력하세요"
               required
               disabled={loading}
             />
@@ -207,7 +206,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             disabled={loading || !username || !password}
             className="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? (mode === "login" ? "�α��� ��..." : "���� ��...") : mode === "login" ? "�α���" : "ȸ������"}
+            {loading ? (mode === "login" ? "로그인 중..." : "가입 중...") : mode === "login" ? "로그인" : "회원가입"}
           </button>
         </form>
 
@@ -222,11 +221,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             className="text-accent hover:text-accent-strong transition-colors"
             disabled={loading}
           >
-            {mode === "login" ? "������ �����Ű���? ȸ������" : "�̹� ������ �����Ű���? �α���"}
+            {mode === "login" ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
           </button>
 
           <div className="space-y-1 text-foreground">
-            <p>��й�ȣ�� ������? <span className="font-medium">KSM Support</span>���� �����ϼ���.</p>
+            <p>비밀번호를 잊으셨나요? <span className="font-medium">KSM Support</span>에게 문의하세요.</p>
             <p>
               Email: <a href="mailto:syyun@ksm.co.kr" className="text-accent hover:text-accent-strong">syyun@ksm.co.kr</a>
             </p>
@@ -235,6 +234,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
           <p className="pt-2 text-[11px] text-muted-strong">© 2025 KSM. All rights reserved.</p>
         </footer>
-      </CardShell>\r\n      <BackgroundControls />\r\n    </div>
+      </CardShell>
+    </div>
   );
 }

@@ -19,7 +19,7 @@ from backend.api.routes.dashboard import (
 )
 from backend.api.services.auth_service import auth_service
 from backend.api.security import get_current_user
-from backend.database import get_database_info
+from backend.database import execute_query, get_database_info
 from common.logger import get_logger
 
 router = APIRouter(prefix="/api/system-overview", tags=["system-overview"])
@@ -246,6 +246,11 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
     frontend_home_dir = project_root / "frontend-home"
     frontend_prediction_dir = project_root / "frontend-prediction"
     frontend_training_dir = project_root / "frontend-training"
+    frontend_shared_dir = project_root / "frontend-shared"
+    electron_app_dir = project_root / "electron-app"
+    scripts_dir = project_root / "scripts"
+    models_dir = project_root / "models"
+    workflow_settings_path = project_root / "config" / "workflow_settings.json"
 
     home_pages = sorted(p.name for p in frontend_home_dir.glob("*.html"))
     algorithm_page = frontend_home_dir / "algorithm-map.html"
@@ -267,6 +272,112 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
         _record_warning(warnings, "Prediction frontend package.json unavailable or unreadable.")
     if training_status != STATUS_OPERATIONAL:
         _record_warning(warnings, "Training frontend package.json unavailable or unreadable.")
+
+    frontend_shared_meta = _load_package_metadata(frontend_shared_dir / "package.json")
+    shared_metrics: Dict[str, Any] = dict(frontend_shared_meta)
+    shared_metrics["workspace"] = "frontend-shared"
+    shared_metrics["typescript"] = (frontend_shared_dir / "tsconfig.json").exists()
+    shared_status = STATUS_OPERATIONAL if frontend_shared_meta else STATUS_DEGRADED
+    if shared_status != STATUS_OPERATIONAL:
+        _record_warning(warnings, "Shared frontend package (frontend-shared/package.json) is missing.")
+
+    electron_pkg_meta = _load_package_metadata(electron_app_dir / "package.json")
+    monitor_metrics: Dict[str, Any] = dict(electron_pkg_meta)
+    monitor_metrics["entrypoint"] = "electron-app/main.js"
+    if electron_app_dir.exists():
+        dist_dir = electron_app_dir / "dist"
+        if dist_dir.exists():
+            monitor_metrics["dist_targets"] = len(list(dist_dir.iterdir()))
+        build_dir = electron_app_dir / "build"
+        if build_dir.exists():
+            monitor_metrics["build_targets"] = len(list(build_dir.iterdir()))
+    monitor_status = STATUS_OPERATIONAL if electron_pkg_meta else STATUS_DEGRADED
+    if monitor_status != STATUS_OPERATIONAL:
+        _record_warning(warnings, "Electron monitor package.json is missing or unreadable.")
+
+    workflow_metrics: Dict[str, Any] = {"config": "config/workflow_settings.json"}
+    workflow_status = STATUS_DEGRADED
+    if workflow_settings_path.exists():
+        try:
+            with workflow_settings_path.open("r", encoding="utf-8") as handle:
+                workflow_settings = json.load(handle)
+            graph_info = workflow_settings.get("graph", {})
+            workflow_metrics["graph_nodes"] = len(graph_info.get("nodes", []))
+            workflow_metrics["graph_edges"] = len(graph_info.get("edges", []))
+            modules = (workflow_settings.get("modules") or {}).get("items") or []
+            workflow_metrics["modules"] = len(modules)
+            workflow_status = STATUS_OPERATIONAL if workflow_metrics.get("graph_nodes", 0) else STATUS_DEGRADED
+        except Exception as exc:
+            _record_warning(warnings, "workflow_settings.json load failed", exc)
+    else:
+        _record_warning(warnings, "workflow_settings.json missing")
+
+    batch_metrics: Dict[str, Any] = {}
+    batch_status = STATUS_DEGRADED
+    bat_paths = {path.resolve() for path in project_root.glob("*.bat")}
+    if scripts_dir.exists():
+        bat_paths.update(path.resolve() for path in scripts_dir.glob("*.bat"))
+        sh_paths = {path.resolve() for path in scripts_dir.glob("*.sh")}
+    else:
+        sh_paths = set()
+    sh_paths.update(path.resolve() for path in project_root.glob("*.sh"))
+    if bat_paths or sh_paths:
+        batch_metrics["bat_scripts"] = len(bat_paths)
+        batch_metrics["shell_scripts"] = len(sh_paths)
+        timestamps = []
+        for candidate in bat_paths.union(sh_paths):
+            try:
+                timestamps.append(candidate.stat().st_mtime)
+            except FileNotFoundError:
+                continue
+        if timestamps:
+            batch_metrics["latest_updated"] = datetime.utcfromtimestamp(max(timestamps)).isoformat() + "Z"
+        batch_status = STATUS_OPERATIONAL
+    else:
+        batch_metrics = {"bat_scripts": 0, "shell_scripts": 0}
+
+    artifact_suffixes = {".json", ".pkl", ".onnx", ".db", ".bin"}
+    artifact_files: List[Path] = []
+    if models_dir.exists():
+        for candidate in models_dir.rglob("*"):
+            if candidate.is_file() and candidate.suffix.lower() in artifact_suffixes:
+                artifact_files.append(candidate)
+    model_metrics_snapshot = {"artifacts": len(artifact_files), "json_configs": sum(1 for p in artifact_files if p.suffix.lower() == ".json")}
+    model_status = STATUS_OPERATIONAL if artifact_files else STATUS_DEGRADED
+    if artifact_files:
+        latest_model_ts = max(path.stat().st_mtime for path in artifact_files)
+        model_metrics_snapshot["latest_updated"] = datetime.utcfromtimestamp(latest_model_ts).isoformat() + "Z"
+    registry_path = models_dir / "registry.db"
+    if registry_path.exists():
+        try:
+            model_metrics_snapshot["registry"] = str(registry_path.relative_to(project_root))
+        except ValueError:
+            model_metrics_snapshot["registry"] = str(registry_path)
+
+    feature_metrics: Dict[str, Any] = {"config": "models/active_features.json"}
+    feature_status = STATUS_DEGRADED
+    active_features_path = models_dir / "active_features.json"
+    feature_weights_path = models_dir / "feature_weights.json"
+    try:
+        if active_features_path.exists():
+            with active_features_path.open("r", encoding="utf-8") as handle:
+                active_data = json.load(handle)
+            if isinstance(active_data, dict):
+                feature_metrics["active_features"] = len(active_data)
+            elif isinstance(active_data, list):
+                feature_metrics["active_features"] = len(active_data)
+            else:
+                feature_metrics["active_features"] = 0
+            feature_status = STATUS_OPERATIONAL
+        if feature_weights_path.exists():
+            with feature_weights_path.open("r", encoding="utf-8") as handle:
+                weight_data = json.load(handle)
+            if isinstance(weight_data, dict):
+                feature_metrics["weighted"] = len(weight_data)
+            feature_metrics["weights_updated"] = datetime.utcfromtimestamp(feature_weights_path.stat().st_mtime).isoformat() + "Z"
+            feature_status = STATUS_OPERATIONAL
+    except Exception as exc:
+        _record_warning(warnings, "feature metadata load failed", exc)
 
     # ------------------------------------------------------------------
     # Data stores
@@ -301,6 +412,22 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
     except Exception as exc:  # pragma: no cover - defensive logging
         _record_warning(warnings, "get_database_info failed", exc)
 
+    view_total_count: Optional[int] = None
+    if mssql_status == STATUS_OPERATIONAL:
+        try:
+            view_count_rows = execute_query("SELECT COUNT(*) FROM sys.views")
+            if view_count_rows:
+                view_total_count = int(view_count_rows[0][0])
+        except Exception as exc:
+            _record_warning(warnings, "Failed to count MSSQL views", exc)
+
+    if view_total_count is not None:
+        summary_metrics["views"] = {"total": view_total_count}
+
+    summary_metrics["monitor_app"] = monitor_metrics
+    summary_metrics["batch_scripts"] = batch_metrics
+    summary_metrics["artifacts_snapshot"] = model_metrics_snapshot
+
     # ------------------------------------------------------------------
     # Node definitions
     # ------------------------------------------------------------------
@@ -320,6 +447,18 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                     ]
                 },
                 details="최종 사용자가 접근하는 로컬 브라우저 환경.",
+            ),
+            SystemNode(
+                id="monitor-client",
+                label="Routing Monitor 앱",
+                category="client",
+                status=monitor_status,
+                rank=1,
+                metrics={
+                    **monitor_metrics,
+                    "spec_files": len(list(project_root.glob("RoutingMLMonitor*.spec"))),
+                },
+                details="electron-app 기반 Windows 데스크톱 모니터링 클라이언트.",
             ),
             SystemNode(
                 id="home-frontend",
@@ -350,6 +489,22 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 details="전체 워크플로우와 상태를 시각화하는 신규 페이지.",
             ),
             SystemNode(
+                id="view-explorer",
+                label="View Explorer",
+                category="home",
+                status=STATUS_OPERATIONAL if (frontend_home_dir / "view-explorer.html").exists() and mssql_status == STATUS_OPERATIONAL else STATUS_DEGRADED,
+                rank=2,
+                metrics={
+                    "fetches": [
+                        "/api/view-explorer/views",
+                        "/api/view-explorer/views/{name}/sample",
+                    ],
+                    "available_views": view_total_count,
+                    "connected": mssql_metrics.get("connection_status"),
+                },
+                details="MSSQL VIEW_* 메타데이터를 탐색하고 샘플 데이터를 확인하는 도구.",
+            ),
+            SystemNode(
                 id="prediction-frontend",
                 label="예측 콘솔 (5173)",
                 category="frontend",
@@ -366,6 +521,15 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 rank=1,
                 metrics=training_pkg_meta,
                 details="frontend-training React 앱. Workflow Graph 편집 및 학습 설정 제공.",
+            ),
+            SystemNode(
+                id="shared-components",
+                label="Frontend Shared",
+                category="platform",
+                status=STATUS_OPERATIONAL if shared_status == STATUS_OPERATIONAL else STATUS_DEGRADED,
+                rank=0,
+                metrics=shared_metrics,
+                details="npm workspace(frontend-shared)에서 제공하는 공통 UI/유틸 라이브러리.",
             ),
             SystemNode(
                 id="backend-api",
@@ -399,6 +563,15 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 details="backend/api/services/auth_service.py 기반 JWT 발급 및 승인 로직.",
             ),
             SystemNode(
+                id="workflow-engine",
+                label="Workflow Engine",
+                category="platform",
+                status=workflow_status,
+                rank=1,
+                metrics=workflow_metrics,
+                details="workflow_settings.json 기반 FastAPI 워크플로우 그래프/블루프린트 엔진.",
+            ),
+            SystemNode(
                 id="approval-monitor",
                 label="승인 스크립트",
                 category="service",
@@ -420,11 +593,20 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 details="predictor_ml.py 및 trainer_ml.py 기반 모델 실행/학습 모듈.",
             ),
             SystemNode(
+                id="batch-orchestrator",
+                label="Batch Orchestrator",
+                category="service",
+                status=batch_status,
+                rank=2,
+                metrics=batch_metrics,
+                details="배치 스크립트(run_*.bat, scripts/*)로 서비스 재기동과 학습을 제어.",
+            ),
+            SystemNode(
                 id="monitoring-dashboard",
                 label="모니터링 엔드포인트",
                 category="service",
                 status=STATUS_OPERATIONAL if (item_stats_model or routing_stats_model) else STATUS_DEGRADED,
-                rank=2,
+                rank=3,
                 metrics={
                     "items": (item_stats_model.model_dump() if item_stats_model is not None else {}),
                     "routing": (routing_stats_model.model_dump() if routing_stats_model is not None else {}),
@@ -449,6 +631,24 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 metrics=mssql_metrics,
                 details="주 ERP 데이터 소스. VIEW_* 를 통해 라우팅/아이템 데이터 제공.",
             ),
+            SystemNode(
+                id="model-registry",
+                label="Model Registry",
+                category="data",
+                status=model_status,
+                rank=2,
+                metrics=model_metrics_snapshot,
+                details="models 디렉터리의 학습 아티팩트 및 registry.db 관리.",
+            ),
+            SystemNode(
+                id="feature-library",
+                label="Feature Library",
+                category="data",
+                status=feature_status,
+                rank=3,
+                metrics=feature_metrics,
+                details="active_features.json 과 feature_weights.json 기반 특징 구성을 보관.",
+            ),
         ]
     )
 
@@ -463,7 +663,23 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="home-frontend",
                 label="GET /",
                 protocol="https",
-                description="Node.js 서버 (포트 3000)를 통한 정적 페이지 응답.",
+                description="Node.js 프록시(포트 3000)로 홈 대시보드를 진입.",
+            ),
+            SystemEdge(
+                id="edge-monitor-backend",
+                source="monitor-client",
+                target="backend-api",
+                label="REST /api/dashboard/*",
+                protocol="https",
+                description="Routing Monitor 앱이 FastAPI로 상태 지표를 폴링.",
+            ),
+            SystemEdge(
+                id="edge-monitor-auth",
+                source="monitor-client",
+                target="auth-service",
+                label="POST /api/auth/login",
+                protocol="https",
+                description="모니터 앱 사용자 인증.",
             ),
             SystemEdge(
                 id="edge-home-algorithms",
@@ -471,7 +687,15 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="algorithm-overview",
                 label="Link /algorithm-map.html",
                 protocol="internal",
-                description="홈 대시보드에서 신규 알고리즘 페이지로 이동.",
+                description="홈 대시보드에서 알고리즘 지도 페이지로 이동.",
+            ),
+            SystemEdge(
+                id="edge-home-view-explorer",
+                source="home-frontend",
+                target="view-explorer",
+                label="Link /view-explorer.html",
+                protocol="internal",
+                description="홈 패널에서 View Explorer 도구로 진입.",
             ),
             SystemEdge(
                 id="edge-algo-backend",
@@ -479,7 +703,23 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="backend-api",
                 label="GET /api/system-overview/graph",
                 protocol="https",
-                description="알고리즘 페이지가 시스템 스냅샷 데이터를 요청.",
+                description="알고리즘 개요가 시스템 그래프 데이터를 요청.",
+            ),
+            SystemEdge(
+                id="edge-view-backend",
+                source="view-explorer",
+                target="backend-api",
+                label="GET /api/view-explorer/*",
+                protocol="https",
+                description="View Explorer가 FastAPI 엔드포인트에 메타데이터를 요청.",
+            ),
+            SystemEdge(
+                id="edge-view-mssql",
+                source="view-explorer",
+                target="mssql-core",
+                label="VIEW metadata",
+                protocol="tds",
+                description="sys.views 와 ERP VIEW_* 정보를 조회.",
             ),
             SystemEdge(
                 id="edge-home-prediction",
@@ -495,7 +735,23 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="training-frontend",
                 label="Link http://localhost:5174",
                 protocol="http",
-                description="트레이닝 콘솔로 이동.",
+                description="훈련 콘솔로 이동.",
+            ),
+            SystemEdge(
+                id="edge-prediction-shared",
+                source="prediction-frontend",
+                target="shared-components",
+                label="Imports @routing/shared",
+                protocol="internal",
+                description="예측 UI가 공통 컴포넌트 번들을 사용.",
+            ),
+            SystemEdge(
+                id="edge-training-shared",
+                source="training-frontend",
+                target="shared-components",
+                label="Imports @routing/shared",
+                protocol="internal",
+                description="훈련 콘솔도 공통 라이브러리를 의존.",
             ),
             SystemEdge(
                 id="edge-prediction-auth",
@@ -503,23 +759,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="auth-service",
                 label="POST /api/auth/login",
                 protocol="https",
-                description="JWT 발급을 위한 로그인 요청.",
-            ),
-            SystemEdge(
-                id="edge-auth-rsl",
-                source="auth-service",
-                target="rsl-database",
-                label="SQLAlchemy session_scope()",
-                protocol="sqlite",
-                description="사용자 상태 및 승인 내역 조회/수정.",
-            ),
-            SystemEdge(
-                id="edge-approval-auth",
-                source="approval-monitor",
-                target="auth-service",
-                label="POST /api/auth/admin/*",
-                protocol="https",
-                description="RoutingML-Monitor User-Agent 기반 승인/거절.",
+                description="JWT 기반 사용자 인증.",
             ),
             SystemEdge(
                 id="edge-prediction-backend",
@@ -527,7 +767,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="backend-api",
                 label="REST /api/prediction/*",
                 protocol="https",
-                description="예측 결과, 라우팅 데이터 요청.",
+                description="예측/점수 산출 API 호출.",
             ),
             SystemEdge(
                 id="edge-training-backend",
@@ -535,7 +775,15 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="backend-api",
                 label="REST /api/workflow/*",
                 protocol="https",
-                description="Workflow Graph 및 학습 설정 저장.",
+                description="워크플로우 편집/학습 설정 API.",
+            ),
+            SystemEdge(
+                id="edge-backend-workflow",
+                source="backend-api",
+                target="workflow-engine",
+                label="workflow API",
+                protocol="internal",
+                description="FastAPI 라우트가 워크플로우 엔진 코어를 호출.",
             ),
             SystemEdge(
                 id="edge-backend-ml",
@@ -543,7 +791,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="ml-runtime",
                 label="Python call",
                 protocol="internal",
-                description="predictor_ml.py / trainer_ml.py 모듈 호출.",
+                description="predictor_ml.py / trainer_ml.py 실행.",
             ),
             SystemEdge(
                 id="edge-backend-mssql",
@@ -551,7 +799,15 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="mssql-core",
                 label="pyodbc pool",
                 protocol="tds",
-                description="데이터 조회 및 저장을 위한 주요 쿼리.",
+                description="비즈니스 조회를 위한 메인 DB 연결.",
+            ),
+            SystemEdge(
+                id="edge-workflow-mssql",
+                source="workflow-engine",
+                target="mssql-core",
+                label="Profile sync",
+                protocol="tds",
+                description="Workflow 설정이 ERP View 통계를 참조.",
             ),
             SystemEdge(
                 id="edge-ml-mssql",
@@ -559,7 +815,55 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="mssql-core",
                 label="Feature pulls",
                 protocol="tds",
-                description="학습/예측 시 ERP 데이터 조회.",
+                description="학습/예측에 필요한 ERP 데이터를 조회.",
+            ),
+            SystemEdge(
+                id="edge-scheduler-backend",
+                source="batch-orchestrator",
+                target="backend-api",
+                label="CLI restart",
+                protocol="local",
+                description="배치 스크립트가 FastAPI 서비스를 재기동.",
+            ),
+            SystemEdge(
+                id="edge-scheduler-ml",
+                source="batch-orchestrator",
+                target="ml-runtime",
+                label="Training trigger",
+                protocol="local",
+                description="배치 작업으로 모델 재학습을 기동.",
+            ),
+            SystemEdge(
+                id="edge-ml-models",
+                source="ml-runtime",
+                target="model-registry",
+                label="Load artifacts",
+                protocol="file",
+                description="모델 러ntime이 저장된 모델/메타데이터를 적재.",
+            ),
+            SystemEdge(
+                id="edge-ml-features",
+                source="ml-runtime",
+                target="feature-library",
+                label="Feature weights",
+                protocol="file",
+                description="특징 중요도/활성 목록을 참조.",
+            ),
+            SystemEdge(
+                id="edge-auth-rsl",
+                source="auth-service",
+                target="rsl-database",
+                label="SQLAlchemy session_scope()",
+                protocol="sqlite",
+                description="인증 서비스가 RSL 저장소를 조회/갱신.",
+            ),
+            SystemEdge(
+                id="edge-approval-auth",
+                source="approval-monitor",
+                target="auth-service",
+                label="POST /api/auth/admin/*",
+                protocol="https",
+                description="CLI 모니터가 관리자 API로 승인/거절을 수행.",
             ),
             SystemEdge(
                 id="edge-dashboard-backend",
@@ -567,7 +871,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="backend-api",
                 label="Depends on /api/dashboard/*",
                 protocol="internal",
-                description="대시보드 집계를 위해 FastAPI 라우터 사용.",
+                description="대시보드가 FastAPI 통계 엔드포인트를 사용.",
             ),
             SystemEdge(
                 id="edge-dashboard-mssql",
@@ -575,7 +879,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 target="mssql-core",
                 label="VIEW_* counts",
                 protocol="tds",
-                description="지표 산출을 위해 ERP View 조회.",
+                description="모니터링 카드가 ERP View 집계를 조회.",
             ),
         ]
     )

@@ -16,10 +16,10 @@ if not exist ".venv\Scripts\python.exe" (
     exit /b 1
 )
 
-echo Starting Prediction Service on http://localhost:8002
-echo API Docs: http://localhost:8002/docs
+echo Starting Prediction Service on https://localhost:8002
+echo API Docs: https://localhost:8002/docs
 echo.
 
-.venv\Scripts\python.exe -m uvicorn backend.api.prediction_app:app --host 0.0.0.0 --port 8002 --reload
+.venv\Scripts\python.exe -m uvicorn backend.api.prediction_app:app --host 0.0.0.0 --port 8002 --ssl-keyfile=certs/rtml.ksm.co.kr.key --ssl-certfile=certs/rtml.ksm.co.kr.crt --reload
 
 pause

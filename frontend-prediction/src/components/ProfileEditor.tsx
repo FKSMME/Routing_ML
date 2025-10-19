@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Save, X, Search, Filter } from 'lucide-react';
-import { apiClient } from '../lib/apiClient';
+import apiClient from '../lib/apiClient';
 import { MappingRuleEditor } from './MappingRuleEditor';
 import type { DataMappingProfile, DataMappingRule } from '../types';
 
@@ -35,7 +35,7 @@ export function ProfileEditor({ profile, onSave, onCancel }: ProfileEditorProps)
       setSaving(true);
       setError(null);
 
-      const response = await apiClient.patch(`/api/data-mapping/profiles/${profile.id}`, {
+      const response = await apiClient.patch(`/data-mapping/profiles/${profile.id}`, {
         mappings,
       });
 
