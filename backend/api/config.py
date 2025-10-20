@@ -29,6 +29,10 @@ class Settings(BaseSettings):
         default=Path("models/registry.db"),
         description="모델 레지스트리 SQLite 파일 경로",
     )
+    tensorboard_projector_path: Path = Field(
+        default=Path("models/tb_projector"),
+        description="TensorBoard Projector 내보내기 경로",
+    )
     default_top_k: int = Field(default=10, ge=1, le=50)
     default_similarity_threshold: float = Field(default=0.8, ge=0.0, le=1.0)
 
@@ -176,6 +180,7 @@ class Settings(BaseSettings):
         "candidate_store_dir",
         "audit_log_dir",
         "model_registry_path",
+        "tensorboard_projector_path",
         "workflow_code_dir",
         mode="before",
     )
