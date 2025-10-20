@@ -1,4 +1,4 @@
-import { FullScreen3DBackground } from "@routing-ml/shared";
+import { LiquidEther } from "@routing-ml/shared";
 import { LoginPage } from "@components/auth/LoginPage";
 import { BackgroundControls } from "@components/BackgroundControls";
 import { CandidatePanel } from "@components/CandidatePanel";
@@ -15,6 +15,7 @@ import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayo
 import { lazy } from "react";
 const DataOutputWorkspace = lazy(() => import("@components/workspaces/DataOutputWorkspace").then(m => ({ default: m.DataOutputWorkspace })));
 const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/ProcessGroupsWorkspace").then(m => ({ default: m.ProcessGroupsWorkspace })));
+const RoutingConfigWorkspace = lazy(() => import("@components/workspaces/RoutingConfigWorkspace").then(m => ({ default: m.RoutingConfigWorkspace })));
 const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
@@ -29,6 +30,7 @@ import { VisualizationSummary } from "@components/VisualizationSummary";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
+import { useBackgroundSettings } from "@store/backgroundSettings";
 import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
@@ -51,16 +53,10 @@ const BASE_NAVIGATION_ITEMS = [
     icon: <Database size={18} />,
   },
   {
-    id: "routing-matrix",
-    label: "라우팅 조합",
-    description: "Variant 조합 편집",
+    id: "routing-config",
+    label: "라우팅 설정",
+    description: "라우팅 조합 · 공정 그룹",
     icon: <Table size={18} />,
-  },
-  {
-    id: "process-groups",
-    label: "공정 그룹",
-    description: "대체 경로 관리",
-    icon: <Layers size={18} />,
   },
   // "출력설정" 메뉴 삭제됨 (프로파일 관리로 기능 이관)
 ];
@@ -129,6 +125,69 @@ const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
 
   return detail && detail !== banner ? { banner, details: detail } : { banner };
 };
+
+function LiquidEtherBackdrop() {
+  const {
+    enabled,
+    opacity,
+    colors,
+    mouseForce,
+    cursorSize,
+    resolution,
+    autoSpeed,
+    autoIntensity,
+    iterationsPoisson,
+    isBounce,
+    autoDemo,
+    isViscous,
+    viscous,
+    iterationsViscous,
+    dt,
+    bfecc,
+    takeoverDuration,
+    autoResumeDelay,
+    autoRampDuration,
+  } = useBackgroundSettings();
+
+  if (!enabled) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        opacity,
+        zIndex: 0,
+      }}
+    >
+      <LiquidEther
+        colors={colors}
+        mouseForce={mouseForce}
+        cursorSize={cursorSize}
+        resolution={resolution}
+        autoSpeed={autoSpeed}
+        autoIntensity={autoIntensity}
+        iterationsPoisson={iterationsPoisson}
+        isBounce={isBounce}
+        autoDemo={autoDemo}
+        isViscous={isViscous}
+        viscous={viscous}
+        iterationsViscous={iterationsViscous}
+        dt={dt}
+        BFECC={bfecc}
+        takeoverDuration={takeoverDuration}
+        autoResumeDelay={autoResumeDelay}
+        autoRampDuration={autoRampDuration}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
@@ -300,11 +359,10 @@ export default function App() {
     case "master-data":
       workspace = <Suspense fallback={loadingFallback}><MasterDataSimpleWorkspace /></Suspense>;
       break;
+    case "routing-config":
     case "routing-matrix":
-      workspace = <Suspense fallback={loadingFallback}><RoutingMatrixWorkspace /></Suspense>;
-      break;
     case "process-groups":
-      workspace = <Suspense fallback={loadingFallback}><ProcessGroupsWorkspace /></Suspense>;
+      workspace = <Suspense fallback={loadingFallback}><RoutingConfigWorkspace /></Suspense>;
       break;
     case "data-output":
       workspace = <Suspense fallback={loadingFallback}><DataOutputWorkspace /></Suspense>;
@@ -327,7 +385,7 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
-      <FullScreen3DBackground />
+      <LiquidEtherBackdrop />
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
@@ -368,4 +426,3 @@ export default function App() {
     </div>
   );
 }
-

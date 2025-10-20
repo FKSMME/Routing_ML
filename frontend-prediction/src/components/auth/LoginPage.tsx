@@ -1,9 +1,9 @@
 import { CardShell } from "@components/common/CardShell";
-import { HyperspeedBackground } from "@components/HyperspeedBackground";
 import { LogIn, UserPlus } from "lucide-react";
 import { type FormEvent, useState, useEffect } from "react";
 
 import { ThemeToggle } from "../ThemeToggle";
+import { HyperspeedBackground } from "../HyperspeedBackground";
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -109,6 +109,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center surface-base p-6 overflow-hidden">
+      {/* 3D Hyperspeed background */}
       <HyperspeedBackground />
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />

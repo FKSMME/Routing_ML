@@ -5,6 +5,7 @@ import { CandidatePanel } from "../CandidatePanel";
 import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
 import { PredictionControls } from "../PredictionControls";
+import { ErpItemExplorer } from "../routing/ErpItemExplorer";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
@@ -74,23 +75,30 @@ export function RoutingTabbedWorkspace({
       label: "제어판",
       icon: null,
       content: (
-        <div className="routing-control-tab" style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
-          {renderPredictionBanner?.()}
+        <div className="routing-control-tab" style={{ display: 'flex', width: '100%', gap: '1rem', padding: '1rem' }}>
+          {/* 좌측: ERP View (40%) */}
+          <div className="erp-view-section" style={{ flex: '0 0 40%', minWidth: '400px' }}>
+            <ErpItemExplorer onAddItems={onChangeItemCodes} />
+          </div>
 
-          {/* 제어판 */}
-          <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 제어판</h3>
-            <PredictionControls
-              itemCodes={itemCodes}
-              onChangeItemCodes={onChangeItemCodes}
-              topK={topK}
-              onChangeTopK={onChangeTopK}
-              threshold={threshold}
-              onChangeThreshold={onChangeThreshold}
-              loading={loading}
-              onSubmit={onSubmit}
-              errorMessage={errorMessage}
-            />
+          {/* 우측: 제어판 (60%) */}
+          <div className="control-panel-section" style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {renderPredictionBanner?.()}
+
+            <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
+              <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 제어판</h3>
+              <PredictionControls
+                itemCodes={itemCodes}
+                onChangeItemCodes={onChangeItemCodes}
+                topK={topK}
+                onChangeTopK={onChangeTopK}
+                threshold={threshold}
+                onChangeThreshold={onChangeThreshold}
+                loading={loading}
+                onSubmit={onSubmit}
+                errorMessage={errorMessage}
+              />
+            </div>
           </div>
         </div>
       ),

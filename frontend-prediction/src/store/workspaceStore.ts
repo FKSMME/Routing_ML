@@ -16,6 +16,7 @@ export type LayoutMode = "desktop";
 export type NavigationKey =
   | "master-data"
   | "routing"
+  | "routing-config"
   | "routing-matrix"
   | "process-groups"
   | "data-output"
