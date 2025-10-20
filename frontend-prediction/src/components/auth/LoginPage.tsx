@@ -1,94 +1,10 @@
+import { BackgroundControls } from "@components/BackgroundControls";
 import { CardShell } from "@components/common/CardShell";
-import { LiquidEther } from "@routing-ml/shared";
+import { LiquidEtherBackground } from "@components/LiquidEtherBackground";
 import { LogIn, UserPlus } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 
-import { useBackgroundSettings } from "@store/backgroundSettings";
 import { ThemeToggle } from "../ThemeToggle";
-
-function LoginBackground() {
-  const {
-    enabled,
-    opacity,
-    colors,
-    mouseForce,
-    cursorSize,
-    resolution,
-    autoSpeed,
-    autoIntensity,
-    iterationsPoisson,
-    isBounce,
-    autoDemo,
-    isViscous,
-    viscous,
-    iterationsViscous,
-    dt,
-    bfecc,
-    takeoverDuration,
-    autoResumeDelay,
-    autoRampDuration,
-  } = useBackgroundSettings((state) => ({
-    enabled: state.enabled,
-    opacity: state.opacity,
-    colors: state.colors,
-    mouseForce: state.mouseForce,
-    cursorSize: state.cursorSize,
-    resolution: state.resolution,
-    autoSpeed: state.autoSpeed,
-    autoIntensity: state.autoIntensity,
-    iterationsPoisson: state.iterationsPoisson,
-    isBounce: state.isBounce,
-    autoDemo: state.autoDemo,
-    isViscous: state.isViscous,
-    viscous: state.viscous,
-    iterationsViscous: state.iterationsViscous,
-    dt: state.dt,
-    bfecc: state.bfecc,
-    takeoverDuration: state.takeoverDuration,
-    autoResumeDelay: state.autoResumeDelay,
-    autoRampDuration: state.autoRampDuration,
-  }));
-
-  if (!enabled) {
-    return null;
-  }
-
-  return (
-    <div
-      className="login-liquid-ether"
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 0,
-        opacity,
-      }}
-    >
-      <LiquidEther
-        colors={colors}
-        mouseForce={mouseForce}
-        cursorSize={cursorSize}
-        resolution={resolution}
-        iterationsPoisson={iterationsPoisson}
-        isBounce={isBounce}
-        autoDemo={autoDemo}
-        autoSpeed={autoSpeed}
-        autoIntensity={autoIntensity}
-        isViscous={isViscous}
-        viscous={viscous}
-        iterationsViscous={iterationsViscous}
-        dt={dt}
-        BFECC={bfecc}
-        takeoverDuration={takeoverDuration}
-        autoResumeDelay={autoResumeDelay}
-        autoRampDuration={autoRampDuration}
-        style={{ width: "100%", height: "100%" }}
-      />
-    </div>
-  );
-}
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -193,15 +109,26 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center surface-base p-6 overflow-hidden">
-      {/* Liquid Ether background */}
-      <LoginBackground />
-      <div className="absolute top-4 right-4 z-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 text-slate-100">
+      <LiquidEtherBackground />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          zIndex: 5,
+          background:
+            "radial-gradient(circle at 15% 20%, rgba(82, 39, 255, 0.2), transparent 55%)," +
+            "radial-gradient(circle at 85% 80%, rgba(255, 159, 252, 0.18), transparent 60%)," +
+            "linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(15, 15, 30, 0.55))",
+          backdropFilter: "blur(36px)",
+          WebkitBackdropFilter: "blur(36px)",
+        }}
+      />
+      <div className="absolute top-4 right-4 z-30">
         <ThemeToggle />
       </div>
       <CardShell
         className="w-full max-w-md"
-        style={{ position: "relative", zIndex: 1 }}
+        style={{ position: "relative", zIndex: 40 }}
         tone="soft"
         padding="lg"
         innerClassName="space-y-6"
@@ -342,9 +269,11 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <p>Tel: 010-9718-0580</p>
           </div>
 
-          <p className="pt-2 text-[11px] text-muted-strong">© 2025 KSM. All rights reserved.</p>
-        </footer>
-      </CardShell>
+      <p className="pt-2 text-[11px] text-muted-strong">© 2025 KSM. All rights reserved.</p>
+    </footer>
+  </CardShell>
+      <BackgroundControls />
     </div>
   );
 }
+

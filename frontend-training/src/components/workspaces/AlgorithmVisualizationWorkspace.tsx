@@ -580,7 +580,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
 
   // Node search filter
   useEffect(() => {
-    if (!searchQuery || nodes.length === 0) {
+    if (!searchQuery) {
       setNodes((nds) =>
         nds.map((node) => ({
           ...node,
@@ -600,7 +600,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
         };
       })
     );
-  }, [searchQuery, nodes.length]);
+  }, [searchQuery]);
 
   // Static mode: Use FLOW_LIBRARY for rainbow balls animation
   const flowDefinition = useMemo(() => {

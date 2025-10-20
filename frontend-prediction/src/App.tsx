@@ -1,6 +1,6 @@
-import { LiquidEther } from "@routing-ml/shared";
 import { LoginPage } from "@components/auth/LoginPage";
 import { BackgroundControls } from "@components/BackgroundControls";
+import { LiquidEtherBackground } from "@components/LiquidEtherBackground";
 import { CandidatePanel } from "@components/CandidatePanel";
 import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
@@ -30,7 +30,6 @@ import { VisualizationSummary } from "@components/VisualizationSummary";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
-import { useBackgroundSettings } from "@store/backgroundSettings";
 import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
@@ -125,69 +124,6 @@ const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
 
   return detail && detail !== banner ? { banner, details: detail } : { banner };
 };
-
-function LiquidEtherBackdrop() {
-  const {
-    enabled,
-    opacity,
-    colors,
-    mouseForce,
-    cursorSize,
-    resolution,
-    autoSpeed,
-    autoIntensity,
-    iterationsPoisson,
-    isBounce,
-    autoDemo,
-    isViscous,
-    viscous,
-    iterationsViscous,
-    dt,
-    bfecc,
-    takeoverDuration,
-    autoResumeDelay,
-    autoRampDuration,
-  } = useBackgroundSettings();
-
-  if (!enabled) {
-    return null;
-  }
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100vh",
-        pointerEvents: "none",
-        opacity,
-        zIndex: 0,
-      }}
-    >
-      <LiquidEther
-        colors={colors}
-        mouseForce={mouseForce}
-        cursorSize={cursorSize}
-        resolution={resolution}
-        autoSpeed={autoSpeed}
-        autoIntensity={autoIntensity}
-        iterationsPoisson={iterationsPoisson}
-        isBounce={isBounce}
-        autoDemo={autoDemo}
-        isViscous={isViscous}
-        viscous={viscous}
-        iterationsViscous={iterationsViscous}
-        dt={dt}
-        BFECC={bfecc}
-        takeoverDuration={takeoverDuration}
-        autoResumeDelay={autoResumeDelay}
-        autoRampDuration={autoRampDuration}
-        style={{ width: "100%", height: "100%" }}
-      />
-    </div>
-  );
-}
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
@@ -385,7 +321,8 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
-      <LiquidEtherBackdrop />
+      <LiquidEtherBackground />
+      <BackgroundControls />
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
