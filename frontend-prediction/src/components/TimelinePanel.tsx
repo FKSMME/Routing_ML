@@ -1,9 +1,10 @@
 import { useRoutingStore } from "@store/routingStore";
-import { BadgeCheck, Clock3, Printer,Redo2, Save, Undo2 } from "lucide-react";
+import { BadgeCheck, Clock3, Download, Printer,Redo2, Save, Undo2 } from "lucide-react";
 import { useCallback,useMemo } from "react";
 
 import { AnimatedCard } from "./AnimatedCard";
 import { RecommendationsTab } from "./routing/RecommendationsTab";
+import { exportAllItemsToCSV } from "@lib/csvExporter";
 
 export function TimelinePanel() {
   const timeline = useRoutingStore((state) => state.timeline);
@@ -28,6 +29,22 @@ export function TimelinePanel() {
     console.log("Saving routing configuration...", timeline);
     alert("저장 기능은 백엔드 API 연동이 필요합니다.");
   }, [timeline]);
+
+  const handleExportCSV = useCallback(() => {
+    // Export all product tabs to CSV
+    const items = productTabs.map((tab) => ({
+      itemCode: tab.productCode,
+      timeline: tab.timeline,
+    }));
+
+    if (items.length === 0 || items.every((item) => item.timeline.length === 0)) {
+      alert("내보낼 라우팅 데이터가 없습니다.");
+      return;
+    }
+
+    exportAllItemsToCSV(items);
+    alert(`${items.length}개 품목의 CSV 파일이 다운로드되었습니다.`);
+  }, [productTabs]);
 
   const handlePrint = useCallback(() => {
     // 출력을 위한 HTML 생성
@@ -117,6 +134,10 @@ export function TimelinePanel() {
           <button type="button" className="timeline-action" onClick={handleSave} disabled={!dirty || timeline.length === 0}>
             <Save size={16} />
             <span>Save</span>
+          </button>
+          <button type="button" className="timeline-action" onClick={handleExportCSV} disabled={productTabs.length === 0}>
+            <Download size={16} />
+            <span>전체 출력</span>
           </button>
           <button type="button" className="timeline-action" onClick={handlePrint} disabled={timeline.length === 0}>
             <Printer size={16} />
