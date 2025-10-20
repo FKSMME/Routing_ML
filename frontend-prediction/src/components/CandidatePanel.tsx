@@ -189,44 +189,45 @@ export function CandidatePanel() {
 
   return (
     <section className="panel-card interactive-card candidate-panel responsive-container">
-      <header className="panel-header responsive-split">
-        <div>
-          <h2 className="panel-title heading-fluid-3">후보 공정 블록</h2>
-          <p className="panel-subtitle">추천 공정, 사용자 정의 공정, ERP 토글을 한 화면에서 확인하세요.</p>
+      <header className="panel-header candidate-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 className="panel-title heading-fluid-3">후보 공정 노드</h2>
+          <button
+            type="button"
+            className="candidate-manage__button touch-target"
+            onClick={handleOpenSettings}
+          >
+            <Settings size={16} /> 노드 설정
+          </button>
         </div>
-        <div className="candidate-summary__meta responsive-inline">
-          <span className="candidate-summary__meta-item" aria-label="표시 중인 공정 수">
-            <Activity size={14} /> {visibleCount}
-          </span>
-          <span className="candidate-summary__meta-item" aria-label="사용자 정의 공정 수">
-            <Plus size={14} /> {customCount}
-          </span>
-          <span className="candidate-summary__meta-item" aria-label="숨김 처리된 공정 수">
-            <EyeOff size={14} /> {hiddenCount}
-          </span>
-          <span className="candidate-summary__meta-item" aria-label="타임라인 단계">
-            <Database size={14} /> {timelineLength}
-          </span>
+        <div className="candidate-filter candidate-header__filter" style={{ width: '100%' }}>
+          <Search size={14} className="candidate-filter__icon" />
+          <input
+            type="search"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="공정 코드/설명 검색"
+            style={{ flex: 1 }}
+          />
         </div>
       </header>
 
-      <div className="candidate-summary responsive-grid responsive-grid--2-cols">
-        <div className="candidate-summary__item">
-          <span className="candidate-summary__label">활성 품목</span>
-          <span className="candidate-summary__value">{activeTab?.productName ?? "선택되지 않음"}</span>
-          {activeTab?.candidateId ? (
-            <span className="candidate-summary__hint">Candidate #{activeTab.candidateId}</span>
-          ) : null}
-        </div>
-        <div className="candidate-summary__item">
-          <span className="candidate-summary__label">타임라인</span>
-          <span className="candidate-summary__value">{timelineLength}</span>
-          <span className={`candidate-summary__status${dirty ? " is-dirty" : ""}`}>
-            {dirty ? "변경됨" : lastSavedAt ? `저장됨 (${new Date(lastSavedAt).toLocaleTimeString()})` : "저장 전"}
+      <div className="candidate-toolbar">
+        <div className="candidate-tags">
+          <span className="candidate-tag" aria-label="표시 중인 공정 수">
+            <Activity size={13} /> {visibleCount} 표시
+          </span>
+          <span className="candidate-tag" aria-label="사용자 정의 공정 수">
+            <Plus size={13} /> {customCount} 사용자
+          </span>
+          <span className="candidate-tag" aria-label="숨김 처리된 공정 수">
+            <EyeOff size={13} /> {hiddenCount} 숨김
+          </span>
+          <span className="candidate-tag" aria-label="타임라인 단계">
+            <Database size={13} /> 타임라인 {timelineLength}
           </span>
         </div>
-        <div className="candidate-summary__item candidate-summary__item--toggle">
-          <span className="candidate-summary__label">ERP 인터페이스</span>
+        <div className="candidate-controls">
           <button
             type="button"
             className={`candidate-erp-toggle touch-target${erpRequired ? " is-active" : ""}`}
@@ -235,13 +236,10 @@ export function CandidatePanel() {
             aria-label="ERP 인터페이스 필요 여부 토글"
           >
             {erpRequired ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-            <span>{erpRequired ? "ON" : "OFF"}</span>
+            <span>{erpRequired ? "ERP ON" : "ERP OFF"}</span>
           </button>
-          <p className="candidate-summary__hint">INTERFACE 저장과 MSSQL 연동은 ERP ON 시에만 가능합니다.</p>
-        </div>
-        <div className="candidate-summary__item candidate-summary__item--group">
-          <span className="candidate-summary__label">공정 그룹</span>
-          <div className="candidate-summary__value candidate-summary__value--select">
+          <label className="candidate-controls__group">
+            <span className="candidate-controls__label">공정 그룹</span>
             <select
               value={activeProcessGroupId ?? ""}
               onChange={(event) =>
@@ -257,32 +255,8 @@ export function CandidatePanel() {
                 </option>
               ))}
             </select>
-          </div>
-          {activeProcessGroup ? (
-            <span className="candidate-summary__hint">
-              기본 컬럼 {activeProcessGroup.defaultColumns.length}개 · 고정값
-              {` ${Object.keys(activeProcessGroup.fixedValues).length}개`}
-            </span>
-          ) : (
-            <span className="candidate-summary__hint">워크스페이스에서 공정 그룹을 구성하세요.</span>
-          )}
+          </label>
         </div>
-      </div>
-
-      <div className="candidate-filter">
-        <Search size={14} className="candidate-filter__icon" />
-        <input
-          type="search"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          placeholder="공정 코드/설명 검색"
-        />
-      </div>
-
-      <div className="candidate-manage">
-        <button type="button" className="candidate-manage__button touch-target" onClick={handleOpenSettings}>
-          <Settings size={16} /> 추천 관리
-        </button>
       </div>
 
       {loading ? (
@@ -298,13 +272,14 @@ export function CandidatePanel() {
             : "등록된 후보 공정이 없습니다. 사용자 정의 공정을 추가해 보세요."}
         </div>
       ) : (
-        <div className="candidate-list responsive-grid responsive-grid--auto-fit" role="list">
+        <div className="candidate-list responsive-grid responsive-grid--auto-fit" role="list" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', overflowX: 'hidden' }}>
           {visibleOperations.map((item, index) => (
             <AnimatedCandidateCard
               key={item.id}
               delay={index * 0.05}
               role="listitem"
-              className={`candidate-block responsive-card touch-target${item.source === "custom" ? " is-custom" : ""}`}
+              className={`candidate-node-card responsive-card touch-target${item.source === "custom" ? " is-custom" : ""}`}
+              style={{ flex: '0 1 calc(50% - 0.5rem)', minWidth: '220px', maxWidth: '100%' }}
               draggable
               onClick={handleCardClick(item)}
               onDragStart={handleDragStart(item.operation)}
@@ -317,24 +292,36 @@ export function CandidatePanel() {
                 }
               }}
             >
-              <header className="candidate-block__header">
-                <span className="candidate-block__code">{item.operation.PROC_CD}</span>
-                <span className="candidate-block__seq">#{item.operation.PROC_SEQ}</span>
-                {item.source === "custom" ? (
-                  <span className="candidate-block__badge">사용자 정의</span>
-                ) : null}
-              </header>
-              <p className="candidate-block__desc">{item.operation.PROC_DESC ?? "설명 없음"}</p>
-              <div className="candidate-block__meta responsive-inline">
-                <span>세팅 {item.operation.SETUP_TIME ?? "-"}</span>
-                <span>가공 {item.operation.RUN_TIME ?? "-"}</span>
-                <span>대기 {item.operation.WAIT_TIME ?? "-"}</span>
-              </div>
-              <div className="candidate-block__actions responsive-inline">
-                {item.source === "custom" && item.entryId ? (
-                  <button
-                    type="button"
-                    className="candidate-block__action btn-responsive"
+              <div className="timeline-node candidate-node">
+                <header className="timeline-node__header">
+                  <div className="timeline-node__title-group">
+                    <span className="timeline-node__seq">#{item.operation.PROC_SEQ}</span>
+                    <span className="timeline-node__title">{item.operation.PROC_CD}</span>
+                  </div>
+                  <div className="timeline-node__actions">
+                    {item.source === "custom" ? (
+                      <span className="candidate-node__badge">사용자 정의</span>
+                    ) : null}
+                  </div>
+                </header>
+                <p className="timeline-node__desc">{item.operation.PROC_DESC ?? "설명 없음"}</p>
+                <div className="timeline-node__meta candidate-node__metrics">
+                  <span className="timeline-node__meta-item">
+                    <strong>Setup:</strong> {item.operation.SETUP_TIME ?? "-"}
+                  </span>
+                  <span className="timeline-node__meta-item">
+                    <strong>Run:</strong> {item.operation.RUN_TIME ?? "-"}
+                  </span>
+                  <span className="timeline-node__meta-item">
+                    <strong>Wait:</strong> {item.operation.WAIT_TIME ?? "-"}
+                  </span>
+                </div>
+                <div className="candidate-node__footer">
+                  <div className="candidate-node__actions">
+                    {item.source === "custom" && item.entryId ? (
+                      <button
+                        type="button"
+                    className="candidate-node__action btn-responsive"
                     onClick={(event) => {
                       event.stopPropagation();
                       if (item.entryId) {
@@ -343,19 +330,21 @@ export function CandidatePanel() {
                     }}
                     aria-label="사용자 정의 공정 편집"
                   >
-                    <Edit3 size={14} /> 편집
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="candidate-block__action btn-responsive"
-                  onClick={handleRemoveOperation(item)}
-                  aria-label={item.source === "custom" ? "사용자 정의 공정 삭제" : "추천 공정 숨기기"}
-                >
-                  <Trash2 size={14} /> {item.source === "custom" ? "삭제" : "숨기기"}
-                </button>
+                        <Edit3 size={14} /> 편집
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="candidate-node__action btn-responsive"
+                      onClick={handleRemoveOperation(item)}
+                      aria-label={item.source === "custom" ? "사용자 정의 공정 삭제" : "추천 공정 숨기기"}
+                    >
+                      <Trash2 size={14} /> {item.source === "custom" ? "삭제" : "숨기기"}
+                    </button>
+                  </div>
+                  <p className="candidate-node__hint">드래그 또는 더블 클릭으로 추가</p>
+                </div>
               </div>
-              <p className="candidate-block__hint">드래그 또는 더블 클릭으로 추가</p>
             </AnimatedCandidateCard>
           ))}
         </div>
