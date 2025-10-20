@@ -19,6 +19,7 @@ export function MasterDataSimpleWorkspace() {
   const {
     data: viewSample,
     isFetching: isViewLoading,
+    refetch: refetchViewSample,
   } = useErpViewSample("dbo.BI_ITEM_INFO_VIEW", {
     page: currentPage,
     pageSize,
@@ -29,38 +30,21 @@ export function MasterDataSimpleWorkspace() {
 
   const erpColumns = viewSample?.columns ?? [];
   const erpRows = viewSample?.data ?? [];
-  const totalRowCount = viewSample?.row_count ?? erpRows.length;
+  const totalRowCount = viewSample?.row_count ?? 0;
 
   useEffect(() => {
     setSearchDraft(viewSearch);
   }, [viewSearch]);
 
-  const filteredErpRows = useMemo(() => {
-    if (erpRows.length === 0) {
-      return [];
-    }
-    const keyword = viewSearch.trim().toLowerCase();
-    return erpRows.filter((row) => {
-      if (!keyword) {
-        return true;
-      }
-      if (activeColumn !== "ALL") {
-        const value = row[activeColumn];
-        return value != null && String(value).toLowerCase().includes(keyword);
-      }
-      return erpColumns.some((column) => {
-        const value = row[column.name];
-        return value != null && String(value).toLowerCase().includes(keyword);
-      });
-    });
-  }, [erpRows, viewSearch, activeColumn, erpColumns]);
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [viewSearch, activeColumn, erpRows.length]);
+  }, [viewSearch, activeColumn]);
 
-  const totalRows = filteredErpRows.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const responsePage = viewSample?.page ?? currentPage;
+  const responsePageSize = viewSample?.page_size ?? pageSize;
+  const totalPages =
+    viewSample?.total_pages ??
+    (responsePageSize > 0 ? Math.max(1, Math.ceil(totalRowCount / responsePageSize)) : 1);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -68,18 +52,24 @@ export function MasterDataSimpleWorkspace() {
     }
   }, [currentPage, totalPages]);
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalRows);
-  const paginatedRows = filteredErpRows.slice(startIndex, endIndex);
+  const startIndex =
+    totalRowCount === 0 ? 0 : Math.max((responsePage - 1) * responsePageSize, 0);
+  const endIndex =
+    totalRowCount === 0 ? 0 : Math.min(startIndex + erpRows.length, totalRowCount);
   const primaryColumn = erpColumns[0]?.name;
 
   const handleSearchSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      setViewSearch(searchDraft.trim());
+      const keyword = searchDraft.trim();
+      const isSame = keyword === viewSearch;
+      setViewSearch(keyword);
       setCurrentPage(1);
+      if (isSame) {
+        void refetchViewSample();
+      }
     },
-    [searchDraft],
+    [refetchViewSample, searchDraft, viewSearch],
   );
 
   const handleColumnSelect = useCallback((columnName: string) => {
@@ -96,21 +86,6 @@ export function MasterDataSimpleWorkspace() {
     setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
   }, [totalPages]);
 
-  const canLoadMore = Boolean(
-    viewSample && viewSample.row_count > (viewSample.data?.length ?? 0),
-  );
-
-  const handleLoadMore = useCallback(() => {
-    if (!viewSample) {
-      return;
-    }
-    const targetCount = viewSample.row_count ?? sampleLimit + SAMPLE_EXPANSION_STEP;
-    const nextLimit = Math.min(sampleLimit + SAMPLE_EXPANSION_STEP, targetCount);
-    if (nextLimit > sampleLimit) {
-      setSampleLimit(nextLimit);
-    }
-  }, [sampleLimit, viewSample]);
-
   return (
     <div className="master-data-simple-workspace">
       <section className="master-data-simple-full">
@@ -119,7 +94,7 @@ export function MasterDataSimpleWorkspace() {
             <div className="master-data-view-header__meta">
               <h2 className="panel-title">ERP View: dbo.BI_ITEM_INFO_VIEW</h2>
               <p className="panel-subtitle">
-                <strong>{filteredErpRows.length}</strong>건 (총 {totalRowCount}건) · 컬럼{" "}
+                <strong>{erpRows.length}</strong>건 (총 {totalRowCount}건) · 컬럼{" "}
                 <strong>{erpColumns.length}</strong>개
               </p>
             </div>

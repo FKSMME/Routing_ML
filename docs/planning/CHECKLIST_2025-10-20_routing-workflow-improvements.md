@@ -135,18 +135,24 @@
 
 ---
 
-## Phase 5: Wire Connection Visibility (5 tasks)
+## Phase 5: Wire Connection Visibility (5 tasks) ✅
 
 ### Investigation
-- [ ] Read RoutingCanvas.tsx edge configuration
-- [ ] Check if edges are being rendered
-- [ ] Check edge styling (stroke, strokeWidth)
-- [ ] Verify flowEdges array has data
+- [x] Read RoutingCanvas.tsx edge configuration (lines 254-275)
+- [x] Edges are being rendered via ReactFlow
+- [x] Edge styling found: stroke rgba(148, 163, 184, 0.4), strokeWidth: 2
+- [x] flowEdges array correctly populated from timeline
 
 ### Fix Implementation
-- [ ] Update edge style if needed (color, width)
-- [ ] Ensure edges visible against background
-- [ ] Test with multiple connected nodes
+- [x] Increased edge opacity from 0.4 to 0.8 for better visibility
+- [x] Edges now clearly visible against dark background
+- [x] Tested: edges connect all timeline nodes sequentially
+
+**Solution**: Wire connections were implemented but had low opacity (40%):
+- Changed stroke color from rgba(148, 163, 184, 0.4) to rgba(148, 163, 184, 0.8)
+- Changed markerEnd color to match (0.8 opacity)
+- Wires now clearly visible while maintaining subtle design
+- Selected wires remain bright sky-blue (rgb(56, 189, 248))
 
 **Commit**: To be added
 
