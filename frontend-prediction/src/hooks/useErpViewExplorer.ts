@@ -20,23 +20,46 @@ export function useErpViews() {
 
 export interface UseErpViewSampleOptions {
   limit?: number;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  searchColumn?: string | null;
   enabled?: boolean;
 }
 
 export function useErpViewSample(
   viewName: string | null | undefined,
-  { limit = 200, enabled = true }: UseErpViewSampleOptions = {},
+  { limit, page, pageSize, search, searchColumn, enabled = true }: UseErpViewSampleOptions = {},
 ) {
+  const normalizedSearch = search?.trim();
+  const normalizedSearchColumn =
+    searchColumn && searchColumn.length > 0 ? searchColumn : undefined;
+
   return useQuery<ViewExplorerSampleResponse>({
-    queryKey: ["erp-view-sample", viewName, limit],
+    queryKey: [
+      "erp-view-sample",
+      viewName,
+      limit ?? null,
+      page ?? null,
+      pageSize ?? null,
+      normalizedSearch ?? "",
+      normalizedSearchColumn ?? "",
+    ],
     queryFn: () => {
       if (!viewName) {
         throw new Error("viewName is required to fetch sample data");
       }
-      return fetchViewExplorerSample(viewName, limit);
+      return fetchViewExplorerSample(viewName, {
+        limit,
+        page,
+        pageSize,
+        search: normalizedSearch && normalizedSearch.length > 0 ? normalizedSearch : undefined,
+        searchColumn: normalizedSearchColumn,
+      });
     },
     enabled: Boolean(viewName) && enabled,
     staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    keepPreviousData: true,
   });
 }

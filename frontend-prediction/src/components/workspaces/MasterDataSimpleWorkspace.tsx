@@ -6,22 +6,26 @@ import { useErpViewSample } from "@hooks/useErpViewExplorer";
 import { Layers, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, FormEvent, ChangeEvent } from "react";
 
-const PAGE_SIZE_OPTIONS = [20, 50, 100];
-const SAMPLE_EXPANSION_STEP = 500;
-const INITIAL_SAMPLE_LIMIT = 500;
+const PAGE_SIZE_OPTIONS = [10, 20, 30];
+const DEFAULT_PAGE_SIZE = 30;
 
 export function MasterDataSimpleWorkspace() {
   const [viewSearch, setViewSearch] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [activeColumn, setActiveColumn] = useState<string>("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
-  const [sampleLimit, setSampleLimit] = useState(INITIAL_SAMPLE_LIMIT);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const {
     data: viewSample,
     isFetching: isViewLoading,
-  } = useErpViewSample("dbo.BI_ITEM_INFO_VIEW", { limit: sampleLimit, enabled: true });
+  } = useErpViewSample("dbo.BI_ITEM_INFO_VIEW", {
+    page: currentPage,
+    pageSize,
+    search: viewSearch.length > 0 ? viewSearch : undefined,
+    searchColumn: activeColumn === "ALL" ? undefined : activeColumn,
+    enabled: true,
+  });
 
   const erpColumns = viewSample?.columns ?? [];
   const erpRows = viewSample?.data ?? [];
