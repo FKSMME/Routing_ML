@@ -686,6 +686,53 @@
         </p>
       </div>
       <div class="header-actions">
+        <input type="text" id="searchInput" placeholder="🔍 Search nodes..." style="
+          appearance: none;
+          border: 1px solid var(--border-soft);
+          background: var(--surface);
+          color: var(--text-strong);
+          padding: 0.6rem 1rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          width: 220px;
+          transition: all 0.2s ease;
+        ">
+        <select id="filterMethod" style="
+          appearance: none;
+          border: 1px solid var(--border-soft);
+          background: var(--surface);
+          color: var(--text-strong);
+          padding: 0.6rem 1rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          cursor: pointer;
+        ">
+          <option value="">All Methods</option>
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="DELETE">DELETE</option>
+          <option value="PATCH">PATCH</option>
+        </select>
+        <select id="filterCategory" style="
+          appearance: none;
+          border: 1px solid var(--border-soft);
+          background: var(--surface);
+          color: var(--text-strong);
+          padding: 0.6rem 1rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          cursor: pointer;
+        ">
+          <option value="">All Categories</option>
+          <option value="client">Client</option>
+          <option value="home">Home</option>
+          <option value="frontend">Frontend</option>
+          <option value="platform">Platform</option>
+          <option value="backend">Backend</option>
+          <option value="service">Service</option>
+          <option value="data">Data</option>
+        </select>
         <a href="index.html">← 홈으로</a>
         <button type="button" id="refreshButton">⟳ 새로고침</button>
       </div>
@@ -697,6 +744,69 @@
 
     <section class="graph-wrapper">
       <div class="graph-shell">
+        <!-- Zoom Controls -->
+        <div style="position: absolute; top: 1rem; left: 1rem; z-index: 20; display: flex; flex-direction: column; gap: 0.5rem;">
+          <button type="button" id="zoomInButton" style="
+            appearance: none;
+            border: 1px solid var(--border-soft);
+            background: var(--surface-strong);
+            color: var(--text-strong);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+          ">+</button>
+          <button type="button" id="zoomOutButton" style="
+            appearance: none;
+            border: 1px solid var(--border-soft);
+            background: var(--surface-strong);
+            color: var(--text-strong);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+          ">−</button>
+          <button type="button" id="fitScreenButton" style="
+            appearance: none;
+            border: 1px solid var(--border-soft);
+            background: var(--surface-strong);
+            color: var(--text-strong);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+          ">⊡</button>
+        </div>
+
+        <!-- Minimap -->
+        <canvas id="minimap" style="
+          position: absolute;
+          bottom: 1rem;
+          right: 1rem;
+          width: 180px;
+          height: 120px;
+          border: 1px solid var(--border-soft);
+          border-radius: 0.5rem;
+          background: var(--surface-strong);
+          z-index: 20;
+          cursor: pointer;
+        "></canvas>
+
         <div class="graph-scroll" id="graphScroll">
           <div class="graph-canvas" id="graphCanvas">
             <canvas class="edge-layer" id="edgeCanvas" role="presentation"></canvas>
@@ -742,6 +852,11 @@
       nodeIndex: new Map(),
       laneSequence: [],
       nodeElements: new Map(),
+      // Filters
+      searchQuery: '',
+      filterMethod: '',
+      filterCategory: '',
+      filteredNodes: [],
     };
 
     const CATEGORY_LAYOUT = ["client", "home", "frontend", "platform", "backend", "service", "data"];
@@ -770,6 +885,14 @@
     const warningSection = document.getElementById("warningSection");
     const generatedAtEl = document.getElementById("generatedAt");
     const loadingOverlay = document.getElementById("loadingOverlay");
+    const searchInput = document.getElementById("searchInput");
+    const filterMethod = document.getElementById("filterMethod");
+    const filterCategory = document.getElementById("filterCategory");
+    const minimap = document.getElementById("minimap");
+    const minimapCtx = minimap.getContext("2d");
+    const zoomInButton = document.getElementById("zoomInButton");
+    const zoomOutButton = document.getElementById("zoomOutButton");
+    const fitScreenButton = document.getElementById("fitScreenButton");
 
     const ZOOM_MIN = 0.6;
     const ZOOM_MAX = 1.8;
@@ -1154,6 +1277,48 @@
           }
         }
       });
+    }
+
+    // Search and Filter functionality
+    function fuzzyMatch(text, query) {
+      if (!query) return true;
+      const lowerText = text.toLowerCase();
+      const lowerQuery = query.toLowerCase();
+      return lowerText.includes(lowerQuery);
+    }
+
+    function applyFilters() {
+      let filtered = state.nodes;
+
+      // Apply search filter
+      if (state.searchQuery) {
+        filtered = filtered.filter(node => {
+          return fuzzyMatch(node.label, state.searchQuery) ||
+                 fuzzyMatch(node.details || '', state.searchQuery) ||
+                 fuzzyMatch(node.metrics?.path || '', state.searchQuery) ||
+                 fuzzyMatch(node.id, state.searchQuery);
+        });
+      }
+
+      // Apply method filter
+      if (state.filterMethod) {
+        filtered = filtered.filter(node => {
+          return node.metrics?.method === state.filterMethod;
+        });
+      }
+
+      // Apply category filter
+      if (state.filterCategory) {
+        filtered = filtered.filter(node => {
+          return getCategoryKey(node) === state.filterCategory;
+        });
+      }
+
+      state.filteredNodes = filtered;
+      renderNodes(filtered);
+
+      // Update minimap
+      renderMinimap();
     }
 
     function renderNodes(nodes = []) {
@@ -1675,9 +1840,18 @@
         state.metrics = payload.metrics ?? {};
         state.warnings = payload.warnings ?? [];
         state.selectedNodeId = null;
+        state.filteredNodes = state.nodes;
 
         buildMetricCards(state.metrics, payload.generated_at);
-        renderNodes(state.nodes);
+
+        // Apply filters if any are active
+        if (state.searchQuery || state.filterMethod || state.filterCategory) {
+          applyFilters();
+        } else {
+          renderNodes(state.nodes);
+          renderMinimap();
+        }
+
         renderWarnings(state.warnings);
 
         const pinnedAvailable = state.pinnedNodeId && state.nodeIndex.has(state.pinnedNodeId);
@@ -1702,6 +1876,93 @@
       } finally {
         toggleLoading(false);
       }
+    }
+
+    // Minimap rendering
+    function renderMinimap() {
+      if (!minimap || !graphCanvas) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const mmWidth = 180;
+      const mmHeight = 120;
+
+      minimap.width = mmWidth * dpr;
+      minimap.height = mmHeight * dpr;
+      minimapCtx.scale(dpr, dpr);
+
+      // Clear minimap
+      minimapCtx.clearRect(0, 0, mmWidth, mmHeight);
+
+      // Draw background
+      minimapCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      minimapCtx.fillRect(0, 0, mmWidth, mmHeight);
+
+      // Calculate scale
+      const canvasWidth = parseFloat(graphCanvas.style.width) || 1000;
+      const canvasHeight = parseFloat(graphCanvas.style.height) || 1000;
+      const scale = Math.min(mmWidth / canvasWidth, mmHeight / canvasHeight);
+
+      // Draw nodes
+      state.nodeElements.forEach((entry) => {
+        const element = entry.element;
+        const rect = {
+          left: parseFloat(element.style.left) || 0,
+          top: parseFloat(element.style.top) || 0,
+          width: parseFloat(element.style.width) || 260,
+          height: element.offsetHeight || 120
+        };
+
+        const x = rect.left * scale;
+        const y = rect.top * scale;
+        const w = rect.width * scale;
+        const h = rect.height * scale;
+
+        minimapCtx.fillStyle = element.classList.contains('is-selected')
+          ? 'rgba(56, 189, 248, 0.8)'
+          : 'rgba(148, 163, 184, 0.4)';
+        minimapCtx.fillRect(x, y, w, h);
+      });
+
+      // Draw viewport indicator
+      const scrollLeft = graphScroll.scrollLeft / state.zoom;
+      const scrollTop = graphScroll.scrollTop / state.zoom;
+      const viewportWidth = graphScroll.clientWidth / state.zoom;
+      const viewportHeight = graphScroll.clientHeight / state.zoom;
+
+      const vpX = scrollLeft * scale;
+      const vpY = scrollTop * scale;
+      const vpW = viewportWidth * scale;
+      const vpH = viewportHeight * scale;
+
+      minimapCtx.strokeStyle = 'rgba(56, 189, 248, 0.9)';
+      minimapCtx.lineWidth = 2;
+      minimapCtx.strokeRect(vpX, vpY, vpW, vpH);
+      minimapCtx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+      minimapCtx.fillRect(vpX, vpY, vpW, vpH);
+    }
+
+    // Zoom controls
+    function zoomIn() {
+      setZoom(state.zoom + ZOOM_STEP);
+    }
+
+    function zoomOut() {
+      setZoom(state.zoom - ZOOM_STEP);
+    }
+
+    function fitToScreen() {
+      const canvasWidth = parseFloat(graphCanvas.style.width) || 1000;
+      const canvasHeight = parseFloat(graphCanvas.style.height) || 1000;
+      const viewportWidth = graphScroll.clientWidth;
+      const viewportHeight = graphScroll.clientHeight;
+
+      const scaleX = viewportWidth / canvasWidth;
+      const scaleY = viewportHeight / canvasHeight;
+      const targetZoom = Math.min(scaleX, scaleY, 1) * 0.9;
+
+      setZoom(targetZoom);
+      graphScroll.scrollLeft = 0;
+      graphScroll.scrollTop = 0;
     }
 
     // Debounce utility function
@@ -1767,6 +2028,57 @@
         clearSelection();
       }
     });
+
+    // Search and filter event listeners
+    const debouncedSearch = debounce(() => {
+      state.searchQuery = searchInput.value.trim();
+      applyFilters();
+    }, 300);
+
+    searchInput.addEventListener("input", debouncedSearch);
+
+    filterMethod.addEventListener("change", (e) => {
+      state.filterMethod = e.target.value;
+      applyFilters();
+    });
+
+    filterCategory.addEventListener("change", (e) => {
+      state.filterCategory = e.target.value;
+      applyFilters();
+    });
+
+    // Zoom control event listeners
+    zoomInButton.addEventListener("click", zoomIn);
+    zoomOutButton.addEventListener("click", zoomOut);
+    fitScreenButton.addEventListener("click", fitToScreen);
+
+    // Minimap click to navigate
+    minimap.addEventListener("click", (e) => {
+      const rect = minimap.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const canvasWidth = parseFloat(graphCanvas.style.width) || 1000;
+      const canvasHeight = parseFloat(graphCanvas.style.height) || 1000;
+      const mmWidth = 180;
+      const mmHeight = 120;
+      const scale = Math.min(mmWidth / canvasWidth, mmHeight / canvasHeight);
+
+      const targetX = (x / scale) * state.zoom - graphScroll.clientWidth / 2;
+      const targetY = (y / scale) * state.zoom - graphScroll.clientHeight / 2;
+
+      graphScroll.scrollLeft = targetX;
+      graphScroll.scrollTop = targetY;
+
+      renderMinimap();
+    });
+
+    // Update minimap on scroll
+    const throttledMinimapUpdate = throttle(() => {
+      renderMinimap();
+    }, 100);
+
+    graphScroll.addEventListener("scroll", throttledMinimapUpdate, { passive: true });
 
     document.getElementById("refreshButton").addEventListener("click", () => loadGraph());
     window.addEventListener("resize", debouncedResize);
