@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import { MetricsPanel } from "@components/data-quality/MetricsPanel";
+import { IssuesPanel } from "@components/data-quality/IssuesPanel";
 
 // Type Definitions
 interface DataQualityMetrics {
@@ -121,10 +122,7 @@ export default function DataQualityWorkspace() {
         )}
 
         {activeTab === "issues" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Quality Issues</h2>
-            <p className="text-gray-400">Issues panel will be implemented in Phase 3</p>
-          </div>
+          <IssuesPanel />
         )}
 
         {activeTab === "prometheus" && (
