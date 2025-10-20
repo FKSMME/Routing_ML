@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Routing ML Service Connectivity Overview</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-dark: radial-gradient(circle at 20% 20%, #0f172a 0%, #020617 60%, #00010a 100%);
+      --surface: rgba(15, 23, 42, 0.78);
+      --surface-strong: rgba(30, 41, 59, 0.92);
+      --border-soft: rgba(148, 163, 184, 0.2);
+      --border-strong: rgba(148, 163, 184, 0.35);
+      --text-strong: #f8fafc;
+      --text-muted: rgba(226, 232, 240, 0.75);
+      --text-soft: rgba(148, 163, 184, 0.75);
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --status-ok: #22c55e;
+      --status-degraded: #f59e0b;
+      --status-critical: #ef4444;
+      --edge-color: rgba(56, 189, 248, 0.55);
+      font-family: 'Pretendard', 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-dark);
+      color: var(--text-strong);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding: clamp(1.25rem, 2vw, 2.5rem);
+      position: relative;
+    }
+
+    .page::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12), transparent 55%),
+                  radial-gradient(circle at 85% 20%, rgba(255, 159, 67, 0.12), transparent 60%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .page-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .page-header p {
+      margin: 0.35rem 0 0;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 48rem;
+      line-height: 1.6;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-actions button,
+    .header-actions a {
+      appearance: none;
+      border: 1px solid var(--border-soft);
+      background: var(--surface);
+      color: var(--text-strong);
+      padding: 0.6rem 1rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .header-actions button:hover,
+    .header-actions a:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--accent);
+    }
+
+    .metrics-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border-radius: 1.25rem;
+      border: 1px solid var(--border-soft);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 140px;
+      box-shadow: 0 18px 32px -24px rgba(15, 118, 230, 0.45);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(130deg, transparent 55%, rgba(56, 189, 248, 0.15) 95%);
+      pointer-events: none;
+    }
+
+    .metric-card h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .metric-value {
+      font-size: clamp(1.45rem, 2.2vw, 1.95rem);
+      font-weight: 600;
+      color: var(--text-strong);
+    }
+
+    .metric-sub {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .graph-wrapper {
+      position: relative;
+      min-height: 520px;
+    }
+
+    .graph-shell {
+      position: relative;
+      border-radius: 1.75rem;
+      border: 1px solid var(--border-soft);
+      background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(2, 6, 23, 0.9));
+      height: 100%;
+    }
+
+    .graph-scroll {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      padding: clamp(1rem, 2vw, 1.75rem);
+      -webkit-overflow-scrolling: touch;
+      touch-action: pinch-zoom;
+    }
+
+    .graph-canvas {
+      position: relative;
+      display: block;
+      min-width: 100%;
+      min-height: 100%;
+      transform-origin: 0 0;
+    }
+
+    .node-grid {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    .lane-guide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 1.75rem;
+      border: 1px solid rgba(56, 189, 248, 0.08);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.55), rgba(15, 23, 42, 0.25));
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.05);
+      opacity: 0.85;
+      pointer-events: none;
+      z-index: 1;
+      backdrop-filter: blur(22px);
+    }
+
+    .lane-guide .lane-label {
+      position: absolute;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: rgba(8, 47, 73, 0.45);
+      color: rgba(226, 232, 240, 0.82);
+      box-shadow: 0 12px 28px rgba(2, 6, 23, 0.45);
+    }
+
+    .node-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 1.25rem;
+      background: rgba(15, 23, 42, 0.82);
+      padding: 1rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: absolute;
+      color: inherit;
+      text-decoration: none;
+      min-height: 120px;
+      box-shadow: 0 18px 30px rgba(2, 6, 23, 0.45);
+      width: 260px;
+      z-index: 4;
+      pointer-events: auto;
+    }
+
+    .node-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 18px 32px -24px rgba(56, 189, 248, 0.6);
+    }
+
+    .node-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
+
+    .node-card.is-selected {
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 20px 36px -24px rgba(56, 189, 248, 0.7);
+      z-index: 6;
+    }
+
+    .node-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(148, 163, 184, 0.12);
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      width: fit-content;
+    }
+
+    .node-card.status-operational .node-status {
+      color: var(--status-ok);
+      border-color: rgba(34, 197, 94, 0.35);
+      background: rgba(34, 197, 94, 0.12);
+    }
+
+    .node-card.status-degraded .node-status {
+      color: var(--status-degraded);
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .node-card.status-critical .node-status {
+      color: var(--status-critical);
+      border-color: rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .node-card h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: var(--text-strong);
+    }
+
+    .node-metric-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .node-metric-list li {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+
+    .node-metric-list span:nth-child(1) {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-soft);
+      font-size: 0.7rem;
+    }
+
+    .node-metric-list span:nth-child(2) {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 10rem;
+    }
+
+    .edge-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+      mix-blend-mode: screen;
+    }
+
+    .edge-path {
+      fill: none;
+      stroke: var(--edge-color);
+      stroke-width: 1.8;
+      opacity: 0.65;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.35));
+      transition: stroke-width 0.2s ease, opacity 0.2s ease;
+      stroke-linecap: round;
+      stroke-dasharray: 12 16;
+      animation: edgeFlow 5.5s linear infinite;
+    }
+
+    .edge-path.is-active {
+      stroke-width: 2.6;
+      opacity: 0.95;
+      stroke-dasharray: 8 14;
+      animation-duration: 3.2s;
+    }
+
+    .edge-label {
+      fill: rgba(226, 232, 240, 0.82);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      paint-order: stroke;
+      stroke: rgba(15, 23, 42, 0.85);
+      stroke-width: 2px;
+      filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.6));
+    }
+
+    .edge-label.is-active {
+      fill: var(--accent);
+      stroke: rgba(15, 23, 42, 0.9);
+    }
+
+    .detail-panel {
+      background: var(--surface-strong);
+      border-radius: 1.75rem;
+      border: 1px solid var(--border-soft);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: absolute;
+      top: clamp(1rem, 2vw, 1.75rem);
+      right: clamp(1rem, 2vw, 1.75rem);
+      width: clamp(260px, 32vw, 360px);
+      max-height: calc(100% - clamp(2rem, 4vw, 3.5rem));
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, 12px, 0);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+      z-index: 10;
+    }
+
+    .detail-panel.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .detail-panel.is-pinned::after {
+      content: "PINNED";
+      position: absolute;
+      top: 1.1rem;
+      right: 1.25rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .detail-panel h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .detail-panel p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .detail-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      max-height: calc(100% - 6rem);
+      overflow-y: auto;
+      padding-right: 0.35rem;
+    }
+
+    .detail-connections {
+      border-top: 1px solid var(--border-soft);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .detail-connections h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .connection-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .connection-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .connection-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border: 1px solid var(--border-soft);
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .connection-item strong {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-strong);
+    }
+
+    .connection-item span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .connection-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .connection-pill.inbound {
+      background: rgba(94, 234, 212, 0.15);
+      color: #2dd4bf;
+      border-color: rgba(94, 234, 212, 0.35);
+    }
+
+    .connection-empty {
+      font-size: 0.8rem;
+      color: var(--text-soft);
+      margin: 0;
+    }
+
+    .detail-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      border: 1px solid var(--border-soft);
+      border-radius: 1rem;
+      padding: 0.75rem 0.85rem;
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .detail-row strong {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-soft);
+    }
+
+    .detail-row span,
+    .detail-row pre {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin: 0;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .warnings {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .notice {
+      border-radius: 1rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--border-soft);
+      background: rgba(15, 23, 42, 0.7);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .notice.warning {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(245, 158, 11, 0.08);
+      color: var(--status-degraded);
+    }
+
+    .notice.success {
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.08);
+      color: var(--status-ok);
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-soft);
+      border-top: 1px solid rgba(56, 189, 248, 0.1);
+      padding-top: 0.75rem;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 3px solid rgba(56, 189, 248, 0.15);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes edgeFlow {
+      from {
+        stroke-dashoffset: 0;
+      }
+      to {
+        stroke-dashoffset: -24;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .detail-panel {
+        width: clamp(240px, 45vw, 320px);
+      }
+
+      .node-grid {
+        grid-template-columns: repeat(3, minmax(220px, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .detail-panel {
+        left: clamp(1rem, 4vw, 1.5rem);
+        right: clamp(1rem, 4vw, 1.5rem);
+        width: auto;
+      }
+
+      .node-grid {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner" aria-label="데이터 로딩 중"></div>
+  </div>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <span class="badge">Routing ML System</span>
+        <h1>Service Connectivity Overview</h1>
+        <p>
+          홈 대시보드, 예측/학습 프런트엔드, FastAPI 백엔드, 승인 흐름, 데이터베이스까지 이어지는 전체 파이프라인을
+          실시간 상태와 정량 지표로 점검할 수 있는 전용 캔버스입니다.
+        </p>
+      </div>
+      <div class="header-actions">
+        <a href="index.html">← 홈으로</a>
+        <button type="button" id="refreshButton">⟳ 새로고침</button>
+      </div>
+    </header>
+
+    <section>
+      <div class="metrics-grid" id="metricCards" aria-live="polite"></div>
+    </section>
+
+    <section class="graph-wrapper">
+      <div class="graph-shell">
+        <div class="graph-scroll" id="graphScroll">
+          <div class="graph-canvas" id="graphCanvas">
+            <canvas class="edge-layer" id="edgeCanvas" role="presentation"></canvas>
+            <svg class="edge-layer" id="edgeLayer" role="presentation" style="display:none;"></svg>
+            <div class="node-grid" id="nodeGrid"></div>
+          </div>
+        </div>
+      </div>
+      <aside class="detail-panel" id="detailPanel" aria-live="assertive">
+        <h2>구성을 선택하세요</h2>
+        <p>
+          좌측 캔버스에서 노드를 클릭하면 해당 구성요소의 세부 상태와 최근 지표를 확인할 수 있습니다.
+        </p>
+        <div class="detail-metrics" id="detailMetrics"></div>
+        <div class="detail-connections" id="detailConnections">
+          <h3>연결 정보</h3>
+          <p class="connection-empty">선택된 노드의 연결 관계가 이 영역에 표시됩니다.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section>
+      <div class="warnings" id="warningSection"></div>
+    </section>
+
+    <footer class="footer">
+      <span id="generatedAt"></span>
+      <span>데이터 출처: /api/system-overview/graph · /api/dashboard/*</span>
+    </footer>
+  </main>
+
+  <script>
+    const state = {
+      nodes: [],
+      edges: [],
+      edgeData: [], // For Canvas edge interaction
+      metrics: {},
+      warnings: [],
+      selectedNodeId: null,
+      hoverNodeId: null,
+      pinnedNodeId: null,
+      zoom: 1,
+      nodeIndex: new Map(),
+      laneSequence: [],
+      nodeElements: new Map(),
+    };
+
+    const CATEGORY_LAYOUT = ["client", "home", "frontend", "platform", "backend", "service", "data"];
+
+    const CATEGORY_TITLES = {
+      client: "CLIENT",
+      home: "HOME",
+      frontend: "FRONTEND",
+      platform: "PLATFORM",
+      backend: "BACKEND",
+      service: "SERVICE",
+      data: "DATA",
+      uncategorized: "OTHER",
+    };
+
+    const graphScroll = document.getElementById("graphScroll");
+    const graphCanvas = document.getElementById("graphCanvas");
+    const nodeGrid = document.getElementById("nodeGrid");
+    const edgeLayer = document.getElementById("edgeLayer");
+    const edgeCanvas = document.getElementById("edgeCanvas");
+    const edgeCtx = edgeCanvas.getContext("2d");
+    const detailPanel = document.getElementById("detailPanel");
+    const detailMetrics = document.getElementById("detailMetrics");
+    const detailConnections = document.getElementById("detailConnections");
+    const metricCards = document.getElementById("metricCards");
+    const warningSection = document.getElementById("warningSection");
+    const generatedAtEl = document.getElementById("generatedAt");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    const ZOOM_MIN = 0.6;
+    const ZOOM_MAX = 1.8;
+    const ZOOM_STEP = 0.15;
+
+    const LANE_WIDTH = 260;
+    const LANE_GAP = 160;
+    const LANE_PADDING_X = 120;
+    const LANE_PADDING_TOP = 120;
+    const LANE_PADDING_BOTTOM = 160;
+    const NODE_VERTICAL_GAP = 80;
+    const EDGE_PORT_OFFSET = 28;
+    const EDGE_VERTICAL_STEP = 26;
+
+    function toggleLoading(active) {
+      if (active) {
+        loadingOverlay.classList.add("active");
+      } else {
+        loadingOverlay.classList.remove("active");
+      }
+    }
+
+    function showDetailPanel({ pinned = false } = {}) {
+      detailPanel.classList.add("is-visible");
+      detailPanel.classList.toggle("is-pinned", pinned);
+      detailPanel.setAttribute("aria-hidden", "false");
+    }
+
+    function hideDetailPanel() {
+      detailPanel.classList.remove("is-visible");
+      detailPanel.classList.remove("is-pinned");
+      detailPanel.setAttribute("aria-hidden", "true");
+    }
+
+    function setZoom(nextZoom, anchor) {
+      const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, nextZoom));
+      if (Math.abs(target - state.zoom) < 0.001) return;
+
+      const prevZoom = state.zoom;
+      const scrollLeft = graphScroll.scrollLeft;
+      const scrollTop = graphScroll.scrollTop;
+
+      if (anchor) {
+        const anchorX = (scrollLeft + anchor.x) / prevZoom;
+        const anchorY = (scrollTop + anchor.y) / prevZoom;
+        state.zoom = target;
+        graphCanvas.style.transform = `scale(${state.zoom})`;
+        graphScroll.scrollLeft = anchorX * state.zoom - anchor.x;
+        graphScroll.scrollTop = anchorY * state.zoom - anchor.y;
+      } else {
+        state.zoom = target;
+        graphCanvas.style.transform = `scale(${state.zoom})`;
+      }
+
+      requestAnimationFrame(() => {
+        drawEdges(state.edges);
+        if (state.selectedNodeId) {
+          highlightSelection(state.selectedNodeId);
+        }
+      });
+    }
+
+    function handleZoomWheel(event) {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      const direction = event.deltaY > 0 ? -1 : 1;
+      const step = state.zoom >= 1 ? ZOOM_STEP : ZOOM_STEP * 0.75;
+      const containerRect = graphScroll.getBoundingClientRect();
+      setZoom(state.zoom + direction * step, {
+        x: event.clientX - containerRect.left,
+        y: event.clientY - containerRect.top,
+      });
+    }
+
+    function handleNodeHover(nodeId) {
+      state.hoverNodeId = nodeId;
+      selectNode(nodeId);
+    }
+
+    function handleNodeLeave(nodeId) {
+      if (state.hoverNodeId === nodeId) {
+        state.hoverNodeId = null;
+      }
+      if (state.pinnedNodeId) {
+        selectNode(state.pinnedNodeId, { pinned: true, force: true });
+      } else {
+        clearSelection();
+      }
+    }
+
+    function togglePin(nodeId) {
+      if (state.pinnedNodeId === nodeId) {
+        state.pinnedNodeId = null;
+        detailPanel.classList.remove("is-pinned");
+        if (state.hoverNodeId) {
+          selectNode(state.hoverNodeId, { force: true });
+        } else {
+          clearSelection();
+        }
+        return;
+      }
+      selectNode(nodeId, { pinned: true, force: true });
+    }
+
+    function clearSelection() {
+      if (state.pinnedNodeId) {
+        const pinnedNode = state.nodeIndex.get(state.pinnedNodeId);
+        if (pinnedNode) {
+          state.selectedNodeId = state.pinnedNodeId;
+          highlightSelection(state.pinnedNodeId);
+          renderDetailPanel(pinnedNode);
+          showDetailPanel({ pinned: true });
+          return;
+        }
+        state.pinnedNodeId = null;
+      }
+      state.selectedNodeId = null;
+      highlightSelection(null);
+      renderDetailPanel(null);
+      hideDetailPanel();
+    }
+
+    hideDetailPanel();
+    graphCanvas.style.transform = `scale(${state.zoom})`;
+
+    function formatNumber(value) {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "-";
+      }
+      if (Math.abs(value) >= 1000) {
+        return value.toLocaleString();
+      }
+      if (Number.isInteger(value)) {
+        return value.toString();
+      }
+      return value.toFixed(2);
+    }
+
+    function formatValue(value) {
+      if (value === null || value === undefined) {
+        return "-";
+      }
+      if (typeof value === "number") {
+        return formatNumber(value);
+      }
+      if (typeof value === "boolean") {
+        return value ? "true" : "false";
+      }
+      if (Array.isArray(value)) {
+        if (value.length === 0) {
+          return "[]";
+        }
+        if (value.length <= 5 && value.every((item) => typeof item !== "object")) {
+          return value.join(", ");
+        }
+        return JSON.stringify(value, null, 2);
+      }
+      if (typeof value === "object") {
+        return JSON.stringify(value, null, 2);
+      }
+      return String(value);
+    }
+
+    function formatEdgeLabel(edge) {
+      if (!edge) return "";
+      if (edge.protocol) {
+        return edge.protocol.toUpperCase();
+      }
+      const label = (edge.label || "").trim();
+      if (!label) return "";
+      const verb = label.split(/\s+/)[0];
+      if (/^(get|post|put|delete|patch)$/i.test(verb)) {
+        return verb.toUpperCase();
+      }
+      if (/^link/i.test(label)) {
+        return "LINK";
+      }
+      return label.length > 18 ? `${label.slice(0, 16)}…`.toUpperCase() : label.toUpperCase();
+    }
+
+    function buildMetricCards(metrics, generatedAt) {
+      metricCards.innerHTML = "";
+
+      const users = metrics.users || {};
+      const database = metrics.database || {};
+      const model = metrics.model || {};
+      const routing = metrics.routing || {};
+      const views = metrics.views || {};
+      const batch = metrics.batch_scripts || {};
+      const artifacts = metrics.artifacts_snapshot || {};
+
+      const cards = [
+        {
+          title: "사용자 현황",
+          value: users.total != null ? formatNumber(users.total) : "-",
+          subtitle: `승인 ${formatNumber(users.approved ?? 0)} · 대기 ${formatNumber(users.pending ?? 0)} · 거절 ${formatNumber(users.rejected ?? 0)}`,
+        },
+        {
+          title: "데이터베이스",
+          value: database.connected ? "Connected" : "Unavailable",
+          subtitle: database.server ? `${database.server} · ${database.database || "-"}` : "연결 정보 없음",
+        },
+        {
+          title: "모델 버전",
+          value: model.model_version || "미등록",
+          subtitle: model.trained_at ? `최근 학습: ${model.trained_at}` : "학습 이력 없음",
+        },
+        {
+          title: "Routing Throughput",
+          value: routing.total != null ? formatNumber(routing.total) : "-",
+          subtitle: `일간 ${formatNumber(routing.daily ?? 0)} · 주간 ${formatNumber(routing.weekly ?? 0)} · 월간 ${formatNumber(routing.monthly ?? 0)}`,
+        },
+        {
+          title: "MSSQL Views",
+          value: views.total != null ? formatNumber(views.total) : "-",
+          subtitle: "View Explorer에서 조회 가능한 VIEW 수",
+        },
+        {
+          title: "Model Artifacts",
+          value: formatNumber(artifacts.artifacts ?? 0),
+          subtitle: artifacts.latest_updated ? `최신 업데이트: ${artifacts.latest_updated}` : "모델 스냅샷 등록 현황",
+        },
+        {
+          title: "Batch Scripts",
+          value: `${formatNumber(batch.bat_scripts ?? 0)} BAT`,
+          subtitle: batch.latest_updated ? `최근 갱신: ${batch.latest_updated}` : "배포/운영 스크립트 수",
+        },
+      ];
+
+      cards.forEach((card) => {
+        const wrapper = document.createElement("article");
+        wrapper.className = "metric-card";
+        wrapper.innerHTML = `
+          <h3>${card.title}</h3>
+          <div class="metric-value">${card.value}</div>
+          <p class="metric-sub">${card.subtitle}</p>
+        `;
+        metricCards.appendChild(wrapper);
+      });
+
+      if (generatedAt) {
+        generatedAtEl.textContent = `Snapshot generated at ${generatedAt}`;
+      }
+    }
+
+    function getCategoryKey(node) {
+      return node?.category ?? "uncategorized";
+    }
+
+    function computeLaneSequence(nodes = []) {
+      const preferred = CATEGORY_LAYOUT.filter((category) =>
+        nodes.some((node) => getCategoryKey(node) === category)
+      );
+      const extras = [];
+      nodes.forEach((node) => {
+        const key = getCategoryKey(node);
+        if (!preferred.includes(key) && !extras.includes(key)) {
+          extras.push(key);
+        }
+      });
+      const sequence = [...preferred, ...extras];
+      if (!sequence.length) {
+        sequence.push("uncategorized");
+      }
+      return sequence;
+    }
+
+    function renderLaneGuides() {
+      const fragment = document.createDocumentFragment();
+      state.laneSequence.forEach((category) => {
+        const guide = document.createElement("div");
+        guide.className = "lane-guide";
+        guide.dataset.category = category;
+        const label = document.createElement("span");
+        label.className = "lane-label";
+        label.textContent = CATEGORY_TITLES[category] || category.toUpperCase();
+        guide.appendChild(label);
+        fragment.appendChild(guide);
+      });
+      nodeGrid.appendChild(fragment);
+    }
+
+    function pickSummaryEntries(metrics) {
+      if (!metrics) return [];
+      const entries = Object.entries(metrics);
+      const summary = [];
+      for (const [key, value] of entries) {
+        if (summary.length >= 3) break;
+        if (value === null || value === undefined) continue;
+        if (typeof value === "object" && !Array.isArray(value)) continue;
+        summary.push([key, value]);
+      }
+      return summary;
+    }
+
+    function layoutNodeCards() {
+      if (!state.laneSequence.length || !state.nodeElements.size) {
+        graphCanvas.style.width = "100%";
+        graphCanvas.style.height = "100%";
+        return;
+      }
+
+      const laneData = new Map();
+      state.laneSequence.forEach((category) => laneData.set(category, []));
+
+      state.nodeElements.forEach((entry) => {
+        const key = getCategoryKey(entry.node);
+        if (!laneData.has(key)) {
+          laneData.set(key, []);
+        }
+        laneData.get(key).push(entry);
+      });
+
+      laneData.forEach((list) => {
+        list.sort((a, b) => {
+          const rankA = a.node.rank ?? 0;
+          const rankB = b.node.rank ?? 0;
+          if (rankA !== rankB) return rankA - rankB;
+          return a.node.label.localeCompare(b.node.label, "ko");
+        });
+      });
+
+      const laneInfos = state.laneSequence.map((category, index) => {
+        const nodes = laneData.get(category) ?? [];
+        return { category, index, nodes };
+      });
+
+      const laneTotals = laneInfos.map((info) => {
+        const heights = info.nodes.reduce((sum, entry) => sum + entry.element.offsetHeight, 0);
+        const gaps = Math.max(0, info.nodes.length - 1) * NODE_VERTICAL_GAP;
+        return heights + gaps;
+      });
+
+      const maxLaneHeight = laneTotals.length ? Math.max(...laneTotals, 0) : 0;
+      const canvasWidth =
+        LANE_PADDING_X * 2 +
+        state.laneSequence.length * LANE_WIDTH +
+        Math.max(0, state.laneSequence.length - 1) * LANE_GAP;
+      const canvasHeight = Math.max(
+        maxLaneHeight + LANE_PADDING_TOP + LANE_PADDING_BOTTOM,
+        720
+      );
+
+      graphCanvas.style.width = `${canvasWidth}px`;
+      graphCanvas.style.height = `${canvasHeight}px`;
+      nodeGrid.style.width = `${canvasWidth}px`;
+      nodeGrid.style.height = `${canvasHeight}px`;
+
+      const guides = Array.from(nodeGrid.querySelectorAll(".lane-guide"));
+
+      laneInfos.forEach((info, idx) => {
+        const laneX = LANE_PADDING_X + info.index * (LANE_WIDTH + LANE_GAP);
+        const laneHeight = laneTotals[idx] || 0;
+        const availableHeight = canvasHeight - LANE_PADDING_TOP - LANE_PADDING_BOTTOM;
+        const offsetY = info.nodes.length
+          ? Math.max(LANE_PADDING_TOP, (canvasHeight - laneHeight) / 2)
+          : LANE_PADDING_TOP + availableHeight / 4;
+
+        let currentY = offsetY;
+        info.nodes.forEach(({ element }) => {
+          element.style.left = `${laneX}px`;
+          element.style.top = `${currentY}px`;
+          element.style.width = `${LANE_WIDTH}px`;
+          currentY += element.offsetHeight + NODE_VERTICAL_GAP;
+        });
+
+        const guide = guides[idx];
+        if (guide) {
+          const guidePadding = 40;
+          const guideTop = Math.max(LANE_PADDING_TOP * 0.4, offsetY - guidePadding);
+          const guideHeight = Math.max(
+            laneHeight + guidePadding * 2,
+            canvasHeight - guideTop - LANE_PADDING_BOTTOM * 0.6
+          );
+          guide.style.left = `${laneX - 32}px`;
+          guide.style.top = `${guideTop}px`;
+          guide.style.width = `${LANE_WIDTH + 64}px`;
+          guide.style.height = `${guideHeight}px`;
+          const label = guide.querySelector(".lane-label");
+          if (label) {
+            label.textContent = CATEGORY_TITLES[info.category] || info.category.toUpperCase();
+          }
+        }
+      });
+    }
+
+    function renderNodes(nodes = []) {
+      nodeGrid.innerHTML = "";
+      state.nodeElements = new Map();
+      state.laneSequence = computeLaneSequence(nodes);
+      renderLaneGuides();
+
+      const laneOrder = state.laneSequence;
+      const sortedNodes = [...nodes].sort((a, b) => {
+        const laneRank = laneOrder.indexOf(getCategoryKey(a)) - laneOrder.indexOf(getCategoryKey(b));
+        if (laneRank !== 0) return laneRank;
+        const rankA = a.rank ?? 0;
+        const rankB = b.rank ?? 0;
+        if (rankA !== rankB) return rankA - rankB;
+        return a.label.localeCompare(b.label, "ko");
+      });
+
+      const fragment = document.createDocumentFragment();
+
+      sortedNodes.forEach((node) => {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = `node-card status-${node.status}`;
+        card.dataset.nodeId = node.id;
+        card.dataset.category = getCategoryKey(node);
+        card.innerHTML = `
+          <span class="node-status">${node.status}</span>
+          <h3>${node.label}</h3>
+        `;
+
+        const summary = pickSummaryEntries(node.metrics);
+        if (summary.length > 0) {
+          const list = document.createElement("ul");
+          list.className = "node-metric-list";
+          summary.forEach(([key, value]) => {
+            const item = document.createElement("li");
+            const label = document.createElement("span");
+            label.textContent = key;
+            const val = document.createElement("span");
+            val.textContent = formatValue(value);
+            item.appendChild(label);
+            item.appendChild(val);
+            list.appendChild(item);
+          });
+          card.appendChild(list);
+        }
+
+        card.addEventListener("mouseenter", () => handleNodeHover(node.id));
+        card.addEventListener("mouseleave", () => handleNodeLeave(node.id));
+        card.addEventListener("focus", () => handleNodeHover(node.id));
+        card.addEventListener("blur", () => handleNodeLeave(node.id));
+        card.addEventListener("click", (event) => {
+          if (event.detail > 1) return;
+          selectNode(node.id);
+        });
+        card.addEventListener("dblclick", (event) => {
+          event.preventDefault();
+          togglePin(node.id);
+        });
+        fragment.appendChild(card);
+        state.nodeElements.set(node.id, { node, element: card });
+      });
+
+      nodeGrid.appendChild(fragment);
+      requestAnimationFrame(() => {
+        layoutNodeCards();
+        requestAnimationFrame(() => drawEdges(state.edges));
+      });
+    }
+
+    // Canvas-based edge rendering for better performance
+    function drawEdges(edges = []) {
+      if (!nodeGrid || !edgeCanvas) return;
+
+      const gridRect = nodeGrid.getBoundingClientRect();
+      const width = nodeGrid.offsetWidth || gridRect.width || 1;
+      const height = nodeGrid.offsetHeight || gridRect.height || 1;
+
+      // Set canvas size (account for device pixel ratio for sharp rendering)
+      const dpr = window.devicePixelRatio || 1;
+      edgeCanvas.width = width * dpr;
+      edgeCanvas.height = height * dpr;
+      edgeCanvas.style.width = `${width}px`;
+      edgeCanvas.style.height = `${height}px`;
+      edgeCtx.scale(dpr, dpr);
+
+      // Clear canvas
+      edgeCtx.clearRect(0, 0, width, height);
+
+      // Store edge data for hit testing (for hover effects)
+      state.edgeData = [];
+
+      const grouped = new Map();
+      edges.forEach((edge) => {
+        const key = `${edge.source}->${edge.target}`;
+        if (!grouped.has(key)) {
+          grouped.set(key, []);
+        }
+        grouped.get(key).push(edge.id);
+      });
+
+      edges.forEach((edge) => {
+        const sourceEl = nodeGrid.querySelector(`[data-node-id="${edge.source}"]`);
+        const targetEl = nodeGrid.querySelector(`[data-node-id="${edge.target}"]`);
+        if (!sourceEl || !targetEl) return;
+
+        const sourceRect = sourceEl.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+
+        const direction = sourceRect.left <= targetRect.left ? 1 : -1;
+        const startX =
+          (direction > 0
+            ? sourceRect.right - gridRect.left + EDGE_PORT_OFFSET
+            : sourceRect.left - gridRect.left - EDGE_PORT_OFFSET);
+        const endX =
+          (direction > 0
+            ? targetRect.left - gridRect.left - EDGE_PORT_OFFSET
+            : targetRect.right - gridRect.left + EDGE_PORT_OFFSET);
+        const startY = sourceRect.top + sourceRect.height / 2 - gridRect.top;
+        const endY = targetRect.top + targetRect.height / 2 - gridRect.top;
+
+        const spanX = Math.max(Math.abs(endX - startX), 120);
+        const curvature = Math.min(spanX * 0.45, 320);
+
+        const groupKey = `${edge.source}->${edge.target}`;
+        const siblings = grouped.get(groupKey) || [];
+        const index = siblings.indexOf(edge.id);
+        const siblingOffset = (index - (siblings.length - 1) / 2) * EDGE_VERTICAL_STEP;
+
+        const control1X = startX + direction * curvature;
+        const control2X = endX - direction * curvature;
+        const control1Y = startY + siblingOffset;
+        const control2Y = endY + siblingOffset;
+
+        // Determine if this edge is active (selected)
+        const isActive = state.selectedNodeId &&
+          (edge.source === state.selectedNodeId || edge.target === state.selectedNodeId);
+
+        // Draw the cubic bezier curve
+        edgeCtx.save();
+        edgeCtx.beginPath();
+        edgeCtx.moveTo(startX, startY);
+        edgeCtx.bezierCurveTo(control1X, control1Y, control2X, control2Y, endX, endY);
+
+        edgeCtx.strokeStyle = isActive ? 'rgba(56, 189, 248, 0.95)' : 'rgba(56, 189, 248, 0.55)';
+        edgeCtx.lineWidth = isActive ? 2.6 : 1.8;
+        edgeCtx.lineCap = 'round';
+        edgeCtx.setLineDash(isActive ? [8, 14] : [12, 16]);
+        edgeCtx.shadowColor = 'rgba(56, 189, 248, 0.35)';
+        edgeCtx.shadowBlur = 6;
+        edgeCtx.stroke();
+        edgeCtx.restore();
+
+        // Draw arrow head
+        const t = 0.95; // Position along curve for arrow
+        const x = Math.pow(1-t, 3) * startX + 3 * Math.pow(1-t, 2) * t * control1X +
+                  3 * (1-t) * Math.pow(t, 2) * control2X + Math.pow(t, 3) * endX;
+        const y = Math.pow(1-t, 3) * startY + 3 * Math.pow(1-t, 2) * t * control1Y +
+                  3 * (1-t) * Math.pow(t, 2) * control2Y + Math.pow(t, 3) * endY;
+
+        // Calculate tangent for arrow direction
+        const dx = -3 * Math.pow(1-t, 2) * startX + 3 * (Math.pow(1-t, 2) - 2*t*(1-t)) * control1X +
+                   3 * (2*(1-t)*t - Math.pow(t, 2)) * control2X + 3 * Math.pow(t, 2) * endX;
+        const dy = -3 * Math.pow(1-t, 2) * startY + 3 * (Math.pow(1-t, 2) - 2*t*(1-t)) * control1Y +
+                   3 * (2*(1-t)*t - Math.pow(t, 2)) * control2Y + 3 * Math.pow(t, 2) * endY;
+        const angle = Math.atan2(dy, dx);
+
+        edgeCtx.save();
+        edgeCtx.translate(x, y);
+        edgeCtx.rotate(angle);
+        edgeCtx.fillStyle = isActive ? 'rgba(56, 189, 248, 0.95)' : 'rgba(125, 211, 252, 0.85)';
+        edgeCtx.beginPath();
+        edgeCtx.moveTo(0, 0);
+        edgeCtx.lineTo(-7, -3.5);
+        edgeCtx.lineTo(-7, 3.5);
+        edgeCtx.closePath();
+        edgeCtx.fill();
+        edgeCtx.restore();
+
+        // Draw label
+        const displayLabel = formatEdgeLabel(edge);
+        if (displayLabel) {
+          const labelX = (startX + endX) / 2;
+          const labelY = (startY + endY) / 2 + siblingOffset - 10;
+
+          edgeCtx.save();
+          edgeCtx.font = '10px Arial';
+          edgeCtx.textAlign = 'center';
+          edgeCtx.textBaseline = 'middle';
+
+          // Draw background
+          edgeCtx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+          edgeCtx.strokeStyle = 'rgba(15, 23, 42, 0.85)';
+          edgeCtx.lineWidth = 4;
+          edgeCtx.strokeText(displayLabel, labelX, labelY);
+
+          // Draw text
+          edgeCtx.fillStyle = isActive ? '#38bdf8' : 'rgba(226, 232, 240, 0.82)';
+          edgeCtx.fillText(displayLabel, labelX, labelY);
+          edgeCtx.restore();
+        }
+
+        // Store edge data for potential interaction
+        state.edgeData.push({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          startX, startY, endX, endY,
+          control1X, control1Y, control2X, control2Y
+        });
+      });
+    }
+
+    function renderWarnings(warnings = []) {
+      warningSection.innerHTML = "";
+      if (!warnings.length) {
+        const notice = document.createElement("div");
+        notice.className = "notice success";
+        notice.textContent = "모든 구성요소가 정상 상태로 보고되었습니다.";
+        warningSection.appendChild(notice);
+        return;
+      }
+
+      warnings.forEach((warning) => {
+        const notice = document.createElement("div");
+        notice.className = "notice warning";
+        notice.textContent = warning;
+        warningSection.appendChild(notice);
+      });
+    }
+
+    function highlightSelection(nodeId) {
+      document.querySelectorAll(".node-card").forEach((card) => {
+        card.classList.toggle("is-selected", card.dataset.nodeId === nodeId);
+      });
+      // Redraw edges with Canvas to reflect selection state
+      requestAnimationFrame(() => drawEdges(state.edges));
+    }
+
+    function getNodeLabel(nodeId) {
+      const entry = state.nodeIndex.get(nodeId);
+      return entry ? entry.label : nodeId;
+    }
+
+    function buildConnectionGroup(title, edges, direction) {
+      if (!edges.length) return null;
+      const group = document.createElement("div");
+      group.className = "connection-group";
+      const heading = document.createElement("h3");
+      heading.textContent = title;
+      group.appendChild(heading);
+
+      const list = document.createElement("div");
+      list.className = "connection-list";
+      edges.forEach((edge) => {
+        const item = document.createElement("div");
+        item.className = "connection-item";
+
+        const pill = document.createElement("span");
+        pill.className = `connection-pill ${direction}`;
+        pill.textContent = (edge.protocol || "link").toUpperCase();
+        item.appendChild(pill);
+
+        const textWrap = document.createElement("div");
+        const counterpartId = direction === "outgoing" ? edge.target : edge.source;
+        const labelEl = document.createElement("strong");
+        labelEl.textContent = getNodeLabel(counterpartId);
+        textWrap.appendChild(labelEl);
+
+        const detail = document.createElement("span");
+        detail.textContent = edge.label || edge.description || "";
+        textWrap.appendChild(detail);
+
+        item.appendChild(textWrap);
+        list.appendChild(item);
+      });
+
+      group.appendChild(list);
+      return group;
+    }
+
+    function renderConnectionSummary(node) {
+      detailConnections.innerHTML = "";
+      if (!node) {
+        detailConnections.innerHTML = '<p class="connection-empty">노드를 선택하면 연결 정보가 표시됩니다.</p>';
+        return;
+      }
+
+      const outbound = state.edges.filter((edge) => edge.source === node.id);
+      const inbound = state.edges.filter((edge) => edge.target === node.id);
+
+      const outgoingGroup = buildConnectionGroup("Outgoing", outbound, "outgoing");
+      const incomingGroup = buildConnectionGroup("Incoming", inbound, "inbound");
+
+      if (outgoingGroup) detailConnections.appendChild(outgoingGroup);
+      if (incomingGroup) detailConnections.appendChild(incomingGroup);
+
+      if (!outgoingGroup && !incomingGroup) {
+        detailConnections.innerHTML = '<p class="connection-empty">연결 정보가 없습니다.</p>';
+      }
+    }
+
+    function renderDetailPanel(node) {
+      if (!node) {
+        detailPanel.querySelector("h2").textContent = "노드를 선택해주세요";
+        detailPanel.querySelector("p").textContent = "각 컴포넌트나 노드를 클릭하면 해당 구성요소의 최신 상태와 지표를 확인할 수 있습니다.";
+        detailMetrics.innerHTML = "";
+        detailConnections.innerHTML = '<p class="connection-empty">노드를 선택하면 연결 정보가 표시됩니다.</p>';
+        return;
+      }
+
+      detailPanel.querySelector("h2").textContent = node.label;
+      detailPanel.querySelector("p").textContent = node.details || "추가 설명이 제공되지 않았습니다.";
+      detailMetrics.innerHTML = "";
+
+      const sortedEntries = Object.entries(node.metrics || {}).sort(([a], [b]) => a.localeCompare(b));
+      if (!sortedEntries.length) {
+        const empty = document.createElement("div");
+        empty.className = "detail-row";
+        empty.innerHTML = "<strong>metrics</strong><span>표시할 추가 지표가 없습니다.</span>";
+        detailMetrics.appendChild(empty);
+        return;
+      }
+
+      sortedEntries.forEach(([key, value]) => {
+        const row = document.createElement("div");
+        row.className = "detail-row";
+        const label = document.createElement("strong");
+        label.textContent = key;
+        row.appendChild(label);
+
+        const formatted = formatValue(value);
+        const hasLineBreak = typeof formatted === "string" && formatted.includes("\n");
+        const contentEl = document.createElement(hasLineBreak ? "pre" : "span");
+        contentEl.textContent = formatted;
+        row.appendChild(contentEl);
+        detailMetrics.appendChild(row);
+      });
+
+      renderConnectionSummary(node);
+    }
+
+    function selectNode(nodeId, { pinned = false, force = false } = {}) {
+      const node = state.nodeIndex.get(nodeId);
+      if (!node) return;
+
+      if (pinned) {
+        state.pinnedNodeId = nodeId;
+      }
+
+      if (state.pinnedNodeId && !force && state.pinnedNodeId !== nodeId) {
+        return;
+      }
+
+      state.selectedNodeId = nodeId;
+      highlightSelection(nodeId);
+      renderDetailPanel(node);
+      showDetailPanel({ pinned: state.pinnedNodeId === nodeId });
+    }
+
+    // OpenAPI Spec Fetching and Parsing
+    async function fetchOpenAPISpec() {
+      try {
+        const response = await fetch("/api/openapi.json", { cache: "no-store" });
+        if (!response.ok) {
+          console.warn(`OpenAPI spec not available: HTTP ${response.status}`);
+          return null;
+        }
+        return await response.json();
+      } catch (error) {
+        console.warn("Failed to fetch OpenAPI spec:", error);
+        return null;
+      }
+    }
+
+    function categorizeEndpoint(path) {
+      if (path.includes("/auth")) return "backend";
+      if (path.includes("/user")) return "backend";
+      if (path.includes("/predict") || path.includes("/prediction")) return "service";
+      if (path.includes("/train") || path.includes("/training")) return "service";
+      if (path.includes("/model")) return "service";
+      if (path.includes("/database") || path.includes("/db")) return "data";
+      if (path.includes("/system") || path.includes("/health") || path.includes("/metrics")) return "platform";
+      if (path.includes("/dashboard")) return "platform";
+      if (path.includes("/workflow")) return "service";
+      if (path.includes("/mapping")) return "service";
+      if (path.includes("/profile")) return "service";
+      return "backend";
+    }
+
+    function parseEndpoints(spec) {
+      if (!spec || !spec.paths) return [];
+
+      const nodes = [];
+      const paths = spec.paths;
+
+      Object.entries(paths).forEach(([path, methods]) => {
+        Object.entries(methods).forEach(([method, details]) => {
+          if (method === "parameters") return; // Skip shared parameters
+
+          const nodeId = `api_${method.toUpperCase()}_${path.replace(/\//g, "_").replace(/[{}]/g, "")}`;
+          const summary = details.summary || details.description || path;
+
+          nodes.push({
+            id: nodeId,
+            label: summary.length > 50 ? summary.substring(0, 47) + "..." : summary,
+            category: categorizeEndpoint(path),
+            status: "operational",
+            rank: path.split("/").length, // Rank by depth
+            details: `${method.toUpperCase()} ${path}`,
+            metrics: {
+              method: method.toUpperCase(),
+              path: path,
+              parameters: details.parameters?.length || 0,
+              responses: Object.keys(details.responses || {}).join(", ")
+            }
+          });
+        });
+      });
+
+      return nodes;
+    }
+
+    function inferDataFlow(apiNodes, manualNodes) {
+      const edges = [];
+      const allNodes = [...manualNodes, ...apiNodes];
+      const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+
+      // Infer edges based on API dependencies
+      apiNodes.forEach((node) => {
+        const path = node.metrics.path;
+        const method = node.metrics.method;
+
+        // Prediction endpoints depend on model service
+        if (path.includes("/predict") || path.includes("/prediction")) {
+          const modelNode = allNodes.find(n =>
+            n.id.includes("model") || n.label.toLowerCase().includes("model")
+          );
+          if (modelNode && modelNode.id !== node.id) {
+            edges.push({
+              id: `inferred_${node.id}_to_${modelNode.id}`,
+              source: node.id,
+              target: modelNode.id,
+              label: "uses model",
+              protocol: "internal"
+            });
+          }
+        }
+
+        // Training endpoints depend on database
+        if (path.includes("/train")) {
+          const dbNode = allNodes.find(n =>
+            n.category === "data" || n.label.toLowerCase().includes("database")
+          );
+          if (dbNode && dbNode.id !== node.id) {
+            edges.push({
+              id: `inferred_${node.id}_to_${dbNode.id}`,
+              source: node.id,
+              target: dbNode.id,
+              label: "reads data",
+              protocol: "sql"
+            });
+          }
+        }
+
+        // Auth endpoints
+        if (path.includes("/auth") || path.includes("/login")) {
+          const dbNode = allNodes.find(n =>
+            n.category === "data" || n.label.toLowerCase().includes("database")
+          );
+          if (dbNode && dbNode.id !== node.id) {
+            edges.push({
+              id: `inferred_${node.id}_to_${dbNode.id}`,
+              source: node.id,
+              target: dbNode.id,
+              label: "validates user",
+              protocol: "sql"
+            });
+          }
+        }
+      });
+
+      return edges;
+    }
+
+    async function loadGraph() {
+      toggleLoading(true);
+      try {
+        // Fetch both manual nodes and OpenAPI spec in parallel
+        const [graphResponse, openApiSpec] = await Promise.all([
+          fetch("/api/system-overview/graph", { cache: "no-store" }),
+          fetchOpenAPISpec()
+        ]);
+
+        if (!graphResponse.ok) {
+          throw new Error(`HTTP ${graphResponse.status}`);
+        }
+
+        const payload = await graphResponse.json();
+        const manualNodes = payload.nodes ?? [];
+        const manualEdges = payload.edges ?? [];
+
+        // Parse OpenAPI endpoints into nodes
+        let apiNodes = [];
+        let inferredEdges = [];
+
+        if (openApiSpec) {
+          apiNodes = parseEndpoints(openApiSpec);
+          inferredEdges = inferDataFlow(apiNodes, manualNodes);
+          console.log(`Generated ${apiNodes.length} nodes from OpenAPI spec`);
+          console.log(`Inferred ${inferredEdges.length} edges from API relationships`);
+        }
+
+        // Merge manual and auto-generated nodes/edges
+        state.nodes = [...manualNodes, ...apiNodes];
+        state.nodeIndex = new Map(state.nodes.map((entry) => [entry.id, entry]));
+        state.edges = [...manualEdges, ...inferredEdges];
+        state.metrics = payload.metrics ?? {};
+        state.warnings = payload.warnings ?? [];
+        state.selectedNodeId = null;
+
+        buildMetricCards(state.metrics, payload.generated_at);
+        renderNodes(state.nodes);
+        renderWarnings(state.warnings);
+
+        const pinnedAvailable = state.pinnedNodeId && state.nodeIndex.has(state.pinnedNodeId);
+        if (pinnedAvailable) {
+          selectNode(state.pinnedNodeId, { pinned: true, force: true });
+        } else {
+          state.pinnedNodeId = null;
+          state.hoverNodeId = null;
+          clearSelection();
+        }
+      } catch (error) {
+        warningSection.innerHTML = "";
+        const notice = document.createElement("div");
+        notice.className = "notice warning";
+        notice.textContent = `시스템 정보를 불러오지 못했습니다: ${error.message}`;
+        warningSection.appendChild(notice);
+        detailPanel.querySelector("h2").textContent = "데이터 로드 실패";
+        detailPanel.querySelector("p").textContent = "네트워크 연결과 백엔드 상태를 확인한 후 다시 시도하세요.";
+        detailMetrics.innerHTML = "";
+        detailConnections.innerHTML = '<p class="connection-empty">연결 정보를 불러오지 못했습니다.</p>';
+        showDetailPanel();
+      } finally {
+        toggleLoading(false);
+      }
+    }
+
+    // Debounce utility function
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Throttle utility function
+    function throttle(func, limit) {
+      let inThrottle;
+      return function(...args) {
+        if (!inThrottle) {
+          func.apply(this, args);
+          inThrottle = true;
+          setTimeout(() => inThrottle = false, limit);
+        }
+      };
+    }
+
+    function handleResize() {
+      if (!state.nodeElements.size) return;
+      layoutNodeCards();
+      drawEdges(state.edges);
+      if (state.selectedNodeId) {
+        highlightSelection(state.selectedNodeId);
+      }
+    }
+
+    // Debounced resize handler for better performance
+    const debouncedResize = debounce(() => {
+      requestAnimationFrame(handleResize);
+    }, 150);
+
+    // Throttled scroll handler
+    const throttledScroll = throttle(() => {
+      // Could add viewport-based node rendering here in future
+      requestAnimationFrame(() => {
+        if (state.selectedNodeId) {
+          drawEdges(state.edges);
+        }
+      });
+    }, 100);
+
+    if (graphScroll) {
+      graphScroll.addEventListener("wheel", handleZoomWheel, { passive: false });
+      graphScroll.addEventListener("scroll", throttledScroll, { passive: true });
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        if (state.pinnedNodeId) {
+          state.pinnedNodeId = null;
+        }
+        state.hoverNodeId = null;
+        clearSelection();
+      }
+    });
+
+    document.getElementById("refreshButton").addEventListener("click", () => loadGraph());
+    window.addEventListener("resize", debouncedResize);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadGraph();
+    });
+  </script>
+</body>
+</html>
+
+
+
+
