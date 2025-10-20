@@ -1,2 +1,2 @@
-export * from './3d';
 export * from './hyperspeed';
+export * from './effects';

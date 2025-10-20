@@ -34,11 +34,11 @@ SERVICES: Tuple[Service, ...] = (
         key="home",
         name="Home",
         icon="🏠",
-        check_url="https://localhost:3000/",
+        check_url="https://localhost:5176/",
         start_command="run_frontend_home.bat",
         links=(
-            ("Local", "https://localhost:3000"),
-            ("Domain", "https://rtml.ksm.co.kr:3000"),
+            ("Local", "https://localhost:5176"),
+            ("Domain", "https://rtml.ksm.co.kr:5176"),
         ),
     ),
     Service(

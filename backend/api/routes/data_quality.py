@@ -1,8 +1,6 @@
 """데이터 품질 모니터링 API 엔드포인트."""
 from __future__ import annotations
 
-from typing import Dict
-
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
@@ -11,6 +9,7 @@ from backend.api.services.data_quality_service import (
     DataQualityMetrics,
     DataQualityReport,
     DataQualityService,
+    HealthStatus,
     get_prometheus_metrics,
 )
 
@@ -121,7 +120,8 @@ async def get_prometheus_format(session: Session = Depends(get_session)) -> Resp
     )
 
 
-@router.get("/health")
-async def health_check() -> Dict[str, str]:
+@router.get("/health", response_model=HealthStatus)
+async def health_check(session: Session = Depends(get_session)) -> HealthStatus:
     """데이터 품질 서비스 헬스 체크."""
-    return {"status": "ok", "service": "data-quality"}
+    service = DataQualityService(session)
+    return service.get_health_status()

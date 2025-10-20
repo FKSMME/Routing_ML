@@ -17,7 +17,7 @@ echo   - Network Access:      https://10.204.2.28:8000
 echo   - Domain Access:       https://rtml.ksm.co.kr:8000
 echo.
 echo   [Frontend]
-echo   - Home Dashboard:      https://localhost:3000  (Network: https://10.204.2.28:3000)
+echo   - Home Dashboard:      https://localhost:5176  (Network: https://10.204.2.28:5176)
 echo   - Prediction UI:       https://localhost:5173  (Network: https://10.204.2.28:5173)
 echo   - Training UI:         https://localhost:5174  (Network: https://10.204.2.28:5174)
 echo.
@@ -65,8 +65,8 @@ echo [1/4] Starting Backend Main Service with HTTPS... (Port 8000)
 start "Backend-Main-8000" cmd /k ".venv\Scripts\python.exe -m uvicorn backend.api.app:app --host 0.0.0.0 --port 8000 --ssl-keyfile=certs/rtml.ksm.co.kr.key --ssl-certfile=certs/rtml.ksm.co.kr.crt --reload"
 timeout /t 5 /nobreak >nul
 
-echo [2/4] Starting Frontend Home Dashboard with HTTPS... (Port 3000)
-start "Frontend-Home-3000" cmd /k "set USE_HTTPS=true && cd frontend-home && node server.js"
+echo [2/4] Starting Frontend Home Dashboard with HTTPS... (Port 5176)
+start "Frontend-Home-5176" cmd /k "set USE_HTTPS=true&&set PORT=5176&&set HTTP_REDIRECT_PORT=0 && cd frontend-home && node server.js"
 timeout /t 2 /nobreak >nul
 
 echo [3/4] Starting Frontend Prediction UI... (Port 5173)
@@ -82,19 +82,19 @@ echo   All services started successfully with HTTPS!
 echo ========================================================================
 echo.
 echo Local access (HTTPS):
-echo   Home Dashboard:     https://localhost:3000
+echo   Home Dashboard:     https://localhost:5176
 echo   Routing Creation:   https://localhost:5173
 echo   Model Training:     https://localhost:5174
 echo   Backend API:        https://localhost:8000/docs
 echo.
 echo Internal network access (from other PCs):
-echo   Home Dashboard:     https://10.204.2.28:3000
+echo   Home Dashboard:     https://10.204.2.28:5176
 echo   Routing Creation:   https://10.204.2.28:5173
 echo   Model Training:     https://10.204.2.28:5174
 echo   Backend API:        https://10.204.2.28:8000/docs
 echo.
 echo Domain access:
-echo   Home Dashboard:     https://rtml.ksm.co.kr:3000
+echo   Home Dashboard:     https://rtml.ksm.co.kr:5176
 echo   Routing Creation:   https://rtml.ksm.co.kr:5173
 echo   Model Training:     https://rtml.ksm.co.kr:5174
 echo   Backend API:        https://rtml.ksm.co.kr:8000/docs

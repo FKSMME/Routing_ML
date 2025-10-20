@@ -1,4 +1,4 @@
-import { FullScreen3DBackground } from "@routing-ml/shared";
+import { LiquidEther } from "@routing-ml/shared";
 import { BlueprintGraphPanel } from "@components/blueprint/BlueprintGraphPanel";
 import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
@@ -11,14 +11,14 @@ import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWo
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
 import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
 import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
-import { DataRelationshipManager } from "@components/admin/DataRelationshipManager";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
+import { useBackgroundSettings } from "@store/backgroundSettings";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings, Settings2, Brain, ScatterChart } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { BarChart3, Menu, Route, Settings, Brain, ScatterChart } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
 
 // 🟢 Training & Model Management Web Service
@@ -55,30 +55,78 @@ const BASE_NAVIGATION_ITEMS = [
   },
 ];
 
-// 관리자 전용 메뉴
-const ADMIN_NAVIGATION_ITEMS = [
-  {
-    id: "data-relationship",
-    label: "데이터 관계 설정",
-    description: "학습 → 예측 → 출력 매핑",
-    icon: <Settings2 size={18} />,
-  },
-];
+function LiquidEtherBackdrop() {
+  const {
+    enabled,
+    opacity,
+    colors,
+    mouseForce,
+    cursorSize,
+    resolution,
+    autoSpeed,
+    autoIntensity,
+    iterationsPoisson,
+    isBounce,
+    autoDemo,
+    isViscous,
+    viscous,
+    iterationsViscous,
+    dt,
+    bfecc,
+    takeoverDuration,
+    autoResumeDelay,
+    autoRampDuration,
+  } = useBackgroundSettings();
+
+  if (!enabled) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        opacity,
+        zIndex: 0,
+      }}
+    >
+      <LiquidEther
+        colors={colors}
+        mouseForce={mouseForce}
+        cursorSize={cursorSize}
+        resolution={resolution}
+        autoSpeed={autoSpeed}
+        autoIntensity={autoIntensity}
+        iterationsPoisson={iterationsPoisson}
+        isBounce={isBounce}
+        autoDemo={autoDemo}
+        isViscous={isViscous}
+        viscous={viscous}
+        iterationsViscous={iterationsViscous}
+        dt={dt}
+        BFECC={bfecc}
+        takeoverDuration={takeoverDuration}
+        autoResumeDelay={autoResumeDelay}
+        autoRampDuration={autoRampDuration}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
   useTheme();
 
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isAdmin = useAuthStore((state) => state.isAdmin);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
-  const NAVIGATION_ITEMS = useMemo(
-    () => (isAdmin ? [...BASE_NAVIGATION_ITEMS, ...ADMIN_NAVIGATION_ITEMS] : BASE_NAVIGATION_ITEMS),
-    [isAdmin]
-  );
+  const NAVIGATION_ITEMS = BASE_NAVIGATION_ITEMS;
 
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
@@ -173,9 +221,6 @@ export default function App() {
     case "options":
       workspace = <OptionsWorkspace />;
       break;
-    case "data-relationship":
-      workspace = <DataRelationshipManager />;
-      break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
   }
@@ -184,7 +229,7 @@ export default function App() {
 
   return (
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
-      <FullScreen3DBackground />
+      <LiquidEtherBackdrop />
       {isPersistent ? (
         <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
@@ -225,4 +270,3 @@ export default function App() {
     </div>
   );
 }
-

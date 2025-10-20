@@ -1,43 +1,116 @@
-import { useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Box } from '@react-three/drei';
-import * as THREE from 'three';
+import { Html, useGLTF } from "@react-three/drei";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Suspense, useEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 
-function RotatingBox() {
-  const meshRef = useRef<THREE.Mesh>(null);
+const MODEL_URL = "/models/background.glb";
+const SPINNER_STYLE_ID = "animated-logo-spinner-style";
 
-  useFrame((state) => {
-    if (!meshRef.current) return;
-    // 부드러운 회전 애니메이션
-    meshRef.current.rotation.x = state.clock.elapsedTime * 0.3;
-    meshRef.current.rotation.y = state.clock.elapsedTime * 0.5;
+function ensureSpinnerKeyframes() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(SPINNER_STYLE_ID)) {
+    return;
+  }
+  const style = document.createElement("style");
+  style.id = SPINNER_STYLE_ID;
+  style.textContent = `
+    @keyframes animated-logo-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
-    // 약간의 떠있는 효과
-    meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.2;
+function LogoModel() {
+  const groupRef = useRef<THREE.Group>(null);
+  const { scene } = useGLTF(MODEL_URL);
+
+  const processed = useMemo(() => {
+    const clone = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const scale = 1.8 / maxDim;
+
+    clone.position.set(-center.x, -center.y, -center.z);
+    clone.scale.setScalar(scale);
+    clone.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+      }
+    });
+    return clone;
+  }, [scene]);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    groupRef.current.rotation.y = clock.elapsedTime * 0.6;
+    groupRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.4) * 0.1;
   });
 
   return (
-    <Box ref={meshRef} args={[1, 1, 1]}>
-      <meshStandardMaterial
-        color="#0ea5e9"
-        metalness={0.7}
-        roughness={0.2}
-        emissive="#0ea5e9"
-        emissiveIntensity={0.3}
+    <group ref={groupRef}>
+      <primitive object={processed} />
+    </group>
+  );
+}
+
+function LogoFallback() {
+  return (
+    <Html center>
+      <div
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: "999px",
+          border: "3px solid rgba(148, 163, 184, 0.35)",
+          borderTopColor: "rgba(148, 163, 184, 0.9)",
+          animation: "animated-logo-spin 0.9s linear infinite",
+        }}
       />
-    </Box>
+    </Html>
   );
 }
 
 export function AnimatedLogo3D() {
+  const clearedRef = useRef(false);
+
+  if (!clearedRef.current) {
+    useGLTF.clear(MODEL_URL);
+    clearedRef.current = true;
+  }
+
+  useEffect(() => {
+    ensureSpinnerKeyframes();
+    useGLTF.preload(MODEL_URL);
+    return () => {
+      useGLTF.clear(MODEL_URL);
+    };
+  }, []);
+
   return (
-    <div style={{ width: '80px', height: '80px' }}>
-      <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#a855f7" />
-        <RotatingBox />
-        <OrbitControls enableZoom={false} enablePan={false} />
+    <div
+      style={{
+        width: "88px",
+        height: "88px",
+        pointerEvents: "none",
+      }}
+    >
+      <Canvas
+        camera={{ position: [0, 0.2, 3], fov: 40 }}
+        shadows
+        gl={{ antialias: true }}
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[6, 8, 6]} intensity={1.1} castShadow />
+        <directionalLight position={[-4, 3, -3]} intensity={0.5} />
+        <Suspense fallback={<LogoFallback />}>
+          <LogoModel />
+        </Suspense>
       </Canvas>
     </div>
   );

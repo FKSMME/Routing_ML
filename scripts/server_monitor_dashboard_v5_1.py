@@ -31,7 +31,7 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.2.4"
+__version__ = "5.2.5"
 __build_date__ = "2025-10-20"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
@@ -234,11 +234,11 @@ SERVICES: Tuple[Service, ...] = (
         key="home",
         name="Home",
         icon="🏠",
-        check_url="https://localhost:3000/",
+        check_url="https://localhost:5176/",
         start_command="run_frontend_home.bat",
         links=(
-            ("Local", "https://localhost:3000"),
-            ("Domain", "https://rtml.ksm.co.kr:3000"),
+            ("Local", "https://localhost:5176"),
+            ("Domain", "https://rtml.ksm.co.kr:5176"),
         ),
     ),
     Service(
@@ -1053,7 +1053,7 @@ class RoutingMLDashboard:
                 if parsed.port:
                     target_ports.add(parsed.port)
 
-            target_ports.update({8000, 8001, 8002, 3000, 5173, 5174})
+            target_ports.update({8000, 8001, 8002, 5173, 5174, 5176})
 
             active_pids = set()
             for conn in psutil.net_connections(kind="inet"):
@@ -1673,4 +1673,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -32,7 +32,7 @@ log "   ✅ 프로세스 정리 완료"
 # 2. 포트 확인 및 정리
 log ""
 log "2️⃣ 포트 상태 확인..."
-for port in 8000 5173 5174 8080; do
+for port in 8000 5173 5174 5176 8080; do
     PID=$(lsof -ti:$port 2>/dev/null)
     if [ ! -z "$PID" ]; then
         log "   Port $port 정리 중 (PID: $PID)..."
@@ -47,7 +47,7 @@ log "3️⃣ 환경 변수 설정..."
 export PYTHONPATH=/workspaces/Routing_ML_4:$PYTHONPATH
 export JWT_SECRET_KEY="local-dev-secret-key-min-32-chars-long-do-not-use-in-production-12345"
 export DATABASE_URL="sqlite:///./routing_ml.db"
-export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:8080"
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,https://localhost:3000,http://localhost:3001,https://localhost:3001,http://localhost:5173,https://localhost:5173,http://localhost:5174,https://localhost:5174,http://localhost:5176,https://localhost:5176,http://10.204.2.28:5176,https://10.204.2.28:5176,http://localhost:8080,https://localhost:8080"
 export ENVIRONMENT="development"
 export LOG_LEVEL="INFO"
 log "   ✅ 환경 변수 설정 완료"

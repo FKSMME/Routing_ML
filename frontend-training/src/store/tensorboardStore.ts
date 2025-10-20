@@ -91,9 +91,12 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
     set({ loadingProjectors: true, error: null });
     try {
       const projectors = await fetchTensorboardProjectors();
+      const preferredProjector = projectors.find(
+        (projector: TensorboardProjectorSummary) => projector.id === "root"
+      );
       let selectedId = state.selectedId;
       if (!selectedId || !projectors.some((projector: TensorboardProjectorSummary) => projector.id === selectedId)) {
-        selectedId = projectors.length > 0 ? projectors[0].id : null;
+        selectedId = preferredProjector?.id ?? (projectors.length > 0 ? projectors[0].id : null);
       }
       set({
         projectors,

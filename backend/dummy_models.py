@@ -6,16 +6,46 @@ import numpy as np
 class DummySimilarityEngine:
     """Dummy similarity engine that returns mock results."""
 
-    def __init__(self):
+    def __init__(self, n_dimensions: int = 37):
+        self.index_built = True
+        self.item_codes = [
+            "DUMMY-SEAL-001",
+            "DUMMY-SEAL-002",
+            "DUMMY-SEAL-003",
+            "DUMMY-GASKET-001",
+            "DUMMY-GASKET-002",
+            "DUMMY-PART-001",
+            "DUMMY-PART-002",
+            "DUMMY-PART-003",
+        ]
+        self.vectors = np.random.randn(len(self.item_codes), n_dimensions).astype(np.float32)
         self.index_data = None
-        self.index_ids = []
+        self.index_ids = list(range(len(self.item_codes)))
 
-    def search(self, query_vector, k=10):
-        """Return mock search results."""
-        # Return mock similarities and indices
-        mock_distances = np.random.random(k) * 0.5  # Random values 0-0.5
-        mock_indices = np.arange(k)
-        return mock_distances, mock_indices
+    def search(self, query_vector, k: int = 10, threshold: float = 0.0):
+        """Return mock search results with deterministic structure."""
+        results = []
+        max_k = min(k, len(self.item_codes))
+        for idx, code in enumerate(self.item_codes[:max_k]):
+            similarity = float(max(0.0, 0.95 - idx * 0.05))
+            distance = float(max(0.0, 1.0 - similarity))
+            results.append(
+                {
+                    "item_code": code,
+                    "similarity": similarity,
+                    "distance": distance,
+                    "vector": self.vectors[idx].tolist() if idx < len(self.vectors) else [],
+                }
+            )
+        return results
+
+    def build_index(self, vectors, item_codes):
+        """Store provided vectors and labels to mimic a trained engine."""
+        self.vectors = np.asarray(vectors, dtype=np.float32)
+        self.item_codes = list(item_codes)
+        self.index_ids = list(range(len(self.item_codes)))
+        self.index_built = True
+        return self
 
 
 class DummyEncoder:
@@ -28,6 +58,9 @@ class DummyEncoder:
     def transform(self, X):
         """Return input as-is."""
         return X
+
+    def fit(self, X, y=None):
+        return self
 
 
 class DummyScaler:
@@ -43,3 +76,6 @@ class DummyScaler:
     def transform(self, X):
         """Return input as-is."""
         return X
+
+    def fit(self, X, y=None):
+        return self

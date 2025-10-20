@@ -29,12 +29,15 @@ new_origins = '''allowed_origins: List[str] = Field(
             "http://10.204.2.28:3000",
             "http://10.204.2.28:5173",
             "http://10.204.2.28:5174",
+            "http://10.204.2.28:5176",
             "https://rtml.ksm.co.kr:3000",
             "https://rtml.ksm.co.kr:5173",
             "https://rtml.ksm.co.kr:5174",
+            "https://rtml.ksm.co.kr:5176",
             "https://mcs.ksm.co.kr:3000",
             "https://mcs.ksm.co.kr:5173",
             "https://mcs.ksm.co.kr:5174",
+            "https://mcs.ksm.co.kr:5176",
         ],'''
 
 # 간단한 방법: 라인 번호로 직접 수정

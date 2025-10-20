@@ -53,10 +53,10 @@ SERVICES: Tuple[Service, ...] = (
     Service(
         key="home",
         name="Home Dashboard",
-        check_url="https://localhost:3000/",
+        check_url="https://localhost:5176/",
         links=(
-            ("Local", "https://localhost:3000"),
-            ("LAN", "https://10.204.2.28:3000"),
+            ("Local", "https://localhost:5176"),
+            ("LAN", "https://10.204.2.28:5176"),
         ),
     ),
     Service(

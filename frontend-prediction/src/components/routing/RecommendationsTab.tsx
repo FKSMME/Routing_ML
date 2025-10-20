@@ -11,16 +11,37 @@ interface RecommendationsTabProps extends RoutingCanvasProps {
 
 export function RecommendationsTab({ initialView = "timeline", ...canvasProps }: RecommendationsTabProps) {
   const activeProductId = useRoutingStore((state) => state.activeProductId);
-  const recommendations = useRoutingStore((state) => state.recommendations);
+  const productTabs = useRoutingStore((state) => state.productTabs);
   const insertOperation = useRoutingStore((state) => state.insertOperation);
 
   const [view, setView] = useState<ViewMode>(initialView);
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
   const baseId = useId();
 
+  // Read from productTabs instead of recommendations for automatic sync
   const activeBucket = useMemo(
-    () => recommendations.find((bucket) => bucket.itemCode === activeProductId) ?? null,
-    [activeProductId, recommendations],
+    () => {
+      const tab = productTabs.find(t => t.id === activeProductId);
+      if (!tab) return null;
+
+      // Convert timeline steps back to operations for display
+      const operations = tab.timeline.map(step => ({
+        PROC_SEQ: step.seq,
+        PROC_CD: step.processCode,
+        PROC_DESC: step.description ?? undefined,
+        SETUP_TIME: step.setupTime ?? undefined,
+        RUN_TIME: step.runTime ?? undefined,
+        WAIT_TIME: step.waitTime ?? undefined,
+        metadata: step.metadata ?? undefined,
+      }));
+
+      return {
+        itemCode: tab.productCode,
+        candidateId: tab.candidateId ?? null,
+        operations,
+      };
+    },
+    [activeProductId, productTabs],
   );
 
   const operations = activeBucket?.operations ?? [];

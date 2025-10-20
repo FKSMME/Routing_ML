@@ -29,7 +29,7 @@ services:
       # - ACCESS_DIR=${ACCESS_DIR:-/app/data/db}
       # Features
       - ENABLE_CANDIDATE_PERSISTENCE=${ENABLE_CANDIDATE_PERSISTENCE:-false}
-      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:5174
+      - ALLOWED_ORIGINS=http://localhost:3000,https://localhost:3000,http://localhost:5173,https://localhost:5173,http://localhost:5174,https://localhost:5174
     volumes:
       - ./models:/app/models
       - ./reports:/app/reports

@@ -417,7 +417,13 @@ const ModelViewer = ({
   autoRotateSpeed = 0.35,
   onModelLoaded,
 }: ModelViewerProps) => {
-  useEffect(() => void useGLTF.preload(url), [url]);
+  useEffect(() => {
+    useGLTF.clear(url);
+    useGLTF.preload(url);
+    return () => {
+      useGLTF.clear(url);
+    };
+  }, [url]);
   const pivot = useRef(new THREE.Vector3()).current;
   const contactRef = useRef<any>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);

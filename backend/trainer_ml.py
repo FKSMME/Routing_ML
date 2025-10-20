@@ -11,6 +11,8 @@ import warnings
 from pathlib import Path
 from typing import Any, Callable, List, Tuple, Dict, Optional, Union
 import sys
+import io
+import pickle
 import joblib
 from joblib import Parallel, delayed
 import multiprocessing
@@ -44,6 +46,36 @@ from common.time_aggregator import TimeAggregationConfig, generate_time_profiles
 from models.manifest import write_manifest
 
 logger = get_logger("trainer_ml")
+
+
+class _LegacyDummyPickleModule:
+    """joblib 호환을 위한 레거시 더미 피클 로더."""
+
+    @staticmethod
+    def loads(data: bytes):
+        buffer = io.BytesIO(data)
+
+        class _LegacyUnpickler(pickle.Unpickler):
+            def find_class(self, module, name):  # noqa: D401
+                if module == "__main__" and name == "DummySimilarityEngine":
+                    from backend.dummy_models import DummySimilarityEngine  # pylint: disable=import-outside-toplevel
+
+                    return DummySimilarityEngine
+                if module == "__main__" and name == "DummyEncoder":
+                    from backend.dummy_models import DummyEncoder  # pylint: disable=import-outside-toplevel
+
+                    return DummyEncoder
+                if module == "__main__" and name == "DummyScaler":
+                    from backend.dummy_models import DummyScaler  # pylint: disable=import-outside-toplevel
+
+                    return DummyScaler
+                return super().find_class(module, name)
+
+        return _LegacyUnpickler(buffer).load()
+
+    @staticmethod
+    def dumps(obj, protocol=None):
+        return pickle.dumps(obj, protocol=protocol)
 
 warnings.filterwarnings(
     "ignore",
@@ -1185,10 +1217,58 @@ def load_optimized_model(
     logger.info("모델 로드 시작, 디렉토리: %s", load_dir)
     start_time = time.time()
     p = Path(load_dir).expanduser()
-    searcher = joblib.load(p / "similarity_engine.joblib")
-    encoder = joblib.load(p / "encoder.joblib")
-    scaler = joblib.load(p / "scaler.joblib")
-    feature_columns = joblib.load(p / "feature_columns.joblib")
+
+    similarity_path = p / "similarity_engine.joblib"
+    encoder_path = p / "encoder.joblib"
+    scaler_path = p / "scaler.joblib"
+    feature_column_path = p / "feature_columns.joblib"
+
+    try:
+        searcher = joblib.load(similarity_path)
+    except AttributeError as exc:
+        if "DummySimilarityEngine" in str(exc):
+            logger.warning("레거시 DummySimilarityEngine 피클을 감지했습니다. 호환 모드로 재시도합니다.")
+            try:
+                searcher = joblib.load(similarity_path, pickle_module=_LegacyDummyPickleModule)
+            except Exception as fallback_exc:  # noqa: BLE001
+                logger.error("호환 모드 로드 실패, 기본 더미 검색 엔진으로 대체합니다: %s", fallback_exc)
+                from backend.dummy_models import DummySimilarityEngine  # pylint: disable=import-outside-toplevel
+
+                searcher = DummySimilarityEngine()
+        else:
+            raise
+
+    try:
+        encoder = joblib.load(encoder_path)
+    except AttributeError as exc:
+        if "DummyEncoder" in str(exc):
+            logger.warning("레거시 DummyEncoder 피클을 감지했습니다. 호환 모드로 재시도합니다.")
+            try:
+                encoder = joblib.load(encoder_path, pickle_module=_LegacyDummyPickleModule)
+            except Exception as fallback_exc:  # noqa: BLE001
+                logger.error("호환 모드 DummyEncoder 로드 실패, 기본 더미 인코더로 대체합니다: %s", fallback_exc)
+                from backend.dummy_models import DummyEncoder  # pylint: disable=import-outside-toplevel
+
+                encoder = DummyEncoder()
+        else:
+            raise
+
+    try:
+        scaler = joblib.load(scaler_path)
+    except AttributeError as exc:
+        if "DummyScaler" in str(exc):
+            logger.warning("레거시 DummyScaler 피클을 감지했습니다. 호환 모드로 재시도합니다.")
+            try:
+                scaler = joblib.load(scaler_path, pickle_module=_LegacyDummyPickleModule)
+            except Exception as fallback_exc:  # noqa: BLE001
+                logger.error("호환 모드 DummyScaler 로드 실패, 기본 더미 스케일러로 대체합니다: %s", fallback_exc)
+                from backend.dummy_models import DummyScaler  # pylint: disable=import-outside-toplevel
+
+                scaler = DummyScaler()
+        else:
+            raise
+
+    feature_columns = joblib.load(feature_column_path)
     elapsed_time = time.time() - start_time
     logger.info("모델 로드: %s, 소요 시간: %.2f초", p, elapsed_time)
     return searcher, encoder, scaler, feature_columns
