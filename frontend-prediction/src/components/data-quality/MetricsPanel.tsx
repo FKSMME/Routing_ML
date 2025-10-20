@@ -12,6 +12,7 @@ import { ExportButton, type ExportFormat } from "./ExportButton";
 import { TimeRangeSelector, type TimeRange, type DateRange, getDateRangeFromSelection } from "./TimeRangeSelector";
 import { HistoricalMetricsChart } from "./HistoricalMetricsChart";
 import { exportMetricsToCSV, exportMetricsToPDF } from "../../services/exportService";
+import { checkMetricsForAlerts } from "../../services/alertService";
 import toast, { Toaster } from "react-hot-toast";
 
 interface MetricsPanelProps {
@@ -41,6 +42,23 @@ export function MetricsPanel({ autoRefreshInterval = 30 }: MetricsPanelProps) {
       const data = await fetchDataQualityMetrics();
       setMetrics(data);
       setLastUpdated(new Date());
+
+      // Check for alerts
+      const triggeredAlerts = checkMetricsForAlerts(data);
+      triggeredAlerts.forEach((alert) => {
+        const toastOptions = {
+          duration: 5000,
+          icon: alert.severity === "critical" ? "🔴" : alert.severity === "warning" ? "⚠️" : "ℹ️",
+        };
+
+        if (alert.severity === "critical") {
+          toast.error(alert.message, toastOptions);
+        } else if (alert.severity === "warning") {
+          toast(alert.message, { ...toastOptions, style: { background: "#713f12", color: "#fcd34d" } });
+        } else {
+          toast(alert.message, toastOptions);
+        }
+      });
     } catch (err) {
       console.error("Failed to load metrics:", err);
       setError(err instanceof Error ? err.message : "Failed to load metrics");

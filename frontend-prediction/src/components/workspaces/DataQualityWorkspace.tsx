@@ -13,6 +13,7 @@ import { MetricsPanel } from "@components/data-quality/MetricsPanel";
 import { IssuesPanel } from "@components/data-quality/IssuesPanel";
 import { PrometheusPanel } from "@components/data-quality/PrometheusPanel";
 import { HealthPanel } from "@components/data-quality/HealthPanel";
+import { AlertBell } from "@components/data-quality/AlertBell";
 
 // Type Definitions
 interface DataQualityMetrics {
@@ -79,6 +80,7 @@ export default function DataQualityWorkspace() {
               Real-time monitoring of data quality metrics, issues, and system health
             </p>
           </div>
+          <AlertBell />
         </div>
       </div>
 
