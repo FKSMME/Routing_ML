@@ -8,7 +8,6 @@ import type { Connection, Edge, Node, NodeProps, ReactFlowInstance, Reconnect, V
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
@@ -554,7 +553,6 @@ function RoutingCanvasView({
             }}
             connectionLineType="bezier"
           >
-            <MiniMap pannable zoomable nodeColor={() => "#5b76d8"} />
             <Controls showZoom={false} showInteractive={false} />
             <Background gap={32} size={1} />
           </ReactFlow>

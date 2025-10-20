@@ -24,6 +24,10 @@ export interface ViewExplorerSampleResponse {
   columns: ViewExplorerColumn[];
   data: Array<Record<string, unknown>>;
   row_count: number;
+  page?: number;
+  page_size?: number;
+  total_pages?: number;
+  has_next?: boolean;
 }
 
 // Use relative URL to leverage Vite proxy in development
@@ -142,15 +146,39 @@ export async function fetchViewExplorerViews(): Promise<ViewExplorerView[]> {
   return response.data;
 }
 
+export interface ViewExplorerSampleRequestOptions {
+  limit?: number;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  searchColumn?: string;
+}
+
 export async function fetchViewExplorerSample(
   viewName: string,
-  limit = 200,
+  options: ViewExplorerSampleRequestOptions = {},
 ): Promise<ViewExplorerSampleResponse> {
   const encodedViewName = encodeURIComponent(viewName);
+  const params: Record<string, unknown> = {};
+  if (options.limit != null) {
+    params.limit = options.limit;
+  }
+  if (options.page != null) {
+    params.page = options.page;
+  }
+  if (options.pageSize != null) {
+    params.page_size = options.pageSize;
+  }
+  if (options.search && options.search.length > 0) {
+    params.search = options.search;
+  }
+  if (options.searchColumn && options.searchColumn.length > 0) {
+    params.search_column = options.searchColumn;
+  }
   const response = await api.get<ViewExplorerSampleResponse>(
     `/view-explorer/views/${encodedViewName}/sample`,
     {
-      params: { limit },
+      params,
     },
   );
   return response.data;

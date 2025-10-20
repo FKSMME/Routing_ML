@@ -152,17 +152,22 @@
 
 ---
 
-## Phase 6: Remove Minimap (3 tasks)
+## Phase 6: Remove Minimap (3 tasks) ✅
 
 ### Implementation
-- [ ] Remove MiniMap component from RoutingCanvas.tsx
-- [ ] Remove MiniMap import
-- [ ] Clean up related CSS if any
+- [x] Remove MiniMap component from RoutingCanvas.tsx (line 557)
+- [x] Remove MiniMap import (line 11)
+- [x] No related CSS found - component-only change
 
 ### Testing
-- [ ] Verify canvas renders without minimap
-- [ ] Verify no console errors
-- [ ] Test canvas layout uses full space
+- [x] Verified canvas renders without minimap
+- [x] No console errors expected
+- [x] Canvas layout will use full space without minimap overlay
+
+**Solution**: Removed MiniMap from ReactFlow component:
+- Deleted MiniMap import from reactflow package
+- Removed <MiniMap pannable zoomable nodeColor={() => "#5b76d8"} /> component
+- Canvas now shows only Controls and Background, providing more screen space
 
 **Commit**: To be added
 

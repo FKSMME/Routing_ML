@@ -529,13 +529,13 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
               : `${startIndex + 1} - ${endIndex} / ${totalRowCount}건 표시`}
           </div>
           <div className="erp-item-explorer__footer-controls">
-            <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
+            <button type="button" onClick={() => handlePageChange(effectivePage - 1)} disabled={effectivePage <= 1}>
               이전
             </button>
             <span>
-              {responsePage} / {totalPages}
+              {effectivePage} / {totalPages}
             </span>
-            <button type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
+            <button type="button" onClick={() => handlePageChange(effectivePage + 1)} disabled={effectivePage >= totalPages}>
               다음
             </button>
           </div>
