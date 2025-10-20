@@ -1,4 +1,5 @@
 import type {
+  NodeConnection,
   OperationStep,
   PredictionResponse,
   ProcessGroupColumnDefinition,
@@ -202,6 +203,8 @@ export interface RoutingStoreState {
   validationErrors: string[];
   sourceItemCodes: string[];
   selectedCandidateId: string | null;
+  connections: NodeConnection[];
+  selectedConnectionId: string | null;
   setLoading: (loading: boolean) => void;
   setSaving: (saving: boolean) => void;
   setERPRequired: (enabled: boolean) => void;
@@ -254,6 +257,11 @@ export interface RoutingStoreState {
   rollbackToLastSuccess: () => void;
   undo: () => void;
   redo: () => void;
+  addConnection: (source: string, target: string) => void;
+  removeConnection: (connectionId: string) => void;
+  updateConnection: (connectionId: string, patch: Partial<NodeConnection>) => void;
+  setSelectedConnection: (connectionId: string | null) => void;
+  autoGenerateConnections: (timeline: TimelineStep[]) => void;
 }
 
 type PersistedSelectionState = Omit<
@@ -871,6 +879,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   validationErrors: [],
   sourceItemCodes: [],
   selectedCandidateId: null,
+  connections: [],
+  selectedConnectionId: null,
   setLoading: (loading) => set({ loading }),
   setSaving: (saving) => set({ saving }),
   setERPRequired: (enabled) => set({ erpRequired: enabled, dirty: true }),
@@ -1620,6 +1630,81 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         productTabs: updatedTabs,
         history: { past, future },
         dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
+      };
+    }),
+  addConnection: (source, target) =>
+    set((state) => {
+      // Check for duplicate connections
+      if (state.connections.some((conn) => conn.sourceNodeId === source && conn.targetNodeId === target)) {
+        return state;
+      }
+      const newConnection: NodeConnection = {
+        id: createId(),
+        sourceNodeId: source,
+        targetNodeId: target,
+        sourcePort: 'output',
+        targetPort: 'input',
+        metadata: {
+          createdAt: new Date().toISOString(),
+          createdBy: 'manual',
+        },
+      };
+      return {
+        connections: [...state.connections, newConnection],
+        dirty: true,
+      };
+    }),
+  removeConnection: (connectionId) =>
+    set((state) => {
+      const nextConnections = state.connections.filter((conn) => conn.id !== connectionId);
+      if (nextConnections.length === state.connections.length) {
+        return state;
+      }
+      return {
+        connections: nextConnections,
+        selectedConnectionId: state.selectedConnectionId === connectionId ? null : state.selectedConnectionId,
+        dirty: true,
+      };
+    }),
+  updateConnection: (connectionId, patch) =>
+    set((state) => {
+      const index = state.connections.findIndex((conn) => conn.id === connectionId);
+      if (index === -1) {
+        return state;
+      }
+      const updated = { ...state.connections[index], ...patch };
+      const nextConnections = [...state.connections];
+      nextConnections[index] = updated;
+      return {
+        connections: nextConnections,
+        dirty: true,
+      };
+    }),
+  setSelectedConnection: (connectionId) =>
+    set({ selectedConnectionId: connectionId }),
+  autoGenerateConnections: (timeline) =>
+    set(() => {
+      if (timeline.length < 2) {
+        return { connections: [] };
+      }
+      const autoConnections: NodeConnection[] = [];
+      for (let i = 0; i < timeline.length - 1; i++) {
+        const sourceStep = timeline[i];
+        const targetStep = timeline[i + 1];
+        autoConnections.push({
+          id: `auto-${sourceStep.id}-${targetStep.id}`,
+          sourceNodeId: sourceStep.id,
+          targetNodeId: targetStep.id,
+          sourcePort: 'output',
+          targetPort: 'input',
+          metadata: {
+            createdAt: new Date().toISOString(),
+            createdBy: 'auto',
+          },
+        });
+      }
+      return {
+        connections: autoConnections,
       };
     }),
 });

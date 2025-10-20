@@ -228,3 +228,16 @@ export interface DataMappingProfileListResponse {
   profiles: DataMappingProfile[];
   total: number;
 }
+
+// Timeline Wire Connection Types
+export interface NodeConnection {
+  id: string;                           // Unique connection ID
+  sourceNodeId: string;                 // Source timeline step ID
+  targetNodeId: string;                 // Target timeline step ID
+  sourcePort?: 'output';                // Source connection point
+  targetPort?: 'input';                 // Target connection point
+  metadata?: {
+    createdAt: string;
+    createdBy: 'auto' | 'manual';
+  };
+}
