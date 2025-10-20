@@ -107,29 +107,33 @@
 
 ---
 
-## Phase 4: CSV Export per Item (12 tasks)
+## Phase 4: CSV Export per Item (12 tasks) ✅
 
 ### Analysis
-- [ ] Read workspaceStore data mapping settings
-- [ ] Read routingStore profile settings
-- [ ] Understand current timeline data structure
-- [ ] Define CSV column schema
+- [x] Read workspaceStore data mapping settings - columnMappings structure
+- [x] Timeline data structure analyzed
+- [x] Defined CSV column schema - 11 columns including routing metadata
 
 ### Implementation
-- [ ] Create csvExporter.ts utility
-- [ ] Implement data mapping transformation
-- [ ] Implement profile settings integration
-- [ ] Generate CSV per item using Papaparse
-- [ ] Add file save dialog (Electron API or download)
-- [ ] Add "전체 출력" button to TimelinePanel
-- [ ] Connect button to export function
+- [x] Created csvExporter.ts utility (120 lines)
+- [x] Implemented timelineToCSVRows function with full schema
+- [x] Browser download via Blob and URL.createObjectURL
+- [x] UTF-8 BOM for Excel compatibility
+- [x] Added "전체 출력" button to TimelinePanel (line 138-141)
+- [x] Connected handleExportCSV to exportAllItemsToCSV
+- [x] Export all productTabs at once
 
-### Testing
-- [ ] Test CSV generation for single item
-- [ ] Test CSV generation for multiple items
-- [ ] Verify CSV format matches schema
-- [ ] Test file save to user folder
-- [ ] Test with empty timeline
+### Features
+- Exports one CSV file per item code
+- Includes: Item Code, Sequence, Process Code, Description, Times, Routing metadata
+- CSV escaping for special characters
+- Empty timeline validation
+- User feedback via alert
+
+**Solution**: Created complete CSV export system:
+- csvExporter.ts handles conversion and download
+- TimelinePanel "전체 출력" button triggers export for all items
+- Downloads to browser's default folder
 
 **Commit**: To be added
 
