@@ -158,7 +158,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
       setCurrentPage(1);
       setHasRequestedData(true);
       if (hasRequestedData && isSameKeyword) {
-        void refetchSample();
+        void refetchSample({ cancelRefetch: false });
       }
     },
     [hasRequestedData, refetchSample, search, searchDraft],
@@ -217,6 +217,14 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     [onAddItems],
   );
 
+  const handleRefreshViews = useCallback(() => {
+    void refetchViews({ cancelRefetch: false });
+  }, [refetchViews]);
+
+  const handleRefreshSample = useCallback(() => {
+    void refetchSample({ cancelRefetch: false });
+  }, [refetchSample]);
+
   const statusMessage = useMemo(() => {
     if (isViewsLoading) {
       return "ERP View 목록을 불러오는 중입니다.";
@@ -259,9 +267,6 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
   ]);
 
   const clearImportDragState = useCallback(() => {
-    if (!hasItemCodesDragData()) {
-      return;
-    }
     const dragData = readItemCodesDragData();
     if (!dragData) {
       return;
@@ -328,7 +333,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
 
   const handleDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    if (!hasItemCodesDragData()) {
+    if (!hasItemCodesDragData(event.dataTransfer)) {
       return;
     }
     setIsDraggingOverImport(true);
@@ -355,7 +360,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
             <button
               type="button"
               className="erp-item-explorer__action"
-              onClick={() => refetchViews()}
+              onClick={handleRefreshViews}
               title="ERP View 목록 새로고침"
             >
               <RefreshCw size={16} />
@@ -363,8 +368,8 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
             <button
               type="button"
               className="erp-item-explorer__action"
-              onClick={() => refetchSample()}
-              disabled={!selectedView}
+              onClick={handleRefreshSample}
+              disabled={!selectedView || !hasRequestedData}
               title="샘플 데이터 새로고침"
             >
               <RefreshCw size={16} />

@@ -3,6 +3,7 @@
  * Only shows ERP View: dbo.BI_ITEM_INFO_VIEW
  */
 import { useErpViewSample } from "@hooks/useErpViewExplorer";
+import type { ViewExplorerColumn } from "@lib/apiClient";
 import { Layers, Search } from "lucide-react";
 import { useCallback, useEffect, useState, FormEvent, ChangeEvent } from "react";
 
@@ -28,8 +29,8 @@ export function MasterDataSimpleWorkspace() {
     enabled: true,
   });
 
-  const erpColumns = viewSample?.columns ?? [];
-  const erpRows = viewSample?.data ?? [];
+  const erpColumns: ViewExplorerColumn[] = viewSample?.columns ?? [];
+  const erpRows = (viewSample?.data ?? []) as Array<Record<string, unknown>>;
   const totalRowCount = viewSample?.row_count ?? 0;
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export function MasterDataSimpleWorkspace() {
       setViewSearch(keyword);
       setCurrentPage(1);
       if (isSame) {
-        void refetchViewSample();
+        void refetchViewSample({ cancelRefetch: false });
       }
     },
     [refetchViewSample, searchDraft, viewSearch],
