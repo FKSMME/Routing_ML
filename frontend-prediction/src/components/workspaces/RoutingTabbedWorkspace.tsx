@@ -72,7 +72,7 @@ export function RoutingTabbedWorkspace({
   const tabs = [
     {
       id: "control",
-      label: "제어판",
+      label: "예측 대상 품목",
       icon: null,
       content: (
         <div className="routing-control-tab" style={{ display: 'flex', width: '100%', gap: '1rem', padding: '1rem' }}>
@@ -81,12 +81,12 @@ export function RoutingTabbedWorkspace({
             <ErpItemExplorer onAddItems={onChangeItemCodes} />
           </div>
 
-          {/* 우측: 제어판 (60%) */}
+          {/* 우측: 라우팅 생성 제어 (60%) */}
           <div className="control-panel-section" style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {renderPredictionBanner?.()}
 
             <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 제어판</h3>
+              <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 라우팅 생성</h3>
               <PredictionControls
                 itemCodes={itemCodes}
                 onChangeItemCodes={onChangeItemCodes}
