@@ -1,7 +1,7 @@
 import { CardShell } from "@components/common/CardShell";
 import { HyperspeedBackground } from "@components/HyperspeedBackground";
 import { LogIn, UserPlus } from "lucide-react";
-import { type FormEvent,useState } from "react";
+import { type FormEvent, useState, useEffect } from "react";
 
 import { ThemeToggle } from "../ThemeToggle";
 
@@ -19,6 +19,29 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Force dark mode on login page
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    const currentTheme = htmlElement.getAttribute('data-theme');
+
+    // Set dark mode
+    htmlElement.setAttribute('data-theme', 'dark');
+    htmlElement.classList.add('dark');
+    htmlElement.classList.remove('light');
+
+    // Store previous theme
+    return () => {
+      // Restore previous theme on unmount if it was different
+      if (currentTheme && currentTheme !== 'dark') {
+        htmlElement.setAttribute('data-theme', currentTheme);
+        if (currentTheme === 'light') {
+          htmlElement.classList.add('light');
+          htmlElement.classList.remove('dark');
+        }
+      }
+    };
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
