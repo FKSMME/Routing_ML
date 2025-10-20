@@ -262,12 +262,12 @@ function RoutingCanvasView({
           target: step.id,
           animated: isSelected,
           style: {
-            stroke: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.4)',
+            stroke: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.8)',
             strokeWidth: isSelected ? 3 : 2,
           },
           markerEnd: {
             type: 'arrowclosed' as const,
-            color: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.4)',
+            color: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.8)',
           },
         };
       }),
