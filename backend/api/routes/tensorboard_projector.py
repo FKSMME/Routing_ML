@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from sklearn.decomposition import PCA
 
 from backend.api.security import require_auth
+from backend.api.config import get_settings
 
 router = APIRouter(
     prefix="/api/training/tensorboard",
@@ -100,6 +101,14 @@ class ExportProjectorRequest(BaseModel):
         ge=1,
         description="Optional hard cap on number of vectors to export after sampling.",
     )
+
+
+class TensorboardConfigResponse(BaseModel):
+    """TensorBoard Projector configuration."""
+
+    projector_path: str = Field(..., description="Configured export path for TensorBoard Projector")
+    projector_path_exists: bool = Field(..., description="Whether the path currently exists")
+    model_dir: str = Field(..., description="Model artifacts directory")
 
 
 @dataclass(frozen=True)
@@ -330,6 +339,18 @@ def _get_projector(projector_id: str) -> ProjectorData:
     return _cached_projector(projector_id, entry.signature)
 
 
+@router.get("/config", response_model=TensorboardConfigResponse)
+async def get_tensorboard_config() -> TensorboardConfigResponse:
+    """Return TensorBoard Projector configuration."""
+    settings = get_settings()
+    projector_path = settings.tensorboard_projector_path.resolve()
+    return TensorboardConfigResponse(
+        projector_path=str(projector_path),
+        projector_path_exists=projector_path.exists(),
+        model_dir=str(BASE_MODELS_DIR),
+    )
+
+
 @router.get("/projectors", response_model=List[ProjectorSummary])
 async def list_projectors() -> List[ProjectorSummary]:
     """Return available TensorBoard projector exports."""
@@ -354,12 +375,13 @@ async def list_projectors() -> List[ProjectorSummary]:
 @router.post("/projectors/export")
 async def export_projector(payload: ExportProjectorRequest) -> Dict[str, Any]:
     """Trigger fresh projector export from current model artifacts."""
+    settings = get_settings()
     script_path = REPO_ROOT / "models" / "export_tb_projector.py"
     if not script_path.exists():
         raise HTTPException(status_code=500, detail="export_tb_projector.py not found.")
 
     model_dir = BASE_MODELS_DIR
-    out_dir = (model_dir / "tb_projector").resolve()
+    out_dir = settings.tensorboard_projector_path.resolve()
     cmd = [
         sys.executable,
         str(script_path),

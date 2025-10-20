@@ -438,9 +438,23 @@ export const TensorboardEmbeddingPanel = () => {
   const [pointOpacity, setPointOpacity] = useState(0.9);
   const [showGrid, setShowGrid] = useState(true);
   const [showControls, setShowControls] = useState(false);
+  const [projectorPath, setProjectorPath] = useState<string | null>(null);
+  const [pathExists, setPathExists] = useState(false);
 
   useEffect(() => {
     void initialize();
+    // Fetch projector configuration
+    fetch("/api/training/tensorboard/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.projector_path) {
+          setProjectorPath(data.projector_path);
+          setPathExists(data.projector_path_exists);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch TensorBoard config:", err);
+      });
   }, [initialize]);
 
   const statusSignatureRef = useRef<string | null>(null);
@@ -519,6 +533,16 @@ export const TensorboardEmbeddingPanel = () => {
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Inspect model embeddings in 3D and review key training metrics.
           </p>
+          {projectorPath ? (
+            <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              Export path: <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{projectorPath}</code>
+              {pathExists ? (
+                <span className="ml-2 text-emerald-600 dark:text-emerald-400">✓ exists</span>
+              ) : (
+                <span className="ml-2 text-amber-600 dark:text-amber-400">⚠ not found</span>
+              )}
+            </p>
+          ) : null}
           {exportNote ? (
             <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">{exportNote}</p>
           ) : null}
