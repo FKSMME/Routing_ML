@@ -11,6 +11,8 @@
 import { useState } from "react";
 import { MetricsPanel } from "@components/data-quality/MetricsPanel";
 import { IssuesPanel } from "@components/data-quality/IssuesPanel";
+import { PrometheusPanel } from "@components/data-quality/PrometheusPanel";
+import { HealthPanel } from "@components/data-quality/HealthPanel";
 
 // Type Definitions
 interface DataQualityMetrics {
@@ -126,17 +128,11 @@ export default function DataQualityWorkspace() {
         )}
 
         {activeTab === "prometheus" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Prometheus Metrics</h2>
-            <p className="text-gray-400">Prometheus panel will be implemented in Phase 4</p>
-          </div>
+          <PrometheusPanel />
         )}
 
         {activeTab === "health" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">System Health</h2>
-            <p className="text-gray-400">Health panel will be implemented in Phase 4</p>
-          </div>
+          <HealthPanel />
         )}
       </div>
     </div>
