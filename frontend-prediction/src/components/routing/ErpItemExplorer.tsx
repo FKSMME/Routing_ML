@@ -10,9 +10,8 @@ interface ErpItemExplorerProps {
 
 const DEFAULT_VIEW_MATCHERS = [/ITEM/i, /PRODUCT/i, /MASTER/i];
 const DEFAULT_COLUMN_MATCHERS = [/ITEM_CD/i, /ITEM/i, /CODE/i];
-const SAMPLE_LIMIT_STEP = 500;
-const INITIAL_SAMPLE_LIMIT = 500;
-const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const PAGE_SIZE_OPTIONS = [10, 20, 30];
+const DEFAULT_PAGE_SIZE = 30;
 
 const normalizeItems = (items: string[]): string[] => {
   return Array.from(
@@ -30,11 +29,11 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
   const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
   const [search, setSearch] = useState("");
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sampleLimit, setSampleLimit] = useState(INITIAL_SAMPLE_LIMIT);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isDraggingOverImport, setIsDraggingOverImport] = useState(false);
+  const [hasRequestedData, setHasRequestedData] = useState(false);
 
   const defaultViewName = useMemo(() => {
     if (views.length === 0) {
@@ -61,10 +60,16 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     isError: isSampleError,
     error: sampleError,
     refetch: refetchSample,
-  } = useErpViewSample(selectedView, { limit: sampleLimit, enabled: Boolean(selectedView) });
+  } = useErpViewSample(selectedView, {
+    page: currentPage,
+    pageSize,
+    search: search.length > 0 ? search : undefined,
+    searchColumn: selectedColumn ?? undefined,
+    enabled: Boolean(selectedView) && hasRequestedData,
+  });
 
   const columnOptions = viewSample?.columns ?? [];
-  const rowCount = viewSample?.row_count ?? 0;
+  const totalRowCount = viewSample?.row_count ?? 0;
 
   const defaultColumnName = useMemo(() => {
     if (columnOptions.length === 0) {
@@ -86,15 +91,39 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
   }, [defaultColumnName, selectedColumn]);
 
   useEffect(() => {
+    setSearchDraft(search);
+  }, [search]);
+
+  useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedColumn]);
+  }, [selectedColumn]);
+
+  useEffect(() => {
+    if (!selectedView) {
+      return;
+    }
+    setSelectedColumn(null);
+    setSelectedItems(new Set());
+    setSearch("");
+    setSearchDraft("");
+    setCurrentPage(1);
+    setHasRequestedData(false);
+  }, [selectedView]);
 
   const sampleRows = viewSample?.data ?? [];
+  const responsePage = viewSample?.page ?? currentPage;
+  const responsePageSize = viewSample?.page_size ?? pageSize;
+  const totalPages = viewSample?.total_pages ?? (responsePageSize > 0 ? Math.max(1, Math.ceil(totalRowCount / responsePageSize)) : 1);
+  const pageStartIndex = totalRowCount === 0 ? 0 : Math.max((responsePage - 1) * responsePageSize, 0);
+  const effectivePage = totalPages === 0 ? 1 : Math.min(Math.max(responsePage, 1), totalPages);
+  const startIndex = totalRowCount === 0 ? 0 : pageStartIndex;
+  const endIndex = totalRowCount === 0 ? 0 : Math.min(pageStartIndex + sampleRows.length, totalRowCount);
+
   const availableItems = useMemo(() => {
     if (!selectedColumn) {
       return [];
     }
-    const values = (sampleRows ?? [])
+    const values = sampleRows
       .map((row) => {
         const value = row[selectedColumn];
         if (typeof value === "string") {
@@ -115,66 +144,40 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     return normalizeItems(values);
   }, [sampleRows, selectedColumn]);
 
-  useEffect(() => {
-    setSelectedItems((prev) => {
-      if (prev.size === 0) {
-        return prev;
-      }
-      const next = new Set<string>();
-      for (const item of prev) {
-        if (availableItems.includes(item)) {
-          next.add(item);
-        }
-      }
-      return next;
-    });
-  }, [availableItems]);
-
-  useEffect(() => {
-    setSearchDraft(search);
-  }, [search]);
-
-  const filteredItems = useMemo(() => {
-    if (search.trim().length === 0) {
-      return availableItems;
-    }
-    const keyword = search.trim().toLowerCase();
-    return availableItems.filter((item) => item.toLowerCase().includes(keyword));
-  }, [availableItems, search]);
-
+  const filteredItems = availableItems;
+  const paginatedItems = filteredItems;
   const selectedCount = selectedItems.size;
-  const totalFiltered = filteredItems.length;
-  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalFiltered);
-  const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
-  const canLoadMore = Boolean(rowCount && sampleRows.length < rowCount);
-
-  const handleSearchSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSearch(searchDraft.trim());
-    setCurrentPage(1);
-  }, [searchDraft]);
+  const handleSearchSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const keyword = searchDraft.trim();
+      const isSameKeyword = keyword === search;
+      setSearch(keyword);
+      setCurrentPage(1);
+      setHasRequestedData(true);
+      if (hasRequestedData && isSameKeyword) {
+        void refetchSample();
+      }
+    },
+    [hasRequestedData, refetchSample, search, searchDraft],
+  );
 
   const handlePageSizeChange = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
-    setPageSize(Number(event.target.value));
+    const nextSize = Number(event.target.value);
+    setPageSize(nextSize);
     setCurrentPage(1);
   }, []);
 
-  const handlePageChange = useCallback((nextPage: number) => {
-    setCurrentPage(Math.min(Math.max(nextPage, 1), totalPages));
-  }, [totalPages]);
-
-  const handleLoadMore = useCallback(() => {
-    if (!rowCount) {
-      return;
-    }
-    const nextLimit = Math.min(sampleLimit + SAMPLE_LIMIT_STEP, rowCount);
-    if (nextLimit > sampleLimit) {
-      setSampleLimit(nextLimit);
-    }
-  }, [sampleLimit, rowCount]);
+  const handlePageChange = useCallback(
+    (nextPage: number) => {
+      setCurrentPage((prev) => {
+        const clamped = Math.min(Math.max(nextPage, 1), totalPages);
+        return clamped === prev ? prev : clamped;
+      });
+    },
+    [totalPages],
+  );
 
   const handleToggleSelection = useCallback((item: string) => {
     setSelectedItems((prev) => {
@@ -214,26 +217,45 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
   );
 
   const statusMessage = useMemo(() => {
-    if (isViewsLoading || isSampleLoading) {
-      return "ERP View 데이터를 불러오는 중입니다.";
+    if (isViewsLoading) {
+      return "ERP View 목록을 불러오는 중입니다.";
     }
     if (viewsError) {
       return "ERP View 목록을 불러오지 못했습니다.";
     }
-    if (sampleError) {
-      return "ERP View 샘플 데이터를 불러오지 못했습니다.";
-    }
     if (!selectedView) {
       return "ERP View를 선택하세요.";
+    }
+    if (!hasRequestedData) {
+      return "검색 버튼을 눌러 데이터를 불러오세요.";
+    }
+    if (isSampleLoading) {
+      return "ERP View 데이터를 불러오는 중입니다.";
+    }
+    if (sampleError) {
+      return "ERP View 데이터를 불러오지 못했습니다.";
     }
     if (!selectedColumn) {
       return "컬럼을 선택하세요.";
     }
+    if (totalRowCount === 0) {
+      return "선택한 조건에서 항목을 찾을 수 없습니다.";
+    }
     if (availableItems.length === 0) {
-      return "선택한 컬럼에서 항목을 찾을 수 없습니다.";
+      return "현재 페이지에 표시할 항목이 없습니다.";
     }
     return null;
-  }, [availableItems.length, isSampleLoading, isViewsLoading, sampleError, selectedColumn, selectedView, viewsError]);
+  }, [
+    availableItems.length,
+    hasRequestedData,
+    isSampleLoading,
+    isViewsLoading,
+    sampleError,
+    selectedColumn,
+    selectedView,
+    totalRowCount,
+    viewsError,
+  ]);
 
   const clearImportDragState = useCallback(() => {
     if (!hasItemCodesDragData()) {
@@ -269,7 +291,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
         items: normalized,
         viewName: selectedView ?? undefined,
         columnName: selectedColumn ?? undefined,
-        filterValue: search.trim() || null,
+        filterValue: search || null,
         source,
       });
       event.currentTarget.classList.add("is-dragging");
@@ -502,15 +524,16 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
       {!statusMessage && paginatedItems.length > 0 ? (
         <footer className="erp-item-explorer__footer">
           <div className="erp-item-explorer__footer-info">
-            {startIndex + 1} - {endIndex} / {totalFiltered}건 표시
-            {rowCount > sampleRows.length ? ` · 샘플 ${sampleRows.length}/${rowCount}` : ""}
+            {totalRowCount === 0
+              ? "표시할 데이터가 없습니다."
+              : `${startIndex + 1} - ${endIndex} / ${totalRowCount}건 표시`}
           </div>
           <div className="erp-item-explorer__footer-controls">
             <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
               이전
             </button>
             <span>
-              {currentPage} / {totalPages}
+              {responsePage} / {totalPages}
             </span>
             <button type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
               다음
@@ -528,11 +551,6 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
               </select>
             </label>
           </div>
-          {canLoadMore ? (
-            <button type="button" className="erp-item-explorer__load-more" onClick={handleLoadMore}>
-              더 불러오기 ({sampleRows.length}/{rowCount})
-            </button>
-          ) : null}
         </footer>
       ) : null}
     </div>
