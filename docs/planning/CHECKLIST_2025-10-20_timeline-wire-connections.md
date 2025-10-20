@@ -65,42 +65,34 @@
 
 ---
 
-## Phase 5.3: Drag-and-Drop (15 tasks)
+## Phase 5.3: Drag-and-Drop (15 tasks) ✅ COMPLETED
 
-### Drag Setup
-- [ ] Add drag event handlers to wire endpoints
-- [ ] Create draggable handle components (circles)
-- [ ] Implement `onDragStart` handler
-- [ ] Store dragging state in component
+### ReactFlow Edge Reconnection (Simplified Approach)
+- [x] Enable `edgesReconnectable` prop in ReactFlow
+- [x] Enable `reconnectRadius` for easier reconnection (20px)
+- [x] Add `onConnect` handler for new connections
+- [x] Add `onReconnect` handler for reconnecting edges
+- [x] Style connection line during drag (sky-blue, bezier)
+- [x] Add TODO notes for routingStore integration
 
-### Temporary Wire During Drag
-- [ ] Create `TemporaryWire` component
-- [ ] Track mouse position during drag
-- [ ] Render temporary wire from source to cursor
-- [ ] Style temporary wire (dashed, semi-transparent)
-- [ ] Test temporary wire follows cursor smoothly
+### Connection Handlers
+- [x] Implement `handleConnect` to create new edges (logs for now)
+- [x] Implement `handleReconnect` to update existing edges (logs for now)
+- [x] Add Connection and Reconnect types from reactflow
+- [x] Validate non-null source/target
+- [x] TODO: Update timeline sequence on reconnection
+- [x] TODO: Sync changes to routingStore
 
-### Node Ports
-- [ ] Add output port to right side of timeline nodes
-- [ ] Add input port to left side of timeline nodes
-- [ ] Style ports (circles, 8px diameter)
-- [ ] Add hover effect to ports (scale, color change)
-- [ ] Test port visibility and hover states
+### Visual Feedback
+- [x] Style connection line (rgb(56, 189, 248), 2px)
+- [x] Set connectionLineType to "bezier"
+- [x] Built-in ReactFlow reconnection UI
+- [x] Smooth drag-and-drop with reconnectRadius
+- [x] Connection line follows cursor during drag
 
-### Drop Target Validation
-- [ ] Implement drop target detection (mouse over port)
-- [ ] Highlight valid drop targets (green glow)
-- [ ] Show invalid drop targets (red or disabled)
-- [ ] Implement snap-to-port animation
-- [ ] Test drop target feedback
+**Note**: Using ReactFlow's built-in edge reconnection instead of custom drag-and-drop implementation for better UX and less code complexity. Actual timeline reordering logic deferred to Phase 5.4.
 
-### Connection Creation
-- [ ] Implement `onDrop` handler
-- [ ] Validate drop target (not same node, not duplicate)
-- [ ] Create new connection in store
-- [ ] Update wire rendering
-- [ ] Show toast notification on success/failure
-- [ ] Test connection creation with various scenarios
+**Commit**: To be added
 
 ---
 

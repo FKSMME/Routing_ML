@@ -4,7 +4,7 @@ import type { DraggableOperationPayload, RuleViolation, TimelineStep } from "@st
 import { useRoutingStore } from "@store/routingStore";
 import { Edit2,Trash2 } from "lucide-react";
 import { type DragEvent, memo, type UIEvent,useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Edge, Node, NodeProps, ReactFlowInstance, Viewport } from "reactflow";
+import type { Connection, Edge, Node, NodeProps, ReactFlowInstance, Reconnect, Viewport } from "reactflow";
 import ReactFlow, {
   Background,
   Controls,
@@ -431,6 +431,25 @@ function RoutingCanvasView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedEdgeId]);
 
+  // Connection handler - creates new edge when dragging from one node to another
+  const handleConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return;
+    console.log('New connection:', connection);
+    // TODO: Update timeline to insert/reorder nodes based on new connection
+    // For now, just log the connection
+  }, []);
+
+  // Reconnection handler - updates existing edge when reconnecting
+  const handleReconnect = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      if (!newConnection.source || !newConnection.target) return;
+      console.log('Reconnecting edge:', oldEdge.id, 'to:', newConnection);
+      // TODO: Update timeline sequence based on reconnection
+      // This requires reordering nodes in the timeline array
+    },
+    [],
+  );
+
   useEffect(() => {
     setNodes(flowNodes);
     setEdges(flowEdges);
@@ -484,11 +503,15 @@ function RoutingCanvasView({
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onEdgeClick={handleEdgeClick}
+            onConnect={handleConnect}
+            onReconnect={handleReconnect}
             onInit={handleInit}
             onMove={handleMove}
             onNodeDragStop={handleNodeDragStop}
             nodesDraggable
             nodesConnectable={true}
+            edgesReconnectable={true}
+            reconnectRadius={20}
             elementsSelectable
             proOptions={{ hideAttribution: true }}
             defaultViewport={{ x: 0, y: 50, zoom: 0.8 }}
@@ -496,6 +519,11 @@ function RoutingCanvasView({
             maxZoom={1.5}
             className="timeline-flow__reactflow"
             style={{ width: "100%", height: "100%" }}
+            connectionLineStyle={{
+              stroke: 'rgb(56, 189, 248)',
+              strokeWidth: 2,
+            }}
+            connectionLineType="bezier"
           >
             <MiniMap pannable zoomable nodeColor={() => "#5b76d8"} />
             <Controls showZoom={false} showInteractive={false} />
