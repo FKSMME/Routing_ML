@@ -1,37 +1,28 @@
-import { useState } from 'react';
-
 import { Hyperspeed } from './Hyperspeed';
-import { getPreset,HYPERSPEED_PRESETS, PRESET_KEYS } from './hyperspeedPresets';
+import { getPreset } from './hyperspeedPresets';
 
-export function HyperspeedBackground() {
-  const [selectedPreset, setSelectedPreset] = useState('cyberpunk');
+interface HyperspeedBackgroundProps {
+  preset?: string;
+  showControls?: boolean;
+}
 
-  const currentPreset = getPreset(selectedPreset);
+export function HyperspeedBackground({
+  preset = 'cyberpunk',
+  showControls = false
+}: HyperspeedBackgroundProps) {
+  const currentPreset = getPreset(preset);
 
   return (
-    <>
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      zIndex: 0,
+      pointerEvents: showControls ? 'auto' : 'none'
+    }}>
       <Hyperspeed preset={currentPreset} />
-
-      <div className="hyperspeed-preset-selector">
-        <label htmlFor="preset-select">Animation Theme</label>
-        <select
-          id="preset-select"
-          value={selectedPreset}
-          onChange={(e) => setSelectedPreset(e.target.value)}
-        >
-          {PRESET_KEYS.map((key) => {
-            const preset = HYPERSPEED_PRESETS[key];
-            return (
-              <option key={key} value={key}>
-                {preset.name}
-              </option>
-            );
-          })}
-        </select>
-        <div className="preset-info">
-          {currentPreset.description}
-        </div>
-      </div>
-    </>
+    </div>
   );
 }
