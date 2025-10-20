@@ -6,6 +6,7 @@ import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
 import { PredictionControls } from "../PredictionControls";
 import { ErpItemExplorer } from "../routing/ErpItemExplorer";
+import { ItemListPanel } from "../routing/ItemListPanel";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
@@ -75,30 +76,30 @@ export function RoutingTabbedWorkspace({
       label: "예측 대상 품목",
       icon: null,
       content: (
-        <div className="routing-control-tab" style={{ display: 'flex', width: '100%', gap: '1rem', padding: '1rem' }}>
-          {/* 좌측: ERP View (40%) */}
-          <div className="erp-view-section" style={{ flex: '0 0 40%', minWidth: '400px' }}>
-            <ErpItemExplorer onAddItems={onChangeItemCodes} />
-          </div>
+        <div className="routing-control-tab" data-layout="erp-enhanced">
+          <div className="routing-control-layout">
+            <section className="routing-control-left">
+              <ErpItemExplorer onAddItems={onChangeItemCodes} />
+            </section>
 
-          {/* 우측: 라우팅 생성 제어 (60%) */}
-          <div className="control-panel-section" style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {renderPredictionBanner?.()}
+            <section className="routing-control-right">
+              {renderPredictionBanner?.()}
 
-            <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-xl font-semibold mb-4 text-slate-200">⚙️ 라우팅 생성</h3>
-              <PredictionControls
-                itemCodes={itemCodes}
-                onChangeItemCodes={onChangeItemCodes}
-                topK={topK}
-                onChangeTopK={onChangeTopK}
-                threshold={threshold}
-                onChangeThreshold={onChangeThreshold}
-                loading={loading}
-                onSubmit={onSubmit}
-                errorMessage={errorMessage}
-              />
-            </div>
+              <div className="routing-control-panel">
+                <h3 className="routing-control-panel__title">⚙️ 라우팅 생성</h3>
+                <PredictionControls
+                  itemCodes={itemCodes}
+                  onChangeItemCodes={onChangeItemCodes}
+                  topK={topK}
+                  onChangeTopK={onChangeTopK}
+                  threshold={threshold}
+                  onChangeThreshold={onChangeThreshold}
+                  loading={loading}
+                  onSubmit={onSubmit}
+                  errorMessage={errorMessage}
+                />
+              </div>
+            </section>
           </div>
         </div>
       ),
@@ -109,8 +110,15 @@ export function RoutingTabbedWorkspace({
       icon: <BarChart3 size={18} />,
       content: (
         <div className="routing-visualization-tab" style={{ display: 'flex', width: '100%', minHeight: '800px', gap: '1rem', padding: '1rem' }}>
-          {/* 좌측: 시각화 (70%) */}
-          <div className="visualization-section" style={{ flex: '0 0 70%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* 좌측: 품목 리스트 (15%) */}
+          <div className="item-list-section" style={{ flex: '0 0 15%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 flex-1 overflow-y-auto">
+              <ItemListPanel />
+            </div>
+          </div>
+
+          {/* 중앙: 시각화 (55%) */}
+          <div className="visualization-section" style={{ flex: '0 0 55%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50 flex-1">
               <h3 className="text-xl font-semibold mb-4 text-slate-200">📊 시각화</h3>
               <TimelinePanel key={`timeline-${tabKey}`} />
