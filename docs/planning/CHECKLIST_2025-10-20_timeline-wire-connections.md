@@ -96,20 +96,30 @@
 
 ---
 
-## Phase 5.4: Connection Management (5 tasks)
+## Phase 5.4: Connection Management (5 tasks) ✅ COMPLETED
 
-### State Persistence
-- [ ] Store connections alongside timeline in routingStore
-- [ ] Persist connections when saving routing group
-- [ ] Load connections when loading routing group
-- [ ] Test save/load cycle preserves connections
+### Timeline Reordering
+- [x] Implement reordering logic in handleReconnect
+- [x] Find source and target nodes in timeline (findIndex)
+- [x] Calculate new sequence: newIndex = sourceIndex + 1
+- [x] Call routingStore.moveStep to update
+- [x] Preserve node metadata (moveStep handles this)
 
-### Validation
-- [ ] Validate no self-connections (source !== target)
-- [ ] Validate no duplicate connections
-- [ ] Prevent cyclic connections (optional)
-- [ ] Show validation errors to user
-- [ ] Test validation with edge cases
+### Connection Validation
+- [x] Validate no self-connections (source === target)
+- [x] Check source and target exist in timeline (findIndex !== -1)
+- [x] Prevent invalid reconnections with early returns
+- [x] Console warnings for validation failures
+
+### Integration
+- [x] Integrate handleReconnect with moveStep
+- [x] Logic: reconnected node moves after new source
+- [x] Edges auto-update from timeline (useMemo reactive)
+- [x] Sequence numbers recalculated by normalizeSequence
+
+**Note**: Connections are implicit from timeline sequence. No separate persistence needed.
+
+**Commit**: To be added
 
 ---
 

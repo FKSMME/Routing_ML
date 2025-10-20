@@ -443,11 +443,40 @@ function RoutingCanvasView({
   const handleReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
       if (!newConnection.source || !newConnection.target) return;
-      console.log('Reconnecting edge:', oldEdge.id, 'to:', newConnection);
-      // TODO: Update timeline sequence based on reconnection
-      // This requires reordering nodes in the timeline array
+
+      // Validate: no self-connections
+      if (newConnection.source === newConnection.target) {
+        console.warn('Cannot connect node to itself');
+        return;
+      }
+
+      // Find the node being reconnected in timeline
+      const reconnectedNodeId = oldEdge.target; // The node whose input is being changed
+      const newSourceNodeId = newConnection.source;
+
+      // Find indices in timeline
+      const reconnectedNodeIndex = timeline.findIndex(step => step.id === reconnectedNodeId);
+      const newSourceIndex = timeline.findIndex(step => step.id === newSourceNodeId);
+
+      if (reconnectedNodeIndex === -1 || newSourceIndex === -1) {
+        console.warn('Could not find nodes in timeline');
+        return;
+      }
+
+      // Calculate new position: right after the new source
+      const newIndex = newSourceIndex + 1;
+
+      // Only move if position actually changes
+      if (reconnectedNodeIndex !== newIndex) {
+        console.log('Reordering timeline:', {
+          nodeId: reconnectedNodeId,
+          from: reconnectedNodeIndex,
+          to: newIndex
+        });
+        moveStep(reconnectedNodeId, newIndex);
+      }
     },
-    [],
+    [timeline, moveStep],
   );
 
   useEffect(() => {
