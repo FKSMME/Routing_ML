@@ -190,6 +190,7 @@ function RoutingCanvasView({
   const profileControllerRef = useRef<RoutingCanvasProfileController | null>(null);
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
   const [editingStep, setEditingStep] = useState<TimelineStep | null>(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
   const ensureProfileController = useCallback(() => {
     if (profileControllerRef.current || !onProfileReady) {
@@ -253,12 +254,25 @@ function RoutingCanvasView({
 
   const flowEdges = useMemo<Edge[]>(
     () =>
-      timeline.slice(1).map((step, index) => ({
-        id: `edge-${timeline[index].id}-${step.id}`,
-        source: timeline[index].id,
-        target: step.id,
-      })),
-    [timeline],
+      timeline.slice(1).map((step, index) => {
+        const edgeId = `edge-${timeline[index].id}-${step.id}`;
+        const isSelected = edgeId === selectedEdgeId;
+        return {
+          id: edgeId,
+          source: timeline[index].id,
+          target: step.id,
+          animated: isSelected,
+          style: {
+            stroke: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.4)',
+            strokeWidth: isSelected ? 3 : 2,
+          },
+          markerEnd: {
+            type: 'arrowclosed' as const,
+            color: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.4)',
+          },
+        };
+      }),
+    [timeline, selectedEdgeId],
   );
 
   const canvasDimensions = useMemo(() => {
@@ -392,6 +406,31 @@ function RoutingCanvasView({
     [],
   );
 
+  // Edge selection handler
+  const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
+    setSelectedEdgeId(edge.id);
+  }, []);
+
+  // Delete key handler for removing selected edge
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' && selectedEdgeId) {
+        // Note: In current implementation, edges are auto-generated from timeline
+        // To truly delete a connection, we would need to remove the corresponding timeline step
+        // For now, we just deselect
+        console.log('Delete edge:', selectedEdgeId);
+        setSelectedEdgeId(null);
+        // TODO: Implement actual edge deletion when custom connections are supported
+      }
+      if (event.key === 'Escape' && selectedEdgeId) {
+        setSelectedEdgeId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedEdgeId]);
+
   useEffect(() => {
     setNodes(flowNodes);
     setEdges(flowEdges);
@@ -444,6 +483,7 @@ function RoutingCanvasView({
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onEdgeClick={handleEdgeClick}
             onInit={handleInit}
             onMove={handleMove}
             onNodeDragStop={handleNodeDragStop}
