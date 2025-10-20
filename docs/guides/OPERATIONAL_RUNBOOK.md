@@ -51,7 +51,7 @@
 |-----------|------|---------|--------------|
 | Nginx | 80, 443 | Reverse proxy, SSL | `curl https://routing.example.com` |
 | Backend API | 8000 | FastAPI application | `curl http://localhost:8000/health` |
-| Frontend (Training) | 3000 | React app (training UI) | `curl http://localhost:3000` |
+| Frontend (Home) | 3000 | Integrated dashboard (HTTPS) | `curl -k https://localhost:3000 --head` |
 | Frontend (Prediction) | 3001 | React app (prediction UI) | `curl http://localhost:3001` |
 | Prometheus | 9090 | Metrics collection | `curl http://localhost:9090/-/healthy` |
 | Grafana | 3003 | Metrics visualization | `curl http://localhost:3003/api/health` |

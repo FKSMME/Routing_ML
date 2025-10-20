@@ -70,7 +70,7 @@
 | Backend API | http://localhost:8000 | ✅ 정상 | uvicorn |
 | Prediction Frontend | http://localhost:5173 | ✅ 정상 | CSS 1400px 반영 |
 | Training Frontend | http://localhost:5174 | ✅ 정상 | 알고리즘 메뉴 추가 |
-| Unified Homepage | http://localhost:3000 | ✅ 정상 | IPv4 바인딩 |
+| Unified Homepage | https://localhost:3000 | ✅ 정상 | IPv4 바인딩 |
 
 ---
 
@@ -116,7 +116,7 @@
 
 ### 1. 통합 홈페이지
 ```
-URL: http://localhost:3000
+URL: https://localhost:3000
 확인: 2개 카드 (5173, 5174 링크)
 ```
 
@@ -156,3 +156,5 @@ URL: http://localhost:5174
 
 _작성: 2025-10-07 11:55 UTC_
 _작성자: Claude AI_
+
+

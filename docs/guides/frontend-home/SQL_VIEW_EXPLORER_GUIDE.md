@@ -94,7 +94,7 @@ SELECT 3, 'Task C', '대기', '이영희', '2025-01-25';
 ### 1. 뷰 탐색 및 설정
 
 1. **홈 페이지 접속**
-   - `http://localhost:3000` 접속
+   - `https://localhost:3000` 접속
    - 하단의 "SQL View Explorer" 카드 클릭
 
 2. **뷰 목록 불러오기**
@@ -124,7 +124,7 @@ SELECT 3, 'Task C', '대기', '이영희', '2025-01-25';
 ### 2. 홈 대시보드에서 데이터 확인
 
 1. **홈 페이지로 이동**
-   - `http://localhost:3000` 접속
+   - `https://localhost:3000` 접속
    - 설정한 뷰 데이터가 자동으로 표시됨
 
 2. **체크리스트 사용**
@@ -277,3 +277,4 @@ POST /api/view-explorer/checklist/{view_name}
 - [FastAPI 공식 문서](https://fastapi.tiangolo.com/)
 - [MSSQL Views 문서](https://docs.microsoft.com/en-us/sql/relational-databases/views/views)
 - [HTML Drag and Drop API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API)
+

@@ -24,13 +24,14 @@ START_ALL_WINDOWS.bat
 ### 2단계: 접속 확인
 
 #### 로컬 접속 (서버 PC에서)
-- 홈 대시보드: http://localhost:3000
+- 홈 대시보드: https://localhost:3000
+- HTTP redirect: http://localhost:3080 -> https://localhost:3000
 - 라우팅 생성: http://localhost:5173
 - 모델 학습: http://localhost:5174
 - API 문서: http://localhost:8000/docs
 
 #### 내부망 접속 (다른 PC에서)
-- 홈 대시보드: **http://10.204.2.28:3000**
+- 홈 대시보드: **https://10.204.2.28:3000**
 - 라우팅 생성: **http://10.204.2.28:5173**
 - 모델 학습: **http://10.204.2.28:5174**
 - API 문서: **http://10.204.2.28:8000/docs**
@@ -168,3 +169,4 @@ TCP    0.0.0.0:8000    0.0.0.0:0    LISTENING    12345
 
 **마지막 테스트:** 2025-10-13 14:40
 **상태:** ✅ 정상 작동 확인
+

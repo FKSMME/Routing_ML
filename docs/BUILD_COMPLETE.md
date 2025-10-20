@@ -140,13 +140,13 @@ npm run preview
 ### 접속 URL
 
 #### 로컬 개발 환경
-- Frontend Home: http://localhost:3000
+- Frontend Home: https://localhost:3000
 - Frontend Prediction: http://localhost:5173
 - Frontend Training: http://localhost:5174
 - Backend API: http://localhost:8000/docs
 
 #### 내부 네트워크 (IP)
-- Frontend Home: http://10.204.2.28:3000
+- Frontend Home: https://10.204.2.28:3000
 - Frontend Prediction: http://10.204.2.28:5173
 - Frontend Training: http://10.204.2.28:5174
 - Backend API: http://10.204.2.28:8000/docs

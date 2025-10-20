@@ -172,7 +172,7 @@ proxy: {
 ### 1. Localhost 테스트
 ```bash
 # Frontend
-http://localhost:3000         # Frontend Home
+https://localhost:3000        # Frontend Home (HTTPS default)
 http://localhost:5173         # Frontend Prediction
 http://localhost:5174         # Frontend Training
 
@@ -183,7 +183,7 @@ http://localhost:8000/api/health
 ### 2. IP 주소 테스트
 ```bash
 # Frontend
-http://10.204.2.28:3000
+https://10.204.2.28:3000
 http://10.204.2.28:5173
 http://10.204.2.28:5174
 
@@ -362,3 +362,5 @@ ERR_CONNECTION_REFUSED
 **작성자**: Claude Code
 **승인자**: (승인 필요)
 **관련 이슈**: CORS policy blocking API requests from production domain
+
+

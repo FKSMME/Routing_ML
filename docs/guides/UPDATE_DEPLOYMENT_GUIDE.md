@@ -200,7 +200,7 @@ sleep 10
 curl -s http://localhost:8000/api/health
 curl -s http://localhost:5173 | head -3
 curl -s http://localhost:5174 | head -3
-curl -s http://localhost:3000 | head -3
+curl -k https://localhost:3000 | head -3
 ```
 
 **예상 시간**: 1-2분
@@ -302,7 +302,7 @@ except ImportError:
 ✅ Backend API:          http://localhost:8000  (MSSQL 연결)
 ✅ Frontend Training:    http://localhost:5173
 ✅ Frontend Prediction:  http://localhost:5174
-✅ Frontend Home:        http://localhost:3000
+✅ Frontend Home:        https://localhost:3000
 ```
 
 ### 로그 파일 위치
@@ -344,3 +344,5 @@ tail -f /tmp/frontend-prediction.log
 
 **작성일**: 2025-10-10
 **작성자**: Claude AI Assistant
+
+

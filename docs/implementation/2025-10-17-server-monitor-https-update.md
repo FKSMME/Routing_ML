@@ -220,7 +220,7 @@ ssl_context.verify_mode = ssl.CERT_NONE
 | 서비스 | Health Check URL | 프로토콜 | 비고 |
 |--------|-----------------|---------|------|
 | **Backend API** | `http://localhost:8000/api/health` | HTTP | Backend는 HTTP 유지 |
-| **Frontend Home** | `http://localhost:3000/` | HTTP | Node.js 서버 |
+| **Frontend Home** | `https://localhost:3000/` | **HTTPS** | Node.js 서버 (certificate required) |
 | **Frontend Prediction** | `https://localhost:5173/` | **HTTPS** | Vite dev server |
 | **Frontend Training** | `https://localhost:5174/` | **HTTPS** | Vite dev server |
 
@@ -354,3 +354,4 @@ Frontend Vite 프록시가 HTTPS → HTTP 변환을 처리합니다.
 **빌드 일시**: 2025년 10월 17일 11:02
 **Git Branch**: 251014
 **Commit**: feat: Update Server Monitor v5.2.1 to support HTTPS
+
