@@ -1394,9 +1394,9 @@
     function drawEdges(edges = []) {
       if (!nodeGrid || !edgeCanvas) return;
 
-      const gridRect = nodeGrid.getBoundingClientRect();
-      const width = nodeGrid.offsetWidth || gridRect.width || 1;
-      const height = nodeGrid.offsetHeight || gridRect.height || 1;
+      // Use offsetWidth/Height instead of getBoundingClientRect for accurate positioning
+      const width = nodeGrid.offsetWidth || 1;
+      const height = nodeGrid.offsetHeight || 1;
 
       // Set canvas size (account for device pixel ratio for sharp rendering)
       const dpr = window.devicePixelRatio || 1;
@@ -1404,6 +1404,9 @@
       edgeCanvas.height = height * dpr;
       edgeCanvas.style.width = `${width}px`;
       edgeCanvas.style.height = `${height}px`;
+
+      // Reset transform and apply scale
+      edgeCtx.setTransform(1, 0, 0, 1, 0, 0);
       edgeCtx.scale(dpr, dpr);
 
       // Clear canvas
@@ -1426,20 +1429,26 @@
         const targetEl = nodeGrid.querySelector(`[data-node-id="${edge.target}"]`);
         if (!sourceEl || !targetEl) return;
 
-        const sourceRect = sourceEl.getBoundingClientRect();
-        const targetRect = targetEl.getBoundingClientRect();
+        // Use element.style positions directly for accurate calculation
+        const sourceLeft = parseFloat(sourceEl.style.left) || 0;
+        const sourceTop = parseFloat(sourceEl.style.top) || 0;
+        const sourceWidth = parseFloat(sourceEl.style.width) || sourceEl.offsetWidth || LANE_WIDTH;
+        const sourceHeight = sourceEl.offsetHeight || 120;
 
-        const direction = sourceRect.left <= targetRect.left ? 1 : -1;
-        const startX =
-          (direction > 0
-            ? sourceRect.right - gridRect.left + EDGE_PORT_OFFSET
-            : sourceRect.left - gridRect.left - EDGE_PORT_OFFSET);
-        const endX =
-          (direction > 0
-            ? targetRect.left - gridRect.left - EDGE_PORT_OFFSET
-            : targetRect.right - gridRect.left + EDGE_PORT_OFFSET);
-        const startY = sourceRect.top + sourceRect.height / 2 - gridRect.top;
-        const endY = targetRect.top + targetRect.height / 2 - gridRect.top;
+        const targetLeft = parseFloat(targetEl.style.left) || 0;
+        const targetTop = parseFloat(targetEl.style.top) || 0;
+        const targetWidth = parseFloat(targetEl.style.width) || targetEl.offsetWidth || LANE_WIDTH;
+        const targetHeight = targetEl.offsetHeight || 120;
+
+        const direction = sourceLeft <= targetLeft ? 1 : -1;
+        const startX = direction > 0
+          ? sourceLeft + sourceWidth + EDGE_PORT_OFFSET
+          : sourceLeft - EDGE_PORT_OFFSET;
+        const endX = direction > 0
+          ? targetLeft - EDGE_PORT_OFFSET
+          : targetLeft + targetWidth + EDGE_PORT_OFFSET;
+        const startY = sourceTop + sourceHeight / 2;
+        const endY = targetTop + targetHeight / 2;
 
         const spanX = Math.max(Math.abs(endX - startX), 120);
         const curvature = Math.min(spanX * 0.45, 320);
@@ -1472,6 +1481,26 @@
         edgeCtx.shadowBlur = 6;
         edgeCtx.stroke();
         edgeCtx.restore();
+
+        // Draw data flow animation dots
+        const dotCount = isActive ? 3 : 2;
+        const animTime = Date.now() / (isActive ? 1500 : 2500);
+        for (let i = 0; i < dotCount; i++) {
+          const tDot = ((animTime + i / dotCount) % 1);
+          const dotX = Math.pow(1-tDot, 3) * startX + 3 * Math.pow(1-tDot, 2) * tDot * control1X +
+                       3 * (1-tDot) * Math.pow(tDot, 2) * control2X + Math.pow(tDot, 3) * endX;
+          const dotY = Math.pow(1-tDot, 3) * startY + 3 * Math.pow(1-tDot, 2) * tDot * control1Y +
+                       3 * (1-tDot) * Math.pow(tDot, 2) * control2Y + Math.pow(tDot, 3) * endY;
+
+          edgeCtx.save();
+          edgeCtx.beginPath();
+          edgeCtx.arc(dotX, dotY, isActive ? 3.5 : 2.5, 0, Math.PI * 2);
+          edgeCtx.fillStyle = isActive ? 'rgba(56, 189, 248, 1)' : 'rgba(125, 211, 252, 0.9)';
+          edgeCtx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+          edgeCtx.shadowBlur = 8;
+          edgeCtx.fill();
+          edgeCtx.restore();
+        }
 
         // Draw arrow head
         const t = 0.95; // Position along curve for arrow
@@ -2083,8 +2112,20 @@
     document.getElementById("refreshButton").addEventListener("click", () => loadGraph());
     window.addEventListener("resize", debouncedResize);
 
+    // Animation loop for data flow dots
+    function animate() {
+      if (state.edges.length > 0) {
+        drawEdges(state.edges);
+      }
+      requestAnimationFrame(animate);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       loadGraph();
+      // Start animation loop after initial load
+      setTimeout(() => {
+        animate();
+      }, 1000);
     });
   </script>
 </body>
