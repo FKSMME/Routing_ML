@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { MetricsPanel } from "@components/data-quality/MetricsPanel";
 
 // Type Definitions
 interface DataQualityMetrics {
@@ -116,10 +117,7 @@ export default function DataQualityWorkspace() {
       {/* Content Area */}
       <div className="flex-1 overflow-auto p-6">
         {activeTab === "metrics" && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Metrics Dashboard</h2>
-            <p className="text-gray-400">Metrics panel will be implemented in Phase 2</p>
-          </div>
+          <MetricsPanel autoRefreshInterval={30} />
         )}
 
         {activeTab === "issues" && (
