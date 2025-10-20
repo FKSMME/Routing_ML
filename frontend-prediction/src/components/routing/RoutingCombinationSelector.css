@@ -1,0 +1,117 @@
+/* Routing Combination Selector Component Styles */
+
+.routing-combination-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-family: var(--font-family);
+  color: var(--foreground);
+}
+
+.selector-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.selector-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.selector-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.selector-field label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.selector-input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.85rem;
+  background-color: var(--input);
+  border: 1px solid var(--border);
+  border-radius: var(--layout-radius, 6px);
+  color: var(--foreground);
+  transition: border-color 0.15s ease;
+}
+
+.selector-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb, 56, 189, 248), 0.1);
+}
+
+.selector-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.selector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.selector-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.selector-summary {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--surface-overlay, rgba(0, 0, 0, 0.1));
+  border-radius: var(--layout-radius, 6px);
+  border: 1px solid var(--border);
+}
+
+.combo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.combo-list li {
+  padding: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.combo-more {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Dark mode specific overrides */
+html.dark .routing-combination-selector {
+  color: var(--foreground);
+}
+
+html.dark .selector-input {
+  background-color: var(--input);
+  border-color: var(--border);
+  color: var(--foreground);
+}
+
+html.dark .selector-input:focus {
+  border-color: var(--accent);
+}
+
+html.dark .selector-summary {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: var(--border);
+}
