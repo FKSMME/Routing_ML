@@ -141,7 +141,7 @@
 
 **Solution**: Modified `RecommendationsTab.tsx` to read from `productTabs` instead of `recommendations`. Timeline steps are converted to operations inline for display. Both views now share the same data source (timeline), ensuring automatic synchronization.
 
-**Commit**: To be added
+**Commits**: 2f491243, 282a722f (merged to main)
 
 ---
 

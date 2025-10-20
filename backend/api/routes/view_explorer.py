@@ -113,10 +113,22 @@ async def list_views(
 @router.get("/views/{view_name}/sample")
 async def get_view_sample_data(
     view_name: str,
-    limit: int = Query(100, ge=1, le=1000, description="조회할 행 수"),
+    page: int = Query(1, ge=1, description="조회할 페이지 번호"),
+    page_size: int = Query(30, ge=1, le=30, description="페이지 당 행 수"),
+    search: Optional[str] = Query(None, description="검색 키워드"),
+    search_column: Optional[str] = Query(None, description="검색 대상 컬럼"),
+    limit: Optional[int] = Query(None, ge=1, le=5000, description="(Deprecated) 조회할 최대 행 수"),
 ) -> Dict[str, Any]:
-    """뷰의 샘플 데이터를 조회한다."""
-    logger.info(f"뷰 샘플 데이터 조회: view={view_name}, limit={limit}")
+    """뷰의 샘플 데이터를 페이지 단위로 조회한다."""
+    logger.info(
+        "뷰 샘플 데이터 조회: view=%s, page=%s, page_size=%s, search=%s, column=%s, limit=%s",
+        view_name,
+        page,
+        page_size,
+        search,
+        search_column,
+        limit,
+    )
 
     try:
         # 컬럼 정보 조회
@@ -134,7 +146,7 @@ async def get_view_sample_data(
         """
 
         # 뷰 이름 파싱 (schema.view)
-        parts = view_name.split('.')
+        parts = view_name.split(".")
         if len(parts) != 2:
             raise HTTPException(status_code=400, detail="뷰 이름은 'schema.view' 형식이어야 합니다")
 
@@ -147,34 +159,96 @@ async def get_view_sample_data(
                 "type": row[1],
                 "max_length": row[2],
                 "precision": row[3],
-                "scale": row[4]
+                "scale": row[4],
             }
             for row in columns_rows
         ]
 
-        # 데이터 조회
-        data_query = f"SELECT TOP {limit} * FROM {view_name}"
-        data_rows = database.execute_query(data_query)
+        column_names = [column["name"] for column in columns]
+        if not column_names:
+            return {
+                "view_name": view_name,
+                "columns": columns,
+                "data": [],
+                "row_count": 0,
+                "page": page,
+                "page_size": limit if limit is not None else page_size,
+                "total_pages": 0,
+                "has_next": False,
+            }
 
-        # 데이터 변환
-        data = []
+        if search_column and search_column not in column_names:
+            raise HTTPException(status_code=400, detail=f"'{search_column}' 컬럼을 찾을 수 없습니다.")
+
+        effective_page_size = limit if limit is not None else page_size
+        if effective_page_size <= 0:
+            raise HTTPException(status_code=400, detail="페이지 크기는 1 이상이어야 합니다.")
+
+        offset = (page - 1) * effective_page_size
+        where_clauses: List[str] = []
+        query_params: List[Any] = []
+
+        if search:
+            keyword = f"%{search}%"
+            if search_column:
+                where_clauses.append(f"CAST([{search_column}] AS NVARCHAR(MAX)) LIKE ?")
+                query_params.append(keyword)
+            else:
+                like_clauses = []
+                for name in column_names:
+                    like_clauses.append(f"CAST([{name}] AS NVARCHAR(MAX)) LIKE ?")
+                    query_params.append(keyword)
+                if like_clauses:
+                    where_clauses.append("(" + " OR ".join(like_clauses) + ")")
+
+        where_clause = ""
+        if where_clauses:
+            where_clause = "WHERE " + " AND ".join(where_clauses)
+
+        order_column = search_column or column_names[0]
+        order_clause = f"ORDER BY [{order_column}]"
+
+        count_query = f"SELECT COUNT(*) FROM {view_name} {where_clause}"
+        count_result = database.execute_query(count_query, query_params)
+        total_count = int(count_result[0][0]) if count_result else 0
+
+        data_query = f"""
+        SELECT *
+        FROM {view_name}
+        {where_clause}
+        {order_clause}
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """
+        data_params = list(query_params)
+        data_params.extend([offset, effective_page_size])
+        data_rows = database.execute_query(data_query, data_params)
+
+        data: List[Dict[str, Any]] = []
         for row in data_rows:
-            row_dict = {}
+            row_dict: Dict[str, Any] = {}
             for i, col in enumerate(columns):
                 value = row[i]
-                # datetime 변환
                 if isinstance(value, datetime):
                     value = value.isoformat()
                 row_dict[col["name"]] = value
             data.append(row_dict)
 
+        total_pages = (total_count // effective_page_size) + (1 if total_count % effective_page_size else 0)
+        has_next = offset + len(data_rows) < total_count
+
         return {
             "view_name": view_name,
             "columns": columns,
             "data": data,
-            "row_count": len(data)
+            "row_count": total_count,
+            "page": page,
+            "page_size": effective_page_size,
+            "total_pages": total_pages,
+            "has_next": has_next,
         }
 
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error(f"뷰 샘플 데이터 조회 실패: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"샘플 데이터 조회 실패: {exc}")
