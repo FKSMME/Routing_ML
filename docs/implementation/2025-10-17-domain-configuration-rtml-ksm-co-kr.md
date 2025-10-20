@@ -64,12 +64,12 @@ allowed_origins: List[str] = Field(
         "http://10.204.2.28:5174",
 
         # Production domains (프로덕션 환경)
-        "http://rtml.ksm.co.kr:3000",
-        "http://rtml.ksm.co.kr:5173",
-        "http://rtml.ksm.co.kr:5174",
-        "http://mcs.ksm.co.kr:3000",
-        "http://mcs.ksm.co.kr:5173",
-        "http://mcs.ksm.co.kr:5174",
+        "https://rtml.ksm.co.kr:3000",
+        "https://rtml.ksm.co.kr:5173",
+        "https://rtml.ksm.co.kr:5174",
+        "https://mcs.ksm.co.kr:3000",
+        "https://mcs.ksm.co.kr:5173",
+        "https://mcs.ksm.co.kr:5174",
     ],
 )
 ```
@@ -90,7 +90,7 @@ allowed_origins: List[str] = Field(
 
 **After**:
 ```javascript
-"connect-src 'self' http://localhost:* http://10.204.2.28:* http://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*",
+"connect-src 'self' http://localhost:* http://10.204.2.28:* https://rtml.ksm.co.kr:* https://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*",
 ```
 
 **이유**: CSP가 프로덕션 도메인으로의 API 요청을 차단하지 않도록 허용
@@ -194,12 +194,12 @@ http://10.204.2.28:8000/api/health
 ### 3. 도메인 테스트 (프로덕션)
 ```bash
 # Frontend
-http://rtml.ksm.co.kr:3000
-http://rtml.ksm.co.kr:5173
-http://rtml.ksm.co.kr:5174
+https://rtml.ksm.co.kr:3000
+https://rtml.ksm.co.kr:5173
+https://rtml.ksm.co.kr:5174
 
 # Backend
-http://rtml.ksm.co.kr:8000/api/health
+https://rtml.ksm.co.kr:8000/api/health
 ```
 
 ### 4. CORS 테스트
@@ -214,7 +214,7 @@ fetch('http://localhost:8000/api/health', {
   .then(data => console.log('Health check:', data));
 
 // 2. CORS 에러가 없어야 함
-// "Access to fetch at 'http://localhost:8000/api/health' from origin 'http://rtml.ksm.co.kr:3000' has been blocked by CORS policy"
+// "Access to fetch at 'http://localhost:8000/api/health' from origin 'https://rtml.ksm.co.kr:3000' has been blocked by CORS policy"
 // ❌ 이 에러가 더 이상 발생하지 않아야 함!
 ```
 
@@ -264,7 +264,7 @@ fetch('http://localhost:8000/api/health', {
 |------|---------------|-----------|-------------|------|
 | **개발 (Local)** | `http://localhost:5173` | `http://localhost:8000` | `http://localhost:5173` | Vite proxy 사용 |
 | **내부 (IP)** | `http://10.204.2.28:5173` | `http://10.204.2.28:8000` | `http://10.204.2.28:5173` | 내부 네트워크 |
-| **프로덕션 (Domain)** | `http://rtml.ksm.co.kr:5173` | `http://rtml.ksm.co.kr:8000` | `http://rtml.ksm.co.kr:5173` | Reverse proxy 권장 |
+| **프로덕션 (Domain)** | `https://rtml.ksm.co.kr:5173` | `https://rtml.ksm.co.kr:8000` | `https://rtml.ksm.co.kr:5173` | Reverse proxy 권장 |
 
 ---
 
@@ -274,7 +274,7 @@ fetch('http://localhost:8000/api/health', {
 
 **증상**:
 ```
-Access to fetch at 'http://localhost:8000/api/...' from origin 'http://rtml.ksm.co.kr:3000'
+Access to fetch at 'http://localhost:8000/api/...' from origin 'https://rtml.ksm.co.kr:3000'
 has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 

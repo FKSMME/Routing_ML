@@ -1,5 +1,5 @@
-﻿import type { ReactNode } from "react";
-import { useMenuAnimation } from "@hooks/useGSAPAnimation";
+﻿import { useMenuAnimation } from "@hooks/useGSAPAnimation";
+import type { ReactNode } from "react";
 
 export interface NavigationItem {
   id: string;

@@ -9,8 +9,8 @@
  * - 데이터 정규화
  */
 
-import type { TimelineStep } from "@store/routingStore";
 import type { RoutingGroupStep } from "@app-types/routing";
+import type { TimelineStep } from "@store/routingStore";
 
 /**
  * TimelineStep을 RoutingGroupStep으로 변환합니다.

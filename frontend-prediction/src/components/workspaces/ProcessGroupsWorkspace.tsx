@@ -2,8 +2,8 @@ import type { ProcessGroupColumnType, ProcessGroupType } from "@app-types/routin
 import { CardShell } from "@components/common/CardShell";
 import { useRoutingStore } from "@store/routingStore";
 import { Layers, Plus, Trash2 } from "lucide-react";
-import { useMemo } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
+import { useMemo } from "react";
 
 const groupTypeOptions: Array<{ value: string; label: string }> = [
   { value: "machining", label: "대체 가공 경로" },

@@ -11,6 +11,8 @@ const HOST = "0.0.0.0";
 const BASE_DIR = __dirname;
 const API_TARGET = process.env.API_TARGET || "https://localhost:8000";
 const API_URL = new URL(API_TARGET);
+const HTTP_REDIRECT_PORT = Number(process.env.HTTP_REDIRECT_PORT || 0);
+const REDIRECT_HOST = process.env.REDIRECT_HOST || null;
 
 // SSL Certificate paths
 const CERT_SEARCH_PATHS = [
@@ -85,7 +87,7 @@ function getSecurityHeaders(contentType) {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self' http://localhost:* https://localhost:* http://10.204.2.28:* https://10.204.2.28:* http://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* ws://localhost:* wss://localhost:* ws://10.204.2.28:* wss://10.204.2.28:* ws://rtml.ksm.co.kr:* wss://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:* wss://mcs.ksm.co.kr:*",
+      "connect-src 'self' http://localhost:* https://localhost:* http://10.204.2.28:* https://10.204.2.28:* https://rtml.ksm.co.kr:* https://mcs.ksm.co.kr:* ws://localhost:* wss://localhost:* ws://10.204.2.28:* wss://10.204.2.28:* ws://rtml.ksm.co.kr:* wss://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:* wss://mcs.ksm.co.kr:*",
       "frame-ancestors 'self'",
     ].join("; "),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
@@ -184,16 +186,19 @@ const requestHandler = (req, res) => {
 const HTTPS_READY = USE_HTTPS && SSL_KEY && SSL_CERT;
 
 if (USE_HTTPS && !HTTPS_READY) {
-  console.warn("[home] Requested HTTPS but certificate files were not found. Falling back to HTTP.");
+  console.error("[home] USE_HTTPS is true but certificate files were not found.");
   if (!SSL_KEY) {
-    console.warn("        Missing key file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.key")).join(", "));
+    console.error("        Missing key file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.key")).join(", "));
   }
   if (!SSL_CERT) {
-    console.warn("        Missing certificate file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.crt")).join(", "));
+    console.error("        Missing certificate file. Checked paths:", CERT_SEARCH_PATHS.map((p) => path.join(p, "rtml.ksm.co.kr.crt")).join(", "));
   }
+  console.error("        Set SSL_KEY_PATH and SSL_CERT_PATH to valid files or set USE_HTTPS=false.");
+  process.exit(1);
 }
 
 let server;
+let redirectServer;
 
 if (HTTPS_READY) {
   const options = {
@@ -207,6 +212,15 @@ if (HTTPS_READY) {
   console.log("[home] Running in HTTP mode");
 }
 
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`[home] Port ${PORT} is already in use. Stop the other process or choose a different PORT.`);
+  } else {
+    console.error("[home] Server error:", error);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, HOST, () => {
   const protocol = HTTPS_READY ? "https" : "http";
   console.log(`[home] listening on ${protocol}://localhost:${PORT}`);
@@ -214,3 +228,31 @@ server.listen(PORT, HOST, () => {
   console.log(`        sql view explorer: ${protocol}://localhost:${PORT}/view-explorer.html`);
   console.log(`        domain access:    ${protocol}://rtml.ksm.co.kr:${PORT}`);
 });
+
+if (HTTPS_READY && HTTP_REDIRECT_PORT > 0) {
+  redirectServer = http.createServer((req, res) => {
+    const hostHeader = req.headers.host || `localhost:${HTTP_REDIRECT_PORT}`;
+    const hostWithoutPort = hostHeader.replace(/:\d+$/, "");
+    const targetHost = REDIRECT_HOST || hostWithoutPort;
+    const portSegment = PORT === 443 ? "" : `:${PORT}`;
+    const redirectUrl = `https://${targetHost}${portSegment}${req.url}`;
+
+    res.writeHead(301, {
+      Location: redirectUrl,
+      "Content-Type": "text/plain",
+    });
+    res.end(`Redirecting to ${redirectUrl}`);
+  });
+
+  redirectServer.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      console.warn(`[home] HTTP redirect port ${HTTP_REDIRECT_PORT} is already in use. Redirect server not started.`);
+    } else {
+      console.warn("[home] HTTP redirect server error:", error);
+    }
+  });
+
+  redirectServer.listen(HTTP_REDIRECT_PORT, HOST, () => {
+    console.log(`[home] HTTP redirect listening on http://localhost:${HTTP_REDIRECT_PORT} -> https://localhost:${PORT}`);
+  });
+}

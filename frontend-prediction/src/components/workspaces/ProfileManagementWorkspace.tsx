@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ProfileManagement } from '../ProfileManagement';
-import { ProfileEditor } from '../ProfileEditor';
+
 import type { DataMappingProfile } from '../../types/routing';
+import { ProfileEditor } from '../ProfileEditor';
+import { ProfileManagement } from '../ProfileManagement';
 
 export function ProfileManagementWorkspace() {
   const [selectedProfile, setSelectedProfile] = useState<DataMappingProfile | null>(null);

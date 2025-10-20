@@ -1,14 +1,14 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-import { OptionsWorkspace } from "../OptionsWorkspace";
-import { useWorkspaceStore } from "@store/workspaceStore";
-import { useRoutingStore } from "@store/routingStore";
 import {
   fetchWorkspaceSettings,
   saveWorkspaceSettings,
   type WorkspaceSettingsResponse,
 } from "@lib/apiClient";
+import { useRoutingStore } from "@store/routingStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { OptionsWorkspace } from "../OptionsWorkspace";
 
 vi.mock("@lib/apiClient", () => {
   const defaultResponse: WorkspaceSettingsResponse = {

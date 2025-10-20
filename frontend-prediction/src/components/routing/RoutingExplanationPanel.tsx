@@ -1,5 +1,5 @@
-import { useMemo } from "react";
 import type { CandidateRouting } from "@app-types/routing";
+import { useMemo } from "react";
 
 interface RoutingExplanationPanelProps {
   candidate: CandidateRouting | null;

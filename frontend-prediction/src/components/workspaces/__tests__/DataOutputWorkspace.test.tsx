@@ -1,8 +1,8 @@
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { describe, expect, beforeEach, vi, it } from "vitest";
+import { useWorkspaceStore } from "@store/workspaceStore";
+import { fireEvent,render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it,vi } from "vitest";
 
 import { DataOutputWorkspace } from "../DataOutputWorkspace";
-import { useWorkspaceStore } from "@store/workspaceStore";
 
 const mockProfiles = [
   { id: "profile-1", name: "Primary", description: "Primary profile", format: "CSV" },

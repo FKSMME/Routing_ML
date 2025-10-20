@@ -201,12 +201,12 @@ allowed_origins: List[str] = Field(
         "https://10.204.2.28:5173",
         "https://10.204.2.28:5174",
         # HTTP - Production Domains
-        "http://rtml.ksm.co.kr:3000",
-        "http://rtml.ksm.co.kr:5173",
-        "http://rtml.ksm.co.kr:5174",
-        "http://mcs.ksm.co.kr:3000",
-        "http://mcs.ksm.co.kr:5173",
-        "http://mcs.ksm.co.kr:5174",
+        "https://rtml.ksm.co.kr:3000",
+        "https://rtml.ksm.co.kr:5173",
+        "https://rtml.ksm.co.kr:5174",
+        "https://mcs.ksm.co.kr:3000",
+        "https://mcs.ksm.co.kr:5173",
+        "https://mcs.ksm.co.kr:5174",
         # HTTPS - Production Domains
         "https://rtml.ksm.co.kr:3000",
         "https://rtml.ksm.co.kr:5173",

@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { Box,OrbitControls } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Box } from '@react-three/drei';
+import { useRef } from 'react';
 import * as THREE from 'three';
 
 function RotatingBox() {

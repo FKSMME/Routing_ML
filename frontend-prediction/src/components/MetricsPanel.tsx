@@ -1,5 +1,6 @@
 import type { PredictionMetrics } from "@app-types/routing";
 import { Fragment } from "react";
+
 import { AnimatedCard } from "./AnimatedCard";
 
 interface MetricsPanelProps {

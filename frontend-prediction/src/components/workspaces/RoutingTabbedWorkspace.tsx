@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
 import { BarChart3 } from "lucide-react";
-import { Tabs } from "../ui/Tabs";
-import { PredictionControls } from "../PredictionControls";
-import { TimelinePanel } from "../TimelinePanel";
-import { VisualizationSummary } from "../VisualizationSummary";
-import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
+import React, { useEffect,useState } from "react";
+
+import { CandidatePanel } from "../CandidatePanel";
 import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
-import { CandidatePanel } from "../CandidatePanel";
+import { PredictionControls } from "../PredictionControls";
+import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
+import { TimelinePanel } from "../TimelinePanel";
+import { Tabs } from "../ui/Tabs";
+import { VisualizationSummary } from "../VisualizationSummary";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls

@@ -42,5 +42,5 @@ with open("backend/api/config.py", "w", encoding="utf-8") as f:
 print("CORS updated successfully!")
 print("Added origins:")
 print("  - http://10.204.2.28:*")
-print("  - http://rtml.ksm.co.kr:*")
-print("  - http://mcs.ksm.co.kr:*")
+print("  - https://rtml.ksm.co.kr:*")
+print("  - https://mcs.ksm.co.kr:*")

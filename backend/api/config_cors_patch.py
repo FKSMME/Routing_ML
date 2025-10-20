@@ -29,12 +29,12 @@ new_origins = '''allowed_origins: List[str] = Field(
             "http://10.204.2.28:3000",
             "http://10.204.2.28:5173",
             "http://10.204.2.28:5174",
-            "http://rtml.ksm.co.kr:3000",
-            "http://rtml.ksm.co.kr:5173",
-            "http://rtml.ksm.co.kr:5174",
-            "http://mcs.ksm.co.kr:3000",
-            "http://mcs.ksm.co.kr:5173",
-            "http://mcs.ksm.co.kr:5174",
+            "https://rtml.ksm.co.kr:3000",
+            "https://rtml.ksm.co.kr:5173",
+            "https://rtml.ksm.co.kr:5174",
+            "https://mcs.ksm.co.kr:3000",
+            "https://mcs.ksm.co.kr:5173",
+            "https://mcs.ksm.co.kr:5174",
         ],'''
 
 # 간단한 방법: 라인 번호로 직접 수정
@@ -62,5 +62,5 @@ with open(config_file, "w", encoding="utf-8") as f:
 print("✅ CORS 설정 패치 완료!")
 print("추가된 도메인:")
 print("  - http://10.204.2.28:*")
-print("  - http://rtml.ksm.co.kr:*")
-print("  - http://mcs.ksm.co.kr:*")
+print("  - https://rtml.ksm.co.kr:*")
+print("  - https://mcs.ksm.co.kr:*")

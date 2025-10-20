@@ -418,6 +418,96 @@ class EmailService:
             raise
 
 
+    def notify_user_password_reset(
+        self,
+        username: str,
+        email: str,
+        temporary_password: str,
+        *,
+        force_change: bool = True,
+        display_name: Optional[str] = None,
+    ) -> bool:
+        if not email:
+            self._logger.info(
+                "Password reset email skipped: missing address",
+                extra={"username": username},
+            )
+            return False
+
+        subject = f"[Routing ML] {username} 비밀번호 초기화 안내"
+        guidance = (
+            "로그인 후 반드시 새 비밀번호를 설정해 주세요."
+            if force_change
+            else "임시 비밀번호는 로그인 후 변경할 수 있습니다."
+        )
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #1f2937;">
+                <h2 style="color:#2563eb;">Routing ML 비밀번호 초기화</h2>
+                <p>{display_name or username} 님 안녕하세요.</p>
+                <p>관리자가 임시 비밀번호를 발급했습니다. 아래 정보를 사용해 로그인하세요.</p>
+                <div style="padding:12px 16px; background:#f3f4f6; border-radius:8px; margin:16px 0;">
+                    <strong>임시 비밀번호:</strong>
+                    <code style="font-size:1.1em;">{temporary_password}</code>
+                </div>
+                <p>{guidance}</p>
+                <p style="color:#6b7280; font-size:12px;">본 메일은 시스템에서 자동 발송되었습니다.</p>
+            </body>
+        </html>
+        """
+
+        try:
+            return self.send_email(email, subject, html_body)
+        except OutlookNotAvailableError as exc:
+            self._logger.warning(
+                "Outlook unavailable for password reset email",
+                extra={"username": username, "error": str(exc)},
+            )
+            raise
+
+    def notify_user_bulk_invited(
+        self,
+        username: str,
+        email: str,
+        temporary_password: str,
+        *,
+        display_name: Optional[str] = None,
+        invited_by: Optional[str] = None,
+    ) -> bool:
+        if not email:
+            self._logger.info(
+                "Bulk invite email skipped: missing address",
+                extra={"username": username},
+            )
+            return False
+
+        subject = f"[Routing ML] {display_name or username} 계정이 생성되었습니다"
+        html_body = f"""
+        <html>
+            <body style="font-family: Arial, sans-serif; color: #111827;">
+                <h2 style="color:#0ea5e9;">Routing ML 계정 안내</h2>
+                <p>{invited_by or '관리자'}가 {display_name or username} 님의 계정을 생성했습니다.</p>
+                <p>아래 임시 비밀번호로 로그인한 뒤 원하는 비밀번호로 변경해 주세요.</p>
+                <div style="padding:12px 16px; background:#e0f2fe; border-radius:8px; margin:16px 0;">
+                    <strong>아이디:</strong> {username}<br/>
+                    <strong>임시 비밀번호:</strong>
+                    <code style="font-size:1.1em;">{temporary_password}</code>
+                </div>
+                <p style="color:#6b7280; font-size:12px;">이 메시지는 일괄 등록 기능으로 자동 발송되었습니다.</p>
+            </body>
+        </html>
+        """
+
+        try:
+            return self.send_email(email, subject, html_body)
+        except OutlookNotAvailableError as exc:
+            self._logger.warning(
+                "Outlook unavailable for bulk invite email",
+                extra={"username": username, "error": str(exc)},
+            )
+            raise
+
+
 # 싱글톤 인스턴스
 email_service = EmailService()
 

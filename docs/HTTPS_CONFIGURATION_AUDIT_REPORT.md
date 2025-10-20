@@ -58,9 +58,9 @@ allowed_origins: List[str] = Field(
         # HTTPS - IP Address
         "https://10.204.2.28:3000", ":5173", ":5174",
         # HTTP/HTTPS - Production Domains
-        "http://rtml.ksm.co.kr:3000", ":5173", ":5174",
         "https://rtml.ksm.co.kr:3000", ":5173", ":5174",
-        "http://mcs.ksm.co.kr:3000", ":5173", ":5174",
+        "https://rtml.ksm.co.kr:3000", ":5173", ":5174",
+        "https://mcs.ksm.co.kr:3000", ":5173", ":5174",
         "https://mcs.ksm.co.kr:3000", ":5173", ":5174",
     ],
 )
@@ -145,7 +145,7 @@ const SSL_CERT = path.join(__dirname, "../certs/rtml.ksm.co.kr.crt");
 
 ⚠️ **문제**:
 ```javascript
-"connect-src 'self' http://localhost:* http://10.204.2.28:* http://rtml.ksm.co.kr:* http://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*"
+"connect-src 'self' http://localhost:* http://10.204.2.28:* https://rtml.ksm.co.kr:* https://mcs.ksm.co.kr:* ws://localhost:* ws://10.204.2.28:* ws://rtml.ksm.co.kr:* ws://mcs.ksm.co.kr:*"
 ```
 
 **누락된 프로토콜**:
@@ -157,8 +157,8 @@ const SSL_CERT = path.join(__dirname, "../certs/rtml.ksm.co.kr.crt");
 "connect-src 'self' " +
   "http://localhost:* https://localhost:* " +
   "http://10.204.2.28:* https://10.204.2.28:* " +
-  "http://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* " +
-  "http://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* " +
+  "https://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* " +
+  "https://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* " +
   "ws://localhost:* wss://localhost:* " +
   "ws://10.204.2.28:* wss://10.204.2.28:* " +
   "ws://rtml.ksm.co.kr:* wss://rtml.ksm.co.kr:* " +
@@ -266,7 +266,7 @@ SERVICES: Tuple[Service, ...] = (
         check_url="http://localhost:8000/api/health",  # ⚠️ HTTP
         links=(
             ("Local", "http://localhost:8000/docs"),
-            ("Domain", "http://rtml.ksm.co.kr:8000/docs"),
+            ("Domain", "https://rtml.ksm.co.kr:8000/docs"),
         ),
     ),
     Service(
@@ -465,8 +465,8 @@ ssl_context.verify_mode = ssl.CERT_NONE
 "connect-src 'self' " +
   "http://localhost:* https://localhost:* " +
   "http://10.204.2.28:* https://10.204.2.28:* " +
-  "http://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* " +
-  "http://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* " +
+  "https://rtml.ksm.co.kr:* https://rtml.ksm.co.kr:* " +
+  "https://mcs.ksm.co.kr:* https://mcs.ksm.co.kr:* " +
   "ws://localhost:* wss://localhost:* " +
   "ws://10.204.2.28:* wss://10.204.2.28:* " +
   "ws://rtml.ksm.co.kr:* wss://rtml.ksm.co.kr:* " +

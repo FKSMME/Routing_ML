@@ -9,15 +9,16 @@ import type {
 } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
+import { regenerateWorkflowCode } from "@lib/apiClient";
 import { cn } from "@lib/classNames";
 import { ExternalLink } from "lucide-react";
 import {
+  type CSSProperties,
   Fragment,
   useCallback,
   useEffect,
   useMemo,
   useState,
-  type CSSProperties,
 } from "react";
 import ReactFlow, {
   Background,
@@ -29,7 +30,6 @@ import ReactFlow, {
   Position,
   ReactFlowProvider,
 } from "reactflow";
-import { regenerateWorkflowCode } from "@lib/apiClient";
 
 const NODE_TYPES = {
   module: ModuleNode,

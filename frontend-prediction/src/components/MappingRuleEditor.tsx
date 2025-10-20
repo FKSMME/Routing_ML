@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+
 import type { DataMappingRule, DataMappingSourceType } from '../types';
 
 interface MappingRuleEditorProps {

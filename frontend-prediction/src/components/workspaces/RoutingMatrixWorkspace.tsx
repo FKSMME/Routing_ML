@@ -1,8 +1,8 @@
 import { CardShell } from "@components/common/CardShell";
 import { useRoutingStore } from "@store/routingStore";
 import { ChevronLeft, ChevronRight, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface MatrixComboSummary {
   key: string;

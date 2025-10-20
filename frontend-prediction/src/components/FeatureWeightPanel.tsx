@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+
 import { AnimatedCard } from "./AnimatedCard";
 
 interface FeatureWeightPanelProps {

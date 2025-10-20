@@ -1,6 +1,7 @@
 import { useState } from 'react';
+
 import { Hyperspeed } from './Hyperspeed';
-import { HYPERSPEED_PRESETS, PRESET_KEYS, getPreset } from './hyperspeedPresets';
+import { getPreset,HYPERSPEED_PRESETS, PRESET_KEYS } from './hyperspeedPresets';
 
 export function HyperspeedBackground() {
   const [selectedPreset, setSelectedPreset] = useState('cyberpunk');

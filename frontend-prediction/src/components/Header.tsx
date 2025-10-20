@@ -1,7 +1,8 @@
-﻿import { LogOut, Home } from "lucide-react";
-import { useAuthStore } from "@store/authStore";
-import { ThemeToggle } from "./ThemeToggle";
+﻿import { useAuthStore } from "@store/authStore";
+import { Home,LogOut } from "lucide-react";
+
 import { AnimatedLogo3D } from "./AnimatedLogo3D";
+import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
   onRefresh: () => void;

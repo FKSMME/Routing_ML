@@ -5,8 +5,9 @@
  * 예상 정확도: 70-75%
  */
 
-import React, { useState } from 'react';
 import './OnPremSearch.css';
+
+import React, { useState } from 'react';
 
 // ============================================================================
 // Types

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Edit2, Plus, Save, Trash2, X } from 'lucide-react';
+import { useEffect,useState } from 'react';
+
 import apiClient from '../lib/apiClient';
 import type { DataMappingProfile } from '../types';
 

@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
 import { detectLayout, useResponsiveLayout } from "@styles/responsive";
 import type { LayoutTier } from "@styles/theme";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const PERSISTENT_BREAKPOINTS: LayoutTier[] = ["desktop", "laptop"];
 

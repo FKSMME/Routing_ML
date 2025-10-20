@@ -84,7 +84,15 @@
       "Bash(nslookup:*)",
       "Bash(npm install:*)",
       "Bash(sed:*)",
-      "Bash(./../.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)"
+      "Bash(./../.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:*)",
+      "Bash(for file in AnimatedLogo3D.tsx BackgroundControls.tsx FullScreen3DBackground.tsx Hyperspeed.tsx HyperspeedBackground.tsx ParticleBackground.tsx)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(diff:*)",
+      "Bash(done)",
+      "Bash(npx vite build)",
+      "Bash(./../.venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []

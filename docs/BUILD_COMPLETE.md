@@ -152,10 +152,10 @@ npm run preview
 - Backend API: http://10.204.2.28:8000/docs
 
 #### 프로덕션 (도메인)
-- Frontend Home: http://rtml.ksm.co.kr:3000
-- Frontend Prediction: http://rtml.ksm.co.kr:5173
-- Frontend Training: http://rtml.ksm.co.kr:5174
-- Backend API: http://rtml.ksm.co.kr:8000/docs
+- Frontend Home: https://rtml.ksm.co.kr:3000
+- Frontend Prediction: https://rtml.ksm.co.kr:5173
+- Frontend Training: https://rtml.ksm.co.kr:5174
+- Backend API: https://rtml.ksm.co.kr:8000/docs
 
 ---
 
@@ -163,8 +163,8 @@ npm run preview
 
 ### 1. CORS 테스트
 ```javascript
-// 브라우저 Console에서 실행 (http://rtml.ksm.co.kr:5173)
-fetch('http://rtml.ksm.co.kr:8000/api/health', {
+// 브라우저 Console에서 실행 (https://rtml.ksm.co.kr:5173)
+fetch('https://rtml.ksm.co.kr:8000/api/health', {
   credentials: 'include'
 })
   .then(r => r.json())
@@ -176,7 +176,7 @@ fetch('http://rtml.ksm.co.kr:8000/api/health', {
 ```
 
 ### 2. 로그인 및 인증 테스트
-1. Frontend Prediction 접속 (http://rtml.ksm.co.kr:5173)
+1. Frontend Prediction 접속 (https://rtml.ksm.co.kr:5173)
 2. 로그인 페이지에서 인증
 3. "라우팅 생성" 메뉴 클릭
 4. API 요청 성공 확인 (Network 탭에서 401 에러 없음)

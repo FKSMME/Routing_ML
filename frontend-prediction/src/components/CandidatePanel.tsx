@@ -7,6 +7,7 @@ import {
 import { Activity, Database, Edit3, EyeOff, Plus, Search, Settings, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+
 import { AnimatedCandidateCard } from "./AnimatedCandidateCard";
 import { CandidateSettingsModal } from "./CandidateSettingsModal";
 

@@ -7,7 +7,11 @@ from backend.api.config import get_settings
 from backend.api.schemas import (
     AdminApproveRequest,
     AdminRejectRequest,
+    AdminResetPasswordRequest,
+    AdminResetPasswordResponse,
     AuthenticatedUser,
+    BulkRegisterRequest,
+    BulkRegisterResponse,
     ChangePasswordRequest,
     ChangePasswordResponse,
     LoginRequest,
@@ -17,7 +21,7 @@ from backend.api.schemas import (
     UserListResponse,
     UserStatusResponse,
 )
-from backend.api.security import require_admin, require_auth
+from backend.api.security import require_auth
 from backend.api.services.auth_service import auth_service, login as login_service
 from common.logger import get_logger
 
@@ -194,17 +198,65 @@ async def change_password(
     return result
 
 
+@router.post("/admin/reset-password", response_model=AdminResetPasswordResponse)
+async def admin_reset_password(
+    request: Request,
+    payload: AdminResetPasswordRequest,
+) -> AdminResetPasswordResponse:
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Monitoring client required")
+
+    try:
+        result = auth_service.reset_password_admin(payload, admin_username="ServerMonitor")
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    audit_logger.info(
+        "관리자 비밀번호 초기화",
+        extra={"admin": "ServerMonitor", "target": result.username, "force_change": result.force_change, "notified": result.notified},
+    )
+    return result
+
+
+@router.post("/admin/bulk-register", response_model=BulkRegisterResponse)
+async def admin_bulk_register(
+    request: Request,
+    payload: BulkRegisterRequest,
+) -> BulkRegisterResponse:
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Monitoring client required")
+
+    try:
+        result = auth_service.bulk_register(payload, admin_username="ServerMonitor")
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    audit_logger.info(
+        "관리자 일괄 등록",
+        extra={"admin": "ServerMonitor", "requested": len(payload.users), "succeeded": len(result.successes), "failed": len(result.failures)},
+    )
+    return result
+
+
 @router.get("/admin/users", response_model=UserListResponse)
 async def list_users(
+    request: Request,
+    status: str | None = None,
+    search: str | None = None,
     limit: int = 50,
     offset: int = 0,
-    admin: AuthenticatedUser = Depends(require_admin),
 ) -> UserListResponse:
-    """사용자 목록 조회 (관리자 전용)"""
-    result = auth_service.list_users(limit=limit, offset=offset)
+    """관리자용 사용자 목록 조회"""
+    user_agent = request.headers.get("User-Agent", "")
+    if "RoutingML-Monitor" not in user_agent:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Monitoring client required")
+
+    result = auth_service.list_users(status=status, search=search, limit=limit, offset=offset)
     audit_logger.info(
-        "사용자 목록 조회",
-        extra={"admin": admin.username, "limit": limit, "offset": offset},
+        "관리자 사용자 목록 조회",
+        extra={"admin": "ServerMonitor", "status": status, "search": search, "limit": limit, "offset": offset},
     )
     return result
 

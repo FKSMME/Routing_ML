@@ -599,3 +599,12 @@ Phase 1 작업을 성공적으로 완료했습니다:
 **Last Updated**: 2025-10-20
 **Author**: Claude Code Assistant
 **Version**: 1.0.0
+### 2025-10-20 추가 작업 요약
+
+- 관리자 비밀번호 초기화·대량 등록 API를 추가하고 AuthService에 
+eset_password_admin, ulk_register 로직을 구현했습니다.
+- GET /api/auth/admin/users는 상태/검색 필터와 페이지네이션을 지원하도록 확장되었고, /admin/reset-password, /admin/bulk-register 엔드포인트를 노출했습니다.
+- 이메일 서비스에 패스워드 초기화/일괄 등록 안내 메일 헬퍼를 추가하고, 관련 단위 테스트 7건을 업데이트해 모두 통과했습니다.
+- 테스트 픽스처는 TESTING 플래그와 임시 SQLite 경로를 사용하도록 갱신하여 PoC 환경에서도 안전하게 실행됩니다.
+
+- PyInstaller 모니터 앱이 서비스 계정으로 백엔드에 로그인하여 전체 사용자 조회, 비밀번호 초기화, CSV 일괄 등록을 수행할 수 있도록 UI와 API 연동을 확장했습니다.

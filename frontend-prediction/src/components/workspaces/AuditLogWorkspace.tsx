@@ -1,6 +1,6 @@
 import { CardShell } from "@components/common/CardShell";
 import { ClipboardList, Filter, RefreshCw, Search, X } from "lucide-react";
-import { useCallback, useEffect, useState, type ChangeEvent, type CSSProperties } from "react";
+import { type ChangeEvent, type CSSProperties,useCallback, useEffect, useState } from "react";
 
 interface AuditEvent {
   timestamp: string;

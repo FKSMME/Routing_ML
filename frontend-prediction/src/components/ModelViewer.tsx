@@ -1,19 +1,19 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useLoader, useThree, invalidate } from "@react-three/fiber";
 import {
-  OrbitControls,
-  useGLTF,
-  useFBX,
-  useProgress,
-  Html,
-  Environment,
   ContactShadows,
+  Environment,
+  Html,
+  OrbitControls,
+  useFBX,
+  useGLTF,
+  useProgress,
 } from "@react-three/drei";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { Canvas, invalidate,useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 
 type ModelViewerProps = {
   url: string;

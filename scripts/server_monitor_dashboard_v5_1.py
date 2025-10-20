@@ -17,6 +17,8 @@ import webbrowser
 import json
 import subprocess
 import os
+import csv
+import http.cookiejar as cookiejar
 from dataclasses import dataclass
 from pathlib import Path
 from queue import Empty, Queue
@@ -71,6 +73,12 @@ NODE_DISABLED = "#1a1f24"  # Darker gray for disabled nodes
 NODE_ENABLED = "#2d4a5d"   # Brighter blue-gray for enabled nodes
 NODE_READY = "#3fb950"     # Green for ready/online state
 
+API_BASE_URL = os.getenv("ROUTING_ML_API_URL", "https://localhost:8000")
+MONITOR_ADMIN_USERNAME = os.getenv("MONITOR_ADMIN_USERNAME")
+MONITOR_ADMIN_PASSWORD = os.getenv("MONITOR_ADMIN_PASSWORD")
+API_TIMEOUT = float(os.getenv("MONITOR_API_TIMEOUT", "8"))
+USER_AGENT = "RoutingML-Monitor/5.3"
+
 
 def blend_color(hex_a: str, hex_b: str, t: float) -> str:
     """Linear interpolate between two hex colors"""
@@ -86,6 +94,112 @@ def blend_color(hex_a: str, hex_b: str, t: float) -> str:
     b = int(ba * (1 - t) + bb * t)
 
     return f"#{r:02x}{g:02x}{b:02x}"
+
+
+class ApiError(Exception):
+    """Raised when API interaction fails."""
+
+
+class ApiClient:
+    """Simple API client with cookie support for the Routing ML backend."""
+
+    def __init__(
+        self,
+        base_url: str,
+        username: Optional[str],
+        password: Optional[str],
+        *,
+        timeout: float = 8.0,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.username = username
+        self.password = password
+        self.timeout = timeout
+        self.context = ssl.create_default_context()
+        self.context.check_hostname = False
+        self.context.verify_mode = ssl.CERT_NONE
+        self.cookie_jar = cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=self.context),
+            urllib.request.HTTPCookieProcessor(self.cookie_jar),
+        )
+        self.headers = {
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/json",
+        }
+        if self.username and self.password:
+            self._authenticate()
+
+    def _authenticate(self) -> None:
+        payload = json.dumps(
+            {"username": self.username, "password": self.password}
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            f"{self.base_url}/api/auth/login",
+            data=payload,
+            headers=self.headers,
+            method="POST",
+        )
+        try:
+            with self.opener.open(request, timeout=self.timeout) as response:
+                if response.status != 200:
+                    raise ApiError(f"Login failed (HTTP {response.status})")
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            raise ApiError(f"Login failed: {exc.reason} ({exc.code}) {detail}") from exc
+        except urllib.error.URLError as exc:
+            raise ApiError(f"Unable to reach API server: {exc.reason}") from exc
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        data: Optional[bytes] = None,
+        params: Optional[Dict[str, Optional[str]]] = None,
+    ) -> Optional[dict]:
+        url = f"{self.base_url}{path}"
+        if params:
+            filtered = {k: v for k, v in params.items() if v not in (None, "")}
+            if filtered:
+                query = urllib.parse.urlencode(filtered)
+                separator = "&" if "?" in url else "?"
+                url = f"{url}{separator}{query}"
+
+        request = urllib.request.Request(
+            url,
+            data=data,
+            headers=self.headers,
+            method=method.upper(),
+        )
+        try:
+            with self.opener.open(request, timeout=self.timeout) as response:
+                payload = response.read()
+                if not payload:
+                    return None
+                try:
+                    return json.loads(payload.decode("utf-8"))
+                except json.JSONDecodeError:
+                    return None
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            raise ApiError(
+                f"API 요청 실패 (HTTP {exc.code}): {detail or exc.reason}"
+            ) from exc
+        except urllib.error.URLError as exc:
+            raise ApiError(f"Unable to reach API server: {exc.reason}") from exc
+
+    def get_json(
+        self,
+        path: str,
+        *,
+        params: Optional[Dict[str, Optional[str]]] = None,
+    ) -> Optional[dict]:
+        return self._request("GET", path, params=params)
+
+    def post_json(self, path: str, payload: dict) -> Optional[dict]:
+        data = json.dumps(payload).encode("utf-8")
+        return self._request("POST", path, data=data)
 
 
 # ============================================================================
@@ -553,6 +667,8 @@ class RoutingMLDashboard:
         self.root.configure(bg=BG_PRIMARY)
         self.root.geometry("1200x800")
 
+        self.api_client: Optional[ApiClient] = None
+
         # Setup styles
         self._setup_styles()
 
@@ -570,6 +686,18 @@ class RoutingMLDashboard:
 
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
+
+    def _ensure_api_client(self) -> bool:
+        """Ensure API client is available; authentication is optional."""
+        if self.api_client is None:
+            self.api_client = ApiClient(
+                API_BASE_URL,
+                MONITOR_ADMIN_USERNAME or None,
+                MONITOR_ADMIN_PASSWORD or None,
+                timeout=API_TIMEOUT,
+            )
+        return True
+
 
     def _setup_styles(self):
         """Setup ttk styles"""
@@ -777,6 +905,51 @@ class RoutingMLDashboard:
             command=self._load_pending_users
         )
         refresh_btn.pack(side="right", padx=20, pady=16)
+
+        action_bar = tk.Frame(self.user_tab, bg=BG_PRIMARY)
+        action_bar.pack(fill="x", padx=20, pady=(12, 0))
+
+        tk.Button(
+            action_bar,
+            text="전체 사용자 보기",
+            font=("Segoe UI", 9, "bold"),
+            fg=TEXT_PRIMARY,
+            bg=ACCENT_INFO,
+            activebackground=ACCENT_SECONDARY,
+            relief="flat",
+            cursor="hand2",
+            padx=14,
+            pady=6,
+            command=self._open_user_browser,
+        ).pack(side="left", padx=4)
+
+        tk.Button(
+            action_bar,
+            text="비밀번호 초기화",
+            font=("Segoe UI", 9, "bold"),
+            fg=TEXT_PRIMARY,
+            bg=ACCENT_WARNING,
+            activebackground=ACCENT_SECONDARY,
+            relief="flat",
+            cursor="hand2",
+            padx=14,
+            pady=6,
+            command=self._prompt_reset_password,
+        ).pack(side="left", padx=4)
+
+        tk.Button(
+            action_bar,
+            text="CSV 일괄 등록",
+            font=("Segoe UI", 9, "bold"),
+            fg=TEXT_PRIMARY,
+            bg=ACCENT_PRIMARY,
+            activebackground=ACCENT_SECONDARY,
+            relief="flat",
+            cursor="hand2",
+            padx=14,
+            pady=6,
+            command=self._bulk_register_csv,
+        ).pack(side="left", padx=4)
 
         # User list container with scroll
         list_container = tk.Frame(self.user_tab, bg=BG_PRIMARY)
@@ -992,49 +1165,42 @@ class RoutingMLDashboard:
         for widget in self.user_list_frame.winfo_children():
             widget.destroy()
 
-        # Create SSL context for self-signed certificates
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+        if not self._ensure_api_client():
+            self.user_status_label.config(text="관리자 인증이 필요합니다")
+            return
 
         try:
-            request = urllib.request.Request(
-                "https://localhost:8000/api/auth/admin/pending-users",
-                headers={"User-Agent": "RoutingML-Monitor/5.2"}
-            )
-
-            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
-                data = json.loads(response.read().decode("utf-8"))
-                users = data.get("users", [])
-                count = data.get("count", 0)
-
-                if count == 0:
-                    self.user_status_label.config(text="대기 중인 회원이 없습니다")
-                    no_users = tk.Label(
-                        self.user_list_frame,
-                        text="대기 중인 회원이 없습니다",
-                        font=("Segoe UI", 12),
-                        fg=TEXT_SECONDARY,
-                        bg=BG_PRIMARY,
-                        pady=50
-                    )
-                    no_users.pack()
-                else:
-                    self.user_status_label.config(text=f"대기 중인 회원: {count}명")
-                    for user in users:
-                        self._create_user_card(user)
-
-        except Exception as e:
-            self.user_status_label.config(text=f"오류: {str(e)}")
+            data = self.api_client.get_json("/api/auth/admin/pending-users") or {}
+            users = data.get("users", []) or []
+            count = data.get("count", len(users))
+        except ApiError as exc:
+            self.user_status_label.config(text=f"오류: {exc}")
             error_label = tk.Label(
                 self.user_list_frame,
-                text=f"회원 목록을 불러올 수 없습니다\n\n{str(e)}",
+                text=f"회원 정보를 불러올 수 없습니다\n\n{exc}",
                 font=("Segoe UI", 11),
                 fg=ACCENT_DANGER,
                 bg=BG_PRIMARY,
                 pady=50
             )
             error_label.pack()
+            return
+
+        if count == 0:
+            self.user_status_label.config(text="대기 중인 회원이 없습니다")
+            no_users = tk.Label(
+                self.user_list_frame,
+                text="대기 중인 회원이 없습니다",
+                font=("Segoe UI", 12),
+                fg=TEXT_SECONDARY,
+                bg=BG_PRIMARY,
+                pady=50
+            )
+            no_users.pack()
+        else:
+            self.user_status_label.config(text=f"대기 중 회원: {count}명")
+            for user in users:
+                self._create_user_card(user)
 
     def _create_user_card(self, user: dict):
         """Create compact user card"""
@@ -1122,61 +1288,280 @@ class RoutingMLDashboard:
         )
         reject_btn.pack(side="left", padx=3)
 
+    @staticmethod
+    def _csv_value_to_bool(value: Optional[str]) -> bool:
+        if value is None:
+            return False
+        return str(value).strip().lower() in {"1", "true", "yes", "y", "t", "on"}
+
+
+    def _open_user_browser(self) -> None:
+        if not self._ensure_api_client():
+            return
+
+        window = tk.Toplevel(self.root)
+        window.title("전체 사용자 목록")
+        window.configure(bg=BG_PRIMARY)
+        window.geometry("760x540")
+        window.transient(self.root)
+
+        search_var = tk.StringVar()
+        status_var = tk.StringVar()
+        total_var = tk.StringVar(value="0명")
+
+        control = tk.Frame(window, bg=BG_PRIMARY)
+        control.pack(fill="x", padx=16, pady=12)
+
+        tk.Label(control, text="검색", font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_PRIMARY).pack(side="left")
+        search_entry = tk.Entry(control, textvariable=search_var, font=("Segoe UI", 10))
+        search_entry.pack(side="left", padx=(6, 12))
+        search_entry.focus_set()
+
+        tk.Label(control, text="상태", font=("Segoe UI", 9), fg=TEXT_SECONDARY, bg=BG_PRIMARY).pack(side="left")
+        status_box = ttk.Combobox(control, textvariable=status_var, values=["", "approved", "pending", "rejected"], width=12, state="readonly")
+        status_box.pack(side="left", padx=(6, 12))
+        status_box.set("")
+
+        def refresh_users() -> None:
+            params = {
+                "search": search_var.get().strip() or None,
+                "status": status_var.get() or None,
+                "limit": "100",
+                "offset": "0",
+            }
+            try:
+                data = self.api_client.get_json("/api/auth/admin/users", params=params) or {}
+            except ApiError as exc:
+                messagebox.showerror("조회 실패", str(exc))
+                return
+
+            tree.delete(*tree.get_children())
+            users = data.get("users", []) or []
+
+            def fmt(ts: Optional[str]) -> str:
+                if not ts or ts == "None":
+                    return "-"
+                return ts.replace("T", " ")[:19]
+
+            for user in users:
+                tree.insert(
+                    "",
+                    "end",
+                    values=(
+                        user.get("username", "-"),
+                        user.get("status", "-"),
+                        "Y" if user.get("is_admin") else "N",
+                        "Y" if user.get("must_change_password") else "N",
+                        user.get("invited_by") or "-",
+                        fmt(str(user.get("created_at"))),
+                        fmt(str(user.get("last_login_at"))),
+                    ),
+                )
+
+            total = data.get("total", len(users))
+            total_var.set(f"{total}명")
+
+        tk.Button(
+            control,
+            text="조회",
+            font=("Segoe UI", 9, "bold"),
+            bg=ACCENT_PRIMARY,
+            fg=TEXT_PRIMARY,
+            activebackground=ACCENT_SECONDARY,
+            relief="flat",
+            cursor="hand2",
+            padx=12,
+            pady=6,
+            command=refresh_users,
+        ).pack(side="left")
+
+        tk.Button(
+            control,
+            text="닫기",
+            font=("Segoe UI", 9),
+            bg=BG_SECONDARY,
+            fg=TEXT_PRIMARY,
+            relief="flat",
+            cursor="hand2",
+            padx=12,
+            pady=6,
+            command=window.destroy,
+        ).pack(side="right")
+
+        tree_frame = tk.Frame(window, bg=BG_PRIMARY)
+        tree_frame.pack(fill="both", expand=True, padx=16, pady=(0, 12))
+
+        columns = ("username", "status", "admin", "force", "invited", "created", "last_login")
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=16)
+        headings = {
+            "username": "아이디",
+            "status": "상태",
+            "admin": "관리자",
+            "force": "변경필요",
+            "invited": "등록자",
+            "created": "등록일",
+            "last_login": "최근 로그인",
+        }
+        widths = {
+            "username": 140,
+            "status": 90,
+            "admin": 80,
+            "force": 90,
+            "invited": 110,
+            "created": 140,
+            "last_login": 150,
+        }
+        for key, title in headings.items():
+            tree.heading(key, text=title)
+            tree.column(key, width=widths[key], anchor="center")
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        footer = tk.Frame(window, bg=BG_PRIMARY)
+        footer.pack(fill="x", padx=16, pady=(0, 12))
+        tk.Label(footer, textvariable=total_var, font=("Segoe UI", 9), fg=TEXT_TERTIARY, bg=BG_PRIMARY).pack(side="left")
+
+        refresh_users()
+
+    def _prompt_reset_password(self) -> None:
+        if not self._ensure_api_client():
+            return
+
+        username = simpledialog.askstring("비밀번호 초기화", "초기화할 사용자 ID를 입력하세요:")
+        if not username:
+            return
+
+        temp_password = simpledialog.askstring(
+            "임시 비밀번호",
+            "직접 임시 비밀번호를 지정하시겠습니까? (미입력 시 자동 생성)",
+            show="*",
+        )
+        force_change = messagebox.askyesno("비밀번호 초기화", "다음 로그인 시 비밀번호 변경을 강제할까요?")
+        notify = messagebox.askyesno("비밀번호 초기화", "사용자에게 이메일 알림을 보낼까요?")
+
+        payload = {
+            "username": username.strip(),
+            "temp_password": (temp_password.strip() if temp_password else None),
+            "force_change": force_change,
+            "notify": notify,
+        }
+
+        try:
+            result = self.api_client.post_json("/api/auth/admin/reset-password", payload) or {}
+        except ApiError as exc:
+            messagebox.showerror("초기화 실패", str(exc))
+            return
+
+        temp_display = result.get("temporary_password") or payload["temp_password"]
+        messagebox.showinfo(
+            "비밀번호 초기화 완료",
+            f"사용자 '{username}'의 비밀번호가 초기화되었습니다.\n임시 비밀번호: {temp_display}",
+        )
+
+    def _bulk_register_csv(self) -> None:
+        if not self._ensure_api_client():
+            return
+
+        file_path = filedialog.askopenfilename(
+            title="CSV 파일 선택",
+            filetypes=[("CSV 파일", "*.csv"), ("모든 파일", "*.*")],
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, newline="", encoding="utf-8-sig") as csvfile:
+                reader = csv.DictReader(csvfile)
+                users: List[dict] = []
+                for row in reader:
+                    username = (row.get("username") or "").strip()
+                    if not username:
+                        continue
+                    users.append(
+                        {
+                            "username": username,
+                            "display_name": (row.get("display_name") or "").strip() or None,
+                            "full_name": (row.get("full_name") or "").strip() or None,
+                            "email": (row.get("email") or "").strip() or None,
+                            "password": (row.get("password") or "").strip() or None,
+                            "make_admin": self._csv_value_to_bool(row.get("is_admin")),
+                        }
+                    )
+        except Exception as exc:
+            messagebox.showerror("CSV 읽기 실패", str(exc))
+            return
+
+        if not users:
+            messagebox.showwarning("일괄 등록", "유효한 사용자 레코드가 없습니다.")
+            return
+
+        auto_approve = messagebox.askyesno("일괄 등록", "등록된 사용자를 즉시 승인할까요?")
+        force_change = messagebox.askyesno("일괄 등록", "최초 로그인 시 비밀번호 변경을 강제할까요?")
+        notify = messagebox.askyesno("일괄 등록", "사용자에게 이메일 알림을 보낼까요?")
+        overwrite = messagebox.askyesno("일괄 등록", "기존 사용자가 존재하면 덮어쓸까요?")
+
+        payload = {
+            "users": users,
+            "auto_approve": auto_approve,
+            "force_password_change": force_change,
+            "notify": notify,
+            "overwrite_existing": overwrite,
+            "invited_by": self.api_client.username,
+        }
+
+        try:
+            result = self.api_client.post_json("/api/auth/admin/bulk-register", payload) or {}
+        except ApiError as exc:
+            messagebox.showerror("일괄 등록 실패", str(exc))
+            return
+
+        successes = result.get("successes", [])
+        failures = result.get("failures", [])
+        messagebox.showinfo(
+            "일괄 등록 완료",
+            f"요청: {len(payload['users'])}명\n성공: {len(successes)}명\n실패/스킵: {len(failures)}명",
+        )
+
     def _approve_user(self, username: str, make_admin: bool):
         """Approve user"""
         confirm = messagebox.askyesno("회원 승인", f"'{username}' 회원을 승인하시겠습니까?")
 
         if not confirm:
             return
+        if not self._ensure_api_client():
+            return
 
-        # Create SSL context for self-signed certificates
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-
+        payload = {"username": username, "make_admin": make_admin}
         try:
-            payload = json.dumps({"username": username, "make_admin": make_admin}).encode("utf-8")
-            request = urllib.request.Request(
-                "https://localhost:8000/api/auth/admin/approve",
-                data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
-                method="POST"
-            )
+            self.api_client.post_json("/api/auth/admin/approve", payload)
+        except ApiError as exc:
+            messagebox.showerror("승인 실패", str(exc))
+            return
 
-            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
-                messagebox.showinfo("승인 완료", f"'{username}' 회원이 승인되었습니다.")
-                self._load_pending_users()
-
-        except Exception as e:
-            messagebox.showerror("오류", f"승인 실패:\n{e}")
+        messagebox.showinfo("승인 완료", f"'{username}' 회원이 승인되었습니다.")
+        self._load_pending_users()
 
     def _reject_user(self, username: str):
         """Reject user"""
-        reason = simpledialog.askstring("회원 거절", f"'{username}' 회원 가입을 거절하시겠습니까?\n\n거절 사유 (선택사항):")
+        reason = simpledialog.askstring("회원 거절", f"'{username}' 회원 승인을 거절하시겠습니까?\n\n거절 사유 (선택 입력):")
 
         if reason is None:
             return
+        if not self._ensure_api_client():
+            return
 
-        # Create SSL context for self-signed certificates
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-
+        payload = {"username": username, "reason": (reason or "사유 없음")}
         try:
-            payload = json.dumps({"username": username, "reason": reason or "사유 없음"}).encode("utf-8")
-            request = urllib.request.Request(
-                "https://localhost:8000/api/auth/admin/reject",
-                data=payload,
-                headers={"Content-Type": "application/json", "User-Agent": "RoutingML-Monitor/5.2"},
-                method="POST"
-            )
+            self.api_client.post_json("/api/auth/admin/reject", payload)
+        except ApiError as exc:
+            messagebox.showerror("거절 실패", str(exc))
+            return
 
-            with urllib.request.urlopen(request, timeout=5, context=ssl_context) as response:
-                messagebox.showinfo("거절 완료", f"'{username}' 회원 가입이 거절되었습니다.")
-                self._load_pending_users()
-
-        except Exception as e:
-            messagebox.showerror("오류", f"거절 실패:\n{e}")
+        messagebox.showinfo("거절 완료", f"'{username}' 회원이 거절 처리되었습니다.")
+        self._load_pending_users()
 
     # ========================================================================
     # Background Tasks
@@ -1288,7 +1673,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
 

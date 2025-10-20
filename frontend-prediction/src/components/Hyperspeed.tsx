@@ -1,7 +1,9 @@
+import './Hyperspeed.css';
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+
 import { HyperspeedPreset } from './hyperspeedPresets';
-import './Hyperspeed.css';
 
 interface HyperspeedProps {
   preset: HyperspeedPreset;
@@ -21,7 +23,7 @@ export function Hyperspeed({ preset, className = '' }: HyperspeedProps) {
     let camera: THREE.PerspectiveCamera;
     let renderer: THREE.WebGLRenderer;
     let particles: THREE.Points;
-    let trails: THREE.Points[] = [];
+    const trails: THREE.Points[] = [];
 
     const init = () => {
       // Scene setup

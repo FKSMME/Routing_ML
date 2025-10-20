@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Save, X, Search, Filter } from 'lucide-react';
+import { Filter,Save, Search, X } from 'lucide-react';
+import { useEffect,useState } from 'react';
+
 import apiClient from '../lib/apiClient';
-import { MappingRuleEditor } from './MappingRuleEditor';
 import type { DataMappingProfile, DataMappingRule } from '../types';
+import { MappingRuleEditor } from './MappingRuleEditor';
 
 interface ProfileEditorProps {
   profile: DataMappingProfile;

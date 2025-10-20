@@ -2,23 +2,22 @@ import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import {
   createOutputProfile,
+  type CreateOutputProfilePayload,
   generateOutputPreview,
   // type OutputProfileColumn,
   postUiAudit,
   saveWorkspaceSettings,
-  type CreateOutputProfilePayload,
 } from "@lib/apiClient";
 
 type OutputProfileColumn = any;
-import { AlertCircle, DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload, X, Database } from "lucide-react";
-import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { TabContainer, type Tab } from "@components/TabContainer";
 import { DatabaseSettings } from "@components/DatabaseSettings";
-
+import { type Tab,TabContainer } from "@components/TabContainer";
 import {
   OutputMappingRow as MappingRow,
   useWorkspaceStore,
 } from "@store/workspaceStore";
+import { AlertCircle, Database,DownloadCloud, Eye, FolderOpen, List, Plus, Save, Settings, Trash2, Upload, X } from "lucide-react";
+import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 const COLUMN_TYPES: Array<{ value: string; label: string }> = [
   { value: "string", label: "Text" },

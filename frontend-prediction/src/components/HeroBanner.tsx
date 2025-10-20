@@ -1,9 +1,8 @@
+import type { NavigationKey } from "@store/workspaceStore";
 import type { CSSProperties } from "react";
 
-import type { NavigationKey } from "@store/workspaceStore";
-
-import ModelViewer from "./ModelViewer";
 import heroImage from "../../../main/4.jpg";
+import ModelViewer from "./ModelViewer";
 
 interface HeroBannerProps {
   activeMenu: NavigationKey;

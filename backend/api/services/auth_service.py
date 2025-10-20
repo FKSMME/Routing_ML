@@ -394,18 +394,211 @@ class AuthService:
     # ------------------------------------------------------------------
     # 사용자 목록 조회 (관리자용)
     # ------------------------------------------------------------------
-    def list_users(
-        self, limit: int = 50, offset: int = 0
-    ) -> UserListResponse:
-        """사용자 목록 조회 (관리자용)"""
-        with session_scope() as session:
-            # 전체 사용자 수
-            total = session.query(UserAccount).count()
+    def reset_password_admin(
+        self,
+        payload: AdminResetPasswordRequest,
+        *,
+        admin_username: Optional[str] = None,
+    ) -> AdminResetPasswordResponse:
+        """Reset a user's password on behalf of an administrator."""
 
-            # 페이지네이션
-            users = (
+        temporary_password = payload.temp_password or self._generate_temporary_password()
+        normalized = normalize_username(payload.username)
+        now = utc_now_naive()
+
+        with session_scope() as session:
+            user = (
                 session.query(UserAccount)
-                .order_by(UserAccount.created_at.desc())
+                .filter(UserAccount.normalized_username == normalized)
+                .one_or_none()
+            )
+            if not user:
+                raise ValueError("사용자를 찾을 수 없습니다")
+
+            user.password_hash = self._hasher.hash(temporary_password)
+            user.must_change_password = payload.force_change
+            if payload.notify:
+                user.initial_password_sent_at = now
+            session.add(user)
+
+            email = user.email
+            display_name = user.display_name
+            username = user.username
+
+        notified = False
+        if payload.notify and email:
+            try:
+                notified = email_service.notify_user_password_reset(
+                    username=username,
+                    email=email,
+                    temporary_password=temporary_password,
+                    force_change=payload.force_change,
+                    display_name=display_name,
+                )
+            except OutlookNotAvailableError as exc:
+                self._logger.info("Password reset email skipped: Outlook unavailable", extra={"username": username, "error": str(exc)})
+            except Exception as exc:
+                self._logger.warning("Password reset email failed", extra={"username": username, "error": str(exc)})
+        elif payload.notify:
+            self._logger.warning("Password reset email skipped: no email address", extra={"username": username})
+
+        self._logger.info("Admin password reset", extra={"target": username, "admin": admin_username, "force_change": payload.force_change, "notified": notified})
+
+        return AdminResetPasswordResponse(
+            username=username,
+            temporary_password=temporary_password,
+            force_change=payload.force_change,
+            notified=notified,
+            updated_at=now,
+        )
+
+    def bulk_register(
+        self,
+        payload: BulkRegisterRequest,
+        *,
+        admin_username: Optional[str] = None,
+    ) -> BulkRegisterResponse:
+        """Create or update multiple users from a single request."""
+
+        successes: List[BulkRegisterResult] = []
+        failures: List[BulkRegisterResult] = []
+        notification_queue: List[tuple[str, str, str, Optional[str]]] = []
+        now = utc_now_naive()
+        invited_by = payload.invited_by or admin_username
+
+        with session_scope() as session:
+            for record in payload.users:
+                username_raw = (record.username or "").strip()
+                if not username_raw:
+                    failures.append(BulkRegisterResult(username=record.username or "", status="failed", message="username is required"))
+                    continue
+
+                username = username_raw
+                normalized = normalize_username(username)
+                temporary_password = record.password or self._generate_temporary_password()
+
+                try:
+                    user = (
+                        session.query(UserAccount)
+                        .filter(UserAccount.normalized_username == normalized)
+                        .one_or_none()
+                    )
+
+                    if user and not payload.overwrite_existing:
+                        failures.append(BulkRegisterResult(username=username, status="skipped", is_admin=user.is_admin, approved=user.status == "approved", message="existing user and overwrite disabled"))
+                        continue
+
+                    action = "created" if user is None else "updated"
+
+                    if user is None:
+                        user = UserAccount(
+                            username=username,
+                            normalized_username=normalized,
+                            display_name=record.display_name,
+                            full_name=record.full_name,
+                            email=record.email,
+                            password_hash=self._hasher.hash(temporary_password),
+                            status="approved" if payload.auto_approve else "pending",
+                            is_admin=record.make_admin,
+                            must_change_password=payload.force_password_change,
+                            invited_by=invited_by,
+                            approved_at=now if payload.auto_approve else None,
+                        )
+                        if payload.notify:
+                            user.initial_password_sent_at = now
+                        session.add(user)
+                    else:
+                        user.display_name = record.display_name or user.display_name
+                        user.full_name = record.full_name or user.full_name
+                        user.email = record.email or user.email
+                        user.password_hash = self._hasher.hash(temporary_password)
+                        if payload.auto_approve:
+                            user.status = "approved"
+                            user.approved_at = now
+                        user.is_admin = record.make_admin
+                        user.must_change_password = payload.force_password_change
+                        user.invited_by = invited_by
+                        if payload.notify:
+                            user.initial_password_sent_at = now
+                        session.add(user)
+
+                    approved = user.status == "approved"
+                    result = BulkRegisterResult(
+                        username=username,
+                        status=action,
+                        is_admin=user.is_admin,
+                        approved=approved,
+                        temporary_password=temporary_password,
+                    )
+                    successes.append(result)
+
+                    if payload.notify:
+                        if user.email:
+                            notification_queue.append((user.email, username, temporary_password, user.display_name))
+                        else:
+                            result.message = "email address missing - notification skipped"
+                except Exception as exc:
+                    failures.append(BulkRegisterResult(username=username, status="failed", message=str(exc)))
+
+        notified_users: set[str] = set()
+        if payload.notify:
+            for email_address, username, temporary_password, display_name in notification_queue:
+                try:
+                    email_service.notify_user_bulk_invited(
+                        username=username,
+                        email=email_address,
+                        temporary_password=temporary_password,
+                        display_name=display_name,
+                        invited_by=admin_username or invited_by,
+                    )
+                    notified_users.add(username)
+                except OutlookNotAvailableError as exc:
+                    self._logger.info("Bulk register email skipped: Outlook unavailable", extra={"username": username, "error": str(exc)})
+                except Exception as exc:
+                    self._logger.warning("Bulk register email failed", extra={"username": username, "error": str(exc)})
+
+            for result in successes:
+                if result.username in notified_users:
+                    result.message = ((result.message + "; ") if result.message else "") + "email notified"
+
+        self._logger.info("Bulk user register", extra={"admin": admin_username, "requested": len(payload.users), "succeeded": len(successes), "failed": len(failures)})
+
+        return BulkRegisterResponse(successes=successes, failures=failures, total=len(payload.users))
+
+    def list_users(
+        self,
+        *,
+        status: Optional[str] = None,
+        search: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> UserListResponse:
+        """List users with optional status/search filters."""
+
+        normalized_status = status.strip().lower() if status else None
+        normalized_search = search.strip() if search else None
+
+        with session_scope() as session:
+            query = session.query(UserAccount)
+
+            if normalized_status:
+                query = query.filter(UserAccount.status == normalized_status)
+
+            if normalized_search:
+                keyword = f"%{normalized_search}%"
+                query = query.filter(
+                    or_(
+                        UserAccount.username.ilike(keyword),
+                        UserAccount.display_name.ilike(keyword),
+                        UserAccount.full_name.ilike(keyword),
+                        UserAccount.email.ilike(keyword),
+                    )
+                )
+
+            total = query.count()
+
+            users = (
+                query.order_by(UserAccount.created_at.desc())
                 .limit(limit)
                 .offset(offset)
                 .all()
@@ -417,10 +610,13 @@ class AuthService:
                     display_name=user.display_name,
                     status=user.status,
                     is_admin=user.is_admin,
+                    must_change_password=user.must_change_password,
+                    invited_by=user.invited_by,
                     created_at=user.created_at,
                     last_login_at=user.last_login_at,
                     approved_at=user.approved_at,
                     rejected_at=user.rejected_at,
+                    initial_password_sent_at=user.initial_password_sent_at,
                 )
                 for user in users
             ]

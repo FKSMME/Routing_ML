@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Database, CheckCircle, XCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, CheckCircle, Database, RefreshCw, X,XCircle } from 'lucide-react';
+import React, { useEffect,useState } from 'react';
 
 interface DatabaseConfig {
   server: string;

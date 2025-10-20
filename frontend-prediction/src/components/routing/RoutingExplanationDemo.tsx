@@ -1,7 +1,9 @@
-import { useState } from "react";
-import type { CandidateRouting } from "@app-types/routing";
-import { RoutingExplanationPanel } from "./RoutingExplanationPanel";
 import "./RoutingExplanationPanel.css";
+
+import type { CandidateRouting } from "@app-types/routing";
+import { useState } from "react";
+
+import { RoutingExplanationPanel } from "./RoutingExplanationPanel";
 
 // Mock data for demonstration
 const MOCK_CANDIDATES: CandidateRouting[] = [
