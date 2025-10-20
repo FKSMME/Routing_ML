@@ -7,6 +7,7 @@ import { MetricsPanel } from "../MetricsPanel";
 import { PredictionControls } from "../PredictionControls";
 import { ErpItemExplorer } from "../routing/ErpItemExplorer";
 import { ItemListPanel } from "../routing/ItemListPanel";
+import { RoutingCombinationSelector } from "../routing/RoutingCombinationSelector";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
@@ -110,10 +111,13 @@ export function RoutingTabbedWorkspace({
       icon: <BarChart3 size={18} />,
       content: (
         <div className="routing-visualization-tab" style={{ display: 'flex', width: '100%', minHeight: '800px', gap: '1rem', padding: '1rem' }}>
-          {/* 좌측: 품목 리스트 (15%) */}
+          {/* 좌측: 품목 리스트 + 라우팅 조합 (15%) */}
           <div className="item-list-section" style={{ flex: '0 0 15%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 flex-1 overflow-y-auto">
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 overflow-y-auto">
               <ItemListPanel />
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 overflow-y-auto">
+              <RoutingCombinationSelector />
             </div>
           </div>
 
