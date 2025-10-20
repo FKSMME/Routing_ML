@@ -57,13 +57,13 @@ server_monitor_dashboard_v5_1.py (1,707 lines)를 논리적 모듈로 분리
 
 ## ⏭️ Phase 4: Refactor Main Dashboard
 
-- [ ] Move RoutingMLDashboard to monitor/ui/dashboard.py (lines 657-1691)
-- [ ] Update all imports in dashboard
-- [ ] Create new entry point: server_monitor_v6.py
-- [ ] Test full application
+- [ ] Move RoutingMLDashboard to monitor/ui/dashboard.py (lines 653-1662, ~1,009 lines)
+- [ ] Update all imports in dashboard to use monitor modules
+- [x] Create new entry point: server_monitor_v6.py
+- [ ] Test full application with modular structure
 - [ ] Update batch scripts if needed
 
-**Status**: Not Started
+**Status**: 20% Complete (entry point created)
 
 ---
 
