@@ -3,7 +3,7 @@ chcp 65001 >nul
 echo ========================================
 echo   Frontend Home Dashboard
 echo   Integrated Dashboard
-echo   Port: 3000
+echo   Port: 5176
 echo ========================================
 echo.
 
@@ -47,16 +47,19 @@ REM Enable HTTPS
 set USE_HTTPS=true
 
 REM Optional: enable HTTP->HTTPS redirect (change port as needed, 0 disables redirect)
-set HTTP_REDIRECT_PORT=3080
+set HTTP_REDIRECT_PORT=0
 
 REM Set API target to match protocol
 set API_TARGET=https://localhost:8000
 
+REM Override default server port
+set PORT=5176
+
 echo Starting Home Dashboard (HTTPS enforced)
-echo   - Local:   https://localhost:3000
-echo   - Domain:  https://rtml.ksm.co.kr:3000
+echo   - Local:   https://localhost:5176
+echo   - Domain:  https://rtml.ksm.co.kr:5176
 if NOT "%HTTP_REDIRECT_PORT%"=="0" (
-    echo   - Redirect: http://localhost:%HTTP_REDIRECT_PORT% ^> https://localhost:3000
+    echo   - Redirect: http://localhost:%HTTP_REDIRECT_PORT% ^> https://localhost:5176
 )
 echo.
 

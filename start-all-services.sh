@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # 1. 환경 변수 설정
 export JWT_SECRET_KEY="local-dev-secret-key-min-32-chars-long-do-not-use-in-production-12345"
 export DATABASE_URL="sqlite:///./routing_ml.db"
-export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:8080"
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,https://localhost:3000,http://localhost:3001,https://localhost:3001,http://localhost:5173,https://localhost:5173,http://localhost:5174,https://localhost:5174,http://localhost:5176,https://localhost:5176,http://10.204.2.28:5176,https://10.204.2.28:5176,http://localhost:8080,https://localhost:8080"
 export ENVIRONMENT="development"
 export LOG_LEVEL="INFO"
 export PYTHONPATH=/workspaces/Routing_ML_4:$PYTHONPATH

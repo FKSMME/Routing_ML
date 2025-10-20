@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 5176);
 const envHttps = process.env.USE_HTTPS;
 const USE_HTTPS = envHttps === undefined ? true : envHttps.toLowerCase() === "true";
 const HOST = "0.0.0.0";

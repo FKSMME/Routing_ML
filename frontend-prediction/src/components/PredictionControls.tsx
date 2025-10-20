@@ -1,5 +1,5 @@
-﻿import { usePurchaseOrderItems } from "@hooks/usePurchaseOrderItems";
-import { FormEvent, useEffect, useState } from "react";
+import { hasItemCodesDragData, readItemCodesDragData } from "@lib/dragAndDrop";
+import { forwardRef, FormEvent, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
 interface PredictionControlsProps {
   itemCodes: string[];
@@ -19,24 +19,67 @@ const splitItemCodes = (value: string): string[] =>
     .map((code) => code.trim())
     .filter(Boolean);
 
-export function PredictionControls({
-  itemCodes,
-  onChangeItemCodes,
-  topK,
-  onChangeTopK,
-  threshold,
-  onChangeThreshold,
-  loading,
-  onSubmit,
-  errorMessage,
-}: PredictionControlsProps) {
+const MAX_ITEM_CODES = 50;
+
+const mergeItemCodes = (current: string[], incoming: string[]): string[] => {
+  const result: string[] = [...current];
+  for (const raw of incoming) {
+    if (!raw) continue;
+    const code = raw.trim();
+    if (!code) continue;
+    if (!result.includes(code)) {
+      result.push(code);
+    }
+    if (result.length >= MAX_ITEM_CODES) {
+      break;
+    }
+  }
+  return result.slice(0, MAX_ITEM_CODES);
+};
+
+export interface PredictionControlsHandle {
+  appendItemCodes: (codes: string[]) => void;
+}
+
+export const PredictionControls = forwardRef<PredictionControlsHandle, PredictionControlsProps>(function PredictionControls(
+  {
+    itemCodes,
+    onChangeItemCodes,
+    topK,
+    onChangeTopK,
+    threshold,
+    onChangeThreshold,
+    loading,
+    onSubmit,
+    errorMessage,
+  },
+  ref,
+) {
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
-  const { items: purchaseItems, isLoading: isPurchaseLoading } = usePurchaseOrderItems();
-  const [selectedPurchaseItem, setSelectedPurchaseItem] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     setInputValue(itemCodes.join("\n"));
   }, [itemCodes]);
+
+  const appendItemCodes = useCallback((incoming: string[]) => {
+    if (!Array.isArray(incoming) || incoming.length === 0) {
+      return;
+    }
+    setInputValue((previous) => {
+      const existing = splitItemCodes(previous);
+      const next = mergeItemCodes(existing, incoming);
+      return next.join("\n");
+    });
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      appendItemCodes,
+    }),
+    [appendItemCodes],
+  );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -45,55 +88,54 @@ export function PredictionControls({
     onSubmit();
   };
 
-  const handlePurchaseItemSelect = (itemCode: string) => {
-    if (!itemCode) return;
+  const handleDrop = useCallback(
+    (event: React.DragEvent<HTMLTextAreaElement>) => {
+      event.preventDefault();
+      setIsDragOver(false);
+      const payload = readItemCodesDragData(event.dataTransfer);
+      if (!payload || payload.items.length === 0) {
+        return;
+      }
+      appendItemCodes(payload.items);
+    },
+    [appendItemCodes],
+  );
 
-    // Add selected item to textarea (if not already present)
-    const currentCodes = splitItemCodes(inputValue);
-    if (!currentCodes.includes(itemCode)) {
-      const newValue = inputValue ? `${inputValue}\n${itemCode}` : itemCode;
-      setInputValue(newValue);
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLTextAreaElement>) => {
+    if (!hasItemCodesDragData(event.dataTransfer)) {
+      return;
     }
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    setIsDragOver(true);
+  }, []);
 
-    // Reset dropdown
-    setSelectedPurchaseItem("");
-  };
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLTextAreaElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node)) {
+      return;
+    }
+    setIsDragOver(false);
+  }, []);
 
   return (
     <form onSubmit={handleSubmit} className="panel-card interactive-card space-y-4 prediction-panel">
-      {/* Purchase Order Items Dropdown */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold text-accent-strong">생산 접수 품목</label>
-        <select
-          value={selectedPurchaseItem}
-          onChange={(e) => handlePurchaseItemSelect(e.target.value)}
-          className="input-field"
-          disabled={isPurchaseLoading}
-        >
-          <option value="">
-            {isPurchaseLoading ? "로딩 중..." : "품목을 선택하여 추가..."}
-          </option>
-          {purchaseItems.map((item) => (
-            <option key={item.ITEM_CD} value={item.ITEM_CD}>
-              {item.ITEM_CD} - {item.PO_NO} ({item.PO_DATE})
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted">
-          생산 접수된 품목을 선택하면 아래 입력창에 자동으로 추가됩니다.
-        </p>
-      </div>
-
       <div className="space-y-2">
         <label className="text-xs font-semibold text-accent-strong">품목 코드 목록</label>
         <textarea
           value={inputValue}
           onChange={(event) => setInputValue(event.target.value)}
           rows={8}
-          className="input-field prediction-panel__textarea"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`input-field prediction-panel__textarea ${isDragOver ? "prediction-panel__textarea--drag-over" : ""}`}
           placeholder={"ITEM-001\nITEM-002"}
         />
-        <p className="text-xs text-muted">줄바꿈 또는 콤마로 여러 품목을 입력하세요. 최대 50건을 지원합니다.</p>
+        <p className="text-xs text-muted">
+          줄바꿈 또는 콤마로 여러 품목을 입력하세요. 좌측 ERP 리스트에서 Drag & Drop으로 빠르게 추가할 수 있습니다. 최대 {MAX_ITEM_CODES}건을
+          지원합니다.
+        </p>
       </div>
 
       <div className="prediction-grid">
@@ -132,4 +174,4 @@ export function PredictionControls({
       </button>
     </form>
   );
-}
+});

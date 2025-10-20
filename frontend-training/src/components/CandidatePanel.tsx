@@ -178,7 +178,7 @@ export function CandidatePanel() {
 
   return (
     <section className="panel-card interactive-card candidate-panel">
-      <header className="panel-header">
+      <header className="panel-header candidate-panel__header">
         <div>
           <h2 className="panel-title">후보 공정 블록</h2>
           <p className="panel-subtitle">추천 공정, 사용자 정의 공정, ERP 토글을 한 화면에서 확인하세요.</p>
@@ -257,19 +257,24 @@ export function CandidatePanel() {
         </div>
       </div>
 
-      <div className="candidate-filter">
-        <Search size={14} className="candidate-filter__icon" />
-        <input
-          type="search"
-          value={filter}
-          onChange={(event) => setFilter(event.target.value)}
-          placeholder="공정 코드/설명 검색"
-        />
-      </div>
-
-      <div className="candidate-manage">
-        <button type="button" className="candidate-manage__button" onClick={handleOpenSettings}>
-          <Settings size={16} /> 추천 관리
+      <div className="candidate-toolbar">
+        <div className="candidate-filter" role="search">
+          <Search size={14} className="candidate-filter__icon" />
+          <input
+            type="search"
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="공정 코드/설명 검색"
+            aria-label="후보 공정 검색"
+          />
+        </div>
+        <button
+          type="button"
+          className="candidate-manage__button candidate-toolbar__settings"
+          onClick={handleOpenSettings}
+          title="후보 공정에 노드를 추가하거나 숨길 수 있는 설정을 엽니다."
+        >
+          <Settings size={16} /> 노드 추가·숨김 설정
         </button>
       </div>
 

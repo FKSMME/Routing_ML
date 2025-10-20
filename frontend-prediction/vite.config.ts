@@ -6,6 +6,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const CHUNK_LIMIT = Number(process.env.VITE_CHUNK_LIMIT ?? "2000");
+
+const isReactModule = (id: string) =>
+  /node_modules\/(react|react-dom)\//.test(id) || id.includes("node_modules/react/index");
+
+const isReactFlowModule = (id: string) => id.includes("node_modules/reactflow");
+
+const isQueryModule = (id: string) => id.includes("node_modules/@tanstack/react-query");
+
+const isUiModule = (id: string) =>
+  id.includes("node_modules/lucide-react") || id.includes("node_modules/zustand");
+
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   resolve: {
@@ -22,14 +34,22 @@ export default defineConfig({
     target: "es2020",
     minify: "esbuild",
     sourcemap: false,
+    chunkSizeWarningLimit: Number.isFinite(CHUNK_LIMIT) ? CHUNK_LIMIT : 1200,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom"],
-          "reactflow-vendor": ["reactflow"],
-          "three-vendor": ["three", "ogl"],
-          "query-vendor": ["@tanstack/react-query"],
-          "ui-vendor": ["lucide-react", "zustand"],
+        manualChunks(id: string) {
+          if (isReactModule(id)) return "react-vendor";
+          if (isReactFlowModule(id)) return "reactflow-vendor";
+          if (id.includes("@react-three/drei")) return "three-drei";
+          if (id.includes("@react-three/fiber")) return "three-fiber";
+          if (id.includes("node_modules/ogl")) return "three-ogl";
+          if (id.includes("node_modules/three")) return "three-core";
+          if (id.includes("three/examples") || id.includes("three-stdlib")) return "three-extras";
+          if (isQueryModule(id)) return "query-vendor";
+          if (isUiModule(id)) return "ui-vendor";
+          if (id.includes("frontend-shared")) return "routing-shared";
+          if (id.includes("src/components/workspaces")) return "workspaces";
+          return undefined;
         },
       },
     },

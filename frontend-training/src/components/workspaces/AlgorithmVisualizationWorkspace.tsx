@@ -61,6 +61,29 @@ interface APIEdge {
   label?: string;
 }
 
+const normalizeBackendPath = (value?: string | null): string | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const slashified = trimmed.replace(/\\/g, '/').replace(/^\.\/+/, '');
+  const withoutLeadingSlash = slashified.startsWith('/') ? slashified.slice(1) : slashified;
+
+  if (withoutLeadingSlash.startsWith('backend/')) {
+    return withoutLeadingSlash;
+  }
+
+  const backendIndex = withoutLeadingSlash.indexOf('backend/');
+  if (backendIndex !== -1) {
+    return withoutLeadingSlash.slice(backendIndex);
+  }
+
+  return `backend/${withoutLeadingSlash.replace(/^backend\//, '')}`;
+};
+
 // 커스텀 노드 컴포넌트
 const FunctionNode = memo(({ data }: NodeProps<FunctionNodeData>) => {
   const isClass = data.type === 'class';
@@ -292,7 +315,42 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
             include_training: true,
           },
         });
-        setAllPythonFiles(response.data);
+        const files: PythonFile[] = Array.isArray(response.data)
+          ? response.data
+              .map((file: any) => {
+                const normalizedPath =
+                  normalizeBackendPath(typeof file.path === 'string' ? file.path : undefined) ??
+                  normalizeBackendPath(typeof file.full_path === 'string' ? file.full_path : undefined);
+
+                const normalizedFullPath =
+                  typeof file.full_path === 'string' ? file.full_path.replace(/\\/g, '/') : undefined;
+
+                const mappedType = (() => {
+                  const rawType = typeof file.type === 'string' ? file.type.toLowerCase() : '';
+                  if (rawType === 'training' || rawType === 'prediction' || rawType === 'preprocessing') {
+                    return rawType;
+                  }
+                  return 'utility';
+                })() as PythonFile['type'];
+
+                if (!normalizedPath) {
+                  return null;
+                }
+
+                return {
+                  id: String(file.id ?? normalizedPath),
+                  name: typeof file.name === 'string' ? file.name : normalizedPath.split('/').pop() ?? 'unknown.py',
+                  path: normalizedPath,
+                  full_path: normalizedFullPath,
+                  type: mappedType,
+                  functions: typeof file.functions === 'number' ? file.functions : 0,
+                  classes: typeof file.classes === 'number' ? file.classes : 0,
+                } as PythonFile;
+              })
+              .filter((item: PythonFile | null): item is PythonFile => item !== null)
+          : [];
+
+        setAllPythonFiles(files);
       } catch (error) {
         console.error('Failed to fetch Python files:', error);
       }
@@ -379,9 +437,21 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
 
     setIsAnalyzing(true);
     try {
+      const filePathParam =
+        normalizeBackendPath(selectedFile.path) ??
+        normalizeBackendPath(selectedFile.full_path) ??
+        selectedFile.path ??
+        selectedFile.full_path;
+
+      if (!filePathParam) {
+        alert('선택한 파일 경로를 확인할 수 없습니다.');
+        setIsAnalyzing(false);
+        return;
+      }
+
       const response = await axios.get('/api/algorithm-viz/analyze', {
         params: {
-          file_path: selectedFile.full_path || selectedFile.path,
+          file_path: filePathParam,
         },
       });
 

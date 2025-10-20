@@ -441,7 +441,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 rank=0,
                 metrics={
                     "entrypoints": [
-                        "http://localhost:3000",
+                        "http://localhost:5176",
                         "http://localhost:5173",
                         "http://localhost:5174",
                     ]
@@ -469,7 +469,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 metrics={
                     "page_count": len(home_pages),
                     "pages": home_pages,
-                    "server_port": 3000,
+                    "server_port": 5176,
                 },
                 details="frontend-home/index.html에서 제공되는 공개형 요약 대시보드.",
             ),

@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 # export_tb_projector.py
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Tuple, List, Optional, Dict, Any
 
 # backend 경로 (joblib 역직렬화용)
-sys.path.insert(0, r"D:\routing\machine")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 import joblib
 import numpy as np
@@ -15,12 +18,13 @@ import tensorflow as tf
 from tensorboard.plugins import projector
 
 # ===== 사용자 옵션 =====
-MODEL_DIR     = Path(r"D:\routing\machine\models")
-OUT_DIR       = MODEL_DIR / "tb_projector"
+MODEL_DIR     = (REPO_ROOT / "models" / "default").resolve()
+OUT_DIR       = (REPO_ROOT / "models" / "tb_projector").resolve()
 TENSOR_NAME   = "item_embeddings"
 SAMPLE_EVERY  = 1
+MAX_ROWS      = None
 
-META_PATH     = MODEL_DIR / "item_master.tsv"
+META_PATH     = (REPO_ROOT / "models" / "item_master.tsv").resolve()
 
 KEEP_COLS     = [
     "ITEM_CD", "PART_TYPE", "ITEM_NM", "ITEM_SPEC",
@@ -45,6 +49,16 @@ COLOR_BY_FEATURES: Dict[str, Dict[str, Any]] = {
 }
 
 # ===== 유틸 =====
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Export TensorBoard projector artifacts from model embeddings.")
+    parser.add_argument("--model-dir", type=Path, default=MODEL_DIR, help="모델 아티팩트가 위치한 디렉토리")
+    parser.add_argument("--out-dir", type=Path, default=None, help="프로젝터 내보내기 결과 디렉토리")
+    parser.add_argument("--meta-path", type=Path, default=META_PATH, help="메타데이터 TSV 경로")
+    parser.add_argument("--sample-every", type=int, default=SAMPLE_EVERY, help="N번째 벡터마다 샘플링")
+    parser.add_argument("--max-rows", type=int, default=None, help="최대 내보낼 벡터 수 제한")
+    return parser.parse_args()
+
+
 def ensure_dir(p: Path) -> Path:
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -79,12 +93,22 @@ def extract_vectors_and_labels(searcher) -> Tuple[np.ndarray, List[str]]:
     return X, item_codes[:n]
 
 def maybe_downsample(vectors: np.ndarray, labels: List[str]) -> Tuple[np.ndarray, List[str]]:
-    if SAMPLE_EVERY <= 1:
-        return vectors, labels
-    vectors = vectors[::SAMPLE_EVERY]
-    labels  = labels[::SAMPLE_EVERY]
-    print(f"[INFO] downsampled → vectors: {vectors.shape}, labels: {len(labels)}")
-    return vectors, labels
+    sliced_vectors = vectors
+    sliced_labels = labels
+
+    if SAMPLE_EVERY > 1:
+        sliced_vectors = sliced_vectors[::SAMPLE_EVERY]
+        sliced_labels = sliced_labels[::SAMPLE_EVERY]
+        print(
+            f"[INFO] downsampled every {SAMPLE_EVERY} rows → vectors: {sliced_vectors.shape}, labels: {len(sliced_labels)}"
+        )
+
+    if MAX_ROWS is not None and len(sliced_vectors) > MAX_ROWS:
+        sliced_vectors = sliced_vectors[:MAX_ROWS]
+        sliced_labels = sliced_labels[:MAX_ROWS]
+        print(f"[INFO] applied max_rows={MAX_ROWS} → vectors: {sliced_vectors.shape}, labels: {len(sliced_labels)}")
+
+    return sliced_vectors, sliced_labels
 
 # ===== 메타데이터 유틸 =====
 def load_item_metadata_tsv(path: Path) -> pd.DataFrame:
@@ -350,7 +374,16 @@ def verify_export(out_dir: Path):
             print(f"  ✗ Error reading metadata: {e}")
 
 # ===== 메인 =====
-def main():
+def main() -> None:
+    global MODEL_DIR, OUT_DIR, META_PATH, SAMPLE_EVERY, MAX_ROWS  # noqa: PLW0603
+
+    args = parse_args()
+    MODEL_DIR = args.model_dir.expanduser().resolve()
+    OUT_DIR = (args.out_dir or (MODEL_DIR / "tb_projector")).expanduser().resolve()
+    META_PATH = args.meta_path.expanduser().resolve() if args.meta_path else (MODEL_DIR / "item_master.tsv")
+    SAMPLE_EVERY = max(1, int(args.sample_every))
+    MAX_ROWS = args.max_rows
+
     print(f"[INFO] Loading searcher from: {MODEL_DIR}")
     searcher = load_searcher(MODEL_DIR)
 
@@ -411,3 +444,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

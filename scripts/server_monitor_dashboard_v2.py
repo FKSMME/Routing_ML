@@ -139,11 +139,11 @@ SERVICES: Tuple[Service, ...] = (
         key="home",
         name="Home Dashboard",
         icon="🏠",
-        check_url="https://localhost:3000/",
+        check_url="https://localhost:5176/",
         start_command="run_frontend_home.bat",
         links=(
-            ("Local", "https://localhost:3000"),
-            ("LAN", "https://10.204.2.28:3000"),
+            ("Local", "https://localhost:5176"),
+            ("LAN", "https://10.204.2.28:5176"),
         ),
     ),
     Service(

@@ -15,6 +15,7 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
   const displayName = useAuthStore((state) => state.displayName);
   const username = useAuthStore((state) => state.username);
   const logout = useAuthStore((state) => state.logout);
+  const homeUrl = `${window.location.protocol}//${window.location.hostname}:5176`;
 
   const handleLogout = async () => {
     await logout();
@@ -39,7 +40,7 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
           </div>
           <ThemeToggle />
           <a
-            href="http://localhost:3000"
+            href={homeUrl}
             className="btn-secondary flex items-center gap-2"
             title="홈으로"
           >

@@ -1,8 +1,93 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, useEffect } from "react";
 import { CardShell } from "@components/common/CardShell";
+import { LiquidEther } from "@routing-ml/shared";
 import { LogIn, UserPlus } from "lucide-react";
 import { ThemeToggle } from "../ThemeToggle";
-import { HyperspeedBackground } from "@components/HyperspeedBackground";
+import { useBackgroundSettings } from "@store/backgroundSettings";
+
+function LoginBackground() {
+  const {
+    enabled,
+    opacity,
+    colors,
+    mouseForce,
+    cursorSize,
+    resolution,
+    autoSpeed,
+    autoIntensity,
+    iterationsPoisson,
+    isBounce,
+    autoDemo,
+    isViscous,
+    viscous,
+    iterationsViscous,
+    dt,
+    bfecc,
+    takeoverDuration,
+    autoResumeDelay,
+    autoRampDuration,
+  } = useBackgroundSettings((state) => ({
+    enabled: state.enabled,
+    opacity: state.opacity,
+    colors: state.colors,
+    mouseForce: state.mouseForce,
+    cursorSize: state.cursorSize,
+    resolution: state.resolution,
+    autoSpeed: state.autoSpeed,
+    autoIntensity: state.autoIntensity,
+    iterationsPoisson: state.iterationsPoisson,
+    isBounce: state.isBounce,
+    autoDemo: state.autoDemo,
+    isViscous: state.isViscous,
+    viscous: state.viscous,
+    iterationsViscous: state.iterationsViscous,
+    dt: state.dt,
+    bfecc: state.bfecc,
+    takeoverDuration: state.takeoverDuration,
+    autoResumeDelay: state.autoResumeDelay,
+    autoRampDuration: state.autoRampDuration,
+  }));
+
+  if (!enabled) {
+    return null;
+  }
+
+  return (
+    <div
+      className="login-liquid-ether"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: 0,
+        opacity,
+      }}
+    >
+      <LiquidEther
+        colors={colors}
+        mouseForce={mouseForce}
+        cursorSize={cursorSize}
+        resolution={resolution}
+        iterationsPoisson={iterationsPoisson}
+        isBounce={isBounce}
+        autoDemo={autoDemo}
+        autoSpeed={autoSpeed}
+        autoIntensity={autoIntensity}
+        isViscous={isViscous}
+        viscous={viscous}
+        iterationsViscous={iterationsViscous}
+        dt={dt}
+        BFECC={bfecc}
+        takeoverDuration={takeoverDuration}
+        autoResumeDelay={autoResumeDelay}
+        autoRampDuration={autoRampDuration}
+        style={{ width: "100%", height: "100%" }}
+      />
+    </div>
+  );
+}
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -18,6 +103,29 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Force dark mode on login page
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    const currentTheme = htmlElement.getAttribute('data-theme');
+
+    // Set dark mode
+    htmlElement.setAttribute('data-theme', 'dark');
+    htmlElement.classList.add('dark');
+    htmlElement.classList.remove('light');
+
+    // Store previous theme
+    return () => {
+      // Restore previous theme on unmount if it was different
+      if (currentTheme && currentTheme !== 'dark') {
+        htmlElement.setAttribute('data-theme', currentTheme);
+        if (currentTheme === 'light') {
+          htmlElement.classList.add('light');
+          htmlElement.classList.remove('dark');
+        }
+      }
+    };
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -85,7 +193,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center surface-base p-6 overflow-hidden">
-      <HyperspeedBackground />
+      <LoginBackground />
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>

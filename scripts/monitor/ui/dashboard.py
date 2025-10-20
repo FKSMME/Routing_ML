@@ -438,7 +438,7 @@ class RoutingMLDashboard:
                 if parsed.port:
                     target_ports.add(parsed.port)
 
-            target_ports.update({8000, 8001, 8002, 3000, 5173, 5174})
+            target_ports.update({8000, 8001, 8002, 5173, 5174, 5176})
 
             active_pids = set()
             for conn in psutil.net_connections(kind="inet"):
@@ -1044,4 +1044,3 @@ class RoutingMLDashboard:
     def run(self):
         """Run the application"""
         self.root.mainloop()
-
