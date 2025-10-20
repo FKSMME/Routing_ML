@@ -3,6 +3,9 @@ import { RefreshCw } from "lucide-react";
 import { fetchDataQualityMetrics, type DataQualityMetrics } from "@lib/apiClient";
 import { KPICard } from "./KPICard";
 import { TrendChart } from "./TrendChart";
+import { ExportButton, type ExportFormat } from "./ExportButton";
+import { exportMetricsToCSV, exportMetricsToPDF } from "../../services/exportService";
+import toast, { Toaster } from "react-hot-toast";
 
 interface MetricsPanelProps {
   autoRefreshInterval?: number; // in seconds, 0 to disable
@@ -53,6 +56,29 @@ export function MetricsPanel({ autoRefreshInterval = 30 }: MetricsPanelProps) {
     loadMetrics(true);
   };
 
+  const handleExport = async (format: ExportFormat) => {
+    if (!metrics) return;
+
+    try {
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `data-quality-metrics-${timestamp}`;
+
+      if (format === "csv") {
+        exportMetricsToCSV(metrics, { filename: `${filename}.csv` });
+        toast.success("Metrics exported to CSV successfully");
+      } else {
+        exportMetricsToPDF(metrics, {
+          filename: `${filename}.pdf`,
+          title: "Data Quality Metrics Report",
+        });
+        toast.success("Metrics exported to PDF successfully");
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Export failed. Please try again.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -85,7 +111,9 @@ export function MetricsPanel({ autoRefreshInterval = 30 }: MetricsPanelProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with refresh button */}
+      <Toaster position="top-right" />
+
+      {/* Header with refresh and export buttons */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Data Quality Metrics</h2>
@@ -100,17 +128,24 @@ export function MetricsPanel({ autoRefreshInterval = 30 }: MetricsPanelProps) {
             </p>
           )}
         </div>
-        <button
-          onClick={handleManualRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors disabled:opacity-50"
-        >
-          <RefreshCw
-            size={16}
-            className={isRefreshing ? "animate-spin" : ""}
+        <div className="flex gap-2">
+          <ExportButton
+            onExport={handleExport}
+            exportType="metrics"
+            disabled={!metrics}
           />
-          Refresh
-        </button>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors disabled:opacity-50"
+          >
+            <RefreshCw
+              size={16}
+              className={isRefreshing ? "animate-spin" : ""}
+            />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}

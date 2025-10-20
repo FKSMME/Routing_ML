@@ -3,6 +3,9 @@ import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { fetchDataQualityReport, type DataQualityReport, type DataQualityIssue } from "@lib/apiClient";
 import { IssueBadge, type IssueSeverity } from "./IssueBadge";
 import { IssueFilter } from "./IssueFilter";
+import { ExportButton, type ExportFormat } from "./ExportButton";
+import { exportIssuesToCSV, exportIssuesToPDF } from "../../services/exportService";
+import toast, { Toaster } from "react-hot-toast";
 
 type SortField = "timestamp" | "severity" | "type" | "affectedRecords";
 type SortOrder = "asc" | "desc";
@@ -47,6 +50,27 @@ export function IssuesPanel() {
 
   const handleManualRefresh = () => {
     loadReport(true);
+  };
+
+  const handleExport = async (format: ExportFormat) => {
+    try {
+      const timestamp = new Date().toISOString().split("T")[0];
+      const filename = `data-quality-issues-${timestamp}`;
+
+      if (format === "csv") {
+        exportIssuesToCSV(filteredIssues, { filename: `${filename}.csv` });
+        toast.success(`Exported ${filteredIssues.length} issues to CSV`);
+      } else {
+        exportIssuesToPDF(filteredIssues, {
+          filename: `${filename}.pdf`,
+          title: "Data Quality Issues Report",
+        });
+        toast.success(`Exported ${filteredIssues.length} issues to PDF`);
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Export failed. Please try again.");
+    }
   };
 
   const handleFilterChange = (severity: IssueSeverity | "all") => {
@@ -172,7 +196,9 @@ export function IssuesPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Header with refresh button */}
+      <Toaster position="top-right" />
+
+      {/* Header with refresh and export buttons */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-white">Data Quality Issues</h2>
@@ -182,17 +208,24 @@ export function IssuesPanel() {
             </p>
           )}
         </div>
-        <button
-          onClick={handleManualRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors disabled:opacity-50"
-        >
-          <RefreshCw
-            size={16}
-            className={isRefreshing ? "animate-spin" : ""}
+        <div className="flex gap-2">
+          <ExportButton
+            onExport={handleExport}
+            exportType="issues"
+            disabled={filteredIssues.length === 0}
           />
-          Refresh
-        </button>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-md transition-colors disabled:opacity-50"
+          >
+            <RefreshCw
+              size={16}
+              className={isRefreshing ? "animate-spin" : ""}
+            />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
