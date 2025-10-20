@@ -3,6 +3,7 @@ import { Filter, Loader2, RefreshCw, Search } from "lucide-react";
 
 import { useErpViewSample, useErpViews } from "@hooks/useErpViewExplorer";
 import { hasItemCodesDragData, readItemCodesDragData, setItemCodesDragData } from "@lib/dragAndDrop";
+import type { ViewExplorerColumn } from "@lib/apiClient";
 
 interface ErpItemExplorerProps {
   onAddItems: (items: string[]) => void;
@@ -68,7 +69,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     enabled: Boolean(selectedView) && hasRequestedData,
   });
 
-  const columnOptions = viewSample?.columns ?? [];
+  const columnOptions: ViewExplorerColumn[] = viewSample?.columns ?? [];
   const totalRowCount = viewSample?.row_count ?? 0;
 
   const defaultColumnName = useMemo(() => {
@@ -110,7 +111,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     setHasRequestedData(false);
   }, [selectedView]);
 
-  const sampleRows = viewSample?.data ?? [];
+  const sampleRows = (viewSample?.data ?? []) as Array<Record<string, unknown>>;
   const responsePage = viewSample?.page ?? currentPage;
   const responsePageSize = viewSample?.page_size ?? pageSize;
   const totalPages = viewSample?.total_pages ?? (responsePageSize > 0 ? Math.max(1, Math.ceil(totalRowCount / responsePageSize)) : 1);

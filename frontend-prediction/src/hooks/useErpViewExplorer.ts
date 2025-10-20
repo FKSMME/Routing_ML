@@ -60,6 +60,5 @@ export function useErpViewSample(
     enabled: Boolean(viewName) && enabled,
     staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
-    keepPreviousData: true,
   });
 }
