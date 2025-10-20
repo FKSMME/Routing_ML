@@ -4,6 +4,28 @@ import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
 import axios from "axios";
 
+export interface ViewExplorerView {
+  schema_name: string;
+  view_name: string;
+  full_name: string;
+  definition?: string | null;
+}
+
+export interface ViewExplorerColumn {
+  name: string;
+  type: string;
+  max_length?: number | null;
+  precision?: number | null;
+  scale?: number | null;
+}
+
+export interface ViewExplorerSampleResponse {
+  view_name: string;
+  columns: ViewExplorerColumn[];
+  data: Array<Record<string, unknown>>;
+  row_count: number;
+}
+
 // Use relative URL to leverage Vite proxy in development
 // In production, set VITE_API_URL environment variable
 const api = axios.create({
@@ -112,6 +134,25 @@ export async function predictRoutings(params: {
   }
 
   const response = await api.post<PredictionResponse>("/predict", payload, { timeout: 20_000 });
+  return response.data;
+}
+
+export async function fetchViewExplorerViews(): Promise<ViewExplorerView[]> {
+  const response = await api.get<ViewExplorerView[]>("/view-explorer/views");
+  return response.data;
+}
+
+export async function fetchViewExplorerSample(
+  viewName: string,
+  limit = 200,
+): Promise<ViewExplorerSampleResponse> {
+  const encodedViewName = encodeURIComponent(viewName);
+  const response = await api.get<ViewExplorerSampleResponse>(
+    `/view-explorer/views/${encodedViewName}/sample`,
+    {
+      params: { limit },
+    },
+  );
   return response.data;
 }
 
@@ -624,6 +665,58 @@ export async function fetchPrometheusMetrics(): Promise<string> {
 
 export async function fetchDataQualityHealth(): Promise<HealthStatus> {
   const response = await api.get<HealthStatus>("/data-quality/health");
+  return response.data;
+}
+
+export interface HistoricalMetricsParams {
+  startDate: string; // ISO format
+  endDate: string; // ISO format
+  interval?: "1h" | "6h" | "1d"; // Data point interval
+}
+
+export interface HistoricalMetricsDataPoint {
+  timestamp: string;
+  metrics: DataQualityMetrics;
+}
+
+export interface HistoricalIssuesDataPoint {
+  timestamp: string;
+  issues: DataQualityIssue[];
+}
+
+export interface HistoricalMetricsResponse {
+  dataPoints: HistoricalMetricsDataPoint[];
+  startDate: string;
+  endDate: string;
+  interval: string;
+}
+
+export interface HistoricalIssuesResponse {
+  dataPoints: HistoricalIssuesDataPoint[];
+  startDate: string;
+  endDate: string;
+  interval: string;
+}
+
+export async function fetchHistoricalMetrics(params: HistoricalMetricsParams): Promise<HistoricalMetricsResponse> {
+  const response = await api.get<HistoricalMetricsResponse>("/data-quality/historical/metrics", {
+    params: {
+      start_date: params.startDate,
+      end_date: params.endDate,
+      interval: params.interval ?? "1h",
+    },
+  });
+  return response.data;
+}
+
+export async function fetchHistoricalIssues(params: HistoricalMetricsParams): Promise<HistoricalIssuesResponse> {
+  const response = await api.get<HistoricalIssuesResponse>("/data-quality/historical/issues", {
+    params: {
+      start_date: params.startDate,
+      end_date: params.endDate,
+      interval: params.interval ?? "1h",
+    },
+  });
   return response.data;
 }
 

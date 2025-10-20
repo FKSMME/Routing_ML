@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
-import { fetchDataQualityReport, type DataQualityReport, type DataQualityIssue } from "@lib/apiClient";
+import { RefreshCw, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
+import {
+  fetchDataQualityReport,
+  fetchHistoricalIssues,
+  type DataQualityReport,
+  type DataQualityIssue,
+  type HistoricalIssuesDataPoint
+} from "@lib/apiClient";
 import { IssueBadge, type IssueSeverity } from "./IssueBadge";
 import { IssueFilter } from "./IssueFilter";
 import { ExportButton, type ExportFormat } from "./ExportButton";
+import { TimeRangeSelector, type TimeRange, type DateRange, getDateRangeFromSelection } from "./TimeRangeSelector";
+import { HistoricalIssuesChart } from "./HistoricalIssuesChart";
 import { exportIssuesToCSV, exportIssuesToPDF } from "../../services/exportService";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -25,6 +33,13 @@ export function IssuesPanel() {
   // Sorting
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  // Historical data state
+  const [showHistorical, setShowHistorical] = useState(false);
+  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>("7d");
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
+  const [historicalData, setHistoricalData] = useState<HistoricalIssuesDataPoint[]>([]);
+  const [historicalLoading, setHistoricalLoading] = useState(false);
 
   const loadReport = async (showSpinner = true) => {
     try {
@@ -48,8 +63,45 @@ export function IssuesPanel() {
     loadReport();
   }, []);
 
+  // Load historical data when toggled
+  useEffect(() => {
+    if (showHistorical && historicalData.length === 0) {
+      const dateRange = getDateRangeFromSelection(selectedTimeRange, customDateRange);
+      loadHistoricalData(selectedTimeRange, dateRange);
+    }
+  }, [showHistorical]);
+
+  const loadHistoricalData = async (range: TimeRange, dateRange: DateRange) => {
+    try {
+      setHistoricalLoading(true);
+      const response = await fetchHistoricalIssues({
+        startDate: dateRange.start.toISOString(),
+        endDate: dateRange.end.toISOString(),
+        interval: "1h",
+      });
+      setHistoricalData(response.dataPoints);
+    } catch (err) {
+      console.error("Failed to load historical issues:", err);
+      toast.error("Failed to load historical issues");
+    } finally {
+      setHistoricalLoading(false);
+    }
+  };
+
+  const handleTimeRangeChange = (range: TimeRange, dateRange: DateRange) => {
+    setSelectedTimeRange(range);
+    if (range === "custom") {
+      setCustomDateRange(dateRange);
+    }
+    loadHistoricalData(range, dateRange);
+  };
+
   const handleManualRefresh = () => {
     loadReport(true);
+    if (showHistorical) {
+      const dateRange = getDateRangeFromSelection(selectedTimeRange, customDateRange);
+      loadHistoricalData(selectedTimeRange, dateRange);
+    }
   };
 
   const handleExport = async (format: ExportFormat) => {
@@ -321,6 +373,48 @@ export function IssuesPanel() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Historical Data Section */}
+      <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={20} className="text-blue-400" />
+            <h3 className="text-lg font-medium text-white">Historical Issues Analysis</h3>
+          </div>
+          <button
+            onClick={() => setShowHistorical(!showHistorical)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              showHistorical
+                ? "bg-blue-600 text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            {showHistorical ? "Hide Historical View" : "Show Historical View"}
+          </button>
+        </div>
+
+        {showHistorical && (
+          <div className="space-y-4">
+            <TimeRangeSelector
+              selectedRange={selectedTimeRange}
+              onRangeChange={handleTimeRangeChange}
+              customRange={customDateRange}
+              disabled={historicalLoading}
+            />
+
+            {historicalLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-400">Loading historical data...</div>
+              </div>
+            ) : (
+              <HistoricalIssuesChart
+                data={historicalData}
+                height={300}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
