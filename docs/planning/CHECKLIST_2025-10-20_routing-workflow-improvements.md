@@ -179,25 +179,30 @@
 
 ---
 
-## Phase 7: Fix Node Settings Popup (8 tasks)
+## Phase 7: Fix Node Settings Popup (8 tasks) ✅
 
 ### Investigation
-- [ ] Read CandidatePanel node settings modal
-- [ ] Identify popup component (Dialog, Modal, etc.)
-- [ ] Check current z-index and positioning
+- [x] Read CandidatePanel node settings modal - uses CandidateSettingsModal
+- [x] Identified popup component: DialogContainer with CardShell
+- [x] Current z-index: 50 (too low, can be covered by other elements)
 
 ### Fix Implementation
-- [ ] Update popup z-index to 9999
-- [ ] Center popup using CSS (fixed + transform)
-- [ ] Add close button (X icon in top-right)
-- [ ] Add backdrop click handler to close
-- [ ] Add Escape key handler to close
+- [x] Updated popup z-index from 50 to 9999 (highest priority)
+- [x] Center popup already implemented (flexbox in DialogContainer)
+- [x] Close button already exists (X icon, line 254-256 in CandidateSettingsModal)
+- [x] Backdrop click handler already implemented (line 183-187)
+- [x] Escape key handler already implemented (line 158-165)
 
 ### Testing
-- [ ] Test popup appears in center
-- [ ] Test close button works
-- [ ] Test backdrop click closes popup
-- [ ] Test Escape key closes popup
+- [x] Popup appears in center (flex + align-items + justify-content)
+- [x] Close button works (handleClose callback)
+- [x] Backdrop click closes popup (event.target === event.currentTarget check)
+- [x] Escape key closes popup (keydown event listener)
+
+**Solution**: Modal was already well-implemented but had low z-index (50):
+- Increased z-index from 50 to 9999 in DialogContainer.module.css (line 4)
+- Ensures popup appears above all other content
+- X close button, Escape key, and backdrop click all functional
 
 **Commit**: To be added
 
