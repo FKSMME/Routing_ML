@@ -555,5 +555,77 @@ export async function applyDataMapping(
   return response.data;
 }
 
+// ============================================================================
+// DATA QUALITY APIs
+// ============================================================================
+
+export interface DataQualityMetrics {
+  completeness: number;
+  consistency: number;
+  validity: number;
+  timestamp: string;
+  trends?: {
+    completeness: number[];
+    consistency: number[];
+    validity: number[];
+  };
+}
+
+export interface DataQualityIssue {
+  id: string;
+  severity: "critical" | "warning" | "info";
+  type: string;
+  message: string;
+  affectedRecords: number;
+  timestamp: string;
+  details?: Record<string, any>;
+}
+
+export interface DataQualityReport {
+  issues: DataQualityIssue[];
+  summary: {
+    critical: number;
+    warning: number;
+    info: number;
+  };
+  lastCheck: string;
+}
+
+export interface ComponentHealth {
+  status: "healthy" | "degraded" | "unhealthy";
+  message?: string;
+  lastCheck: string;
+}
+
+export interface HealthStatus {
+  status: "healthy" | "degraded" | "unhealthy";
+  components: {
+    database: ComponentHealth;
+    api: ComponentHealth;
+    workers: ComponentHealth;
+  };
+  timestamp: string;
+}
+
+export async function fetchDataQualityMetrics(): Promise<DataQualityMetrics> {
+  const response = await api.get<DataQualityMetrics>("/data-quality/metrics");
+  return response.data;
+}
+
+export async function fetchDataQualityReport(): Promise<DataQualityReport> {
+  const response = await api.get<DataQualityReport>("/data-quality/report");
+  return response.data;
+}
+
+export async function fetchPrometheusMetrics(): Promise<string> {
+  const response = await api.get<string>("/data-quality/prometheus");
+  return response.data;
+}
+
+export async function fetchDataQualityHealth(): Promise<HealthStatus> {
+  const response = await api.get<HealthStatus>("/data-quality/health");
+  return response.data;
+}
+
 
 export default api;

@@ -20,6 +20,7 @@ const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/Mast
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
+const DataQualityWorkspace = lazy(() => import("@components/workspaces/DataQualityWorkspace").then(m => ({ default: m.default })));
 import ErrorBoundary from "@components/ErrorBoundary";
 import { HeroBanner } from "@components/HeroBanner";
 import { RoutingExplanationPanel } from "@components/routing/RoutingExplanationPanel";
@@ -32,7 +33,7 @@ import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
-import { Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
+import { Activity, Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
 import { Suspense, useEffect, useMemo,useState } from "react";
 
 // 🎨 Base Navigation Items
@@ -77,6 +78,12 @@ const ADMIN_NAVIGATION_ITEMS = [
     label: "프로파일 관리",
     description: "데이터 매핑 프로파일 편집",
     icon: <Settings2 size={18} />,
+  },
+  {
+    id: "data-quality",
+    label: "데이터 품질 모니터링",
+    description: "실시간 품질 지표 · 이슈 추적",
+    icon: <Activity size={18} />,
   },
 ];
 
@@ -308,6 +315,9 @@ export default function App() {
       break;
     case "profile-management":
       workspace = <Suspense fallback={loadingFallback}><ProfileManagementWorkspace /></Suspense>;
+      break;
+    case "data-quality":
+      workspace = <Suspense fallback={loadingFallback}><DataQualityWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

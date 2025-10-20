@@ -25,7 +25,8 @@ export type NavigationKey =
   | "options"
   | "data-mapping"
   | "data-relationship"
-  | "profile-management";
+  | "profile-management"
+  | "data-quality";
 
 type ExportDestination = "local" | "clipboard" | "server";
 
