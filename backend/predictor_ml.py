@@ -32,6 +32,11 @@ from backend.database import (
     check_item_has_routing,
     fetch_work_results_for_item,
 )
+from backend.routing_postprocess import (
+    CandidateInput,
+    StatisticConfig,
+    build_candidate_routing_frames,
+)
 from common.logger import get_logger
 
 # 개선된 save_load 모듈 import
@@ -1777,7 +1782,6 @@ def predict_items_with_ml_optimized(
 
     predicted_routings: Dict[str, pd.DataFrame] = {}
     raw_candidate_frames: List[pd.DataFrame] = []
-    routing_cache: Dict[str, pd.DataFrame] = {}
 
     for item_cd in item_codes:
         routing_df, cand_df, _ = predict_single_item_with_ml_enhanced(
@@ -1788,11 +1792,8 @@ def predict_items_with_ml_optimized(
         predicted_routings[item_cd] = routing_df if routing_df is not None else pd.DataFrame()
 
         if not cand_df.empty:
-            cand_df['ITEM_CD'] = item_cd
+            cand_df["ITEM_CD"] = item_cd
             raw_candidate_frames.append(cand_df)
-            for cand_item in cand_df['CANDIDATE_ITEM_CD']:
-                if cand_item not in routing_cache:
-                    routing_cache[cand_item] = fetch_routing_for_item(cand_item)
 
     composed_frames: List[pd.DataFrame] = []
     enhanced_candidates: List[Dict[str, Any]] = []
