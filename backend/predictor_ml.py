@@ -4,7 +4,7 @@ from __future__ import annotations
 # ── 표준 라이브러리
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple, Dict, Optional, Any, Union
+from typing import List, Tuple, Dict, Optional, Any, Union, Iterable, Mapping
 import json
 import logging
 from collections import Counter, defaultdict
@@ -1096,91 +1096,188 @@ def calculate_confidence_score(
 def fetch_and_calculate_work_order_times(
     item_cd: str,
     proc_seq: int,
-    job_cd: str
+    job_cd: str,
+    similar_candidates: Optional[Iterable[Mapping[str, Any]]] = None,
+    *,
+    max_similar_items: int = 5
 ) -> Dict[str, Any]:
-    """
-    품목의 작업 실적 데이터 조회 및 평균 시간 계산
+    """Fetch work-order statistics for an item with optional similar-item fallback."""
 
-    Returns:
-        {
-            'predicted_setup_time': float,
-            'predicted_run_time': float,
-            'work_order_count': int,
-            'has_work_data': bool
-        }
-    """
+    def remove_outliers_iqr(series: pd.Series) -> pd.Series:
+        if len(series) < 3:
+            return series
+        q1 = series.quantile(0.25)
+        q3 = series.quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        return series[(series >= lower_bound) & (series <= upper_bound)]
+
+    def filter_work_results(results: pd.DataFrame) -> pd.DataFrame:
+        if results.empty:
+            return results
+        if 'PROC_SEQ' in results.columns and 'OPERATION_CD' in results.columns:
+            return results[
+                (results['PROC_SEQ'] == proc_seq) &
+                (results['OPERATION_CD'] == job_cd)
+            ]
+        if 'OPERATION_CD' in results.columns:
+            return results[results['OPERATION_CD'] == job_cd]
+        return results
+
+    def calculate_means(results: pd.DataFrame) -> Tuple[Optional[float], Optional[float], int]:
+        if results.empty:
+            return None, None, 0
+
+        setup_series = pd.to_numeric(results.get('ACT_SETUP_TIME'), errors='coerce').dropna()
+        run_series = pd.to_numeric(results.get('ACT_RUN_TIME'), errors='coerce').dropna()
+
+        setup_series = remove_outliers_iqr(setup_series)
+        run_series = remove_outliers_iqr(run_series)
+
+        setup_mean = float(setup_series.mean()) if len(setup_series) > 0 else None
+        run_mean = float(run_series.mean()) if len(run_series) > 0 else None
+
+        return setup_mean, run_mean, len(results)
+
+    def compute_confidence(sample_count: int, average_similarity: float) -> float:
+        if sample_count <= 0:
+            return 0.0
+        base_conf = min(1.0, sample_count / (sample_count + 2))
+        similarity_component = max(0.0, min(1.0, average_similarity))
+        confidence_value = 0.5 * base_conf + 0.5 * similarity_component
+        return round(min(1.0, confidence_value), 3)
+
     try:
         work_results = fetch_work_results_for_item(item_cd)
+        filtered = filter_work_results(work_results)
+        setup_mean, run_mean, sample_count = calculate_means(filtered)
 
-        if work_results.empty:
+        if sample_count > 0:
+            return {
+                'predicted_setup_time': setup_mean,
+                'predicted_run_time': run_mean,
+                'work_order_count': sample_count,
+                'has_work_data': True,
+                'data_source': 'input',
+                'confidence': compute_confidence(sample_count, 1.0),
+                'source_items': [item_cd],
+                'average_similarity': 1.0
+            }
+
+        candidate_map: Dict[str, float] = {}
+        if similar_candidates:
+            for candidate in similar_candidates:
+                source_item = str(candidate.get('SOURCE_ITEM') or candidate.get('item') or '').strip()
+                if not source_item:
+                    continue
+                try:
+                    similarity_value = float(candidate.get('SIMILARITY', 0.0))
+                except (TypeError, ValueError):
+                    similarity_value = 0.0
+
+                source_item_upper = source_item.upper()
+                if source_item_upper == item_cd.upper():
+                    continue
+                current_similarity = candidate_map.get(source_item_upper)
+                bounded_similarity = max(0.0, min(1.0, similarity_value))
+                if current_similarity is None or bounded_similarity > current_similarity:
+                    candidate_map[source_item_upper] = bounded_similarity
+
+        if not candidate_map:
             return {
                 'predicted_setup_time': None,
                 'predicted_run_time': None,
                 'work_order_count': 0,
-                'has_work_data': False
+                'has_work_data': False,
+                'data_source': 'none',
+                'confidence': 0.0,
+                'source_items': [],
+                'average_similarity': 0.0
             }
 
-        # PROC_SEQ와 OPERATION_CD(JOB_CD)로 필터링
-        if 'PROC_SEQ' in work_results.columns and 'OPERATION_CD' in work_results.columns:
-            filtered = work_results[
-                (work_results['PROC_SEQ'] == proc_seq) &
-                (work_results['OPERATION_CD'] == job_cd)
-            ]
-        elif 'OPERATION_CD' in work_results.columns:
-            # PROC_SEQ가 없으면 OPERATION_CD만으로 필터링
-            filtered = work_results[work_results['OPERATION_CD'] == job_cd]
-        else:
-            filtered = work_results
+        sorted_candidates = sorted(
+            candidate_map.items(),
+            key=lambda item: item[1],
+            reverse=True
+        )[:max(1, max_similar_items)]
 
-        if filtered.empty:
+        setup_weight_sum = 0.0
+        setup_weight_total = 0.0
+        run_weight_sum = 0.0
+        run_weight_total = 0.0
+        total_samples = 0
+        similarity_sum = 0.0
+        used_items: List[str] = []
+
+        for candidate_item, similarity_score in sorted_candidates:
+            candidate_results = fetch_work_results_for_item(candidate_item)
+            candidate_filtered = filter_work_results(candidate_results)
+            candidate_setup, candidate_run, candidate_samples = calculate_means(candidate_filtered)
+
+            if candidate_samples <= 0:
+                continue
+
+            weight = max(1, candidate_samples) * max(similarity_score, 0.0)
+            if weight <= 0:
+                continue
+
+            if candidate_setup is not None:
+                setup_weight_sum += candidate_setup * weight
+                setup_weight_total += weight
+            if candidate_run is not None:
+                run_weight_sum += candidate_run * weight
+                run_weight_total += weight
+
+            total_samples += candidate_samples
+            similarity_sum += similarity_score * candidate_samples
+            used_items.append(candidate_item)
+
+        if total_samples == 0:
             return {
                 'predicted_setup_time': None,
                 'predicted_run_time': None,
                 'work_order_count': 0,
-                'has_work_data': False
+                'has_work_data': False,
+                'data_source': 'none',
+                'confidence': 0.0,
+                'source_items': [],
+                'average_similarity': 0.0
             }
 
-        # 평균 계산 (이상치 제거: IQR 방식)
-        setup_times = pd.to_numeric(filtered['ACT_SETUP_TIME'], errors='coerce').dropna()
-        run_times = pd.to_numeric(filtered['ACT_RUN_TIME'], errors='coerce').dropna()
-
-        def remove_outliers_iqr(series: pd.Series) -> pd.Series:
-            """IQR 방식으로 이상치 제거"""
-            if len(series) < 3:
-                return series
-            Q1 = series.quantile(0.25)
-            Q3 = series.quantile(0.75)
-            IQR = Q3 - Q1
-            lower_bound = Q1 - 1.5 * IQR
-            upper_bound = Q3 + 1.5 * IQR
-            return series[(series >= lower_bound) & (series <= upper_bound)]
-
-        setup_times_clean = remove_outliers_iqr(setup_times)
-        run_times_clean = remove_outliers_iqr(run_times)
-
-        predicted_setup = float(setup_times_clean.mean()) if len(setup_times_clean) > 0 else None
-        predicted_run = float(run_times_clean.mean()) if len(run_times_clean) > 0 else None
+        predicted_setup_time = (
+            setup_weight_sum / setup_weight_total if setup_weight_total > 0 else None
+        )
+        predicted_run_time = (
+            run_weight_sum / run_weight_total if run_weight_total > 0 else None
+        )
+        average_similarity = similarity_sum / total_samples if total_samples > 0 else 0.0
 
         return {
-            'predicted_setup_time': predicted_setup,
-            'predicted_run_time': predicted_run,
-            'work_order_count': len(filtered),
-            'has_work_data': True
+            'predicted_setup_time': predicted_setup_time,
+            'predicted_run_time': predicted_run_time,
+            'work_order_count': total_samples,
+            'has_work_data': True,
+            'data_source': 'similar',
+            'confidence': compute_confidence(total_samples, average_similarity),
+            'source_items': used_items,
+            'average_similarity': round(average_similarity, 3)
         }
 
     except Exception as e:
-        logger.warning(f"작업 실적 조회 실패 ({item_cd}, PROC_SEQ={proc_seq}, JOB_CD={job_cd}): {e}")
+        logger.warning(
+            f"�۾� ���� ��ȸ ���� ({item_cd}, PROC_SEQ={proc_seq}, JOB_CD={job_cd}): {e}"
+        )
         return {
             'predicted_setup_time': None,
             'predicted_run_time': None,
             'work_order_count': 0,
-            'has_work_data': False
+            'has_work_data': False,
+            'data_source': 'none',
+            'confidence': 0.0,
+            'source_items': [],
+            'average_similarity': 0.0
         }
-
-
-# ════════════════════════════════════════════════
-# 🚀 라우팅 예측 함수
-# ════════════════════════════════════════════════
 
 def predict_routing_from_similar_items(
     input_item_cd: str,
@@ -1367,9 +1464,13 @@ def predict_routing_from_similar_items(
                 len(proc_list), similarity_mean, mach_stats['cv'], config
             )
 
-            # ⭐ WORK_ORDER_RESULTS 데이터 통합
+            # ⭐ WORK_ORDER_RESULTS 데이터 통합 (유사 품목 포함)
+            # 현재 공정에 사용된 유사 품목들을 추출
+            proc_similar_items = [(p['SOURCE_ITEM'], p['SIMILARITY']) for p in proc_list]
+
             work_order_data = fetch_and_calculate_work_order_times(
-                input_item_cd, proc_seq, job_cd
+                input_item_cd, proc_seq, job_cd,
+                similar_items=proc_similar_items
             )
 
             prediction = {
