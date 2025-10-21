@@ -1226,11 +1226,7 @@ def predict_routing_from_similar_items(
             
             # ROUT_NO 정보 로깅
             rout_no = routing['ROUT_NO'].iloc[0] if 'ROUT_NO' in routing.columns else 'UNKNOWN'
-            logger.info(f"  라우팅 발견: {item_cd} (유사도: {filtered_scores[i]:.3f}, ROUT_NO: {rout_no})")
-            
-            # ⭐ 중요: 단일 ROUT_NO 그룹만 사용하므로 첫 번째 라우팅을 찾으면 중단
-            logger.info(f"단일 ROUT_NO 그룹 사용: {item_cd}의 {rout_no} (공정 수: {len(routing)})")
-            break  # 첫 번째 라우팅만 사용하고 중단
+            logger.info(f"  라우팅 발견: {item_cd} (유사도: {filtered_scores[i]:.3f}, ROUT_NO: {rout_no}, 공정 수: {len(routing)})")
         else:
             items_without_routing.append(item_cd)
     
@@ -1255,24 +1251,14 @@ def predict_routing_from_similar_items(
                 
                 # ROUT_NO 정보 로깅
                 rout_no = routing['ROUT_NO'].iloc[0] if 'ROUT_NO' in routing.columns else 'UNKNOWN'
-                logger.info(f"  라우팅 발견: {item_cd} (유사도: {similarity_scores[i]:.3f}, ROUT_NO: {rout_no})")
-                
-                # ⭐ 중요: 단일 ROUT_NO 그룹만 사용하므로 첫 번째 라우팅을 찾으면 중단
-                logger.info(f"단일 ROUT_NO 그룹 사용: {item_cd}의 {rout_no} (공정 수: {len(routing)})")
-                break  # 첫 번째 라우팅만 사용하고 중단
+                logger.info(f"  라우팅 발견: {item_cd} (유사도: {similarity_scores[i]:.3f}, ROUT_NO: {rout_no}, 공정 수: {len(routing)})")
             else:
                 items_without_routing.append(item_cd)
     
     logger.info(f"라우팅 있는 품목: {len(items_with_routing)}개 - {items_with_routing[:5]}")
     logger.info(f"라우팅 없는 품목: {len(items_without_routing)}개 - {items_without_routing[:5]}")
     logger.info(f"전체 확인한 품목: {len(checked_items)}개")
-    
-    # 단일 ROUT_NO 사용 정보 추가 로깅
-    if all_routings:
-        used_item = all_routings[0][0]
-        used_routing = all_routings[0][1]
-        used_rout_no = used_routing['ROUT_NO'].iloc[0] if 'ROUT_NO' in used_routing.columns else 'UNKNOWN'
-        logger.info(f"[예측] 단일 ROUT_NO 기준 예측: {used_item}의 {used_rout_no} 사용")
+    logger.info(f"[예측] 다중 후보 병합 모드: {len(all_routings)}개 라우팅 사용")
     
     # 4. 여전히 라우팅을 찾지 못한 경우
     if not all_routings:
