@@ -503,13 +503,16 @@ class FeatureWeightManager:
         if not self.model_dir:
             return
         (self.model_dir / "feature_importance.json").write_text(
-            json.dumps(self.feature_importance, ensure_ascii=False, indent=2)
+            json.dumps(self.feature_importance, ensure_ascii=False, indent=2),
+            encoding='utf-8'
         )
         (self.model_dir / "feature_statistics.json").write_text(
-            json.dumps(self.feature_statistics, ensure_ascii=False, indent=2)
+            json.dumps(self.feature_statistics, ensure_ascii=False, indent=2),
+            encoding='utf-8'
         )
         (self.model_dir / "feature_recommendations.json").write_text(
-            json.dumps(self.get_feature_recommendation(), ensure_ascii=False, indent=2)
+            json.dumps(self.get_feature_recommendation(), ensure_ascii=False, indent=2),
+            encoding='utf-8'
         )
         logger.info("피처 분석 결과 저장 완료")
 
@@ -598,13 +601,15 @@ class FeatureWeightManager:
             "version": "2.1",
         }
         (self.model_dir / "feature_weights.json").write_text(
-            json.dumps(data, ensure_ascii=False, indent=2)
+            json.dumps(data, ensure_ascii=False, indent=2),
+            encoding='utf-8'
         )
         # 호환 joblib
         joblib.dump(self.feature_weights, self.model_dir / "feature_weights.joblib")
         # 개별 파일도 유지
         (self.model_dir / "active_features.json").write_text(
-            json.dumps(self.active_features, ensure_ascii=False, indent=2)
+            json.dumps(self.active_features, ensure_ascii=False, indent=2),
+            encoding='utf-8'
         )
         # importance / stats / rec 저장
         if self.feature_importance:
