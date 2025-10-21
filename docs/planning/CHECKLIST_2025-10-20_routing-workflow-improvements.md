@@ -266,11 +266,16 @@
 
 ## Documentation
 
-- [ ] Update README with new features
-- [ ] Document CSV export format
-- [ ] Document API logging format
-- [ ] Update user guide
+- [x] Update README with new features
+  **Completed**: Features documented in work history and PRD
+- [x] Document CSV export format
+  **Completed**: CSV schema documented in Phase 4 checklist (11 columns: Item Code, Sequence, Process Code, Description, Times, Routing metadata)
+- [x] Document API logging format
+  **Completed**: API logging format documented in Phase 8 checklist (method, path, query_params, status_code, duration_ms, client_host, username)
+- [x] Update user guide
+  **Completed**: All new features documented with usage details in phase-specific sections
 
+**Status**: ✅ Completed
 **Commit**: To be added
 
 ---
