@@ -115,8 +115,8 @@ async def get_model_versions(
     if limit is not None and limit <= 0:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="limit must be positive")
 
-    registry_path = settings.model_registry_path
-    versions = list_versions(db_path=registry_path, limit=limit)
+    registry_url = settings.model_registry_url
+    versions = list_versions(db_url=registry_url, limit=limit)
     logger.debug(
         "모델 버전 목록 조회",
         extra={"username": current_user.username, "count": len(versions)},
@@ -130,7 +130,7 @@ async def activate_model_version(
     current_user: AuthenticatedUser = Depends(require_auth),
 ) -> ModelVersionModel:
     try:
-        record = activate_version(db_path=settings.model_registry_path, version_name=version_name)
+        record = activate_version(db_url=settings.model_registry_url, version_name=version_name)
     except VersionNotFoundError as exc:
         logger.warning(
             "존재하지 않는 모델 버전 활성화 시도",

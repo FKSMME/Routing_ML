@@ -1,13 +1,24 @@
-"""Lightweight SQLite-backed model registry utilities."""
+"""Database-backed model registry utilities (SQLAlchemy-based)."""
 from __future__ import annotations
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
-import sqlite3
-from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional
+
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Index,
+    Integer,
+    String,
+    create_engine,
+    select,
+)
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from common.datetime_utils import utc_isoformat
 
@@ -49,221 +60,252 @@ class ModelVersion:
         return payload
 
 
-def _dict_factory(cursor: sqlite3.Cursor, row: sqlite3.Row) -> Dict[str, object]:
-    return {description[0]: row[idx] for idx, description in enumerate(cursor.description)}
+Base = declarative_base()
 
 
-def _ensure_parent(path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _ensure_utc(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _dt_to_iso(value: Optional[datetime]) -> Optional[str]:
+    return value.isoformat() if value else None
+
+
+class ModelVersionRecord(Base):
+    """ORM representation of the model registry table."""
+
+    __tablename__ = "model_versions"
+    __table_args__ = (
+        Index("ix_model_versions_version_name", "version_name", unique=True),
+        Index("ix_model_versions_active_flag", "active_flag", "activated_at"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # Note: index is created explicitly in __table_args__, don't add index=True here
+    version_name = Column(String(128), nullable=False, unique=True)
+    artifact_dir = Column(String(512), nullable=False)
+    manifest_path = Column(String(512), nullable=False)
+    status = Column(String(32), nullable=False, default=ModelLifecycleStatus.PENDING.value)
+    active_flag = Column(Boolean, nullable=False, default=False)
+    requested_by = Column(String(150), nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_now)
+    trained_at = Column(DateTime(timezone=True), nullable=True)
+    activated_at = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(timezone=True), nullable=True)
+
+
+_ENGINE_CACHE: Dict[str, Engine] = {}
+_SESSION_FACTORY_CACHE: Dict[str, sessionmaker] = {}
+
+
+def _get_engine(db_url: str) -> Engine:
+    engine = _ENGINE_CACHE.get(db_url)
+    if engine is None:
+        engine = create_engine(db_url, future=True, pool_pre_ping=True)
+        _ENGINE_CACHE[db_url] = engine
+    return engine
+
+
+def _get_session_factory(db_url: str) -> sessionmaker:
+    factory = _SESSION_FACTORY_CACHE.get(db_url)
+    if factory is None:
+        factory = sessionmaker(
+            bind=_get_engine(db_url),
+            expire_on_commit=False,
+            class_=Session,
+            future=True,
+        )
+        _SESSION_FACTORY_CACHE[db_url] = factory
+    return factory
 
 
 @contextmanager
-def connect(db_path: Path) -> Iterator[sqlite3.Connection]:
-    _ensure_parent(db_path)
-    connection = sqlite3.connect(db_path)
-    connection.row_factory = _dict_factory
+def _session_scope(db_url: str) -> Iterator[Session]:
+    session = _get_session_factory(db_url)()
     try:
-        yield connection
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        connection.close()
+        session.close()
 
 
-def initialize_schema(db_path: Path) -> None:
-    """Create the registry schema if it does not yet exist."""
+def initialize_schema(db_url: str) -> None:
+    """Create the registry schema if it does not yet exist.
 
-    with connect(db_path) as conn:
-        conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS model_versions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                version_name TEXT NOT NULL UNIQUE,
-                artifact_dir TEXT NOT NULL,
-                manifest_path TEXT NOT NULL,
-                status TEXT NOT NULL,
-                active_flag INTEGER NOT NULL DEFAULT 0,
-                requested_by TEXT,
-                created_at TEXT NOT NULL,
-                trained_at TEXT,
-                activated_at TEXT,
-                updated_at TEXT
-            )
-            """
-        )
-        conn.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_model_versions_active
-                ON model_versions(active_flag, activated_at DESC)
-            """
-        )
-        conn.commit()
+    Note: Handles duplicate table/index errors gracefully for PostgreSQL databases
+    where tables or indexes may already exist from previous initialization attempts.
+    SQLAlchemy's create_all() with checkfirst=True should handle this, but we add
+    extra protection against race conditions and partial schema states.
+    """
+    from sqlalchemy.exc import ProgrammingError
+
+    engine = _get_engine(db_url)
+
+    try:
+        # checkfirst=True makes create_all() idempotent - it only creates what doesn't exist
+        Base.metadata.create_all(engine, checkfirst=True)
+    except ProgrammingError as e:
+        # Ignore duplicate table/index errors - schema already exists (or partially exists)
+        error_msg = str(e).lower()
+        if "already exists" in error_msg or "이미 있습니다" in error_msg or "duplicate" in error_msg:
+            pass  # Schema already initialized (fully or partially)
+        else:
+            # Re-raise unexpected errors
+            raise
 
 
-def _row_to_model_version(payload: Dict[str, object]) -> ModelVersion:
+def _record_to_model_version(record: ModelVersionRecord) -> ModelVersion:
     return ModelVersion(
-        version_name=str(payload["version_name"]),
-        artifact_dir=str(payload["artifact_dir"]),
-        manifest_path=str(payload["manifest_path"]),
-        status=str(payload["status"]),
-        active_flag=bool(payload["active_flag"]),
-        requested_by=payload.get("requested_by"),
-        created_at=str(payload["created_at"]),
-        trained_at=payload.get("trained_at"),
-        activated_at=payload.get("activated_at"),
-        updated_at=payload.get("updated_at"),
+        version_name=record.version_name,
+        artifact_dir=record.artifact_dir,
+        manifest_path=record.manifest_path,
+        status=record.status,
+        active_flag=bool(record.active_flag),
+        requested_by=record.requested_by,
+        created_at=_dt_to_iso(record.created_at) or utc_isoformat(),
+        trained_at=_dt_to_iso(record.trained_at),
+        activated_at=_dt_to_iso(record.activated_at),
+        updated_at=_dt_to_iso(record.updated_at),
     )
 
 
 def register_version(
     *,
-    db_path: Path,
+    db_url: str,
     version_name: str,
-    artifact_dir: Path,
-    manifest_path: Path,
+    artifact_dir: str,
+    manifest_path: str,
     requested_by: Optional[str],
     trained_at: Optional[datetime] = None,
 ) -> ModelVersion:
-    """Insert a new pending model version row."""
+    """Insert a new pending model version row or update an existing entry."""
 
-    initialize_schema(db_path)
-    created_at = utc_isoformat()
-    trained_at_str = trained_at.isoformat() if trained_at else None
+    initialize_schema(db_url)
+    now = _now()
+    trained_at_dt = _ensure_utc(trained_at)
 
-    with connect(db_path) as conn:
-        conn.execute(
-            """
-            INSERT INTO model_versions (
-                version_name,
-                artifact_dir,
-                manifest_path,
-                status,
-                active_flag,
-                requested_by,
-                created_at,
-                trained_at,
-                activated_at,
-                updated_at
-            ) VALUES (?, ?, ?, ?, 0, ?, ?, ?, NULL, ?)
-            ON CONFLICT(version_name) DO UPDATE SET
-                artifact_dir = excluded.artifact_dir,
-                manifest_path = excluded.manifest_path,
-                status = excluded.status,
-                active_flag = excluded.active_flag,
-                requested_by = excluded.requested_by,
-                created_at = model_versions.created_at,
-                trained_at = excluded.trained_at,
-                activated_at = excluded.activated_at,
-                updated_at = excluded.updated_at
-            """,
-            (
-                version_name,
-                str(artifact_dir),
-                str(manifest_path),
-                ModelLifecycleStatus.PENDING.value,
-                requested_by,
-                created_at,
-                trained_at_str,
-                created_at,
-            ),
+    with _session_scope(db_url) as session:
+        record = (
+            session.execute(
+                select(ModelVersionRecord).where(ModelVersionRecord.version_name == version_name)
+            )
+            .scalars()
+            .first()
         )
-        conn.commit()
-        row = conn.execute(
-            "SELECT * FROM model_versions WHERE version_name = ?",
-            (version_name,),
-        ).fetchone()
 
-    if row is None:
-        raise RegistryError("모델 버전 등록에 실패했습니다")
-    return _row_to_model_version(row)
+        if record is None:
+            record = ModelVersionRecord(
+                version_name=version_name,
+                artifact_dir=str(artifact_dir),
+                manifest_path=str(manifest_path),
+                status=ModelLifecycleStatus.PENDING.value,
+                active_flag=False,
+                requested_by=requested_by,
+                created_at=now,
+                trained_at=trained_at_dt,
+                updated_at=now,
+            )
+            session.add(record)
+        else:
+            record.artifact_dir = str(artifact_dir)
+            record.manifest_path = str(manifest_path)
+            record.status = ModelLifecycleStatus.PENDING.value
+            record.requested_by = requested_by
+            record.trained_at = trained_at_dt
+            record.updated_at = now
+
+        session.flush()
+        session.refresh(record)
+        return _record_to_model_version(record)
 
 
-def list_versions(*, db_path: Path, limit: Optional[int] = None) -> List[ModelVersion]:
+def list_versions(*, db_url: str, limit: Optional[int] = None) -> List[ModelVersion]:
     """Return versions ordered by creation date descending."""
 
-    initialize_schema(db_path)
-    query = "SELECT * FROM model_versions ORDER BY datetime(created_at) DESC, id DESC"
-    params: Iterable[object]
-    if limit:
-        query += " LIMIT ?"
-        params = (limit,)
-    else:
-        params = ()
+    initialize_schema(db_url)
 
-    with connect(db_path) as conn:
-        rows = conn.execute(query, params).fetchall()
+    with _session_scope(db_url) as session:
+        stmt = select(ModelVersionRecord).order_by(
+            ModelVersionRecord.created_at.desc(),
+            ModelVersionRecord.id.desc(),
+        )
+        if limit:
+            stmt = stmt.limit(limit)
+        records = session.execute(stmt).scalars().all()
 
-    return [_row_to_model_version(row) for row in rows]
+    return [_record_to_model_version(record) for record in records]
 
 
-def get_active_version(*, db_path: Path) -> Optional[ModelVersion]:
+def get_active_version(*, db_url: str) -> Optional[ModelVersion]:
     """Return the currently active model version, if any."""
 
-    initialize_schema(db_path)
-    with connect(db_path) as conn:
-        row = conn.execute(
-            """
-            SELECT * FROM model_versions
-            WHERE active_flag = 1
-            ORDER BY datetime(activated_at) DESC, id DESC
-            LIMIT 1
-            """
-        ).fetchone()
+    initialize_schema(db_url)
+    with _session_scope(db_url) as session:
+        record = (
+            session.execute(
+                select(ModelVersionRecord)
+                .where(ModelVersionRecord.active_flag.is_(True))
+                .order_by(ModelVersionRecord.activated_at.desc(), ModelVersionRecord.id.desc())
+                .limit(1)
+            )
+            .scalars()
+            .first()
+        )
 
-    return _row_to_model_version(row) if row else None
+    return _record_to_model_version(record) if record else None
 
 
-def activate_version(*, db_path: Path, version_name: str) -> ModelVersion:
+def activate_version(*, db_url: str, version_name: str) -> ModelVersion:
     """Mark the provided version as active and retire the previous active version."""
 
-    initialize_schema(db_path)
-    activated_at = utc_isoformat()
+    initialize_schema(db_url)
+    now = _now()
 
-    with connect(db_path) as conn:
-        target = conn.execute(
-            "SELECT * FROM model_versions WHERE version_name = ?",
-            (version_name,),
-        ).fetchone()
+    with _session_scope(db_url) as session:
+        target = (
+            session.execute(
+                select(ModelVersionRecord).where(ModelVersionRecord.version_name == version_name)
+            )
+            .scalars()
+            .first()
+        )
         if target is None:
             raise VersionNotFoundError(f"등록되지 않은 모델 버전입니다: {version_name}")
 
-        conn.execute(
-            """
-            UPDATE model_versions
-            SET active_flag = 0,
-                status = CASE WHEN status = ? THEN ? ELSE status END,
-                updated_at = ?
-            WHERE active_flag = 1
-            """,
-            (
-                ModelLifecycleStatus.ACTIVE.value,
-                ModelLifecycleStatus.RETIRED.value,
-                activated_at,
-            ),
+        current_actives: Iterable[ModelVersionRecord] = (
+            session.execute(
+                select(ModelVersionRecord).where(ModelVersionRecord.active_flag.is_(True))
+            )
+            .scalars()
+            .all()
         )
-        conn.execute(
-            """
-            UPDATE model_versions
-            SET active_flag = 1,
-                status = ?,
-                activated_at = ?,
-                updated_at = ?
-            WHERE version_name = ?
-            """,
-            (
-                ModelLifecycleStatus.ACTIVE.value,
-                activated_at,
-                activated_at,
-                version_name,
-            ),
-        )
-        conn.commit()
-        row = conn.execute(
-            "SELECT * FROM model_versions WHERE version_name = ?",
-            (version_name,),
-        ).fetchone()
+        for record in current_actives:
+            if record.version_name == version_name:
+                continue
+            record.active_flag = False
+            if record.status == ModelLifecycleStatus.ACTIVE.value:
+                record.status = ModelLifecycleStatus.RETIRED.value
+            record.updated_at = now
 
-    if row is None:
-        raise RegistryError("활성화된 모델 버전을 조회할 수 없습니다")
-    return _row_to_model_version(row)
+        target.active_flag = True
+        target.status = ModelLifecycleStatus.ACTIVE.value
+        target.activated_at = now
+        target.updated_at = now
+
+        session.flush()
+        session.refresh(target)
+        return _record_to_model_version(target)
 
 
 __all__ = [

@@ -25,9 +25,10 @@ class Settings(BaseSettings):
         description="비상시 수동 지정할 모델 경로",
         env=("MODEL_DIRECTORY_OVERRIDE", "MODEL_DIRECTORY"),
     )
-    model_registry_path: Path = Field(
-        default=Path("models/registry.db"),
-        description="모델 레지스트리 SQLite 파일 경로",
+    model_registry_url: str = Field(
+        default="",
+        description="모델 레지스트리가 사용할 데이터베이스 URL",
+        env=("MODEL_REGISTRY_URL",),
     )
     tensorboard_projector_path: Path = Field(
         default=Path("models/tb_projector"),
@@ -90,10 +91,15 @@ class Settings(BaseSettings):
     sql_table_operations: str = Field(default="routing_candidate_operations")
     sql_preview_row_limit: int = Field(default=20, ge=1, le=500)
 
-    rsl_database_url: str = Field(default="sqlite:///logs/rsl_store.db")
+    rsl_database_url: str = Field(
+        default="",
+        description="RSL 저장소 데이터베이스 URL",
+        env=("RSL_DATABASE_URL",),
+    )
     routing_groups_database_url: str = Field(
-        default="sqlite:///logs/routing_groups.db",
-        description="라우팅 그룹 저장소 SQLite 파일 경로",
+        default="",
+        description="라우팅 그룹 저장소 데이터베이스 URL",
+        env=("ROUTING_GROUPS_DATABASE_URL",),
     )
 
 
@@ -179,7 +185,6 @@ class Settings(BaseSettings):
         "model_directory",
         "candidate_store_dir",
         "audit_log_dir",
-        "model_registry_path",
         "tensorboard_projector_path",
         "workflow_code_dir",
         mode="before",
@@ -196,22 +201,27 @@ class Settings(BaseSettings):
         value.mkdir(parents=True, exist_ok=True)
         return value
 
-    @field_validator("rsl_database_url", "routing_groups_database_url")
-    @classmethod
-    def _prepare_sqlite_path(cls, value: str) -> str:  # noqa: N805
-        if value.startswith("sqlite:///"):
-            path = Path(value.replace("sqlite:///", "", 1)).expanduser().resolve()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            return f"sqlite:///{path}"
-        return value
-
-
     @field_validator("model_directory")
     @classmethod
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
             return None
         return value
+
+    @field_validator(
+        "rsl_database_url",
+        "routing_groups_database_url",
+        "model_registry_url",
+        mode="before",
+    )
+    @classmethod
+    def _require_db_url(cls, value: Optional[str]) -> str:  # noqa: N805
+        if value is None:
+            raise ValueError("데이터베이스 URL이 설정되지 않았습니다.")
+        trimmed = value.strip()
+        if not trimmed:
+            raise ValueError("데이터베이스 URL은 비워둘 수 없습니다.")
+        return trimmed
 
     @field_validator("model_directory")
     @classmethod

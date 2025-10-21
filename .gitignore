@@ -87,3 +87,7 @@ nul
 
 # SQLite memory database
 :memory:
+models/test_phase2/
+models/version_*/
+test_prediction_results.log
+training_full_features.log

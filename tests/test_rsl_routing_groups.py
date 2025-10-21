@@ -22,9 +22,11 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
     """Provide a FastAPI test client with an isolated SQLite database."""
 
     db_path = tmp_path / "rsl_test.db"
-    monkeypatch.setenv("ROUTING_ML_RSL_DATABASE_URL", f"sqlite:///{db_path}")
+    monkeypatch.setenv("RSL_DATABASE_URL", f"sqlite:///{db_path}")
     routing_db_path = tmp_path / "routing_groups.db"
-    monkeypatch.setenv("ROUTING_ML_ROUTING_GROUPS_DATABASE_URL", f"sqlite:///{routing_db_path}")
+    monkeypatch.setenv("ROUTING_GROUPS_DATABASE_URL", f"sqlite:///{routing_db_path}")
+    registry_db_path = tmp_path / "registry.db"
+    monkeypatch.setenv("MODEL_REGISTRY_URL", f"sqlite:///{registry_db_path}")
 
     # Ensure settings and dependent singletons pick up the temp database.
     get_settings.cache_clear()  # type: ignore[attr-defined]

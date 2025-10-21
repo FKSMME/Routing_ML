@@ -16,7 +16,7 @@ def training_service(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Trainin
         def __init__(self, root: Path) -> None:
             self.model_directory = root / "models"
             self.model_directory.mkdir(parents=True, exist_ok=True)
-            self.model_registry_path = root / "registry.db"
+            self.model_registry_url = "sqlite:///:memory:"
             self.default_top_k = 5
             self.default_similarity_threshold = 0.8
             self.enable_candidate_persistence = False

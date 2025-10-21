@@ -92,7 +92,14 @@
       "Bash(diff:*)",
       "Bash(done)",
       "Bash(npx vite build)",
-      "Bash(./../.venv/Scripts/python.exe:*)"
+      "Bash(./../.venv/Scripts/python.exe:*)",
+      "Bash(if [ -f \"routing_data/ROUTING AUTO TEST.accdb\" ])",
+      "Bash(then echo \"파일 존재\")",
+      "Bash(else echo \"파일 없음\")",
+      "Bash(tee:*)",
+      "Bash(if [ -f \".env\" ])",
+      "Bash(then grep -E \"(RSL_DATABASE_URL|ROUTING_GROUPS_DATABASE_URL|MODEL_REGISTRY_URL)\" .env)",
+      "Bash(else echo \".env file not found\")"
     ],
     "deny": [],
     "ask": []

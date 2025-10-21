@@ -65,7 +65,7 @@ class TrainingService:
         self._status_path = status_path or DEFAULT_STATUS_PATH
 
         settings = get_settings()
-        self._registry_path = settings.model_registry_path
+        self._registry_url = settings.model_registry_url
         self._lock = threading.Lock()
         self._thread: Optional[threading.Thread] = None
         self._status = TrainingStatusPayload()
@@ -78,7 +78,7 @@ class TrainingService:
 
         latest_version: Optional[Dict[str, Any]] = None
         try:
-            versions = list_versions(db_path=self._registry_path, limit=1)
+            versions = list_versions(db_url=self._registry_url, limit=1)
         except Exception as exc:  # pragma: no cover - defensive logging
             logger.exception("모델 레지스트리 조회 실패", extra={"error": str(exc)})
             versions = []
@@ -208,7 +208,7 @@ class TrainingService:
         """Build a lightweight run history using the model registry."""
 
         try:
-            versions = list_versions(db_path=self._registry_path, limit=10)
+            versions = list_versions(db_url=self._registry_url, limit=10)
         except Exception as exc:  # pragma: no cover - diagnostics only
             logger.warning("모델 버전 이력 조회 실패", extra={"error": str(exc)})
             return []
@@ -289,7 +289,7 @@ class TrainingService:
         dry_run: bool = False,
     ) -> Dict[str, Any]:
         settings = get_settings()
-        self._registry_path = settings.model_registry_path
+        self._registry_url = settings.model_registry_url
 
         data_cfg = workflow_config_store.get_data_source_config()
         viz_cfg = workflow_config_store.get_visualization_config()
@@ -327,8 +327,9 @@ class TrainingService:
             status="scheduled",
             started_at=started_at.isoformat(),
             progress=1,
-            message="학습 작업을 준비 중입니다",
+            message="학습 작업을 백그라운드에서 시작했습니다.",
             version_path=str(version_dir),
+            metrics={},
         )
 
         def _target() -> None:
@@ -356,12 +357,7 @@ class TrainingService:
             self._thread = thread
         thread.start()
 
-        return {
-            "status": "scheduled",
-            "job_id": job_id,
-            "version": version_name,
-            "message": "학습 작업을 백그라운드에서 시작했습니다.",
-        }
+        return self.get_status()
 
     def _load_dataset(self, data_cfg: DataSourceConfig) -> pd.DataFrame:
         """기준정보를 MSSQL에서 로드하거나 로컬 CSV/파케이지만 허용한다."""
@@ -634,10 +630,10 @@ class TrainingService:
             if not dry_run and manifest_path.exists():
                 try:
                     register_version(
-                        db_path=self._registry_path,
+                        db_url=self._registry_url,
                         version_name=resolved_version,
-                        artifact_dir=version_directory.resolve(),
-                        manifest_path=manifest_path.resolve(),
+                        artifact_dir=str(version_directory.resolve()),
+                        manifest_path=str(manifest_path.resolve()),
                         requested_by=requested_by,
                         trained_at=completed_at,
                     )

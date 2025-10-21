@@ -11,9 +11,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # Set test environment variables before importing config
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-pytest-only-do-not-use-in-production-min-32-chars-long"
 os.environ["LOG_LEVEL"] = "WARNING"
-os.environ["DB_TYPE"] = "SQLITE"
-os.environ["RSL_DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["ROUTING_GROUPS_DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["DB_TYPE"] = "MSSQL"
+TEST_DB_DIR = REPO_ROOT / ".pytest_dbs"
+TEST_DB_DIR.mkdir(parents=True, exist_ok=True)
+os.environ["RSL_DATABASE_URL"] = f"sqlite:///{(TEST_DB_DIR / 'rsl.db').as_posix()}"
+os.environ["ROUTING_GROUPS_DATABASE_URL"] = f"sqlite:///{(TEST_DB_DIR / 'routing_groups.db').as_posix()}"
+os.environ["MODEL_REGISTRY_URL"] = f"sqlite:///{(TEST_DB_DIR / 'registry.db').as_posix()}"
 os.environ["ENABLE_CANDIDATE_PERSISTENCE"] = "false"
 
 DEFAULT_MODEL_DIR = REPO_ROOT / "models" / "default"

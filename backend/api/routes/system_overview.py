@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.engine import url as sa_url
 
 from backend.api.config import get_settings
 from backend.api.routes.dashboard import (
@@ -63,15 +64,6 @@ class SystemGraphResponse(BaseModel):
     warnings: List[str] = Field(default_factory=list)
 
 
-def _resolve_sqlite_path(url: str) -> Optional[Path]:
-    """Return a filesystem path if the provided URL points to SQLite."""
-
-    if url.startswith("sqlite:///"):
-        raw = url.replace("sqlite:///", "", 1)
-        return Path(raw).expanduser().resolve()
-    return None
-
-
 _PATH_PATTERNS = [
     re.compile(r"[A-Za-z]:\\[^\s\"']+"),  # Windows absolute paths
     re.compile(r"/[^/\s]+(?:/[^/\s]+)+"),  # Unix absolute paths with at least one '/'
@@ -119,6 +111,38 @@ def _finalize_warnings(raw_warnings: List[str]) -> List[str]:
         if len(deduped) >= 10:
             break
     return deduped
+
+
+def _describe_db_connection(raw_url: str) -> Dict[str, Any]:
+    """Return a sanitized summary of a SQLAlchemy connection URL."""
+
+    if not raw_url:
+        return {}
+    try:
+        parsed = sa_url.make_url(raw_url)
+    except Exception:
+        protocol = raw_url.split(":", 1)[0] if ":" in raw_url else raw_url
+        return {"driver": protocol}
+
+    summary: Dict[str, Any] = {"driver": parsed.drivername}
+    if parsed.database:
+        summary["database"] = parsed.database
+    if parsed.host:
+        summary["host"] = parsed.host
+    if parsed.port:
+        summary["port"] = parsed.port
+    return summary
+
+
+def _connection_protocol(raw_url: str) -> str:
+    """Extract the protocol/driver portion of a SQLAlchemy URL."""
+
+    if not raw_url:
+        return "unknown"
+    try:
+        return sa_url.make_url(raw_url).drivername
+    except Exception:
+        return raw_url.split(":", 1)[0] if ":" in raw_url else raw_url
 
 
 def _load_package_metadata(package_json: Path) -> Dict[str, Any]:
@@ -347,12 +371,13 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
     if artifact_files:
         latest_model_ts = max(path.stat().st_mtime for path in artifact_files)
         model_metrics_snapshot["latest_updated"] = datetime.utcfromtimestamp(latest_model_ts).isoformat() + "Z"
-    registry_path = models_dir / "registry.db"
-    if registry_path.exists():
-        try:
-            model_metrics_snapshot["registry"] = str(registry_path.relative_to(project_root))
-        except ValueError:
-            model_metrics_snapshot["registry"] = str(registry_path)
+    registry_summary = _describe_db_connection(settings.model_registry_url)
+    if registry_summary:
+        model_metrics_snapshot["registry_connection"] = registry_summary
+    else:
+        if model_status == STATUS_OPERATIONAL:
+            model_status = STATUS_DEGRADED
+        _record_warning(warnings, "Model registry URL missing or invalid")
 
     feature_metrics: Dict[str, Any] = {"config": "models/active_features.json"}
     feature_status = STATUS_DEGRADED
@@ -383,18 +408,10 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
     # Data stores
     # ------------------------------------------------------------------
     rsl_status = STATUS_OPERATIONAL
-    rsl_metrics: Dict[str, Any] = {}
-    rsl_path = _resolve_sqlite_path(settings.rsl_database_url)
-    if rsl_path and rsl_path.exists():
-        stats = rsl_path.stat()
-        rsl_metrics = {
-            "path": str(rsl_path),
-            "size_mb": round(stats.st_size / (1024 * 1024), 2),
-            "last_modified": datetime.utcfromtimestamp(stats.st_mtime).isoformat() + "Z",
-        }
-    else:
-        rsl_status = STATUS_DEGRADED
-        _record_warning(warnings, "RSL SQLite database file was not found")
+    rsl_metrics = _describe_db_connection(settings.rsl_database_url)
+    if not rsl_metrics:
+        rsl_status = STATUS_CRITICAL
+        _record_warning(warnings, "RSL database URL missing or invalid")
 
     # Main MSSQL data source metrics
     mssql_status = STATUS_DEGRADED
@@ -620,7 +637,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 status=rsl_status,
                 rank=0,
                 metrics=rsl_metrics,
-                details="logs/rsl_store.db SQLite. 사용자 계정 및 Rule Set Library 보관.",
+                details="PostgreSQL (RSL_DATABASE_URL) 기반 Rule Set Library 및 사용자 저장소.",
             ),
             SystemNode(
                 id="mssql-core",
@@ -638,7 +655,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 status=model_status,
                 rank=2,
                 metrics=model_metrics_snapshot,
-                details="models 디렉터리의 학습 아티팩트 및 registry.db 관리.",
+                details="PostgreSQL 모델 레지스트리(MODEL_REGISTRY_URL)로 학습 메타데이터 관리.",
             ),
             SystemNode(
                 id="feature-library",
@@ -837,9 +854,9 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 id="edge-ml-models",
                 source="ml-runtime",
                 target="model-registry",
-                label="Load artifacts",
-                protocol="file",
-                description="모델 러ntime이 저장된 모델/메타데이터를 적재.",
+                label="Model metadata",
+                protocol=_connection_protocol(settings.model_registry_url),
+                description="모델 러ntime이 PostgreSQL 레지스트리에서 활성 버전 메타데이터를 조회.",
             ),
             SystemEdge(
                 id="edge-ml-features",
@@ -854,7 +871,7 @@ async def get_system_graph(request: Request) -> SystemGraphResponse:
                 source="auth-service",
                 target="rsl-database",
                 label="SQLAlchemy session_scope()",
-                protocol="sqlite",
+                protocol=_connection_protocol(settings.rsl_database_url),
                 description="인증 서비스가 RSL 저장소를 조회/갱신.",
             ),
             SystemEdge(

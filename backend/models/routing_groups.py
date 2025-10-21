@@ -4,18 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Generator, Optional
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Index,
-    Integer,
-    String,
-    UniqueConstraint,
-    create_engine,
-    event,
-)
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+from sqlalchemy import Boolean, Column, DateTime, Index, Integer, String, UniqueConstraint, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
@@ -29,13 +18,9 @@ Base = declarative_base()
 
 
 def _json_type() -> sqltypes.TypeEngine:
-    """Return a JSON-compatible column type for the configured backend."""
+    """Return a JSON-compatible column type."""
 
-    settings = get_settings()
-    url = settings.routing_groups_database_url
-    if url.startswith("sqlite"):
-        return SQLiteJSON
-    return sqltypes.JSON
+    return sqltypes.JSON(none_as_null=True)
 
 
 class RoutingGroup(Base):
@@ -81,17 +66,7 @@ def get_engine() -> Engine:
     if _ENGINE is None:
         settings = get_settings()
         url = settings.routing_groups_database_url
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        engine = create_engine(url, future=True, echo=False, connect_args=connect_args)
-
-        if url.startswith("sqlite"):
-
-            @event.listens_for(engine, "connect")
-            def _set_sqlite_pragma(dbapi_connection, _):  # pragma: no cover
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA foreign_keys=ON")
-                cursor.close()
-
+        engine = create_engine(url, future=True, echo=False, pool_pre_ping=True)
         _ENGINE = engine
     return _ENGINE
 

@@ -3,95 +3,97 @@
 사용자 승인 관리 스크립트
 """
 import sys
-import sqlite3
 from datetime import datetime
+from typing import List, Tuple
 
-DB_PATH = "logs/rsl_store.db"
+from sqlalchemy import delete, select, update
+
+from backend.api.config import get_settings
+from backend.database_rsl import UserAccount, bootstrap_schema, session_scope
+
+
+def _format_timestamp(value) -> str:
+    if isinstance(value, datetime):
+        return value.isoformat(sep=" ", timespec="seconds")
+    return str(value)
 
 def list_pending_users():
     """대기 중인 사용자 목록 표시"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    with session_scope() as session:
+        rows: List[Tuple[str, str, datetime]] = session.execute(
+            select(UserAccount.username, UserAccount.display_name, UserAccount.created_at)
+            .where(UserAccount.status == "pending")
+            .order_by(UserAccount.created_at.desc())
+        ).all()
 
-    cursor.execute("""
-        SELECT username, display_name, created_at
-        FROM users
-        WHERE status = 'pending'
-        ORDER BY created_at DESC
-    """)
-
-    users = cursor.fetchall()
-    conn.close()
-
-    if not users:
+    if not rows:
         print("✅ 승인 대기 중인 사용자가 없습니다.")
         return []
 
     print("\n📋 승인 대기 중인 사용자:")
     print("-" * 60)
-    for i, (username, display_name, created_at) in enumerate(users, 1):
-        print(f"{i}. {username} ({display_name}) - 가입: {created_at}")
+    for i, (username, display_name, created_at) in enumerate(rows, 1):
+        print(f"{i}. {username} ({display_name or '-'}) - 가입: {_format_timestamp(created_at)}")
     print("-" * 60)
 
-    return users
+    return rows
 
 def list_all_users():
     """모든 사용자 목록 표시"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT username, display_name, status, is_admin, created_at
-        FROM users
-        ORDER BY created_at DESC
-    """)
-
-    users = cursor.fetchall()
-    conn.close()
+    with session_scope() as session:
+        rows: List[Tuple[str, str, str, bool, datetime]] = session.execute(
+            select(
+                UserAccount.username,
+                UserAccount.display_name,
+                UserAccount.status,
+                UserAccount.is_admin,
+                UserAccount.created_at,
+            ).order_by(UserAccount.created_at.desc())
+        ).all()
 
     print("\n👥 전체 사용자 목록:")
     print("-" * 80)
     print(f"{'사용자명':<30} {'이름':<15} {'상태':<10} {'관리자':<8} 가입일")
     print("-" * 80)
 
-    for username, display_name, status, is_admin, created_at in users:
+    for username, display_name, status, is_admin, created_at in rows:
         admin_badge = "✓" if is_admin else ""
         status_emoji = "✅" if status == "approved" else "⏳" if status == "pending" else "❌"
-        print(f"{username:<30} {display_name or '-':<15} {status_emoji} {status:<8} {admin_badge:<8} {created_at}")
+        print(
+            f"{username:<30} {display_name or '-':<15} {status_emoji} {status:<8} "
+            f"{admin_badge:<8} {_format_timestamp(created_at)}"
+        )
 
     print("-" * 80)
 
 def approve_user(username, make_admin=False):
     """사용자 승인"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # 사용자 존재 확인
-    cursor.execute("SELECT username, status FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
+    with session_scope() as session:
+        user = session.execute(
+            select(UserAccount).where(UserAccount.username == username)
+        ).scalar_one_or_none()
 
     if not user:
         print(f"❌ 사용자 '{username}'을 찾을 수 없습니다.")
-        conn.close()
         return False
 
-    if user[1] == "approved":
+    if user.status == "approved":
         print(f"⚠️  사용자 '{username}'은 이미 승인되었습니다.")
-        conn.close()
         return False
 
     # 승인 처리
-    now = datetime.now().isoformat()
-    cursor.execute("""
-        UPDATE users
-        SET status = 'approved',
-            is_admin = ?,
-            approved_at = ?
-        WHERE username = ?
-    """, (1 if make_admin else 0, now, username))
-
-    conn.commit()
-    conn.close()
+    now = datetime.utcnow()
+    with session_scope() as session:
+        session.execute(
+            update(UserAccount)
+            .where(UserAccount.username == username)
+            .values(
+                status="approved",
+                is_admin=bool(make_admin),
+                approved_at=now,
+                updated_at=now,
+            )
+        )
 
     admin_text = " (관리자 권한 부여)" if make_admin else ""
     print(f"✅ 사용자 '{username}'이 승인되었습니다{admin_text}")
@@ -99,29 +101,22 @@ def approve_user(username, make_admin=False):
 
 def reject_user(username, reason=""):
     """사용자 거부"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # 사용자 존재 확인
-    cursor.execute("SELECT username FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
+    with session_scope() as session:
+        user = session.execute(
+            select(UserAccount.username).where(UserAccount.username == username)
+        ).scalar_one_or_none()
 
     if not user:
         print(f"❌ 사용자 '{username}'을 찾을 수 없습니다.")
-        conn.close()
         return False
 
-    # 거부 처리
-    now = datetime.now().isoformat()
-    cursor.execute("""
-        UPDATE users
-        SET status = 'rejected',
-            rejected_at = ?
-        WHERE username = ?
-    """, (now, username))
-
-    conn.commit()
-    conn.close()
+    now = datetime.utcnow()
+    with session_scope() as session:
+        session.execute(
+            update(UserAccount)
+            .where(UserAccount.username == username)
+            .values(status="rejected", rejected_at=now, updated_at=now)
+        )
 
     print(f"❌ 사용자 '{username}'이 거부되었습니다.")
     if reason:
@@ -130,23 +125,23 @@ def reject_user(username, reason=""):
 
 def delete_user(username):
     """사용자 삭제"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
+    with session_scope() as session:
+        result = session.execute(
+            delete(UserAccount).where(UserAccount.username == username)
+        )
+        deleted = result.rowcount or 0
 
-    cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-
-    if cursor.rowcount == 0:
+    if deleted == 0:
         print(f"❌ 사용자 '{username}'을 찾을 수 없습니다.")
-        conn.close()
         return False
-
-    conn.commit()
-    conn.close()
 
     print(f"🗑️  사용자 '{username}'이 삭제되었습니다.")
     return True
 
 def main():
+    get_settings()  # ensure environment variables are loaded
+    bootstrap_schema()
+
     if len(sys.argv) < 2:
         print("""
 🔧 사용자 관리 도구
@@ -157,6 +152,9 @@ def main():
   python approve_user.py approve <사용자명> [--admin]  # 사용자 승인
   python approve_user.py reject <사용자명> [사유]      # 사용자 거부
   python approve_user.py delete <사용자명>  # 사용자 삭제
+
+환경 변수:
+  RSL_DATABASE_URL   PostgreSQL 연결 문자열 (예: postgresql+psycopg://user:pass@host:5432/routing_ml)
 
 예시:
   python approve_user.py list
