@@ -5798,9 +5798,24 @@ html.dark select:focus {
   grid-template-columns: minmax(320px, 0.3fr) minmax(0, 1fr);
   gap: var(--spacing-lg, 1.5rem);
   padding: var(--spacing-lg, 1.5rem);
-  max-width: 1800px;
+  /* Removed max-width: 1800px to allow full-width responsive layout matching menu bar width */
+  max-width: none;
   margin: 0 auto;
+  width: 100%;
   min-height: calc(100vh - 120px);
+}
+
+.master-data-simple-full {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg, 1.5rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.master-data-simple-full .panel-card {
+  width: 100%;
 }
 
 .master-data-simple-left {
