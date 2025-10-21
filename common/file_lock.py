@@ -55,6 +55,10 @@ class FileLock:
             return
         try:
             _unlock_file(self._fh)
+        except PermissionError:
+            # Windows file locking may fail with PermissionError
+            # This is non-critical as the lock will be released when file is closed
+            pass
         finally:
             try:
                 self._fh.close()

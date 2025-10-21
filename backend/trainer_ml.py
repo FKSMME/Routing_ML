@@ -697,16 +697,28 @@ def _train_model_with_ml_improved_core(
     if not update_progress(20):
         return None
 
-    # 7) Label Encoding
-    encoder = LabelEncoder()
+    # 7) OrdinalEncoder (feature_names_in_ 메타데이터 보존)
+    encoder = OrdinalEncoder(
+        handle_unknown="use_encoded_value",
+        unknown_value=-1,
+        dtype=np.float32,
+    )
     encoded_cat = pd.DataFrame(index=df_subset.index)
     if cat_cols:
-        for col in cat_cols:
-            try:
-                encoded_cat[col] = encoder.fit_transform(df_subset[col].astype(str))
-            except Exception as e:
-                logger.warning(f"인코딩 실패 {col}: {e}")
-                encoded_cat[col] = 0
+        try:
+            # 전체 범주형 컬럼을 한 번에 fit_transform
+            encoded_values = encoder.fit_transform(df_subset[cat_cols].astype(str))
+            encoded_cat = pd.DataFrame(encoded_values, columns=cat_cols, index=df_subset.index)
+        except Exception as e:
+            logger.warning(f"OrdinalEncoder 인코딩 실패: {e}, LabelEncoder 사용")
+            # Fallback to LabelEncoder
+            for col in cat_cols:
+                try:
+                    le = LabelEncoder()
+                    encoded_cat[col] = le.fit_transform(df_subset[col].astype(str))
+                except Exception as col_error:
+                    logger.warning(f"인코딩 실패 {col}: {col_error}")
+                    encoded_cat[col] = 0
 
     # 8) 병합
     final_data = pd.concat([encoded_cat, df_subset[num_cols]], axis=1)[feature_cols]
