@@ -1023,7 +1023,7 @@
       }
     ],
     "version_hint": "access-config-v1",
-    "offline_dataset_path": "routing_data/ROUTING AUTO TEST.accdb",
+    "offline_dataset_path": null,
     "mssql_server": "K3-DB.ksm.co.kr,1433",
     "mssql_database": "KsmErp",
     "mssql_user": "FKSM_BI",
@@ -1031,7 +1031,7 @@
     "mssql_encrypt": true,
     "mssql_trust_certificate": true,
     "item_view": "dbo.BI_ITEM_INFO_VIEW",
-    "routing_view": "dbo.BI_ROUTING_HIS_VIEW",
+    "routing_view": "dbo.BI_ROUTING_VIEW",
     "work_result_view": "dbo.BI_WORK_ORDER_RESULTS",
     "purchase_order_view": "dbo.BI_PUR_PO_VIEW"
   },
