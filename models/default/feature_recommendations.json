@@ -1,9 +1,9 @@
 {
-  "«ŸΩ… ««√≥ (π›µÂΩ√ ªÁøÎ)": [
+  "ÌïµÏã¨ ÌîºÏ≤ò (Î∞òÎìúÏãú ÏÇ¨Ïö©)": [
     "PART_TYPE",
     "ITEM_MATERIAL"
   ],
-  "¡ﬂø‰ ««√≥ (±«¿Â)": [
+  "Ï§ëÏöî ÌîºÏ≤ò (Í∂åÏû•)": [
     "ITEM_SPEC",
     "ITEM_TYPE",
     "ITEM_GRP1",
@@ -11,11 +11,12 @@
     "GROUP2",
     "DRAW_NO",
     "OUTDIAMETER",
+    "INDIAMETER",
     "SealTypeGrup",
     "IN_SEALTYPE_CD",
     "RAW_MATL_KIND"
   ],
-  "¿œπ› ««√≥ (º±≈√¿˚)": [
+  "ÏùºÎ∞ò ÌîºÏ≤ò (ÏÑ†ÌÉùÏ†Å)": [
     "PartNm",
     "ADDITIONAL_SPEC",
     "MATERIAL_DESC",
@@ -23,7 +24,6 @@
     "ITEM_UNIT",
     "ITEM_GRP1NM",
     "DRAW_REV",
-    "INDIAMETER",
     "OUTTHICKNESS",
     "OUTDIAMETER_UNIT",
     "IN_SEALSIZE",
@@ -31,18 +31,18 @@
     "MID_SEALTYPE_CD",
     "OUT_SEALTYPE_CD"
   ],
-  "∞À≈‰ « ø‰ ««√≥": [
+  "Í≤ÄÌÜ† ÌïÑÏöî ÌîºÏ≤ò": [
     "ITEM_SUFFIX",
     "STANDARD_YN",
     "DRAW_SHEET_NO",
+    "MID_SEALSIZE",
     "MID_SEALSIZE_UOM",
     "OUT_SEALSIZE",
     "OUT_SEALSIZE_UOM"
   ],
-  "¡¶∞≈ ∞Ì∑¡ ««√≥": [
+  "Ï†úÍ±∞ Í≥†Î†§ ÌîºÏ≤ò": [
     "GROUP3",
     "ROTATE_CLOCKWISE",
-    "MID_SEALSIZE",
     "RAW_MATL_KINDNM"
   ]
 }
