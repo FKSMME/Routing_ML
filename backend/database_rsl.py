@@ -17,11 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
-    event,
-    inspect,
-    text,
 )
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import Session, declarative_base, relationship, sessionmaker
@@ -35,12 +31,9 @@ Base = declarative_base()
 
 
 def _json_type() -> sqltypes.TypeEngine:
-    """Return a JSON-compatible column type for the active backend."""
+    """Return a JSON-compatible column type."""
 
-    settings = get_settings()
-    if settings.rsl_database_url.startswith("sqlite"):
-        return SQLiteJSON
-    return sqltypes.JSON
+    return sqltypes.JSON(none_as_null=True)
 
 
 class RslGroup(Base):
@@ -182,17 +175,7 @@ def get_engine() -> Engine:
     if _ENGINE is None:
         settings = get_settings()
         url = settings.rsl_database_url
-        connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-        engine = create_engine(url, future=True, echo=False, connect_args=connect_args)
-
-        if url.startswith("sqlite"):
-
-            @event.listens_for(engine, "connect")
-            def _set_sqlite_pragma(dbapi_connection, _: int) -> None:  # pragma: no cover
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA foreign_keys=ON")
-                cursor.close()
-
+        engine = create_engine(url, future=True, echo=False, pool_pre_ping=True)
         _ENGINE = engine
     return _ENGINE
 
@@ -227,7 +210,12 @@ def session_scope() -> Generator[Session, None, None]:
 
 
 def bootstrap_schema() -> None:
-    """Create tables if they do not already exist."""
+    """Create tables if they do not already exist.
+
+    Note: For production MSSQL databases, schema creation should be handled
+    by database administrators with proper permissions. This function will
+    skip schema creation for MSSQL connections to avoid permission errors.
+    """
     import os
 
     # Skip schema bootstrap in test environment
@@ -235,52 +223,14 @@ def bootstrap_schema() -> None:
         return
 
     engine = get_engine()
+
+    # Skip table creation for MSSQL (SQL Server) databases
+    # Tables should be created by DBA with proper permissions
+    if "mssql" in engine.url.drivername.lower():
+        return
+
+    # For other databases (SQLite, etc.), create tables automatically
     Base.metadata.create_all(engine)
-
-    with engine.begin() as conn:
-        inspector = inspect(conn)
-
-        # Migrate rsl_group: add erp_required column if missing
-        rsl_group_columns = {column["name"] for column in inspector.get_columns("rsl_group")}
-        if "erp_required" not in rsl_group_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE rsl_group ADD COLUMN erp_required BOOLEAN NOT NULL DEFAULT FALSE"
-                )
-            )
-
-        # Migrate users: add full_name and email columns if missing
-        user_columns = {column["name"] for column in inspector.get_columns("users")}
-        if "full_name" not in user_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN full_name VARCHAR(255) NULL"
-                )
-            )
-        if "email" not in user_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN email VARCHAR(255) NULL"
-                )
-            )
-        if "must_change_password" not in user_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"
-                )
-            )
-        if "invited_by" not in user_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN invited_by VARCHAR(150) NULL"
-                )
-            )
-        if "initial_password_sent_at" not in user_columns:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN initial_password_sent_at DATETIME NULL"
-                )
-            )
 
 
 def iter_groups(session: Session) -> Iterable[RslGroup]:
