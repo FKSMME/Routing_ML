@@ -27,9 +27,10 @@ from backend.constants import (
 from common.config_store import PredictorRuntimeConfig, workflow_config_store
 from backend.trainer_ml import load_optimized_model
 from backend.database import (
-    fetch_single_item, 
-    fetch_routing_for_item, 
+    fetch_single_item,
+    fetch_routing_for_item,
     check_item_has_routing,
+    fetch_work_results_for_item,
 )
 from common.logger import get_logger
 
@@ -1089,6 +1090,95 @@ def calculate_confidence_score(
     return min(1.0, confidence)
 
 # ════════════════════════════════════════════════
+# 🚀 작업 실적 데이터 통합 함수
+# ════════════════════════════════════════════════
+
+def fetch_and_calculate_work_order_times(
+    item_cd: str,
+    proc_seq: int,
+    job_cd: str
+) -> Dict[str, Any]:
+    """
+    품목의 작업 실적 데이터 조회 및 평균 시간 계산
+
+    Returns:
+        {
+            'predicted_setup_time': float,
+            'predicted_run_time': float,
+            'work_order_count': int,
+            'has_work_data': bool
+        }
+    """
+    try:
+        work_results = fetch_work_results_for_item(item_cd)
+
+        if work_results.empty:
+            return {
+                'predicted_setup_time': None,
+                'predicted_run_time': None,
+                'work_order_count': 0,
+                'has_work_data': False
+            }
+
+        # PROC_SEQ와 OPERATION_CD(JOB_CD)로 필터링
+        if 'PROC_SEQ' in work_results.columns and 'OPERATION_CD' in work_results.columns:
+            filtered = work_results[
+                (work_results['PROC_SEQ'] == proc_seq) &
+                (work_results['OPERATION_CD'] == job_cd)
+            ]
+        elif 'OPERATION_CD' in work_results.columns:
+            # PROC_SEQ가 없으면 OPERATION_CD만으로 필터링
+            filtered = work_results[work_results['OPERATION_CD'] == job_cd]
+        else:
+            filtered = work_results
+
+        if filtered.empty:
+            return {
+                'predicted_setup_time': None,
+                'predicted_run_time': None,
+                'work_order_count': 0,
+                'has_work_data': False
+            }
+
+        # 평균 계산 (이상치 제거: IQR 방식)
+        setup_times = pd.to_numeric(filtered['ACT_SETUP_TIME'], errors='coerce').dropna()
+        run_times = pd.to_numeric(filtered['ACT_RUN_TIME'], errors='coerce').dropna()
+
+        def remove_outliers_iqr(series: pd.Series) -> pd.Series:
+            """IQR 방식으로 이상치 제거"""
+            if len(series) < 3:
+                return series
+            Q1 = series.quantile(0.25)
+            Q3 = series.quantile(0.75)
+            IQR = Q3 - Q1
+            lower_bound = Q1 - 1.5 * IQR
+            upper_bound = Q3 + 1.5 * IQR
+            return series[(series >= lower_bound) & (series <= upper_bound)]
+
+        setup_times_clean = remove_outliers_iqr(setup_times)
+        run_times_clean = remove_outliers_iqr(run_times)
+
+        predicted_setup = float(setup_times_clean.mean()) if len(setup_times_clean) > 0 else None
+        predicted_run = float(run_times_clean.mean()) if len(run_times_clean) > 0 else None
+
+        return {
+            'predicted_setup_time': predicted_setup,
+            'predicted_run_time': predicted_run,
+            'work_order_count': len(filtered),
+            'has_work_data': True
+        }
+
+    except Exception as e:
+        logger.warning(f"작업 실적 조회 실패 ({item_cd}, PROC_SEQ={proc_seq}, JOB_CD={job_cd}): {e}")
+        return {
+            'predicted_setup_time': None,
+            'predicted_run_time': None,
+            'work_order_count': 0,
+            'has_work_data': False
+        }
+
+
+# ════════════════════════════════════════════════
 # 🚀 라우팅 예측 함수
 # ════════════════════════════════════════════════
 
@@ -1291,6 +1381,11 @@ def predict_routing_from_similar_items(
                 len(proc_list), similarity_mean, mach_stats['cv'], config
             )
 
+            # ⭐ WORK_ORDER_RESULTS 데이터 통합
+            work_order_data = fetch_and_calculate_work_order_times(
+                input_item_cd, proc_seq, job_cd
+            )
+
             prediction = {
                 'ROUT_NO': 'PREDICTED',
                 'ITEM_CD': input_item_cd,
@@ -1321,6 +1416,11 @@ def predict_routing_from_similar_items(
                 'SOURCE_ITEMS': ','.join([p['SOURCE_ITEM'] for p in proc_list]),
                 'SIMILARITY_SCORES': ','.join([f"{p['SIMILARITY']:.3f}" for p in proc_list]),
                 'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),
+                # ⭐ WORK_ORDER 실적 기반 예측 시간 추가
+                'PREDICTED_SETUP_TIME': round(work_order_data['predicted_setup_time'], 3) if work_order_data['predicted_setup_time'] else None,
+                'PREDICTED_RUN_TIME': round(work_order_data['predicted_run_time'], 3) if work_order_data['predicted_run_time'] else None,
+                'WORK_ORDER_COUNT': work_order_data['work_order_count'],
+                'HAS_WORK_DATA': work_order_data['has_work_data'],
                 'VALID_FROM_DT': '01-Jan-01',
                 'VALID_TO_DT': '31-Dec-99',
                 'INSRT_DT': datetime.now().strftime('%Y-%m-%d')
