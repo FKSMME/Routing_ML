@@ -14,7 +14,11 @@
       "Bash(if not exist \"old\" mkdir old)",
       "Bash(.venv/Scripts/python.exe -m PyInstaller:*)",
       "Bash(git rm:*)",
-      "Bash(./RoutingMLMonitor_v5.2.6.exe:*)"
+      "Bash(./RoutingMLMonitor_v5.2.6.exe:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(curl:*)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

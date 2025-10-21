@@ -13,7 +13,7 @@ from backend.api.services.data_quality_service import (
     get_prometheus_metrics,
 )
 
-router = APIRouter(prefix="/data-quality", tags=["data-quality"])
+router = APIRouter(prefix="/api/data-quality", tags=["data-quality"])
 
 
 # ============================================================================
