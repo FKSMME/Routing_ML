@@ -22,9 +22,14 @@ This is an **ABSOLUTE REQUIREMENT** with **NO EXCEPTIONS**.
 2. ✅ Create Checklist (`docs/planning/CHECKLIST_*.md`)
 3. ✅ Execute tasks sequentially
 4. ✅ Update checkboxes `[ ]` → `[x]` immediately after each task
-5. ✅ Commit & merge to main after **each Phase**
-6. ✅ Return to 251014 branch after merging
-7. ✅ Continue until all checkboxes are `[x]`
+5. ✅ **Immediately before any Git workflow step (commit / push / merge), run the Monitor build validation sequence:**
+   - `.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.5.spec`
+   - Ensure `deploy\build_monitor_v5.bat` reads the script version and outputs `RoutingMLMonitor_v5.2.5.exe`
+   - For quick verification, run `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py`
+6. ✅ Commit & merge to main after **each Phase**
+7. ✅ Return to 251014 branch after merging
+8. ✅ Continue until all checkboxes are `[x]`
+
 
 ---
 

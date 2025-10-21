@@ -332,6 +332,7 @@ Total: [▓▓▓▓▓▓▓▓▓▓] 100% (9/9 tasks)
 **Status**: Not Started
 
 **Git Operations**:
+- [ ] Run monitor build validation sequence (`.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.5.spec` → verify `deploy\build_monitor_v5.bat` outputs `RoutingMLMonitor_v5.2.5.exe` → `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py`) before any commit/push/merge
 - [ ] Commit Phase 1
 - [ ] Push to 251014
 - [ ] Merge to main
@@ -349,6 +350,7 @@ Total: [▓▓▓▓▓▓▓▓▓▓] 100% (9/9 tasks)
 **Status**: Not Started
 
 **Git Operations**:
+- [ ] Run monitor build validation sequence (`.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.5.spec` → verify `deploy\build_monitor_v5.bat` outputs `RoutingMLMonitor_v5.2.5.exe` → `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py`) before any commit/push/merge
 - [ ] Commit Phase 2
 - [ ] Push to 251014
 - [ ] Merge to main
@@ -379,6 +381,154 @@ Total: [░░░░░░░░░░] 0% (0/5 tasks)
 
 **Last Updated**: {YYYY-MM-DD}
 **Next Review**: After Phase completion
+```
+
+---
+
+## 7.5 RoutingMLMonitor 버전 관리 및 재빌드 (필수)
+
+### 7.5.1 재빌드 시점
+
+**CHECKLIST 100% 완료 시 필수 재빌드**:
+
+모든 작업(CHECKLIST)이 100% 완료되면 **반드시** RoutingMLMonitor를 재빌드하고 버전을 업데이트해야 합니다.
+
+### 7.5.2 버전 관리 규칙
+
+**버전 형식**: `RoutingMLMonitor_vX.Y.Z.spec` / `RoutingMLMonitor_vX.Y.Z.exe`
+
+**버전 번호 규칙**:
+
+1. **Major (X) - 큰 변경**:
+   - 주요 기능 추가 (예: 새로운 모니터링 기능, UI 대폭 개편)
+   - 아키텍처 변경 (예: 백엔드 프레임워크 변경)
+   - 하위 호환성 깨짐 (Breaking Changes)
+   - **예시**: 5.2.5 → 6.0.0
+
+2. **Minor (Y) - 중간 변경**:
+   - 새로운 차트/대시보드 추가
+   - 데이터베이스 스키마 변경
+   - 새로운 API 엔드포인트 추가
+   - **예시**: 5.2.5 → 5.3.0
+
+3. **Patch (Z) - 작은 변경**:
+   - 버그 수정
+   - UI 텍스트/레이블 변경
+   - 성능 최적화
+   - 문서 업데이트만 있는 경우
+   - **예시**: 5.2.5 → 5.2.6
+
+### 7.5.3 재빌드 절차
+
+**CHECKLIST 100% 완료 후 수행**:
+
+```bash
+# 1. 버전 번호 결정
+#    - 변경 사항 검토
+#    - Major/Minor/Patch 판단
+
+# 2. 구버전 백업
+mkdir -p old
+move RoutingMLMonitor_v{OLD_VERSION}.spec old/
+move RoutingMLMonitor_v{OLD_VERSION}.exe old/  # (있으면)
+
+# 3. 새 버전 spec 파일 생성
+copy RoutingMLMonitor_v{OLD_VERSION}.spec RoutingMLMonitor_v{NEW_VERSION}.spec
+
+# 4. spec 파일 내부 버전 업데이트
+#    - exe_name 수정
+#    - version 정보 수정
+
+# 5. 재빌드
+.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v{NEW_VERSION}.spec
+
+# 6. 검증
+#    - dist/RoutingMLMonitor_v{NEW_VERSION}.exe 생성 확인
+#    - 실행 테스트: .\.venv\Scripts\python.exe scripts/server_monitor_dashboard_v5_1.py
+
+# 7. Git 커밋
+git add RoutingMLMonitor_v{NEW_VERSION}.spec old/
+git commit -m "build: Rebuild monitor v{NEW_VERSION} - CHECKLIST 100% complete"
+git push origin 251014
+git checkout main && git merge 251014 && git push origin main && git checkout 251014
+```
+
+### 7.5.4 버전 업데이트 예시
+
+**Case 1: 작은 변경 (Patch)**
+```
+변경 사항: 라우팅 예측 UI 개선, 후보 노드 추가
+현재 버전: v5.2.5
+새 버전: v5.2.6
+
+이유: 기존 기능에 UI 개선만 추가, 하위 호환성 유지
+```
+
+**Case 2: 중간 변경 (Minor)**
+```
+변경 사항: 다중 후보 병합 기능 추가, 새 API 엔드포인트
+현재 버전: v5.2.5
+새 버전: v5.3.0
+
+이유: 새로운 예측 기능 추가, 백엔드 로직 확장
+```
+
+**Case 3: 큰 변경 (Major)**
+```
+변경 사항: PostgreSQL 마이그레이션, 전체 백엔드 재구성
+현재 버전: v5.2.5
+새 버전: v6.0.0
+
+이유: 데이터베이스 변경, 설정 파일 구조 변경 (Breaking)
+```
+
+### 7.5.5 old/ 디렉토리 관리
+
+**규칙**:
+- 직전 3개 버전까지만 보관
+- 그 이전 버전은 삭제 또는 아카이브
+
+**예시**:
+```
+현재: v5.2.6
+old/
+  ├── RoutingMLMonitor_v5.2.5.spec
+  ├── RoutingMLMonitor_v5.2.4.spec
+  └── RoutingMLMonitor_v5.2.3.spec
+```
+
+### 7.5.6 CHECKLIST 업데이트
+
+**작업 완료 조건에 추가**:
+```markdown
+## 작업 완료 조건
+
+✅ PRD 문서 작성 완료
+✅ Checklist 문서 작성 완료
+✅ 모든 체크박스 [x] 처리
+✅ 모든 Phase Git commit & merge 완료
+✅ 251014 브랜치로 복귀 완료
+✅ RoutingMLMonitor 재빌드 (버전 업데이트) ← NEW
+✅ 구버전 old/ 디렉토리로 이동 ← NEW
+✅ 작업 히스토리 문서 작성 완료
+```
+
+### 7.5.7 Checklist 템플릿 업데이트
+
+**Final Phase Git Operations**:
+```markdown
+**Final Git Operations** (CHECKLIST 100% 완료 시):
+- [ ] Determine version number (Major/Minor/Patch)
+- [ ] Backup old version to old/ directory
+- [ ] Update spec file with new version
+- [ ] Rebuild: `python -m PyInstaller --clean --noconfirm RoutingMLMonitor_v{NEW}.spec`
+- [ ] Verify: dist/RoutingMLMonitor_v{NEW}.exe created
+- [ ] Test: `python scripts/server_monitor_dashboard_v5_1.py`
+- [ ] Commit: "build: Rebuild monitor v{NEW} - CHECKLIST complete"
+- [ ] Push to 251014
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
 ```
 
 ---
@@ -415,9 +565,10 @@ Total: [░░░░░░░░░░] 0% (0/5 tasks)
 ### 8.4 Phase별 Git 작업
 
 ```
-❌ 모든 Phase 완료 후 한번에 커밋
+❌ 모든 Phase 완료 후 한 번에 커밋
 ❌ main 병합 생략
 ✅ 각 Phase 완료 시마다 커밋
+✅ Git 워크플로우 실행 직전에 Monitor build validation sequence(`.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.5.spec` → `deploy\build_monitor_v5.bat` 결과 확인 → `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py` 실행) 수행
 ✅ 반드시 main 병합 후 251014 복귀
 ```
 
