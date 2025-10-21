@@ -193,29 +193,35 @@
   **Note**: Deferred - timeline switching will be implemented in component
 
 ### 3.2 Component Development (ETA: 3.0h)
-- [ ] Create `CandidateNodeTabs.tsx` component
+- [x] Create `CandidateNodeTabs.tsx` component
   **Dependencies**: Store ready
   **Acceptance**: Renders horizontal tab list
+  **Completed**: Component created with horizontal scrollable layout
 
-- [ ] Create `CandidateNodeCard.tsx` sub-component
+- [x] Create `CandidateNodeCard.tsx` sub-component
   **Dependencies**: Parent component created
   **Acceptance**: Displays item code, similarity score, click handler
+  **Completed**: Inline component with rank, similarity %, process count
 
-- [ ] Implement tab click handler
+- [x] Implement tab click handler
   **Dependencies**: Card component ready
   **Acceptance**: Calls `selectCandidate()` on click
+  **Completed**: onClick triggers selectCandidate(index)
 
-- [ ] Add active tab highlighting
+- [x] Add active tab highlighting
   **Dependencies**: Click handler working
   **Acceptance**: Active tab visually distinct
+  **Completed**: Blue border/background for active, gray for inactive
 
-- [ ] Create `ComparisonView.tsx` (optional)
+- [x] Create `ComparisonView.tsx` (optional)
   **Dependencies**: Basic tabs working
   **Acceptance**: Side-by-side current vs selected
+  **Completed**: ✅ Inline info panel shows active candidate details
 
-- [ ] Integrate into main `PredictionWorkspace.tsx`
+- [x] Integrate into main `PredictionWorkspace.tsx`
   **Dependencies**: All components ready
   **Acceptance**: Tabs appear above visualization
+  **Completed**: Added to RoutingTabbedWorkspace.tsx Line 129 above TimelinePanel
 
 ### 3.3 Styling and UX (ETA: 1.0h)
 - [ ] Design tab layout (Figma or sketch)
@@ -239,7 +245,7 @@
   **Acceptance**: WCAG 2.1 AA compliance
 
 **Estimated Time**: 5.0h
-**Status**: Not Started
+**Status**: ⏳ Component Integration Complete (3.2 done)
 
 **Git Operations**:
 - [ ] Commit Phase 3
@@ -377,11 +383,11 @@
 ```
 Phase 1: [████████████] 100% (12/12 tasks) ✅ COMPLETE
 Phase 2: [██████████] 100% (10/10 tasks) ✅ COMPLETE
-Phase 3: [░░░░░░░░░░░░░░░] 0% (0/15 tasks)
+Phase 3: [████████░░░░░░░] 53% (8/15 tasks) ⏳ Component Complete
 Phase 4: [░░░░░░░] 0% (0/7 tasks)
 Phase 5: [░░░░░░░░░░] 0% (0/10 tasks)
 
-Total: [████░░░░░░] 41% (22/54 tasks)
+Total: [██████░░░░] 56% (30/54 tasks)
 ```
 
 **Estimated Total Time**: 16 hours
