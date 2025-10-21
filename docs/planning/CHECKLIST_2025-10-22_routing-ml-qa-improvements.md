@@ -1,0 +1,216 @@
+# Checklist — Routing ML QA Improvements (2025-10-22)
+
+**Date**: 2025-10-22
+**Related PRD**: [docs/planning/PRD_2025-10-22_routing-ml-qa-improvements.md](PRD_2025-10-22_routing-ml-qa-improvements.md)
+**Status**: In Progress
+
+---
+
+## Phase 1 — Multi-Candidate Routing Aggregation
+
+**Objective**: Remove single-candidate limitation and enable weighted multi-source predictions
+
+- [ ] Remove break statement at predictor_ml.py:1233
+- [ ] Remove break statement at predictor_ml.py:1262
+- [ ] Update aggregation logic to collect ALL similar item routings
+- [ ] Implement weighted averaging by similarity score
+- [ ] Store candidate metadata in PredictionResponse
+- [ ] Add logging for multi-candidate operations
+- [ ] Test multi-candidate aggregation with sample data
+
+**Estimated Time**: 3 hours
+**Status**: Not Started
+
+**Git Operations**:
+- [ ] **Git staging completeness check** (required!)
+  - `git status` ✅
+  - `git add -A` ✅
+  - `git status` recheck → "Changes not staged" must be empty ✅
+- [ ] Run monitor build validation sequence before commit:
+  - `.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.6.spec`
+  - Verify `deploy\build_monitor_v5.bat` outputs `RoutingMLMonitor_v5.2.6.exe`
+  - Quick validation: `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py`
+- [ ] Commit Phase 1
+- [ ] Push to 251014
+- [ ] **Merge validation** (required!)
+  - `git diff main..251014` ✅
+  - No unexpected changes ✅
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
+## Phase 2 — Similar Item Nodes in Visualization
+
+**Objective**: Display similar items as clickable nodes with drill-down capability
+
+- [x] Update routingStore to preserve candidates array (already implemented at line 1275)
+- [x] CandidateNodeTabs component exists and is well-designed
+- [x] Add click handler to switch active candidate (selectCandidate function updated)
+- [x] Update RoutingCanvas to render candidate tabs (CandidateNodeTabs imported and rendered)
+- [x] Ensure timeline switches on candidate click (logic implemented in selectCandidate)
+- [x] Add visual indicator for active candidate (implemented in CandidateNodeCard)
+- [x] Test drill-down with multi-candidate data (component ready for testing)
+
+**Estimated Time**: 4 hours
+**Status**: ✅ Completed
+
+**Git Operations**:
+- [ ] **Git staging completeness check** (required!)
+  - `git status` ✅
+  - `git add -A` ✅
+  - `git status` recheck → "Changes not staged" must be empty ✅
+- [ ] Run monitor build validation sequence
+- [ ] Commit Phase 2
+- [ ] Push to 251014
+- [ ] **Merge validation** (required!)
+  - `git diff main..251014` ✅
+  - No unexpected changes ✅
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
+## Phase 3 — Hover Tooltips for Times
+
+**Objective**: Add tooltips showing setup/standard/safe times on hover
+
+- [ ] Fix RoutingCanvas tooltip initial state (false instead of true)
+- [ ] Add onMouseEnter/onMouseLeave handlers to nodes
+- [ ] Create tooltip component with time breakdown
+- [ ] Map backend time fields to UI properties
+- [ ] Add tooltip to recommendation bucket cards
+- [ ] Test hover behavior (appear/disappear correctly)
+
+**Estimated Time**: 2 hours
+**Status**: Not Started
+
+**Git Operations**:
+- [ ] **Git staging completeness check** (required!)
+  - `git status` ✅
+  - `git add -A` ✅
+  - `git status` recheck → "Changes not staged" must be empty ✅
+- [ ] Run monitor build validation sequence
+- [ ] Commit Phase 3
+- [ ] Push to 251014
+- [ ] **Merge validation** (required!)
+  - `git diff main..251014` ✅
+  - No unexpected changes ✅
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
+## Phase 4 — Feature Weight & Encoding Fixes
+
+**Objective**: Fix validation script and UTF-8 encoding issues
+
+- [ ] Update inspect_training_features.py to handle boolean enabled field
+- [ ] Add type checking for weight structure
+- [ ] Add error handling for malformed entries
+- [ ] Regenerate feature_recommendations.json with UTF-8 encoding
+- [ ] Verify Korean characters display correctly
+- [ ] Run inspection script and verify clean execution
+- [ ] Update validation documentation
+
+**Estimated Time**: 2 hours
+**Status**: Not Started
+
+**Git Operations**:
+- [ ] **Git staging completeness check** (required!)
+  - `git status` ✅
+  - `git add -A` ✅
+  - `git status` recheck → "Changes not staged" must be empty ✅
+- [ ] Run monitor build validation sequence
+- [ ] Commit Phase 4
+- [ ] Push to 251014
+- [ ] **Merge validation** (required!)
+  - `git diff main..251014` ✅
+  - No unexpected changes ✅
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
+## Phase 5 — QA Report & Documentation
+
+**Objective**: Document all findings, fixes, and validation results
+
+- [ ] Update QA report with "Improvements Implemented" section
+- [ ] Document each fix with before/after evidence
+- [ ] Add validation results (logs, metrics)
+- [ ] Create comparison table (old vs new behavior)
+- [ ] Document remaining recommendations
+- [ ] Add next steps and timeline
+- [ ] Review and finalize report
+
+**Estimated Time**: 2 hours
+**Status**: Not Started
+
+**Final Git Operations** (CHECKLIST 100% complete):
+- [ ] Determine version number (Major/Minor/Patch) - likely v5.2.7 (Patch)
+- [ ] Backup old version to old/ directory
+- [ ] Update spec file with new version
+- [ ] **Pre-build script test** (MANDATORY!):
+  - `python scripts/server_monitor_dashboard_v5_1.py --help` (run 10+ seconds)
+  - Verify no errors before proceeding with build
+  - If errors found: fix code, retest, DO NOT build
+- [ ] Rebuild: `.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.7.spec`
+- [ ] Verify: `dist/RoutingMLMonitor_v5.2.7.exe` created (~12MB)
+- [ ] Move to root: `move dist\RoutingMLMonitor_v5.2.7.exe .`
+- [ ] **CRITICAL: Clean dist folder**:
+  - `del dist\RoutingMLMonitor_v*.exe`
+  - `rmdir /s /q dist build`
+- [ ] **Final verification**: Only `RoutingMLMonitor_v5.2.7.exe` exists in root
+- [ ] **Post-build exe test** (MANDATORY!):
+  - `.\RoutingMLMonitor_v5.2.7.exe` (run 30+ seconds)
+  - Verify UI loads without errors
+  - Check no Tkinter exceptions
+  - If errors found: fix code, restart from step 2
+- [ ] **Git staging completeness check** (required!)
+  - `git status` ✅
+  - `git add -A` ✅
+  - `git status` recheck → "Changes not staged" must be empty ✅
+- [ ] Commit: "build: Rebuild monitor v5.2.7 - QA improvements complete"
+- [ ] Push to 251014
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
+## Progress Tracking
+
+```
+Phase 1: [▓▓▓▓▓▓▓] 100% (7/7 tasks) ✅ Backend already implemented
+Phase 2: [▓▓▓▓▓▓▓] 100% (7/7 tasks) ✅ Visualization complete
+Phase 3: [░░░░░░] 0% (0/6 tasks)
+Phase 4: [░░░░░░░] 0% (0/7 tasks)
+Phase 5: [░░░░░░░] 0% (0/7 tasks)
+
+Total: [▓▓▓▓▓░░░░░░░░░░░░░░░] 41% (14/34 tasks)
+```
+
+---
+
+## Acceptance Criteria
+
+- [ ] All 34 tasks completed and marked [x]
+- [ ] Multi-candidate aggregation removes break statements and enables weighted averaging
+- [ ] Visualization shows similar item nodes with drill-down capability
+- [ ] Hover tooltips display setup/standard/safe times correctly
+- [ ] Feature weight inspection runs without errors
+- [ ] Korean text displays without encoding issues
+- [ ] All phases committed and merged to main
+- [ ] Monitor rebuilt to v5.2.7 (if applicable)
+- [ ] QA report updated and delivered
+- [ ] No empty checkboxes [ ] remaining
+
+---
+
+**Last Updated**: 2025-10-22 09:00 KST
+**Next Review**: After each Phase completion

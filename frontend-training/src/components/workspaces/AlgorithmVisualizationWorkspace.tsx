@@ -578,29 +578,23 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
     []
   );
 
-  // Node search filter
-  useEffect(() => {
-    if (!searchQuery) {
-      setNodes((nds) =>
-        nds.map((node) => ({
-          ...node,
-          style: { ...node.style, opacity: 1 },
-        }))
-      );
-      return;
+  // Node search filter - Fixed: Use useMemo to prevent infinite loop
+  // Previous useEffect caused "Maximum update depth exceeded" error
+  // by creating new node objects on every setNodes call, triggering ReactFlow's onNodesChange
+  const displayNodes = useMemo(() => {
+    if (!searchQuery || nodes.length === 0) {
+      return nodes;
     }
 
     const query = searchQuery.toLowerCase();
-    setNodes((nds) =>
-      nds.map((node) => {
-        const matches = node.data.label?.toLowerCase().includes(query);
-        return {
-          ...node,
-          style: { ...node.style, opacity: matches ? 1 : 0.3 },
-        };
-      })
-    );
-  }, [searchQuery]);
+    return nodes.map((node) => {
+      const matches = node.data.label?.toLowerCase().includes(query);
+      return {
+        ...node,
+        style: { ...node.style, opacity: matches ? 1 : 0.3 },
+      };
+    });
+  }, [nodes, searchQuery]);
 
   // Static mode: Use FLOW_LIBRARY for rainbow balls animation
   const flowDefinition = useMemo(() => {
@@ -941,7 +935,7 @@ export const AlgorithmVisualizationWorkspace: React.FC = () => {
           {(viewMode === 'static' && staticNodes.length > 0) || ((viewMode === 'dynamic' || viewMode === 'summary') && nodes.length > 0) ? (
             <ReactFlowProvider>
               <ReactFlow
-                nodes={viewMode === 'static' ? staticNodes : nodes}
+                nodes={viewMode === 'static' ? staticNodes : displayNodes}
                 edges={viewMode === 'static' ? staticEdges : edges}
                 onNodesChange={viewMode === 'dynamic' ? handleNodesChange : undefined}
                 onEdgesChange={viewMode === 'dynamic' ? handleEdgesChange : undefined}

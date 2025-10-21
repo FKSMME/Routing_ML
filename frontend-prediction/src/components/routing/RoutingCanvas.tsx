@@ -14,6 +14,7 @@ import ReactFlow, {
 } from "reactflow";
 
 import { TimeEditModal } from "./TimeEditModal";
+import { CandidateNodeTabs } from "./CandidateNodeTabs";
 
 const NODE_GAP = 240;
 
@@ -508,6 +509,9 @@ function RoutingCanvasView({
 
   return (
     <>
+      {/* Candidate Node Tabs - Shows similar item candidates */}
+      <CandidateNodeTabs className="mb-4" />
+
       {/* Similar Items Candidate List */}
       {productTabs.length > 1 && (
         <div className="candidate-list" style={{
