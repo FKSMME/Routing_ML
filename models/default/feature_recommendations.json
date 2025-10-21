@@ -1,20 +1,48 @@
 {
   "핵심 피처 (반드시 사용)": [
-    "PART_TYPE"
+    "PART_TYPE",
+    "ITEM_MATERIAL"
   ],
   "중요 피처 (권장)": [
+    "ITEM_SPEC",
+    "ITEM_TYPE",
     "ITEM_GRP1",
+    "GROUP1",
+    "GROUP2",
+    "DRAW_NO",
     "OUTDIAMETER",
-    "INDIAMETER",
-    "OUTTHICKNESS"
+    "SealTypeGrup",
+    "IN_SEALTYPE_CD",
+    "RAW_MATL_KIND"
   ],
   "일반 피처 (선택적)": [
-    "ITEM_SPEC",
+    "PartNm",
+    "ADDITIONAL_SPEC",
+    "MATERIAL_DESC",
+    "ITEM_ACCT",
+    "ITEM_UNIT",
     "ITEM_GRP1NM",
+    "DRAW_REV",
+    "INDIAMETER",
+    "OUTTHICKNESS",
+    "OUTDIAMETER_UNIT",
     "IN_SEALSIZE",
-    "MID_SEALSIZE",
-    "OUT_SEALSIZE"
+    "IN_SEALSIZE_UOM",
+    "MID_SEALTYPE_CD",
+    "OUT_SEALTYPE_CD"
   ],
-  "검토 필요 피처": [],
-  "제거 고려 피처": []
+  "검토 필요 피처": [
+    "ITEM_SUFFIX",
+    "STANDARD_YN",
+    "DRAW_SHEET_NO",
+    "MID_SEALSIZE_UOM",
+    "OUT_SEALSIZE",
+    "OUT_SEALSIZE_UOM"
+  ],
+  "제거 고려 피처": [
+    "GROUP3",
+    "ROTATE_CLOCKWISE",
+    "MID_SEALSIZE",
+    "RAW_MATL_KINDNM"
+  ]
 }
