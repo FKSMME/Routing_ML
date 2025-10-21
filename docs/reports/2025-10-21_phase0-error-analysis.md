@@ -57,18 +57,48 @@ AttributeError: Can't get attribute 'DummySimilarityEngine' on <module 'uvicorn.
 
 ### Root Cause Analysis
 
-**Status**: Need to capture training error traceback
+**Status**: Root cause identified ✅
 
-**Hypothesis**:
-- Training data loading may fail due to database schema changes (BI_ROUTING_VIEW fix)
-- Feature preprocessing pipeline may need updates
-- Model architecture may have changed since last successful training
+**Error**: Training data source file not found
 
-**Next Steps**:
-- Trigger training manually
-- Capture full error traceback
-- Analyze training data loading code
-- Verify feature column compatibility
+**Configuration Analysis**:
+```json
+// config/workflow_settings.json line 1026
+"offline_dataset_path": "routing_data/ROUTING AUTO TEST.accdb"
+```
+
+**File Check**:
+```bash
+$ ls -lh "routing_data/ROUTING AUTO TEST.accdb"
+파일 없음 ❌
+```
+
+**Root Cause**:
+1. **Missing training data file**: `routing_data/ROUTING AUTO TEST.accdb` does not exist
+2. **Priority issue**: `offline_dataset_path` takes precedence over MSSQL connection
+3. **Training data loading** in `training_service.py:369-378`:
+   ```python
+   dataset_path_str = getattr(data_cfg, "offline_dataset_path", None)
+   if dataset_path_str:
+       dataset_path = Path(dataset_path_str).expanduser()
+       if dataset_path.exists():  # ❌ This check fails
+           return pd.read_csv(dataset_path)  # Never executed
+   ```
+
+**Alternative Data Source** (configured but not used):
+- MSSQL Server: `K3-DB.ksm.co.kr,1433`
+- Database: `KsmErp`
+- Item View: `dbo.BI_ITEM_INFO_VIEW` (324K rows)
+- Routing View: `dbo.BI_ROUTING_HIS_VIEW` ❌ (should be `BI_ROUTING_VIEW` - 1.76M rows)
+
+**Fix Required**:
+1. **Option A**: Remove `offline_dataset_path` setting (set to `null`)
+2. **Option B**: Update training service to fall back to MSSQL when file not found
+3. **Option C**: Create proper training dataset file from MSSQL export
+
+**Additional Issue Found**:
+- `routing_view` setting still points to old view name: `"dbo.BI_ROUTING_HIS_VIEW"`
+- Should be: `"dbo.BI_ROUTING_VIEW"` (fixed in database.py earlier but not in workflow_settings.json)
 
 ---
 
