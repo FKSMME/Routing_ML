@@ -9,6 +9,7 @@ import { ErpItemExplorer } from "../routing/ErpItemExplorer";
 import { ItemListPanel } from "../routing/ItemListPanel";
 import { RoutingCombinationSelector } from "../routing/RoutingCombinationSelector";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
+import { CandidateNodeTabs } from "../routing/CandidateNodeTabs";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
 import { VisualizationSummary } from "../VisualizationSummary";
@@ -125,6 +126,7 @@ export function RoutingTabbedWorkspace({
           <div className="visualization-section" style={{ flex: '0 0 55%', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="bg-slate-900/50 rounded-xl p-6 border border-slate-700/50 flex-1">
               <h3 className="text-xl font-semibold mb-4 text-slate-200">📊 시각화</h3>
+              <CandidateNodeTabs className="mb-4" />
               <TimelinePanel key={`timeline-${tabKey}`} />
               <div className="mt-4">
                 <VisualizationSummary metrics={data?.metrics} />
