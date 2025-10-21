@@ -20,13 +20,13 @@
 
 ## Phase 2 – Model Artifact Assessment
 
-- [ ] Evaluate `models/v1` artifact compatibility — 0.8h
+- [x] Evaluate `models/v1` artifact compatibility — 0.8h
   - Dependencies: Phase 1 findings on current pipeline schema
   - Acceptance: Compatibility matrix with required conversions (if any)
-- [ ] Gather training metrics and derive feature weighting recommendations — 1.2h
+- [x] Gather training metrics and derive feature weighting recommendations — 1.2h
   - Dependencies: Feature inventory completeness
   - Acceptance: Table of metrics and recommended weight configuration
-- [ ] Outline reuse workflow for legacy checkpoints — 0.5h
+- [x] Outline reuse workflow for legacy checkpoints — 0.5h
   - Dependencies: Compatibility evaluation
   - Acceptance: Step-by-step instructions validated with existing assets
 - [ ] Git Operations: Commit Phase 2 — 0.2h
@@ -36,7 +36,7 @@
 - [ ] Git Operations: Return to 251014 branch — 0.1h
 
 **Estimated Time**: 3.4h  
-**Status**: Not Started
+**Status**: In Progress
 
 ## Phase 3 – Visualization & Reporting
 
@@ -61,10 +61,10 @@
 ## Progress Tracking
 
 Phase 1: [▓▓░░░] 38% (3/8 tasks)  
-Phase 2: [░░░░░] 0% (0/8 tasks)  
+Phase 2: [▓▓░░░] 38% (3/8 tasks)  
 Phase 3: [░░░░░] 0% (0/8 tasks)  
 
-Total: [▓░░░░░░░░░░] 13% (3/24 tasks)
+Total: [▓▓░░░░░░░░░] 25% (6/24 tasks)
 
 ## Acceptance Criteria
 
