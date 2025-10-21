@@ -427,27 +427,49 @@ Total: [░░░░░░░░░░] 0% (0/5 tasks)
 #    - 변경 사항 검토
 #    - Major/Minor/Patch 판단
 
-# 2. 구버전 백업
+# 2. 빌드 전 스크립트 실행 테스트 (필수!)
+python scripts/server_monitor_dashboard_v5_1.py --help
+# - 최소 10초 동안 실행
+# - 오류 없이 종료되는지 확인
+# - 만약 오류 발생 시:
+#   1. 코드 수정
+#   2. 재테스트
+#   3. 오류 없을 때까지 반복
+#   4. 빌드 중단 (오류 있으면 빌드 금지!)
+
+# 3. 구버전 백업
 mkdir -p old
 move RoutingMLMonitor_v{OLD_VERSION}.spec old/
 move RoutingMLMonitor_v{OLD_VERSION}.exe old/  # (있으면)
 
-# 3. 새 버전 spec 파일 생성
+# 4. 새 버전 spec 파일 생성
 copy RoutingMLMonitor_v{OLD_VERSION}.spec RoutingMLMonitor_v{NEW_VERSION}.spec
 
-# 4. spec 파일 내부 버전 업데이트
+# 5. spec 파일 내부 버전 업데이트
 #    - exe_name 수정
 #    - version 정보 수정
 
-# 5. 재빌드
+# 6. 재빌드
 .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v{NEW_VERSION}.spec
 
-# 6. 검증
+# 7. 빌드 후 실행 테스트 (필수!)
 #    - dist/RoutingMLMonitor_v{NEW_VERSION}.exe 생성 확인
-#    - 실행 테스트: .\.venv\Scripts\python.exe scripts/server_monitor_dashboard_v5_1.py
+ls -lh dist/RoutingMLMonitor_v{NEW_VERSION}.exe  # 파일 크기 ~12MB 확인
+move dist/RoutingMLMonitor_v{NEW_VERSION}.exe .  # 프로젝트 루트로 이동
 
-# 7. Git 커밋
-git add RoutingMLMonitor_v{NEW_VERSION}.spec old/
+# 실행 테스트:
+./RoutingMLMonitor_v{NEW_VERSION}.exe --version &
+# - 최소 30초 동안 실행
+# - UI가 정상적으로 로딩되는지 육안 확인
+# - Tkinter 예외 또는 오류 팝업 없는지 확인
+# - 종료 후 콘솔에 오류 로그 없는지 확인
+# - 만약 오류 발생 시:
+#   1. 코드 수정
+#   2. 2단계부터 재시작
+#   3. 오류 없을 때까지 반복
+
+# 8. Git 커밋 (테스트 통과 후에만!)
+git add RoutingMLMonitor_v{NEW_VERSION}.exe RoutingMLMonitor_v{NEW_VERSION}.spec old/
 git commit -m "build: Rebuild monitor v{NEW_VERSION} - CHECKLIST 100% complete"
 git push origin 251014
 git checkout main && git merge 251014 && git push origin main && git checkout 251014
@@ -526,6 +548,149 @@ old/
 - [ ] Test: `python scripts/server_monitor_dashboard_v5_1.py`
 - [ ] Commit: "build: Rebuild monitor v{NEW} - CHECKLIST complete"
 - [ ] Push to 251014
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+```
+
+---
+
+## 7.6 Git Staging 및 커밋 규칙 (필수)
+
+### 7.6.1 커밋 전 필수 단계
+
+모든 커밋 작업 시 **반드시** 다음 절차를 따라야 합니다:
+
+```bash
+# 1단계: 모든 Changes 확인
+git status
+
+# 2단계: 모든 Changes를 Staged 상태로 변경 (필수!)
+git add -A
+# 또는
+git add .
+
+# 3단계: Staging 완전성 재확인
+git status
+
+# ✅ 이상적 출력:
+# On branch 251014
+# Changes to be committed:
+#   (all files listed here)
+#
+# ❌ 다음 섹션이 있으면 안 됨:
+# Changes not staged for commit:  ← 이 섹션 없어야 함!
+
+# 4단계: 커밋
+git commit -m "commit message"
+```
+
+### 7.6.2 포함 대상
+
+**모든 변경사항을 반드시 포함**:
+- ✅ Claude가 수정한 파일
+- ✅ 외부 프로세스 (Training, Analysis 스크립트)가 수정한 파일
+- ✅ 자동 생성된 파일 (feature_importance.json, feature_weights.json 등)
+- ✅ 빌드 산출물 (RoutingMLMonitor_vX.Y.Z.exe, .spec 파일)
+
+**예외: 절대 커밋 금지** (.gitignore 처리):
+- ❌ `.env`, `.env.local` (환경 변수)
+- ❌ `credentials.json`, `*.pem`, `*.key` (시크릿)
+- ❌ `__pycache__/`, `*.pyc` (Python 캐시)
+- ❌ `node_modules/` (npm 패키지)
+- ❌ `dist/`, `build/` (빌드 산출물 중 .exe 제외)
+
+### 7.6.3 커밋 완전성 검증
+
+커밋 후 **반드시** 다음 명령어로 검증:
+
+```bash
+git status
+
+# ✅ 이상적 출력:
+# On branch 251014
+# nothing to commit, working tree clean
+
+# ❌ 만약 이런 메시지가 있다면:
+# Changes not staged for commit:
+#   modified:   models/default/feature_weights.json
+# → 커밋 누락! 아래 명령어로 수정:
+
+git add -A
+git commit --amend --no-edit
+```
+
+### 7.6.4 Merge 전 검증
+
+Main branch로 merge 하기 전 **반드시** 확인:
+
+```bash
+# 현재 브랜치와 main의 차이 확인
+git diff main..251014
+
+# 예상치 못한 변경사항이 없는지 검토
+# - 삭제된 파일이 의도적인지
+# - 추가된 파일이 올바른지
+# - 변경된 내용이 모두 의도된 것인지
+```
+
+### 7.6.5 실패 예시 및 해결
+
+**❌ 실패 사례**:
+```bash
+$ git status
+On branch 251014
+Changes to be committed:
+  modified:   backend/predictor_ml.py
+
+Changes not staged for commit:  # ← 문제!
+  modified:   models/default/feature_weights.json
+
+$ git commit -m "feat: Update predictor"
+# → feature_weights.json이 누락됨!
+```
+
+**✅ 올바른 방법**:
+```bash
+$ git status
+On branch 251014
+Changes not staged for commit:
+  modified:   backend/predictor_ml.py
+  modified:   models/default/feature_weights.json
+
+$ git add -A  # 모든 파일 staging
+
+$ git status
+On branch 251014
+Changes to be committed:
+  modified:   backend/predictor_ml.py
+  modified:   models/default/feature_weights.json  # ✅ 포함됨!
+
+$ git commit -m "feat: Update predictor and feature weights"
+```
+
+### 7.6.6 정량적 목표
+
+- **Unstaged files per commit**: 0개 (목표 100% 달성)
+- **Commit completeness**: 100% (모든 변경사항 포함)
+- **Main-branch consistency**: 100% (코드 저장소 = 실행 환경)
+
+### 7.6.7 CHECKLIST 템플릿 반영
+
+모든 CHECKLIST의 Git Operations 섹션에 다음 추가:
+
+```markdown
+**Git Operations**:
+- [ ] **Git staging 완전성 확인** (필수!)
+  - `git status` 실행 ✅
+  - `git add -A` 실행 ✅
+  - `git status` 재확인 → "Changes not staged" 없음 ✅
+- [ ] Run monitor build validation (해당 시)
+- [ ] Commit Phase X
+- [ ] Push to 251014
+- [ ] **Merge 전 검증** (필수!)
+  - `git diff main..251014` 확인 ✅
+  - 예상치 못한 변경사항 없음 확인 ✅
 - [ ] Merge to main
 - [ ] Push main
 - [ ] Return to 251014
