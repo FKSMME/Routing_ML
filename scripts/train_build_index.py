@@ -35,10 +35,10 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help="Identifier recorded in the registry as the requester",
     )
     parser.add_argument(
-        "--registry-path",
-        type=Path,
+        "--registry-url",
+        type=str,
         default=None,
-        help="Override path to the model registry database",
+        help="Override model registry database URL (defaults to MODEL_REGISTRY_URL PostgreSQL connection)",
     )
     parser.add_argument(
         "--state-path",
@@ -91,11 +91,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     save_dir.mkdir(parents=True, exist_ok=True)
 
     status_path = args.state_path.expanduser().resolve() if args.state_path else DEFAULT_STATUS_PATH
-    registry_path = (
-        args.registry_path.expanduser().resolve()
-        if args.registry_path
-        else get_settings().model_registry_path
-    )
+    registry_url = args.registry_url or get_settings().model_registry_url
     now_str = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     version_label = args.version_label or f"version_{now_str}"
     job_id = f"cli-train-{now_str}"
@@ -181,14 +177,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                 metrics_path.write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
 
                 register_version(
-                    db_path=registry_path,
+                    db_url=registry_url,
                     version_name=version_label,
-                    artifact_dir=save_dir,
-                    manifest_path=manifest_path,
+                    artifact_dir=str(save_dir),
+                    manifest_path=str(manifest_path),
                     requested_by=args.requested_by,
                     trained_at=datetime.now(timezone.utc),
                 )
-                LOGGER.info("Model registry updated", extra={"registry": str(registry_path)})
+                LOGGER.info("Model registry updated", extra={"registry_url": registry_url})
 
             running_status.status = "completed"
             running_status.progress = 100

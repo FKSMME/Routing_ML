@@ -215,6 +215,7 @@ def bootstrap_schema() -> None:
     Note: For production MSSQL databases, schema creation should be handled
     by database administrators with proper permissions. This function will
     skip schema creation for MSSQL connections to avoid permission errors.
+    PostgreSQL and other SQLAlchemy-supported engines will provision the schema automatically.
     """
     import os
 

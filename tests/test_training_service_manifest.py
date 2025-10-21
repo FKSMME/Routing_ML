@@ -21,7 +21,7 @@ def training_service(
     class DummySettings:
         def __init__(self, root: Path) -> None:
             self.model_directory = None
-            self.model_registry_path = root / "registry.db"
+            self.model_registry_url = "sqlite:///:memory:"
             self.default_top_k = 5
             self.default_similarity_threshold = 0.8
             self.enable_candidate_persistence = False
@@ -115,6 +115,7 @@ def test_run_training_registers_manifest_and_updates_metrics(training_service):
 
     assert registry_calls, "register_version should have been called"
     call = registry_calls[0]
+    assert call["db_url"] == "sqlite:///:memory:"
     assert call["version_name"] == "unit_test_version_2"
     assert Path(call["manifest_path"]).name == "manifest.json"
     assert Path(call["artifact_dir"]).name == "unit_test_version_2"

@@ -21,8 +21,9 @@ def routing_api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[st
     group_db = tmp_path / "routing_groups.db"
     rsl_db = tmp_path / "rsl.db"
     audit_dir = tmp_path / "audit"
-    monkeypatch.setenv("ROUTING_ML_ROUTING_GROUPS_DATABASE_URL", f"sqlite:///{group_db}")
-    monkeypatch.setenv("ROUTING_ML_RSL_DATABASE_URL", f"sqlite:///{rsl_db}")
+    monkeypatch.setenv("ROUTING_GROUPS_DATABASE_URL", f"sqlite:///{group_db}")
+    monkeypatch.setenv("RSL_DATABASE_URL", f"sqlite:///{rsl_db}")
+    monkeypatch.setenv("MODEL_REGISTRY_URL", f"sqlite:///{tmp_path / 'registry.db'}")
     monkeypatch.setenv("ROUTING_ML_AUDIT_LOG_DIR", str(audit_dir))
 
     get_settings.cache_clear()  # type: ignore[attr-defined]
@@ -193,4 +194,3 @@ def test_snapshot_sync_marks_dirty(routing_api_client: Tuple[TestClient, Dict[st
         workspace_state = persisted.metadata_payload.get("workspace_state", {})
         assert workspace_state.get("dirty") is True
         assert workspace_state.get("snapshot_id") == "snap-2"
-

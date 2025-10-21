@@ -91,23 +91,10 @@ class AuthService:
                     self._logger.info(
                         "가입 재요청", extra={"username": existing.username}
                     )
-                    # 관리자에게 재가입 알림 이메일 전송
-                    try:
-                        email_service.notify_admin_new_registration(
-                            username=existing.username,
-                            full_name=existing.full_name,
-                            email=existing.email,
-                        )
-                    except OutlookNotAvailableError as e:
-                        self._logger.info(
-                            "Outlook이 실행되지 않아 이메일 알림을 건너뜁니다",
-                            extra={"username": existing.username, "message": str(e)},
-                        )
-                    except Exception as e:
-                        self._logger.warning(
-                            "관리자 이메일 전송 실패",
-                            extra={"username": existing.username, "error": str(e)},
-                        )
+                    self._logger.debug(
+                        "가입 이메일 알림 비활성화 - 관리자 알림 생략",
+                        extra={"username": existing.username},
+                    )
                     return RegisterResponse(
                         username=existing.username,
                         status=existing.status,
@@ -128,23 +115,10 @@ class AuthService:
             session.add(user)
             self._logger.info("가입 요청", extra={"username": username})
 
-        # 관리자에게 신규 가입 알림 이메일 전송
-        try:
-            email_service.notify_admin_new_registration(
-                username=username,
-                full_name=payload.full_name,
-                email=payload.email,
-            )
-        except OutlookNotAvailableError as e:
-            self._logger.info(
-                "Outlook이 실행되지 않아 이메일 알림을 건너뜁니다",
-                extra={"username": username, "message": str(e)},
-            )
-        except Exception as e:
-            self._logger.warning(
-                "관리자 이메일 전송 실패",
-                extra={"username": username, "error": str(e)},
-            )
+        self._logger.debug(
+            "가입 이메일 알림 비활성화 - 관리자 알림 생략",
+            extra={"username": username},
+        )
 
         return RegisterResponse(
             username=username,
@@ -663,10 +637,5 @@ def login(payload: LoginRequest, client_host: Optional[str]) -> LoginResponse:
 
 
 __all__ = ["auth_service", "AuthService", "login"]
-
-
-
-
-
 
 

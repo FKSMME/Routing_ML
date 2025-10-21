@@ -201,8 +201,8 @@ class PredictionService:
         self._compatibility_notes: List[str] = []
         self._loader_strategy: str = "default"
 
-        self._model_registry_path = self.settings.model_registry_path
-        initialize_schema(self._model_registry_path)
+        self._model_registry_url = self.settings.model_registry_url
+        initialize_schema(self._model_registry_url)
         self._model_reference = self._resolve_model_reference()
         self._model_manifest: Optional[ModelManifest] = None
         self._model_root: Optional[Path] = None
@@ -221,7 +221,7 @@ class PredictionService:
         if override is not None:
             return Path(override).expanduser().resolve(strict=False)
 
-        active_version = get_active_version(db_path=self._model_registry_path)
+        active_version = get_active_version(db_url=self._model_registry_url)
         if active_version is None:
             fallback_dir = Path(__file__).resolve().parents[3] / "models" / "default"
             if fallback_dir.exists():
@@ -238,8 +238,8 @@ class PredictionService:
                 f"1. 모델 학습: python -m backend.cli.train_model\n"
                 f"2. 기본 디렉토리 생성: mkdir -p {fallback_dir}\n"
                 f"3. 환경 변수 설정: MODEL_DIRECTORY_OVERRIDE=/path/to/model\n"
-                f"4. 레지스트리 확인: sqlite3 {self._model_registry_path}\n\n"
-                f"현재 레지스트리 경로: {self._model_registry_path}\n"
+                f"4. 레지스트리 연결 확인: {self._model_registry_url}\n\n"
+                f"현재 레지스트리 URL: {self._model_registry_url}\n"
                 f"기대 디렉토리: {fallback_dir}"
             )
 

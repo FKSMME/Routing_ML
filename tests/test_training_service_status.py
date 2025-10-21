@@ -12,7 +12,7 @@ def test_get_status_handles_artifact_permission_error(monkeypatch, tmp_path):
         def __init__(self, root: Path) -> None:
             self.model_directory = root / "models"
             self.model_directory.mkdir(parents=True, exist_ok=True)
-            self.model_registry_path = root / "registry.db"
+            self.model_registry_url = "sqlite:///:memory:"
 
     monkeypatch.setattr(
         "backend.api.services.training_service.get_settings",
