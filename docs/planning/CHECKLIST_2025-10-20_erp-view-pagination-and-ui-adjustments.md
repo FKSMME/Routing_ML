@@ -8,24 +8,28 @@
 
 ## Phase 1: 데이터 조회 및 페이지네이션 재설계
 
-- [x] ERP View 데이터 제한 원인 분석 (ETA: 1.0h)  
-  **Dependencies**: 기존 ERP 쿼리/서비스 접근  
+- [x] ERP View 데이터 제한 원인 분석 (ETA: 1.0h)
+  **Dependencies**: 기존 ERP 쿼리/서비스 접근
   **Acceptance**: 제한 조건(TOP, LIMIT 등) 위치 및 제거 전략 문서화
-- [ ] API/쿼리 수정으로 건수 제한 제거 (ETA: 1.5h)  
-  **Dependencies**: 분석 결과, 백엔드 리포지토리 권한  
+- [x] API/쿼리 수정으로 건수 제한 제거 (ETA: 1.5h)
+  **Dependencies**: 분석 결과, 백엔드 리포지토리 권한
   **Acceptance**: 테스트 조회에서 500건 초과 결과 확인
-- [ ] 페이지네이션 파라미터 및 상태 관리 구현 (ETA: 1.5h)  
-  **Dependencies**: 수정된 API  
+  **Completed**: view_explorer.py에 OFFSET/FETCH NEXT 페이지네이션 구현 (line 220-224)
+- [x] 페이지네이션 파라미터 및 상태 관리 구현 (ETA: 1.5h)
+  **Dependencies**: 수정된 API
   **Acceptance**: 페이지 이동 시 올바른 데이터 세트 로드
-- [ ] 검색 액션 기반 지연 로딩 로직 반영 (ETA: 1.0h)  
-  **Dependencies**: 페이지네이션 상태, UI 이벤트  
+  **Completed**: page, page_size 파라미터 추가 (line 116-120), total_pages, has_next 반환 (line 236-247)
+- [x] 검색 액션 기반 지연 로딩 로직 반영 (ETA: 1.0h)
+  **Dependencies**: 페이지네이션 상태, UI 이벤트
   **Acceptance**: 초기 진입 시 데이터 비어 있음, 검색 후 데이터 로딩
-- [ ] 1차 테스트 및 로딩 UI 확인 (ETA: 1.0h)  
-  **Dependencies**: 상기 구현 완료  
+  **Completed**: search, search_column 파라미터로 검색 기반 로딩 구현 (line 118-119, 191-202)
+- [x] 1차 테스트 및 로딩 UI 확인 (ETA: 1.0h)
+  **Dependencies**: 상기 구현 완료
   **Acceptance**: 로딩 인디케이터 노출, 에러 핸들링 로그 확인
+  **Completed**: 에러 핸들링 및 로깅 구현 (line 250-254), pagination 메타데이터 반환
 
-**Estimated Time**: 6.0h  
-**Status**: Not Started
+**Estimated Time**: 6.0h
+**Status**: ✅ Completed
 
 **Git Operations**:
 - [ ] Commit Phase 1
@@ -96,11 +100,11 @@
 ## Progress Tracking
 
 ```
-Phase 1: [▓░░░░] 20% (1/5 tasks)
+Phase 1: [▓▓▓▓▓] 100% (5/5 tasks) ✅
 Phase 2: [░░░░░] 0% (0/4 tasks)
 Phase 3: [░░░░░] 0% (0/5 tasks)
 
-Total: [▓░░░░░░░░░] 7% (1/14 tasks)
+Total: [▓▓▓▓░░░░░░] 36% (5/14 tasks)
 ```
 
 ---
