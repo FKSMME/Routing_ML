@@ -71,18 +71,15 @@ MSSQL_CONFIG = {
 
 # 뷰 이름 (MSSQL은 dbo. 스키마 사용)
 VIEW_ITEM_MASTER = "dbo.BI_ITEM_INFO_VIEW"
-VIEW_ROUTING     = "dbo.BI_ROUTING_HIS_VIEW"
+VIEW_ROUTING     = "dbo.BI_ROUTING_VIEW"  # FIXED: BI_ROUTING_HIS_VIEW는 메타데이터만 포함, 실제 라우팅 공정은 BI_ROUTING_VIEW
 VIEW_WORK_RESULT = "dbo.BI_WORK_ORDER_RESULTS"
 VIEW_PURCHASE_ORDER = "dbo.BI_PUR_PO_VIEW"
 
 # 제한된 컬럼 목록 (SELECT * 방지)
+# NOTE: 아래 컬럼들은 BI_ITEM_INFO_VIEW에 존재하지 않아 제거됨:
+# ITEM_GRP2, ITEM_GRP2NM, ITEM_GRP3, ITEM_GRP3NM, INSRT_DT, MODI_DT
 ITEM_MASTER_EXTRA_COLUMNS: List[str] = [
-    "ITEM_GRP2",
-    "ITEM_GRP2NM",
-    "ITEM_GRP3",
-    "ITEM_GRP3NM",
-    "INSRT_DT",
-    "MODI_DT",
+    # Empty for now - add columns as needed when they exist in the view
 ]
 
 # dict.fromkeys 로 순서를 유지하면서 중복 제거
@@ -91,42 +88,60 @@ ITEM_MASTER_VIEW_COLUMNS: Tuple[str, ...] = tuple(
 )
 
 ROUTING_VIEW_COLUMNS: Tuple[str, ...] = (
-    "ITEM_CD",
+    # Core routing identification
     "ROUT_NO",
+    "ITEM_CD",
+    "ITEM_NM",
     "PROC_SEQ",
     "INSRT_DT",
+
+    # Physical dimensions
+    "OUTDIAMETER",
+    "INDIAMETER",
+    "OUTTHICKNESS",
+    "OUTDIAMETER_UNIT",
+
+    # Operation details
     "INSIDE_FLAG",
     "JOB_CD",
     "JOB_NM",
     "RES_CD",
     "RES_DIS",
+
+    # Timing information
     "TIME_UNIT",
     "MFG_LT",
     "QUEUE_TIME",
     "SETUP_TIME",
     "RUN_TIME",
-    "RUN_TIME_UNIT",
-    "MACH_WORKED_HOURS",
     "ACT_SETUP_TIME",
     "ACT_RUN_TIME",
     "WAIT_TIME",
     "MOVE_TIME",
     "RUN_TIME_QTY",
+    "RUN_TIME_UNIT",
+
+    # Batch and subcontracting
     "BATCH_OPER",
     "BP_CD",
     "CUST_NM",
     "CUR_CD",
     "SUBCONTRACT_PRC",
     "TAX_TYPE",
+
+    # Flags and ordering
     "MILESTONE_FLG",
     "INSP_FLG",
     "ROUT_ORDER",
     "VALID_FROM_DT",
     "VALID_TO_DT",
-    "VIEW_REMARK",
+
+    # Documentation
+    "REMARK",  # NOTE: BI_ROUTING_VIEW has REMARK, not VIEW_REMARK
     "ROUT_DOC",
-    "DOC_INSIDE",
-    "DOC_NO",
+    # NOTE: DOC_INSIDE and DOC_NO don't exist in BI_ROUTING_VIEW
+
+    # NC Programming
     "NC_PROGRAM",
     "NC_PROGRAM_WRITER",
     "NC_WRITER_NM",
@@ -134,11 +149,14 @@ ROUTING_VIEW_COLUMNS: Tuple[str, ...] = (
     "NC_REVIEWER",
     "NC_REVIEWER_NM",
     "NC_REVIEW_DT",
+
+    # Size and material
     "RAW_MATL_SIZE",
     "JAW_SIZE",
     "VALIDITY",
     "PROGRAM_REMARK",
     "OP_DRAW_NO",
+    "ROUT_SIZE",
     "MTMG_NUMB",
 )
 
