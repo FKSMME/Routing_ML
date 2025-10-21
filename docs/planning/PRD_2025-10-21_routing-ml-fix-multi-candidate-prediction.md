@@ -386,6 +386,55 @@ Based on QA Report recommendations, the following features with ≥80% missing r
 - Maintained prediction accuracy with meaningful features
 - Next model training will use updated feature set
 
+### Phase 5 - Model Compatibility Strategy (2025-10-21)
+
+**Challenge**: Existing models (v2.1) were trained with 41 features including GROUP3, DRAW_USE, ITEM_NM_ENG. After Phase 4.2, these features are removed from TRAIN_FEATURES, but we want to use existing models without retraining.
+
+**Solution - Graceful Degradation**:
+
+The prediction pipeline already implements graceful degradation through pandas `reindex()`:
+
+1. **Encoder Compatibility** (Line 680 in predictor_ml.py):
+   ```python
+   df_for_encoder = df.reindex(columns=encoder_cols, fill_value='missing')
+   ```
+   - Model expects 41 features → input provides 38 features
+   - Missing features (GROUP3, DRAW_USE, ITEM_NM_ENG) filled with 'missing' string
+   - Encoder handles these as unknown categories
+
+2. **Scaler Compatibility** (Line 712 in predictor_ml.py):
+   ```python
+   fin = fin.reindex(columns=scaler_cols, fill_value=0.0).astype(np.float32)
+   ```
+   - After encoding, scaler expects specific column order
+   - Missing numeric features filled with 0.0
+   - Feature weights set to 0.0 for inactive features (Line 720)
+
+3. **Feature Weight Handling** (Line 720-731):
+   - `FeatureWeightManager.get_weights_as_array()` with `apply_active_mask=True`
+   - Removed features have weight 0.0 → effectively excluded from prediction
+   - Logged at Line 687: "Phase 4.2 제거 피처 감지"
+
+**Validation**:
+- ✅ Encoder gracefully handles missing categorical features
+- ✅ Scaler gracefully handles missing numeric features
+- ✅ Feature weights zero-out removed features
+- ✅ Logging tracks compatibility handling
+- ⏸️ Runtime integration test deferred (requires live system)
+
+**Benefits**:
+- No model retraining required immediately
+- Seamless transition during gradual migration
+- Clear separation between feature definition and model artifacts
+- Future models will be smaller and more efficient
+
+**Next Model Training**:
+When next training occurs, new models will:
+- Use only 38 features (excluding GROUP3, DRAW_USE, ITEM_NM_ENG)
+- Have smaller encoder/scaler artifacts
+- Show improved training metrics (reduced noise)
+- Continue to work with same prediction pipeline
+
 ---
 
 **Approved By**: System Analysis (QA Report 2025-10-21)

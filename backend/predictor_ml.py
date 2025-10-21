@@ -678,6 +678,17 @@ def _clean_and_encode_enhanced(
     
     # encoder가 필요로 하는 컬럼만 선택하고, 없는 컬럼은 'missing'으로 채움
     df_for_encoder = df.reindex(columns=encoder_cols, fill_value='missing')
+
+    # Phase 4.2: 제거된 피처 호환성 처리 로깅
+    missing_in_input = set(encoder_cols) - set(df.columns)
+    if missing_in_input:
+        removed_features = missing_in_input & {'GROUP3', 'DRAW_USE', 'ITEM_NM_ENG'}
+        if removed_features:
+            logger.debug(f"Phase 4.2 제거 피처 감지: {removed_features} → 'missing'으로 처리")
+        other_missing = missing_in_input - removed_features
+        if other_missing:
+            logger.debug(f"입력 데이터 누락 피처: {other_missing} → 'missing'으로 처리")
+
     df_cat = df_for_encoder.apply(_safe_string)
     
     # 인코딩 수행
@@ -1466,11 +1477,11 @@ def predict_routing_from_similar_items(
 
             # ⭐ WORK_ORDER_RESULTS 데이터 통합 (유사 품목 포함)
             # 현재 공정에 사용된 유사 품목들을 추출
-            proc_similar_items = [(p['SOURCE_ITEM'], p['SIMILARITY']) for p in proc_list]
-
             work_order_data = fetch_and_calculate_work_order_times(
-                input_item_cd, proc_seq, job_cd,
-                similar_items=proc_similar_items
+                input_item_cd,
+                proc_seq,
+                job_cd,
+                similar_candidates=proc_list
             )
 
             prediction = {
@@ -1504,10 +1515,14 @@ def predict_routing_from_similar_items(
                 'SIMILARITY_SCORES': ','.join([f"{p['SIMILARITY']:.3f}" for p in proc_list]),
                 'WEIGHTS': ','.join([f"{w:.3f}" for w in weights]),
                 # ⭐ WORK_ORDER 실적 기반 예측 시간 추가
-                'PREDICTED_SETUP_TIME': round(work_order_data['predicted_setup_time'], 3) if work_order_data['predicted_setup_time'] else None,
-                'PREDICTED_RUN_TIME': round(work_order_data['predicted_run_time'], 3) if work_order_data['predicted_run_time'] else None,
+                'PREDICTED_SETUP_TIME': round(work_order_data['predicted_setup_time'], 3) if work_order_data['predicted_setup_time'] is not None else None,
+                'PREDICTED_RUN_TIME': round(work_order_data['predicted_run_time'], 3) if work_order_data['predicted_run_time'] is not None else None,
                 'WORK_ORDER_COUNT': work_order_data['work_order_count'],
                 'HAS_WORK_DATA': work_order_data['has_work_data'],
+                'WORK_ORDER_DATA_SOURCE': work_order_data['data_source'],
+                'WORK_ORDER_CONFIDENCE': work_order_data['confidence'],
+                'WORK_ORDER_SOURCE_ITEMS': ','.join(work_order_data.get('source_items', [])),
+                'WORK_ORDER_AVG_SIMILARITY': work_order_data.get('average_similarity', 0.0),
                 'VALID_FROM_DT': '01-Jan-01',
                 'VALID_TO_DT': '31-Dec-99',
                 'INSRT_DT': datetime.now().strftime('%Y-%m-%d')
