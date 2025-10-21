@@ -50,9 +50,17 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const violations = step.violations ?? [];
   const [showTooltip, setShowTooltip] = useState(false);
 
-  // 유사도 계산 (confidence 또는 similarity)
+  // 유사도/신뢰도 계산
   const similarity = step.confidence ?? step.similarity ?? null;
   const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
+  const workSamples = step.workOrderCount ?? null;
+  const workConfidencePercent =
+    step.workOrderConfidence !== null ? Math.round(step.workOrderConfidence * 100) : null;
+  const runStd = step.timeStd ?? null;
+  const timeCvPercent = step.timeCv !== null ? Math.round(step.timeCv * 100) : null;
+  const setupStd = step.setupStd ?? null;
+  const hasWorkData = step.hasWorkData ?? false;
+  const outsourcingReplaced = Boolean(step.outsourcingReplaced);
 
   return (
     <div
@@ -61,19 +69,19 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
     >
-      {/* 말풍선 툴팁 */}
+      {/* 공정 정보 툴팁 */}
       {showTooltip && (
         <div
           className="timeline-node__tooltip"
           style={{
             position: 'absolute',
-            top: '-110px',
+            top: '-130px',
             left: '50%',
             transform: 'translateX(-50%)',
             backgroundColor: '#1e293b',
             border: '1px solid #475569',
             borderRadius: '8px',
-            padding: '10px 14px',
+            padding: '12px 16px',
             fontSize: '11px',
             whiteSpace: 'nowrap',
             zIndex: 1000,
@@ -84,14 +92,19 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
             {step.processCode}
           </div>
           <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
-            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>셋업:</span> {step.setupTime ?? '-'}분
+            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>준비:</span> {step.setupTime ?? '-'}분
           </div>
           <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
-            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>실행:</span> {step.runTime ?? '-'}분
+            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>가공:</span> {step.runTime ?? '-'}분
           </div>
           <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
             <span style={{ color: '#cbd5e1', fontWeight: 500 }}>대기:</span> {step.waitTime ?? '-'}분
           </div>
+          {step.moveTime !== null && (
+            <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+              <span style={{ color: '#cbd5e1', fontWeight: 500 }}>이동:</span> {step.moveTime}분
+            </div>
+          )}
           {(step.optimalTime !== null || step.standardTime !== null || step.safeTime !== null) && (
             <div style={{ borderTop: '1px solid #475569', marginTop: '6px', paddingTop: '6px' }}>
               {step.optimalTime !== null && (
@@ -109,6 +122,48 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
                   <span style={{ color: '#f59e0b', fontWeight: 500 }}>안전:</span> {step.safeTime}분
                 </div>
               )}
+            </div>
+          )}
+          {(hasWorkData || workSamples || workConfidencePercent !== null || runStd !== null || setupStd !== null) && (
+            <div style={{ borderTop: '1px solid #475569', marginTop: '6px', paddingTop: '6px' }}>
+              <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                <span style={{ color: hasWorkData ? '#22d3ee' : '#f87171', fontWeight: 500 }}>실적 데이터:</span> {hasWorkData ? '있음' : '없음'}
+              </div>
+              {workSamples ? (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#cbd5e1', fontWeight: 500 }}>샘플 수:</span> {workSamples}
+                </div>
+              ) : null}
+              {workConfidencePercent !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#34d399', fontWeight: 500 }}>신뢰도:</span> {workConfidencePercent}%
+                </div>
+              )}
+              {runStd !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#facc15', fontWeight: 500 }}>RUN 표준편차:</span> {runStd.toFixed(2)}
+                  {timeCvPercent !== null ? ` (CV ${timeCvPercent}%)` : ''}
+                </div>
+              )}
+              {setupStd !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#facc15', fontWeight: 500 }}>SETUP 표준편차:</span> {setupStd.toFixed(2)}
+                </div>
+              )}
+            </div>
+          )}
+          {outsourcingReplaced && (
+            <div
+              style={{
+                marginTop: '6px',
+                padding: '4px 6px',
+                backgroundColor: '#f97316',
+                color: '#0f172a',
+                borderRadius: '6px',
+                fontWeight: 600,
+              }}
+            >
+              외주 공정을 사내 공정으로 대체했습니다.
             </div>
           )}
           <div
@@ -131,6 +186,16 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
         <div className="timeline-node__title-group">
           <span className="timeline-node__seq">#{step.seq}</span>
           <span className="timeline-node__title">{step.processCode}</span>
+          {outsourcingReplaced && (
+            <span className="timeline-node__badge" data-severity="warning">
+              사내전환
+            </span>
+          )}
+          {!hasWorkData && (
+            <span className="timeline-node__badge" data-severity="info">
+              실적없음
+            </span>
+          )}
         </div>
         <div className="timeline-node__actions">
           {similarityPercent !== null && (
@@ -149,7 +214,7 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
               e.stopPropagation();
               onEdit(step.id);
             }}
-            title="시간 수정"
+            title="시간 조정"
           >
             <Edit2 size={14} />
           </button>
@@ -189,7 +254,6 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
     </div>
   );
 }
-
 const TimelineNode = memo(TimelineNodeComponent);
 TimelineNode.displayName = "TimelineNode";
 

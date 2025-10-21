@@ -1778,7 +1778,7 @@ def predict_items_with_ml_optimized(
     if config is None:
         config = SCENARIO_CONFIG
 
-    logger.info(f"🚀 Enhanced ML 배치 예측 시작: {len(item_codes)}개 품목")
+    logger.info(f"?? Enhanced ML ��ġ ���� ����: {len(item_codes)}�� ǰ��")
 
     predicted_routings: Dict[str, pd.DataFrame] = {}
     raw_candidate_frames: List[pd.DataFrame] = []
@@ -1795,42 +1795,6 @@ def predict_items_with_ml_optimized(
             cand_df["ITEM_CD"] = item_cd
             raw_candidate_frames.append(cand_df)
 
-    composed_frames: List[pd.DataFrame] = []
-    enhanced_candidates: List[Dict[str, Any]] = []
-    per_item_counts: Dict[str, int] = defaultdict(int)
-
-    # ML 예측 조합(존재 시) 우선 추가
-    for item_cd, predicted_df in predicted_routings.items():
-        if predicted_df is None or predicted_df.empty:
-            continue
-        signature = build_routing_signature(predicted_df)
-        candidate_id = f"{item_cd}_MLP"
-        normalized = normalize_routing_frame(
-            item_cd,
-            candidate_id,
-            predicted_df,
-            similarity=1.0,
-            reference_item="ML_PREDICTED",
-            priority="primary",
-            signature=signature,
-        )
-        if normalized.empty:
-            continue
-        composed_frames.append(normalized)
-        per_item_counts[item_cd] += 1
-        enhanced_candidates.append({
-            'ITEM_CD': item_cd,
-            'CANDIDATE_ITEM_CD': 'ML_PREDICTED',
-            'SIMILARITY_SCORE': 1.0,
-            'ROUTING_SIGNATURE': signature,
-            'ROUTING_SUMMARY': f"ML 예측 공정 {len(normalized)}개",
-            'PRIORITY': 'primary',
-            'SIMILARITY_TIER': 'HIGH',
-            'HAS_ROUTING': '✓ 있음',
-            'PROCESS_COUNT': len(normalized),
-        })
-
-
     raw_candidates_df = (
         pd.concat(raw_candidate_frames, ignore_index=True)
         if raw_candidate_frames
@@ -1839,85 +1803,72 @@ def predict_items_with_ml_optimized(
 
     if not raw_candidates_df.empty:
         raw_candidates_df = raw_candidates_df.sort_values(
-            ['ITEM_CD', 'SIMILARITY_SCORE'], ascending=[True, False]
+            ["ITEM_CD", "SIMILARITY_SCORE"], ascending=[True, False]
         )
 
-        for _, cand_row in raw_candidates_df.iterrows():
-            item_cd = cand_row.get('ITEM_CD')
-            candidate_item = cand_row.get('CANDIDATE_ITEM_CD')
-            similarity = float(cand_row.get('SIMILARITY_SCORE', 0.0))
+    final_routing_frames: List[pd.DataFrame] = []
+    final_candidate_frames: List[pd.DataFrame] = []
 
-            if not item_cd or not candidate_item:
-                continue
-
-            if per_item_counts[item_cd] >= MAX_ROUTING_VARIANTS:
-                continue
-
-            routing = routing_cache.get(candidate_item)
-            if routing is None or routing.empty:
-                continue
-
-            signature = build_routing_signature(routing)
-            priority = 'primary' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'fallback'
-            candidate_index = per_item_counts[item_cd] + 1
-            candidate_id = f"{item_cd}_C{candidate_index:02d}"
-
-            normalized = normalize_routing_frame(
-                item_cd,
-                candidate_id,
-                routing,
-                similarity=similarity,
-                reference_item=candidate_item,
-                priority=priority,
-                signature=signature,
+    for item_cd in item_codes:
+        candidate_inputs: List[CandidateInput] = [
+            CandidateInput(
+                reference_item_cd=item_cd,
+                similarity=1.0,
+                priority="primary",
+                source="self",
             )
+        ]
 
-            if normalized.empty:
-                continue
+        if not raw_candidates_df.empty:
+            item_candidates = raw_candidates_df[raw_candidates_df["ITEM_CD"] == item_cd]
+            for _, cand_row in item_candidates.iterrows():
+                candidate_item = cand_row.get("CANDIDATE_ITEM_CD")
+                if not candidate_item:
+                    continue
+                similarity = float(cand_row.get("SIMILARITY_SCORE", 0.0))
+                priority = "primary" if similarity >= SIMILARITY_HIGH_THRESHOLD else "fallback"
+                candidate_inputs.append(
+                    CandidateInput(
+                        reference_item_cd=str(candidate_item),
+                        similarity=similarity,
+                        priority=priority,
+                        source="similar",
+                    )
+                )
 
-            composed_frames.append(normalized)
-            per_item_counts[item_cd] += 1
+        routing_df, candidates_df = build_candidate_routing_frames(
+            item_cd,
+            candidate_inputs,
+            predicted_routing=predicted_routings.get(item_cd),
+            statistic_config=StatisticConfig(),
+            max_variants=MAX_ROUTING_VARIANTS,
+            normalizer=normalize_routing_frame,
+        )
 
-            process_count = len(normalized)
-            summary_text = f"공정 {process_count}개 / 유사도 {similarity:.2f}"
-            enhanced_candidates.append({
-                'ITEM_CD': item_cd,
-                'CANDIDATE_ITEM_CD': candidate_item,
-                'SIMILARITY_SCORE': similarity,
-                'ROUTING_SIGNATURE': signature,
-                'ROUTING_SUMMARY': summary_text,
-                'PRIORITY': priority,
-                'SIMILARITY_TIER': 'HIGH' if similarity >= SIMILARITY_HIGH_THRESHOLD else 'LOW',
-                'HAS_ROUTING': '✓ 있음',
-                'PROCESS_COUNT': process_count,
-            })
+        if not routing_df.empty:
+            final_routing_frames.append(routing_df)
+        if not candidates_df.empty:
+            final_candidate_frames.append(candidates_df)
 
-
-    # Duplicate code removed (P0-2 fix): Lines 1694-1760 were identical copy of 1637-1691
     final_routing_df = (
-        pd.concat(composed_frames, ignore_index=True)
-        if composed_frames
+        pd.concat(final_routing_frames, ignore_index=True)
+        if final_routing_frames
         else pd.DataFrame()
     )
 
     final_cand_df = (
-        pd.DataFrame(enhanced_candidates)
-        if enhanced_candidates
+        pd.concat(final_candidate_frames, ignore_index=True)
+        if final_candidate_frames
         else pd.DataFrame()
     )
 
     logger.info(
-        "배치 예측 완료: %d개 라우팅 조합, %d개 후보",
+        "보조 스코어 반영 완료: %d건 라우팅, %d건 후보",
         len(final_routing_df),
         len(final_cand_df),
     )
 
     return final_routing_df, final_cand_df
-
-# ════════════════════════════════════════════════
-# ⚙️ 런타임 설정 적용 헬퍼
-# ════════════════════════════════════════════════
-
 
 def apply_runtime_config(runtime: PredictorRuntimeConfig) -> None:
     """워크플로우 저장소에서 전달된 설정을 즉시 반영한다."""

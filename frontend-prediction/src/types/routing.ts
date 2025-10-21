@@ -35,6 +35,14 @@ export interface OperationStep {
   OPTIMAL_TIME?: number | null;
   STANDARD_TIME?: number | null;
   SAFE_TIME?: number | null;
+  MOVE_TIME?: number | null;
+  HAS_WORK_DATA?: boolean | string | null;
+  WORK_ORDER_COUNT?: number | null;
+  WORK_ORDER_CONFIDENCE?: number | null;
+  TIME_STD?: number | null;
+  TIME_CV?: number | null;
+  SETUP_STD?: number | null;
+  OUTSOURCING_REPLACED?: boolean | string | null;
   metadata?: TimelineStepMetadata | null;
 }
 
@@ -51,6 +59,10 @@ export interface CandidateRouting {
   RANK: number;
   HAS_ROUTING?: string | null;
   PROCESS_COUNT?: number | null;
+  ROUTING_SOURCE?: string | null;
+  OUTSOURCING_REPLACED?: boolean | string | null;
+  WORK_ORDER_COUNT?: number | null;
+  WORK_ORDER_CONFIDENCE?: number | null;
   feature_importance?: Record<string, number> | null;
   matched_features?: string[] | null;
   metadata?: Record<string, unknown>;
