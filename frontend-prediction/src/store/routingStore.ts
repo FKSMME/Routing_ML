@@ -1202,8 +1202,34 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       if (index === null || index < 0 || index >= state.candidates.length) {
         return { activeCandidateIndex: null };
       }
-      // Future: Load candidate's routing into timeline
-      return { activeCandidateIndex: index };
+
+      const selectedCandidate = state.candidates[index];
+      if (!selectedCandidate) {
+        return { activeCandidateIndex: null };
+      }
+
+      // Find the tab for this candidate's item
+      const candidateItemCode = selectedCandidate.candidate_item_code;
+      const candidateTab = state.productTabs.find(
+        (tab) => tab.productCode === candidateItemCode
+      );
+
+      if (candidateTab) {
+        // If we already have routing data for this candidate, switch to it
+        return {
+          activeCandidateIndex: index,
+          activeProductId: candidateTab.id,
+          activeItemId: candidateTab.id,
+          timeline: cloneTimeline(candidateTab.timeline),
+        };
+      }
+
+      // If no existing tab, we need to fetch the routing for this candidate
+      // For now, just update the active index - fetching will be handled by component
+      return {
+        activeCandidateIndex: index,
+        selectedCandidateId: candidateItemCode,
+      };
     }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({

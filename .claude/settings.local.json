@@ -18,7 +18,8 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(curl:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
