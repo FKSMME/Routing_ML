@@ -1,4 +1,5 @@
 import type {
+  CandidateRouting,
   NodeConnection,
   OperationStep,
   PredictionResponse,
@@ -191,6 +192,8 @@ export interface RoutingStoreState {
   lastSavedAt?: string;
   productTabs: RoutingProductTab[];
   recommendations: RecommendationBucket[];
+  candidates: CandidateRouting[];
+  activeCandidateIndex: number | null;
   customRecommendations: CustomRecommendationEntry[];
   hiddenRecommendationKeys: HiddenRecommendationMap;
   timeline: TimelineStep[];
@@ -242,6 +245,7 @@ export interface RoutingStoreState {
   setProcessGroupFixedValue: (groupId: string, columnKey: string, value: unknown) => void;
   setActiveProcessGroup: (groupId: string | null) => void;
   setSelectedCandidate: (candidateId: string | null) => void;
+  selectCandidate: (index: number | null) => void;
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
@@ -867,6 +871,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
   lastSavedAt: undefined,
   productTabs: [],
   recommendations: [],
+  candidates: [],
+  activeCandidateIndex: null,
   customRecommendations: [],
   hiddenRecommendationKeys: {},
   timeline: [],
@@ -1191,6 +1197,14 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
     }),
   setSelectedCandidate: (candidateId) =>
     set({ selectedCandidateId: candidateId }),
+  selectCandidate: (index) =>
+    set((state) => {
+      if (index === null || index < 0 || index >= state.candidates.length) {
+        return { activeCandidateIndex: null };
+      }
+      // Future: Load candidate's routing into timeline
+      return { activeCandidateIndex: index };
+    }),
   loadRecommendations: (response) => {
     const buckets: RecommendationBucket[] = response.items.map((item) => ({
       itemCode: item.ITEM_CD,
@@ -1258,6 +1272,8 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
 
       return {
         recommendations: buckets,
+        candidates: response.candidates || [],
+        activeCandidateIndex: null,
         productTabs: tabs,
         activeProductId: activeTabId,
         activeItemId: activeTabId,

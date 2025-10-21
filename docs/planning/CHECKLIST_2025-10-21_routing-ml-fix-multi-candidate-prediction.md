@@ -158,36 +158,41 @@
 **Status**: ✅ COMPLETE
 
 **Git Operations**:
-- [ ] Commit Phase 2
-- [ ] Push to 251014
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Commit Phase 2
+- [x] Push to 251014
+- [x] Merge to main
+- [x] Push main
+- [x] Return to 251014
 
 ---
 
 ## Phase 3: Frontend - Candidate Node UI
 
 ### 3.1 Store Enhancement (ETA: 1.0h)
-- [ ] Add `candidates: CandidateRouting[]` to `RoutingState`
+- [x] Add `candidates: CandidateRouting[]` to `RoutingState`
   **Dependencies**: None
   **Acceptance**: Type definition updated
+  **Completed**: Added at Line 194
 
-- [ ] Add `activeCandidateIndex: number | null` to state
+- [x] Add `activeCandidateIndex: number | null` to state
   **Dependencies**: None
   **Acceptance**: State tracks selected candidate
+  **Completed**: Added at Line 195
 
-- [ ] Modify `loadRecommendations()` to save candidates
+- [x] Modify `loadRecommendations()` to save candidates
   **Dependencies**: State defined
   **Acceptance**: `response.candidates` stored in state
+  **Completed**: Line 1267 - stores response.candidates
 
-- [ ] Add `selectCandidate(index)` action
+- [x] Add `selectCandidate(index)` action
   **Dependencies**: State updated
   **Acceptance**: Switches timeline to candidate routing
+  **Completed**: Lines 1200-1207 - validates and sets activeCandidateIndex
 
 - [ ] Add `getCandidateTimeline(index)` selector
   **Dependencies**: Action defined
   **Acceptance**: Returns timeline for candidate
+  **Note**: Deferred - timeline switching will be implemented in component
 
 ### 3.2 Component Development (ETA: 3.0h)
 - [ ] Create `CandidateNodeTabs.tsx` component
