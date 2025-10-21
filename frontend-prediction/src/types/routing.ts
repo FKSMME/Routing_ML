@@ -32,6 +32,9 @@ export interface OperationStep {
   SETUP_TIME?: number | null;
   RUN_TIME?: number | null;
   WAIT_TIME?: number | null;
+  OPTIMAL_TIME?: number | null;
+  STANDARD_TIME?: number | null;
+  SAFE_TIME?: number | null;
   metadata?: TimelineStepMetadata | null;
 }
 

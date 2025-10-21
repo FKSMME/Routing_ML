@@ -48,35 +48,69 @@ interface RoutingCanvasProps {
 function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const { step, onRemove, onEdit } = data;
   const violations = step.violations ?? [];
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // 유사도 계산 (confidence 또는 similarity)
   const similarity = step.confidence ?? step.similarity ?? null;
   const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
 
   return (
-    <div className="timeline-node" onDoubleClick={() => onEdit(step.id)}>
+    <div
+      className="timeline-node"
+      onDoubleClick={() => onEdit(step.id)}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
       {/* 말풍선 툴팁 */}
       {showTooltip && (
         <div
           className="timeline-node__tooltip"
           style={{
             position: 'absolute',
-            top: '-60px',
+            top: '-110px',
             left: '50%',
             transform: 'translateX(-50%)',
             backgroundColor: '#1e293b',
             border: '1px solid #475569',
             borderRadius: '8px',
-            padding: '8px 12px',
+            padding: '10px 14px',
             fontSize: '11px',
             whiteSpace: 'nowrap',
             zIndex: 1000,
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
           }}
         >
-          <div style={{ color: '#94a3b8', marginBottom: '2px' }}>표준시간: {step.runTime ?? '-'}분</div>
-          <div style={{ color: '#94a3b8' }}>셋업시간: {step.setupTime ?? '-'}분</div>
+          <div style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: '6px', borderBottom: '1px solid #475569', paddingBottom: '4px' }}>
+            {step.processCode}
+          </div>
+          <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>셋업:</span> {step.setupTime ?? '-'}분
+          </div>
+          <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>실행:</span> {step.runTime ?? '-'}분
+          </div>
+          <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+            <span style={{ color: '#cbd5e1', fontWeight: 500 }}>대기:</span> {step.waitTime ?? '-'}분
+          </div>
+          {(step.optimalTime !== null || step.standardTime !== null || step.safeTime !== null) && (
+            <div style={{ borderTop: '1px solid #475569', marginTop: '6px', paddingTop: '6px' }}>
+              {step.optimalTime !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#10b981', fontWeight: 500 }}>최적:</span> {step.optimalTime}분
+                </div>
+              )}
+              {step.standardTime !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#3b82f6', fontWeight: 500 }}>표준:</span> {step.standardTime}분
+                </div>
+              )}
+              {step.safeTime !== null && (
+                <div style={{ color: '#94a3b8' }}>
+                  <span style={{ color: '#f59e0b', fontWeight: 500 }}>안전:</span> {step.safeTime}분
+                </div>
+              )}
+            </div>
+          )}
           <div
             style={{
               position: 'absolute',

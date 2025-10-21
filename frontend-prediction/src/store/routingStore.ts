@@ -73,6 +73,9 @@ export interface TimelineStep {
   setupTime?: number | null;
   runTime?: number | null;
   waitTime?: number | null;
+  optimalTime?: number | null;
+  standardTime?: number | null;
+  safeTime?: number | null;
   itemCode?: string | null;
   candidateId?: string | null;
   routingSetCode?: string | null;
@@ -800,6 +803,9 @@ const toTimelineStep = (
     setupTime: operation.SETUP_TIME ?? null,
     runTime: operation.RUN_TIME ?? null,
     waitTime: operation.WAIT_TIME ?? null,
+    optimalTime: operation.OPTIMAL_TIME ?? null,
+    standardTime: operation.STANDARD_TIME ?? null,
+    safeTime: operation.SAFE_TIME ?? null,
     itemCode: context.itemCode ?? null,
     candidateId: context.candidateId ?? null,
     routingSetCode,

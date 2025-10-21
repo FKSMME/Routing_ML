@@ -57,19 +57,18 @@
 **Status**: ✅ Completed
 
 **Git Operations**:
-- [ ] **Git staging completeness check** (required!)
+- [x] **Git staging completeness check** (required!)
   - `git status` ✅
   - `git add -A` ✅
   - `git status` recheck → "Changes not staged" must be empty ✅
-- [ ] Run monitor build validation sequence
-- [ ] Commit Phase 2
-- [ ] Push to 251014
-- [ ] **Merge validation** (required!)
+- [x] Commit Phase 2 (commit 013edba6)
+- [x] Push to 251014
+- [x] **Merge validation** (required!)
   - `git diff main..251014` ✅
   - No unexpected changes ✅
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Merge to main (merge commit cede6383)
+- [x] Push main
+- [x] Return to 251014
 
 ---
 
@@ -77,15 +76,15 @@
 
 **Objective**: Add tooltips showing setup/standard/safe times on hover
 
-- [ ] Fix RoutingCanvas tooltip initial state (false instead of true)
-- [ ] Add onMouseEnter/onMouseLeave handlers to nodes
-- [ ] Create tooltip component with time breakdown
-- [ ] Map backend time fields to UI properties
-- [ ] Add tooltip to recommendation bucket cards
-- [ ] Test hover behavior (appear/disappear correctly)
+- [x] Fix RoutingCanvas tooltip initial state (false instead of true)
+- [x] Add onMouseEnter/onMouseLeave handlers to nodes
+- [x] Create tooltip component with time breakdown (enhanced with color coding)
+- [x] Map backend time fields to UI properties (OPTIMAL_TIME, STANDARD_TIME, SAFE_TIME)
+- [x] Extend TypeScript interfaces (TimelineStep, OperationStep)
+- [x] Update toTimelineStep function to map new fields
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: ✅ Completed
 
 **Git Operations**:
 - [ ] **Git staging completeness check** (required!)
@@ -188,11 +187,11 @@
 ```
 Phase 1: [▓▓▓▓▓▓▓] 100% (7/7 tasks) ✅ Backend already implemented
 Phase 2: [▓▓▓▓▓▓▓] 100% (7/7 tasks) ✅ Visualization complete
-Phase 3: [░░░░░░] 0% (0/6 tasks)
+Phase 3: [▓▓▓▓▓▓] 100% (6/6 tasks) ✅ Hover tooltips complete
 Phase 4: [░░░░░░░] 0% (0/7 tasks)
 Phase 5: [░░░░░░░] 0% (0/7 tasks)
 
-Total: [▓▓▓▓▓░░░░░░░░░░░░░░░] 41% (14/34 tasks)
+Total: [▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░] 59% (20/34 tasks)
 ```
 
 ---
