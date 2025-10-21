@@ -297,6 +297,16 @@ export function CandidatePanel() {
                   <div className="timeline-node__title-group">
                     <span className="timeline-node__seq">#{item.operation.PROC_SEQ}</span>
                     <span className="timeline-node__title">{item.operation.PROC_CD}</span>
+                    {item.operation.OUTSOURCING_REPLACED ? (
+                      <span className="candidate-node__badge" style={{ backgroundColor: '#f97316', color: '#0f172a' }}>
+                        사내전환
+                      </span>
+                    ) : null}
+                    {item.operation.HAS_WORK_DATA === false ? (
+                      <span className="candidate-node__badge" style={{ backgroundColor: '#64748b' }}>
+                        실적없음
+                      </span>
+                    ) : null}
                   </div>
                   <div className="timeline-node__actions">
                     {item.source === "custom" ? (
@@ -315,6 +325,17 @@ export function CandidatePanel() {
                   <span className="timeline-node__meta-item">
                     <strong>Wait:</strong> {item.operation.WAIT_TIME ?? "-"}
                   </span>
+                  {item.operation.WORK_ORDER_COUNT ? (
+                    <span className="timeline-node__meta-item">
+                      <strong>Samples:</strong> {item.operation.WORK_ORDER_COUNT}
+                    </span>
+                  ) : null}
+                  {item.operation.WORK_ORDER_CONFIDENCE !== undefined &&
+                  item.operation.WORK_ORDER_CONFIDENCE !== null ? (
+                    <span className="timeline-node__meta-item">
+                      <strong>Conf:</strong> {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100)}%
+                    </span>
+                  ) : null}
                 </div>
                 <div className="candidate-node__footer">
                   <div className="candidate-node__actions">

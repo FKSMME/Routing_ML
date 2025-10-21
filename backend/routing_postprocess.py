@@ -44,17 +44,17 @@ class CandidateInput:
 
 @dataclass
 class CandidateResult:
-    item_cd: str
-    candidate_id: str
-    reference_item_cd: str
-    similarity: float
-    rank: int
-    has_routing: bool
-    process_count: int
-    source: str
-    outsourcing_replaced: bool
-    work_samples: int
-    confidence: float
+    ITEM_CD: str
+    CANDIDATE_ID: str
+    REFERENCE_ITEM_CD: str
+    SIMILARITY_SCORE: float
+    RANK: int
+    HAS_ROUTING: bool
+    PROCESS_COUNT: int
+    ROUTING_SOURCE: str
+    OUTSOURCING_REPLACED: bool
+    WORK_ORDER_COUNT: int
+    WORK_ORDER_CONFIDENCE: float
 
 
 def _detect_outsourcing(value: str) -> bool:
@@ -199,7 +199,10 @@ def _aggregate_work_stats(
     stats["run_std"] = compute_std("ACT_RUN_TIME") or compute_std("RUN_TIME")
     stats["setup_std"] = compute_std("ACT_SETUP_TIME") or compute_std("SETUP_TIME")
 
-    base_conf = min(1.0, sample_count / (sample_count + 2))
+    if sample_count < config.minimum_samples:
+        base_conf = 0.0
+    else:
+        base_conf = min(1.0, sample_count / (sample_count + 2))
     variability_penalty = 0.0
     if stats["run_std"] and stats["run"] and stats["run"] > 0:
         cv = stats["run_std"] / stats["run"]
@@ -333,17 +336,17 @@ def build_candidate_routing_frames(
 
         candidate_summaries.append(
             CandidateResult(
-                item_cd=target_item_cd,
-                candidate_id=candidate_id,
-                reference_item_cd=reference_item,
-                similarity=float(candidate.similarity),
-                rank=rank_counter,
-                has_routing=True,
-                process_count=process_count,
-                source=candidate.source,
-                outsourcing_replaced=outsourcing_replaced,
-                work_samples=work_samples,
-                confidence=confidence,
+                ITEM_CD=target_item_cd,
+                CANDIDATE_ID=candidate_id,
+                REFERENCE_ITEM_CD=reference_item,
+                SIMILARITY_SCORE=float(candidate.similarity),
+                RANK=rank_counter,
+                HAS_ROUTING="Y",
+                PROCESS_COUNT=process_count,
+                ROUTING_SOURCE=candidate.source,
+                OUTSOURCING_REPLACED=outsourcing_replaced,
+                WORK_ORDER_COUNT=work_samples,
+                WORK_ORDER_CONFIDENCE=confidence,
             )
         )
 

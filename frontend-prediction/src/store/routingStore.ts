@@ -87,6 +87,13 @@ export interface TimelineStep {
   branchPath?: string | null;
   sqlValues?: Record<string, unknown> | null;
   metadata?: TimelineStepMetadata | null;
+  hasWorkData?: boolean | null;
+  workOrderCount?: number | null;
+  workOrderConfidence?: number | null;
+  outsourcingReplaced?: boolean | null;
+  timeStd?: number | null;
+  timeCv?: number | null;
+  setupStd?: number | null;
   positionX?: number;
   violations?: RuleViolation[];
   confidence?: number | null;
@@ -803,9 +810,21 @@ const toTimelineStep = (
     setupTime: operation.SETUP_TIME ?? null,
     runTime: operation.RUN_TIME ?? null,
     waitTime: operation.WAIT_TIME ?? null,
+     moveTime: operation.MOVE_TIME ?? null,
     optimalTime: operation.OPTIMAL_TIME ?? null,
     standardTime: operation.STANDARD_TIME ?? null,
     safeTime: operation.SAFE_TIME ?? null,
+    hasWorkData: typeof operation.HAS_WORK_DATA === "string"
+      ? operation.HAS_WORK_DATA.toUpperCase() === "Y"
+      : Boolean(operation.HAS_WORK_DATA),
+    workOrderCount: operation.WORK_ORDER_COUNT ?? null,
+    workOrderConfidence: operation.WORK_ORDER_CONFIDENCE ?? null,
+    outsourcingReplaced: typeof operation.OUTSOURCING_REPLACED === "string"
+      ? operation.OUTSOURCING_REPLACED.toUpperCase() === "Y"
+      : Boolean(operation.OUTSOURCING_REPLACED),
+    timeStd: operation.TIME_STD ?? null,
+    timeCv: operation.TIME_CV ?? null,
+    setupStd: operation.SETUP_STD ?? null,
     itemCode: context.itemCode ?? null,
     candidateId: context.candidateId ?? null,
     routingSetCode,
@@ -1933,8 +1952,6 @@ export const createRoutingStore = () => {
 };
 
 export const useRoutingStore = createRoutingStore();
-
-
 
 
 
