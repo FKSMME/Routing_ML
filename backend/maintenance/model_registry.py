@@ -89,7 +89,8 @@ class ModelVersionRecord(Base):
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    version_name = Column(String(128), nullable=False, unique=True, index=True)
+    # Note: index is created explicitly in __table_args__, don't add index=True here
+    version_name = Column(String(128), nullable=False, unique=True)
     artifact_dir = Column(String(512), nullable=False)
     manifest_path = Column(String(512), nullable=False)
     status = Column(String(32), nullable=False, default=ModelLifecycleStatus.PENDING.value)
