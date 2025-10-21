@@ -51,30 +51,36 @@
 
 ## Phase 1: Fix Routing Prediction for Multi-Item
 
-- [ ] Review PredictionControls item code parsing (ETA: 0.3h)
+- [x] Review PredictionControls item code parsing (ETA: 0.3h)
   **Dependencies**: Phase 0 findings
   **Acceptance**: Understand how item codes are parsed
-- [ ] Check apiClient.ts predictRoutings implementation (ETA: 0.3h)
+  **Completed**: Frontend correctly parses multiple item codes (newline/comma/semicolon separated)
+- [x] Check apiClient.ts predictRoutings implementation (ETA: 0.3h)
   **Dependencies**: None
   **Acceptance**: Verify API call sends all item codes
-- [ ] Verify backend predict_items_with_ml_optimized (ETA: 0.5h)
+  **Completed**: API client sends item_codes array correctly (Line 125)
+- [x] Verify backend predict_items_with_ml_optimized (ETA: 0.5h)
   **Dependencies**: None
   **Acceptance**: Backend processes all items, not just ITEM-01
-- [ ] Test database queries for non-ITEM-01 items (ETA: 0.5h)
+  **Completed**: Backend loops through all item codes (Line 1680)
+- [x] Test database queries for non-ITEM-01 items (ETA: 0.5h)
   **Dependencies**: Database fix from previous session
   **Acceptance**: Can query any item code successfully
-- [ ] Fix any hardcoded ITEM-01 references (ETA: 0.5h)
+  **Completed**: All DB functions use upper case conversion, no item-specific restrictions
+- [x] Fix any hardcoded ITEM-01 references (ETA: 0.5h)
   **Dependencies**: Code review
   **Acceptance**: All hardcoded values removed
-- [ ] Validate ML model input preprocessing (ETA: 0.5h)
+  **Completed**: No hardcoded "ITEM-01" references found in codebase
+- [x] Validate ML model input preprocessing (ETA: 0.5h)
   **Dependencies**: Model architecture
   **Acceptance**: Features preprocessed correctly for any item
+  **Completed**: Preprocessing handles any item code via dynamic feature extraction
 - [ ] Test multi-item prediction end-to-end (ETA: 0.4h)
   **Dependencies**: All fixes applied
   **Acceptance**: Multiple items predicted successfully
 
 **Estimated Time**: 3.0h
-**Status**: Not Started
+**Status**: 85% Complete (6/7 tasks)
 
 **Git Operations**:
 - [ ] Commit Phase 1
@@ -182,12 +188,12 @@
 
 ```
 Phase 0: [████] 100% (4/4 tasks) ✅ COMPLETE - Fix Applied
-Phase 1: [░░░░░░░] 0% (0/7 tasks)
+Phase 1: [███████░] 85% (6/7 tasks) ⏳ Testing Needed
 Phase 2: [░░░░░░░] 0% (0/7 tasks)
 Phase 3: [░░░░░] 0% (0/5 tasks)
 Phase 4: [░░░░] 0% (0/4 tasks)
 
-Total: [█░░░░░░░░░] 15% (4/27 tasks)
+Total: [███░░░░░░░] 37% (10/27 tasks)
 ```
 
 ---
