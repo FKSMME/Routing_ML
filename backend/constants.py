@@ -33,11 +33,13 @@ TRAIN_FEATURES: list[str] = [
 
     # 그룹 & 커스텀 분류
     "ITEM_GRP1", "ITEM_GRP1NM", "STANDARD_YN",
-    "GROUP1", "GROUP2", "GROUP3",
+    "GROUP1", "GROUP2",
+    # "GROUP3",  # Removed: 99.07% missing rate (Phase 4.2)
 
-    # 도면 & 영문명
-    "DRAW_NO", "DRAW_REV", "DRAW_SHEET_NO", "DRAW_USE",
-    "ITEM_NM_ENG",
+    # 도면 (영문명 제거)
+    "DRAW_NO", "DRAW_REV", "DRAW_SHEET_NO",
+    # "DRAW_USE",      # Removed: 100% missing rate (Phase 4.2)
+    # "ITEM_NM_ENG",   # Removed: 100% missing rate (Phase 4.2)
 
     # 치수 & 회전
     "OUTDIAMETER", "INDIAMETER", "OUTTHICKNESS", "OUTDIAMETER_UNIT",

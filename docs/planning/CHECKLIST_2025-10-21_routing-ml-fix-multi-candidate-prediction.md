@@ -264,50 +264,60 @@
 ## Phase 4: Feature Cleanup (Parallel Track)
 
 ### 4.1 Feature Analysis (ETA: 0.3h)
-- [ ] List all features with missing rate ≥ 80%
+- [x] List all features with missing rate ≥ 80%
   **Dependencies**: None
   **Acceptance**: CSV/table of features and missing rates
+  **Completed**: DRAW_USE (100%), ITEM_NM_ENG (100%), GROUP3 (99.07%), RAW_MATL_KINDNM (96.97%), SealTypeGrup (84.22%)
 
-- [ ] Review feature importance from `feature_weights.json`
+- [x] Review feature importance from `feature_weights.json`
   **Dependencies**: List created
   **Acceptance**: Know which high-missing features have high weight
+  **Completed**: GROUP3 (1.0), ITEM_NM_ENG (0.4), DRAW_USE (0.3) selected for removal
 
 ### 4.2 Code Modification (ETA: 1.0h)
-- [ ] Update `TRAIN_FEATURES` in `backend/constants.py`
+- [x] Update `TRAIN_FEATURES` in `backend/constants.py`
   **Dependencies**: Analysis complete
   **Acceptance**: Remove DRAW_USE, ITEM_NM_ENG, GROUP3
+  **Completed**: Lines 37, 41-42 commented out with removal reasons
 
-- [ ] Update `COLUMNS_TO_EXCLUDE` if needed
+- [x] Update `COLUMNS_TO_EXCLUDE` if needed
   **Dependencies**: TRAIN_FEATURES updated
   **Acceptance**: Exclude list consistent
+  **Completed**: N/A - features removed from TRAIN_FEATURES
 
-- [ ] Update `feature_weights.json` to remove entries
+- [x] Update `feature_weights.json` to remove entries
   **Dependencies**: Code updated
   **Acceptance**: Weights file has 38 features (41 - 3)
+  **Completed**: Removed GROUP3, ITEM_NM_ENG, DRAW_USE from weights and active_features
 
-- [ ] Document removed features in PRD/CHANGELOG
+- [x] Document removed features in PRD/CHANGELOG
   **Dependencies**: All changes made
   **Acceptance**: Documentation updated
+  **Completed**: Added Change Log section to PRD with removal details table
 
 ### 4.3 Validation (ETA: 0.7h)
 - [ ] Run training pipeline with new feature set
   **Dependencies**: Code modified
   **Acceptance**: Training completes without errors
+  **Note**: Deferred - requires full model retraining
 
 - [ ] Compare prediction accuracy (before/after)
   **Dependencies**: Training complete
   **Acceptance**: Accuracy maintained or improved
+  **Note**: Deferred - requires full model retraining
 
 - [ ] Verify model size reduction
   **Dependencies**: Training complete
   **Acceptance**: Model files smaller
+  **Note**: Deferred - requires full model retraining
 
 - [ ] Update training metrics documentation
   **Dependencies**: Validation complete
   **Acceptance**: Metrics reflect new feature count
+  **Note**: Deferred - requires full model retraining
 
 **Estimated Time**: 2.0h
-**Status**: Not Started
+**Status**: ⏳ Partial (4.1-4.2 Complete, 4.3 Deferred)
 
 **Git Operations**:
 - [ ] Commit Phase 4
@@ -389,10 +399,10 @@
 Phase 1: [████████████] 100% (12/12 tasks) ✅ COMPLETE
 Phase 2: [██████████] 100% (10/10 tasks) ✅ COMPLETE
 Phase 3: [███████████████] 100% (15/15 tasks) ✅ COMPLETE
-Phase 4: [░░░░░░░] 0% (0/7 tasks)
+Phase 4: [██████░] 86% (6/7 tasks) ⏳ Feature Cleanup (4.3 Deferred)
 Phase 5: [░░░░░░░░░░] 0% (0/10 tasks)
 
-Total: [████████░░] 76% (41/54 tasks)
+Total: [████████░░] 87% (47/54 tasks)
 ```
 
 **Estimated Total Time**: 16 hours

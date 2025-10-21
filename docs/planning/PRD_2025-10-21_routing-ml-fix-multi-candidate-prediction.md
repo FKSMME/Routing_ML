@@ -358,5 +358,35 @@ CandidateNodeTabs.tsx (NEW)
 
 ---
 
+## Change Log
+
+### Phase 4.2 - Feature Cleanup (2025-10-21)
+
+**Removed High-Missing Features**:
+
+Based on QA Report recommendations, the following features with ≥80% missing rates have been removed from the training pipeline:
+
+| Feature | Missing Rate | Weight | Reason |
+|---------|-------------|--------|---------|
+| `DRAW_USE` | 100% | 0.3 | No data available across entire dataset |
+| `ITEM_NM_ENG` | 100% | 0.4 | No data available across entire dataset |
+| `GROUP3` | 99.07% | 1.0 | Insufficient data for meaningful contribution |
+
+**Files Modified**:
+- `backend/constants.py` - Removed from TRAIN_FEATURES (Lines 37, 41-42)
+- `models/default/feature_weights.json` - Removed entries from weights and active_features
+
+**Retained High-Missing Features**:
+- `SealTypeGrup` (84.22% missing, weight 2.5) - Kept due to high importance weight
+- `RAW_MATL_KINDNM` (96.97% missing, weight 0.7) - Kept as complement to RAW_MATL_KIND
+
+**Expected Impact**:
+- Feature count: 41 → 38 features
+- Reduced model noise from missing data
+- Maintained prediction accuracy with meaningful features
+- Next model training will use updated feature set
+
+---
+
 **Approved By**: System Analysis (QA Report 2025-10-21)
 **Next Steps**: Create detailed CHECKLIST
