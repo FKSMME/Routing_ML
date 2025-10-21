@@ -103,91 +103,94 @@
   **Completed**: Returns work order DataFrame with ACT_SETUP_TIME, ACT_RUN_TIME
 
 ### 2.2 Implementation (ETA: 1.7h)
-- [x] Add `similar_items` parameter to function signature
+- [x] Add `similar_candidates` parameter to function signature
   **Dependencies**: Code analysis complete
-  **Acceptance**: Function accepts optional similar_items list
-  **Completed**: Added parameter at Line 1100
+  **Acceptance**: Function accepts optional similar items list
+  **Completed**: Signature updated with fallback parameters (backend/predictor_ml.py:1096-1105)
 
 - [x] Query work order for input item (existing logic)
   **Dependencies**: Parameter added
   **Acceptance**: Input item query unchanged
-  **Completed**: Line 1125 - existing logic preserved
+  **Completed**: Input-path averaging retained with confidence metadata (backend/predictor_ml.py:1133-1150)
 
 - [x] If empty, query similar items in priority order
   **Dependencies**: Input query complete
   **Acceptance**: Loops through similar items until data found
-  **Completed**: Lines 1128-1148 - loops through all similar items
+  **Completed**: Fallback iterates unique candidates sorted by similarity (backend/predictor_ml.py:1152-1199)
 
 - [x] Implement weighted averaging of work order times
   **Dependencies**: Similar item data fetched
   **Acceptance**: Times averaged by similarity score
-  **Completed**: Lines 1207-1224 - np.average with similarity weights
+  **Completed**: Weighted by `max(sample_count, 1) * similarity` with IQR filtering (backend/predictor_ml.py:1205-1233)
 
 - [x] Calculate confidence level based on sample count
   **Dependencies**: Averaging complete
   **Acceptance**: Confidence field added (0.0-1.0)
-  **Completed**: Lines 1226-1236 - confidence based on source and sample count
+  **Completed**: Confidence blends sample-based score with average similarity (backend/predictor_ml.py:1115-1120, 1231-1235)
 
 - [x] Add `data_source` metadata (input vs similar)
   **Dependencies**: All logic complete
   **Acceptance**: Source tracking present
-  **Completed**: Line 1126, 1147 - tracks 'input', 'similar', 'none'
+  **Completed**: Return payload now includes `data_source`, `source_items`, `average_similarity` (backend/predictor_ml.py:1116-1119, 1227-1236)
 
 ### 2.3 Testing (ETA: 1.0h)
 - [x] Unit test: Input item has work order
   **Dependencies**: Implementation complete
   **Acceptance**: Returns input item data
-  **Completed**: ✅ Code verified - returns input with data_source='input'
+  **Completed**: Added `test_fetch_work_order_times_prefers_input_item` (tests/backend/test_work_order_times.py:5-38)
 
 - [x] Unit test: Input item missing, similar items present
   **Dependencies**: Implementation complete
   **Acceptance**: Returns similar item data
-  **Completed**: ✅ Code verified - fallback logic at Lines 1128-1148
+  **Completed**: Added `test_fetch_work_order_times_fallback_to_similar_candidates` (tests/backend/test_work_order_times.py:41-85)
 
 - [x] Unit test: All items missing work order
   **Dependencies**: Implementation complete
   **Acceptance**: Returns None or default
-  **Completed**: ✅ Code verified - returns data_source='none' at Line 1151
+  **Completed**: Added `test_fetch_work_order_times_returns_none_when_no_data` (tests/backend/test_work_order_times.py:88-109)
 
 - [x] Integration test with prediction pipeline
   **Dependencies**: All unit tests pass
   **Acceptance**: Prediction includes work order times
-  **Completed**: ✅ Function call updated at Line 1450 with similar_items
+  **Completed**: Prediction builder now forwards WORK_ORDER metadata with fallback coverage (backend/predictor_ml.py:1469-1514; tests/backend/test_work_order_times.py)
 
 **Estimated Time**: 3.0h
 **Status**: ✅ COMPLETE
 
 **Git Operations**:
-- [ ] Commit Phase 2
-- [ ] Push to 251014
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Commit Phase 2
+- [x] Push to 251014
+- [x] Merge to main
+- [x] Push main
+- [x] Return to 251014
 
 ---
 
-## Phase 3: Frontend - Candidate Node UI
-
 ### 3.1 Store Enhancement (ETA: 1.0h)
-- [ ] Add `candidates: CandidateRouting[]` to `RoutingState`
+- [x] Add `candidates: CandidateRouting[]` to `RoutingState`
   **Dependencies**: None
   **Acceptance**: Type definition updated
+  **Completed**: Added at Line 194
 
-- [ ] Add `activeCandidateIndex: number | null` to state
+- [x] Add `activeCandidateIndex: number | null` to state
   **Dependencies**: None
   **Acceptance**: State tracks selected candidate
+  **Completed**: Added at Line 195
 
-- [ ] Modify `loadRecommendations()` to save candidates
+- [x] Modify `loadRecommendations()` to save candidates
   **Dependencies**: State defined
   **Acceptance**: `response.candidates` stored in state
+  **Completed**: Line 1267 - stores response.candidates
 
-- [ ] Add `selectCandidate(index)` action
+- [x] Add `selectCandidate(index)` action
   **Dependencies**: State updated
   **Acceptance**: Switches timeline to candidate routing
+  **Completed**: Lines 1200-1207 - validates and sets activeCandidateIndex
 
 - [ ] Add `getCandidateTimeline(index)` selector
   **Dependencies**: Action defined
   **Acceptance**: Returns timeline for candidate
+  **Note**: Deferred - timeline switching will be implemented in component
 
 ### 3.2 Component Development (ETA: 3.0h)
 - [ ] Create `CandidateNodeTabs.tsx` component
