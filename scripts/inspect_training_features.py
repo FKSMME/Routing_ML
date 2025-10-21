@@ -127,14 +127,28 @@ def inspect_weights(model_dir: Path) -> Dict[str, Any]:
         weights_data = load_json_safe(weights_path)
         if weights_data:
             weights = weights_data.get('weights', {})
-            active_features = weights_data.get('active_features', [])
+            active_features_raw = weights_data.get('active_features', {})
+
+            # Handle both dict and list formats for active_features
+            if isinstance(active_features_raw, dict):
+                # New format: {feature_name: boolean}
+                active_features = {k: v for k, v in active_features_raw.items() if v}
+                active_count = sum(1 for v in active_features_raw.values() if v)
+            elif isinstance(active_features_raw, list):
+                # Old format: [feature_name, ...]
+                active_features = {feat: True for feat in active_features_raw}
+                active_count = len(active_features_raw)
+            else:
+                print(f"WARNING: Unexpected active_features format: {type(active_features_raw)}")
+                active_features = {}
+                active_count = 0
 
             print(f"feature_weights.json: {len(weights)} entries")
-            print(f"Active features: {len(active_features)} features")
+            print(f"Active features: {active_count} features")
 
             # Top 10 weights (weights are stored as float values directly)
             sorted_weights = sorted(
-                [(k, v) for k, v in weights.items()],
+                [(k, v) for k, v in weights.items() if isinstance(v, (int, float))],
                 key=lambda x: x[1],
                 reverse=True
             )
@@ -146,7 +160,7 @@ def inspect_weights(model_dir: Path) -> Dict[str, Any]:
 
             result['weights'] = weights
             result['active_features'] = active_features
-            result['active_count'] = len(active_features)
+            result['active_count'] = active_count
         else:
             print(f"feature_weights.json: FAILED TO LOAD")
     else:
