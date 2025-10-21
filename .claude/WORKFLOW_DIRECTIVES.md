@@ -452,12 +452,21 @@ copy RoutingMLMonitor_v{OLD_VERSION}.spec RoutingMLMonitor_v{NEW_VERSION}.spec
 # 6. 재빌드
 .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v{NEW_VERSION}.spec
 
-# 7. 빌드 후 실행 테스트 (필수!)
+# 7. 빌드 후 검증 및 정리 (필수!)
 #    - dist/RoutingMLMonitor_v{NEW_VERSION}.exe 생성 확인
 ls -lh dist/RoutingMLMonitor_v{NEW_VERSION}.exe  # 파일 크기 ~12MB 확인
 move dist/RoutingMLMonitor_v{NEW_VERSION}.exe .  # 프로젝트 루트로 이동
 
-# 실행 테스트:
+# ✅ CRITICAL: dist 폴더 정리 (사용자 혼란 방지)
+rm -f dist/RoutingMLMonitor_v*.exe  # 이전 버전 exe 삭제
+rm -rf dist/* build/*  # 모든 빌드 아티팩트 삭제
+
+# 최종 검증: 프로젝트 루트에만 최신 버전 존재 확인
+ls -lh RoutingMLMonitor_v*.exe
+# 출력: RoutingMLMonitor_v{NEW_VERSION}.exe (최신만 표시되어야 함)
+# ❌ 여러 개 표시되면 이전 버전 수동 삭제 필요!
+
+# 8. 빌드 후 실행 테스트 (필수!)
 ./RoutingMLMonitor_v{NEW_VERSION}.exe --version &
 # - 최소 30초 동안 실행
 # - UI가 정상적으로 로딩되는지 육안 확인
@@ -467,8 +476,9 @@ move dist/RoutingMLMonitor_v{NEW_VERSION}.exe .  # 프로젝트 루트로 이동
 #   1. 코드 수정
 #   2. 2단계부터 재시작
 #   3. 오류 없을 때까지 반복
+#   4. ⚠️ 오류 있으면 빌드 완료로 보고하지 말 것!
 
-# 8. Git 커밋 (테스트 통과 후에만!)
+# 9. Git 커밋 (테스트 통과 후에만!)
 git add RoutingMLMonitor_v{NEW_VERSION}.exe RoutingMLMonitor_v{NEW_VERSION}.spec old/
 git commit -m "build: Rebuild monitor v{NEW_VERSION} - CHECKLIST 100% complete"
 git push origin 251014
