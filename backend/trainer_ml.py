@@ -1225,6 +1225,11 @@ def load_optimized_model(
 
     try:
         searcher = joblib.load(similarity_path)
+    except FileNotFoundError:
+        logger.warning("similarity_engine.joblib 파일을 찾을 수 없습니다. 기본 더미 검색 엔진으로 대체합니다.")
+        from backend.dummy_models import DummySimilarityEngine  # pylint: disable=import-outside-toplevel
+
+        searcher = DummySimilarityEngine()
     except AttributeError as exc:
         if "DummySimilarityEngine" in str(exc):
             logger.warning("레거시 DummySimilarityEngine 피클을 감지했습니다. 호환 모드로 재시도합니다.")
