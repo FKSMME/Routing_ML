@@ -166,6 +166,9 @@ interface CanvasViewProps extends RoutingCanvasProps {
   insertOperation: (payload: DraggableOperationPayload, index?: number) => void;
   removeStep: (stepId: string) => void;
   updateStepTimes: (stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => void;
+  productTabs: Array<{ id: string; productCode: string; productName?: string | null; candidateId?: string | null; timeline: TimelineStep[] }>;
+  activeProductId: string | null;
+  onCandidateSelect: (tabId: string) => void;
 }
 
 function RoutingCanvasView({
@@ -177,6 +180,9 @@ function RoutingCanvasView({
   insertOperation,
   removeStep,
   updateStepTimes,
+  productTabs,
+  activeProductId,
+  onCandidateSelect,
   onProfileReady,
 }: CanvasViewProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -502,6 +508,89 @@ function RoutingCanvasView({
 
   return (
     <>
+      {/* Similar Items Candidate List */}
+      {productTabs.length > 1 && (
+        <div className="candidate-list" style={{
+          display: 'flex',
+          gap: '12px',
+          padding: '12px 16px',
+          backgroundColor: '#1e293b',
+          borderBottom: '1px solid #475569',
+          overflowX: 'auto',
+          alignItems: 'center',
+        }}>
+          <span style={{
+            color: '#94a3b8',
+            fontSize: '13px',
+            fontWeight: 500,
+            whiteSpace: 'nowrap',
+          }}>
+            유사 품목:
+          </span>
+          {productTabs.map((tab, index) => {
+            const isActive = tab.id === activeProductId;
+            // Calculate similarity score from first timeline step
+            const firstStep = tab.timeline[0];
+            const similarity = firstStep?.confidence ?? firstStep?.similarity ?? null;
+            const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onCandidateSelect(tab.id)}
+                className="candidate-node"
+                data-active={isActive}
+                data-testid={`candidate-node-${index}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '8px 12px',
+                  backgroundColor: isActive ? '#3b82f6' : '#334155',
+                  border: isActive ? '2px solid #60a5fa' : '1px solid #475569',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
+                  minWidth: '80px',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#475569';
+                    e.currentTarget.style.borderColor = '#64748b';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = '#334155';
+                    e.currentTarget.style.borderColor = '#475569';
+                  }
+                }}
+              >
+                <span style={{
+                  color: isActive ? '#fff' : '#e2e8f0',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                }}>
+                  {tab.productCode}
+                </span>
+                {similarityPercent !== null && (
+                  <span style={{
+                    color: isActive ? '#dbeafe' : '#94a3b8',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                  }}>
+                    {similarityPercent}%
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div
         className={containerClassName}
         ref={wrapperRef}
@@ -581,6 +670,9 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
   const insertOperation = useRoutingStore((state) => state.insertOperation);
   const removeStep = useRoutingStore((state) => state.removeStep);
   const updateStepTimes = useRoutingStore((state) => state.updateStepTimes);
+  const productTabs = useRoutingStore((state) => state.productTabs);
+  const activeProductId = useRoutingStore((state) => state.activeProductId);
+  const setActiveProduct = useRoutingStore((state) => state.setActiveProduct);
 
   return (
     <ReactFlowProvider>
@@ -590,6 +682,9 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
         insertOperation={insertOperation}
         removeStep={removeStep}
         updateStepTimes={updateStepTimes}
+        productTabs={productTabs}
+        activeProductId={activeProductId}
+        onCandidateSelect={setActiveProduct}
         {...props}
       />
     </ReactFlowProvider>
