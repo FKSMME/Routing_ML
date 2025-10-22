@@ -38,7 +38,9 @@
       "Bash(xargs:*)",
       "Bash(awk:*)",
       "Bash(copy:*)",
-      "Bash(..venvScriptspython.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.4.0.spec)"
+      "Bash(..venvScriptspython.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.4.0.spec)",
+      "Bash(git reset:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
