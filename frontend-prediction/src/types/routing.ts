@@ -42,6 +42,8 @@ export interface OperationStep {
   TIME_STD?: number | null;
   TIME_CV?: number | null;
   SETUP_STD?: number | null;
+  TRIM_MEAN?: number | null;
+  SAMPLE_COUNT?: number | null;
   OUTSOURCING_REPLACED?: boolean | string | null;
   metadata?: TimelineStepMetadata | null;
 }

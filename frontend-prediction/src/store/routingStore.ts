@@ -80,6 +80,7 @@ export interface TimelineStep {
   setupTime?: number | null;
   runTime?: number | null;
   waitTime?: number | null;
+  moveTime?: number | null;
   optimalTime?: number | null;
   standardTime?: number | null;
   safeTime?: number | null;
@@ -101,6 +102,8 @@ export interface TimelineStep {
   timeStd?: number | null;
   timeCv?: number | null;
   setupStd?: number | null;
+  trimMean?: number | null;
+  sampleCount?: number | null;
   positionX?: number;
   violations?: RuleViolation[];
   confidence?: number | null;
@@ -913,6 +916,8 @@ const toTimelineStep = (
     timeStd: operation.TIME_STD ?? null,
     timeCv: operation.TIME_CV ?? null,
     setupStd: operation.SETUP_STD ?? null,
+    trimMean: operation.TRIM_MEAN ?? null,
+    sampleCount: operation.SAMPLE_COUNT ?? null,
     itemCode: context.itemCode ?? null,
     candidateId: context.candidateId ?? null,
     routingSetCode,
@@ -1328,7 +1333,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       }
 
       // Find the tab for this candidate's item
-      const candidateItemCode = selectedCandidate.candidate_item_code;
+      const candidateItemCode = selectedCandidate.CANDIDATE_ITEM_CD;
       const candidateTab = state.productTabs.find(
         (tab) => tab.productCode === candidateItemCode
       );

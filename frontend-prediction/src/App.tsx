@@ -1,32 +1,25 @@
 import { LoginPage } from "@components/auth/LoginPage";
 import { BackgroundControls } from "@components/BackgroundControls";
-import { LiquidEtherBackground } from "@components/LiquidEtherBackground";
-import { CandidatePanel } from "@components/CandidatePanel";
-import { FeatureWeightPanel } from "@components/FeatureWeightPanel";
 import { Header } from "@components/Header";
+import { LiquidEtherBackground } from "@components/LiquidEtherBackground";
 import { MainNavigation } from "@components/MainNavigation";
-import { MetricsPanel } from "@components/MetricsPanel";
-import { PredictionControls } from "@components/PredictionControls";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
-import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
-import { RoutingWorkspaceLayout } from "@components/routing/RoutingWorkspaceLayout";
 // 🚀 Workspace lazy loading (코드 분할)
 import { lazy } from "react";
 const DataOutputWorkspace = lazy(() => import("@components/workspaces/DataOutputWorkspace").then(m => ({ default: m.DataOutputWorkspace })));
-const ProcessGroupsWorkspace = lazy(() => import("@components/workspaces/ProcessGroupsWorkspace").then(m => ({ default: m.ProcessGroupsWorkspace })));
 const RoutingConfigWorkspace = lazy(() => import("@components/workspaces/RoutingConfigWorkspace").then(m => ({ default: m.RoutingConfigWorkspace })));
-const RoutingMatrixWorkspace = lazy(() => import("@components/workspaces/RoutingMatrixWorkspace").then(m => ({ default: m.RoutingMatrixWorkspace })));
 const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/MasterDataSimpleWorkspace").then(m => ({ default: m.MasterDataSimpleWorkspace })));
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
 const DataQualityWorkspace = lazy(() => import("@components/workspaces/DataQualityWorkspace").then(m => ({ default: m.default })));
+const QualityDashboard = lazy(() => import("@components/quality/QualityDashboard").then(m => ({ default: m.QualityDashboard })));
+const TrainingMonitor = lazy(() => import("@components/training/TrainingMonitor").then(m => ({ default: m.TrainingMonitor })));
+const IterTrainingSettings = lazy(() => import("@components/settings/IterTrainingSettings").then(m => ({ default: m.IterTrainingSettings })));
+const LogViewer = lazy(() => import("@components/quality/LogViewer").then(m => ({ default: m.LogViewer })));
 import ErrorBoundary from "@components/ErrorBoundary";
 import { HeroBanner } from "@components/HeroBanner";
-import { RoutingExplanationPanel } from "@components/routing/RoutingExplanationPanel";
-import { TimelinePanel } from "@components/TimelinePanel";
-import { VisualizationSummary } from "@components/VisualizationSummary";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
@@ -34,8 +27,8 @@ import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
-import { Activity, Database, FileOutput, Layers, Menu, Settings2, Table, Workflow } from "lucide-react";
-import { Suspense, useEffect, useMemo,useState } from "react";
+import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 // 🎨 Base Navigation Items
 const BASE_NAVIGATION_ITEMS = [
@@ -80,6 +73,30 @@ const ADMIN_NAVIGATION_ITEMS = [
     description: "실시간 품질 지표 · 이슈 추적",
     icon: <Activity size={18} />,
   },
+  {
+    id: "quality-monitor",
+    label: "품질 모니터링 대시보드",
+    description: "Iterative Training 품질 메트릭 · 알림",
+    icon: <Activity size={18} />,
+  },
+  {
+    id: "training-monitor",
+    label: "학습 모니터",
+    description: "Iterative Training 실행 및 진행 상황 추적",
+    icon: <Activity size={18} />,
+  },
+  {
+    id: "training-settings",
+    label: "학습 설정",
+    description: "Iterative Training 파라미터 및 임계값 설정",
+    icon: <Settings2 size={18} />,
+  },
+  {
+    id: "log-viewer",
+    label: "로그 뷰어",
+    description: "실시간 학습 및 품질 평가 로그",
+    icon: <Activity size={18} />,
+  },
 ];
 
 const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
@@ -88,9 +105,27 @@ const AuthLoadingScreen = () => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-4 surface-base" role="status" aria-live="polite">
     <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
     <div className="text-center space-y-1">
-      <p className="text-base font-medium text-slate-200">세션을 확인하고 있습니다…</p>
-      <p className="text-sm text-slate-400">보안 검증이 끝날 때까지 탭을 닫지 말아 주세요. 최대 5초 정도 소요됩니다.</p>
+      <p className="text-base font-medium text-slate-200">Checking your session…</p>
+      <p className="text-sm text-slate-400">Authenticating with the server. This usually completes in a few seconds.</p>
     </div>
+  </div>
+);
+
+const AuthErrorScreen = ({ message, onRetry }: { message?: string | null; onRetry: () => void }) => (
+  <div className="flex min-h-screen flex-col items-center justify-center gap-6 surface-base" role="alert">
+    <div className="text-center space-y-2 max-w-sm">
+      <h1 className="text-lg font-semibold text-slate-200">Unable to verify your session</h1>
+      <p className="text-sm text-slate-400">
+        {message ?? "The authentication service did not respond. Check your network connection and try again."}
+      </p>
+    </div>
+    <button
+      type="button"
+      className="btn-primary px-6"
+      onClick={onRetry}
+    >
+      Retry
+    </button>
   </div>
 );
 
@@ -138,11 +173,13 @@ const toPredictionErrorInfo = (error: unknown): PredictionErrorInfo => {
 export default function App() {
   const { layout, isDrawerMode, isOpen: isNavOpen, isPersistent, toggle, close } = useResponsiveNav();
 
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const authStatus = useAuthStore((state) => state.status);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  const login = useAuthStore((state) => state.login);
-  const [authLoading, setAuthLoading] = useState(true);
+  const lastAuthError = useAuthStore((state) => state.lastError);
+  const isAuthenticated = authStatus === "authenticated";
+  const isAuthenticating = authStatus === "unknown" || authStatus === "authenticating";
+  const isAuthError = authStatus === "error";
 
   // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
   const NAVIGATION_ITEMS = useMemo(
@@ -176,7 +213,7 @@ export default function App() {
   useTheme();
 
   const hasSearchItems = itemCodes.length > 0;
-  const predictQueryEnabled = isAuthenticated && hasSearchItems;
+  const predictQueryEnabled = isAuthenticated && !isAuthenticating && hasSearchItems;
 
   const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
@@ -228,18 +265,20 @@ export default function App() {
 
   const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? undefined;
 
-  // 인증 확인
+  // Authentication bootstrap
   useEffect(() => {
-    const verifyAuth = async () => {
-      await checkAuth();
-      setAuthLoading(false);
-    };
-    verifyAuth();
-  }, [checkAuth]);
+    if (authStatus === "unknown") {
+      void checkAuth();
+    }
+  }, [authStatus, checkAuth]);
 
   const handleLoginSuccess = async () => {
     await checkAuth();
   };
+
+  const handleRetryAuth = useCallback(() => {
+    void checkAuth();
+  }, [checkAuth]);
 
   const renderPredictionBanner = () =>
     predictionError ? (
@@ -252,11 +291,14 @@ export default function App() {
   const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
 
   // 인증 확인 중이면 로딩 표시
-  if (authLoading) {
+  if (isAuthenticating) {
     return <AuthLoadingScreen />;
   }
 
-  // 인증되지 않은 경우 로그인 페이지 표시
+  if (isAuthError) {
+    return <AuthErrorScreen message={lastAuthError} onRetry={handleRetryAuth} />;
+  }
+
   if (!isAuthenticated) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
@@ -322,6 +364,18 @@ export default function App() {
       break;
     case "data-quality":
       workspace = <Suspense fallback={loadingFallback}><DataQualityWorkspace /></Suspense>;
+      break;
+    case "quality-monitor":
+      workspace = <Suspense fallback={loadingFallback}><QualityDashboard /></Suspense>;
+      break;
+    case "training-monitor":
+      workspace = <Suspense fallback={loadingFallback}><TrainingMonitor /></Suspense>;
+      break;
+    case "training-settings":
+      workspace = <Suspense fallback={loadingFallback}><IterTrainingSettings /></Suspense>;
+      break;
+    case "log-viewer":
+      workspace = <Suspense fallback={loadingFallback}><LogViewer /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
