@@ -13,8 +13,8 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 
-import { TimeEditModal } from "./TimeEditModal";
 import { CandidateNodeTabs } from "./CandidateNodeTabs";
+import { TimeEditModal } from "./TimeEditModal";
 
 const NODE_GAP = 240;
 

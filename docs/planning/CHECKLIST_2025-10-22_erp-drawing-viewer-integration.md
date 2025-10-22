@@ -43,57 +43,57 @@
 
 #### DrawingViewerButton Component
 
-- [ ] Create `frontend-prediction/src/components/routing/` directory (if not exists)
-- [ ] Create `DrawingViewerButton.tsx` component file
-- [ ] Implement button component with itemCode prop
-- [ ] Add loading state management
-- [ ] Add disabled state when no itemCode
-- [ ] Implement handleClick function
-- [ ] Add fetchDrawingInfo API call
-- [ ] Implement URL building logic
-- [ ] Add window.open with ERP viewer URL
-- [ ] Add error handling with Korean error messages
-- [ ] Add loading spinner/text during API call
-- [ ] Style button with Tailwind CSS
+- [x] Create `frontend-prediction/src/components/routing/` directory (if not exists)
+- [x] Create `DrawingViewerButton.tsx` component file
+- [x] Implement button component with itemCode prop
+- [x] Add loading state management
+- [x] Add disabled state when no itemCode
+- [x] Implement handleClick function
+- [x] Add fetchDrawingInfo API call
+- [x] Implement URL building logic
+- [x] Add window.open with ERP viewer URL
+- [x] Add error handling with Korean error messages
+- [x] Add loading spinner/text during API call (Loader2 icon)
+- [x] Style button with Tailwind CSS
 
 #### DrawingViewerSettings Dialog
 
-- [ ] Create `DrawingViewerSettings.tsx` component file
-- [ ] Implement dialog with open/close state
-- [ ] Add ERP ID input field
-- [ ] Add default sheet number input field
-- [ ] Add window width input field
-- [ ] Add window height input field
-- [ ] Implement settings load from localStorage
-- [ ] Implement settings save to localStorage
-- [ ] Add form validation
-- [ ] Style dialog with existing UI components
+- [x] Create `DrawingViewerSettings.tsx` component file
+- [x] Implement dialog with open/close state
+- [x] Add ERP ID input field
+- [x] Add default sheet number input field
+- [x] Add window width input field
+- [x] Add window height input field
+- [x] Implement settings load from localStorage
+- [x] Implement settings save to localStorage
+- [x] Add form validation
+- [x] Style dialog with existing UI components (gray-800 theme)
 
 #### URL Builder Utility
 
-- [ ] Create `frontend-prediction/src/utils/erpViewerUrl.ts` file
-- [ ] Implement buildErpViewerUrl function
-- [ ] Add ErpViewerParams interface
-- [ ] Implement URL parameter encoding
-- [ ] Add URL validation
-- [ ] Add unit tests for URL builder
+- [x] Create `frontend-prediction/src/utils/erpViewerUrl.ts` file
+- [x] Implement buildErpViewerUrl function
+- [x] Add ErpViewerParams interface
+- [x] Implement URL parameter encoding (URLSearchParams)
+- [x] Add URL validation (validateErpViewerUrl function)
+- [ ] Add unit tests for URL builder (deferred - manual testing)
 
 #### API Client Function
 
-- [ ] Add fetchDrawingInfo function to `apiClient.ts`
-- [ ] Define DrawingInfo interface
-- [ ] Implement error handling for API call
-- [ ] Add TypeScript type safety
+- [x] Add fetchDrawingInfo function to `apiClient.ts`
+- [x] Define DrawingInfo interface
+- [x] Implement error handling for API call
+- [x] Add TypeScript type safety
 
 #### Settings Hook
 
-- [ ] Create `useDrawingViewerSettings.ts` hook
-- [ ] Implement settings state management
-- [ ] Add default values for settings
-- [ ] Implement localStorage sync
+- [x] Create `useDrawingViewerSettings.ts` hook
+- [x] Implement settings state management
+- [x] Add default values for settings
+- [x] Implement localStorage sync (with storage event listener)
 
 **Estimated Time**: 3-4 hours
-**Status**: Not Started
+**Status**: ✅ Complete (29/30 tasks, unit tests deferred)
 
 ### Git Operations
 
@@ -220,14 +220,14 @@
 ## Progress Tracking
 
 ```
-Phase 1 (Backend):    [▓▓▓▓▓▓▓▓▓░] 92% (11/12 tasks) ✅ READY FOR COMMIT
-Phase 2 (Frontend):   [░░░░░░░░░░] 0% (0/30 tasks)
+Phase 1 (Backend):    [▓▓▓▓▓▓▓▓▓░] 92% (11/12 tasks) ✅ COMMITTED
+Phase 2 (Frontend):   [▓▓▓▓▓▓▓▓▓░] 97% (29/30 tasks) ✅ READY FOR COMMIT
 Phase 3 (Integration):[░░░░░░░░░░] 0% (0/18 tasks)
 Phase 4 (Polish):     [░░░░░░░░░░] 0% (0/20 tasks)
 
-Total:                [▓░░░░░░░░░] 14% (11/80 tasks)
+Total:                [▓▓▓▓▓░░░░░] 50% (40/80 tasks)
 
-Git Operations:       [░░░░░░░░░░] 0% (0/13 checkpoints)
+Git Operations:       [▓▓░░░░░░░░] 15% (2/13 checkpoints) - Phase 1 pushed
 ```
 
 ---

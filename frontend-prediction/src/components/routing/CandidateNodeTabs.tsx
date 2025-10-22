@@ -5,8 +5,9 @@
  * Phase 3.3 - Enhanced Styling, Responsiveness, and Accessibility
  */
 
-import React from 'react';
 import type { CandidateRouting } from '@app-types/routing';
+import React from 'react';
+
 import { useRoutingStore } from '../../store/routingStore';
 
 interface CandidateNodeCardProps {
