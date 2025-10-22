@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { HyperspeedPreset } from './hyperspeedPresets';
+import { HyperspeedPreset } from '@routing-ml/shared/components/hyperspeed/hyperspeedPresets';
 import './Hyperspeed.css';
 
 interface HyperspeedProps {

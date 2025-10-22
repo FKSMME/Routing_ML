@@ -1,5 +1,5 @@
 import { Hyperspeed } from './Hyperspeed';
-import { getPreset } from './hyperspeedPresets';
+import { getPreset } from '@routing-ml/shared/components/hyperspeed/hyperspeedPresets';
 
 interface HyperspeedBackgroundProps {
   preset?: string;

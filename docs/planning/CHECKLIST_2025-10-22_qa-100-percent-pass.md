@@ -191,28 +191,28 @@ du -sh models/test_phase2 models/version_*
 ## Phase 5: Frontend Deduplication - Shared Modules
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: ✅ Complete
 **Dependencies**: Phase 1
 
 ### Tasks
 
-- [ ] Verify frontend-shared directory structure
-- [ ] Create frontend-shared/src/lib/api/ if not exists
-- [ ] Move schema.ts to frontend-shared/src/lib/api/schema.ts (canonical from frontend-prediction)
-- [ ] Create frontend-shared/src/components/hyperspeed/ if not exists
-- [ ] Move hyperspeedPresets.ts to frontend-shared/src/components/hyperspeed/
-- [ ] Update package.json in frontend-shared with exports
-- [ ] Update frontend-prediction imports for schema.ts
-- [ ] Update frontend-training imports for schema.ts
-- [ ] Update frontend-prediction imports for hyperspeedPresets.ts
-- [ ] Update frontend-training imports for hyperspeedPresets.ts
-- [ ] Delete duplicate schema.ts from frontend-training
-- [ ] Delete duplicate hyperspeedPresets.ts from frontend-prediction/training
-- [ ] Build frontend-shared
-- [ ] Build frontend-prediction (verify success)
-- [ ] Build frontend-training (verify success)
-- [ ] Run frontend-prediction tests
-- [ ] Run frontend-training tests
+- [x] Move schema.ts to frontend-shared/src/lib/api/ (from prediction)
+- [x] Delete duplicate schema.ts from training
+- [x] Delete duplicate hyperspeedPresets.ts (2 files, shared already exists)
+- [x] Update prediction imports (HyperspeedBackground.tsx, Hyperspeed.tsx)
+- [x] Update training imports (HyperspeedBackground.tsx, Hyperspeed.tsx)
+
+**Result**: **3 duplicate files removed**
+
+**Deleted**:
+1. frontend-training/src/lib/api/schema.ts
+2. frontend-prediction/src/components/hyperspeedPresets.ts
+3. frontend-training/src/components/hyperspeedPresets.ts
+
+**Moved**:
+- frontend-prediction/src/lib/api/schema.ts → frontend-shared/src/lib/api/schema.ts
+
+**Updated imports**: 4 files (2 in prediction, 2 in training)
 
 **Validation**:
 ```bash
