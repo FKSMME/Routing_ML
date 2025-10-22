@@ -1,6 +1,6 @@
+import axios from "axios";
 import { Download, Pause, Play, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
 
 interface LogLine {
   timestamp: string;
@@ -264,7 +264,7 @@ export function LogViewer() {
         <ul style={{ marginLeft: "20px", lineHeight: "1.5" }}>
           <li>자동 새로고침은 5초 간격으로 실행됩니다.</li>
           <li>최근 500개의 로그 라인이 표시됩니다.</li>
-          <li>"다운로드" 버튼으로 전체 로그를 텍스트 파일로 저장할 수 있습니다.</li>
+          <li>&quot;다운로드&quot; 버튼으로 전체 로그를 텍스트 파일로 저장할 수 있습니다.</li>
           <li>자동 스크롤을 활성화하면 새 로그가 추가될 때 자동으로 아래로 스크롤됩니다.</li>
         </ul>
       </div>

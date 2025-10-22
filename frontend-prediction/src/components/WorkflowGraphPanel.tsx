@@ -10,8 +10,8 @@ import type {
 import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { regenerateWorkflowCode } from "@lib/apiClient";
-import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 import { cn } from "@lib/classNames";
+import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 import { ExternalLink } from "lucide-react";
 import {
   type CSSProperties,

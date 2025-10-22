@@ -166,7 +166,7 @@ export const OnPremSearch: React.FC = () => {
                 className="example-card"
                 onClick={() => handleExampleClick(example.query)}
               >
-                <div className="example-query">"{example.query}"</div>
+                <div className="example-query">&quot;{example.query}&quot;</div>
                 <div className="example-description">{example.description}</div>
               </div>
             ))}

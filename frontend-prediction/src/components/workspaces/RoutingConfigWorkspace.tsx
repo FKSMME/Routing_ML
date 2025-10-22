@@ -1,8 +1,9 @@
-import { Table, Layers } from "lucide-react";
+import { Layers,Table } from "lucide-react";
 import { useState } from "react";
+
 import { Tabs } from "../ui/Tabs";
-import { RoutingMatrixWorkspace } from "./RoutingMatrixWorkspace";
 import { ProcessGroupsWorkspace } from "./ProcessGroupsWorkspace";
+import { RoutingMatrixWorkspace } from "./RoutingMatrixWorkspace";
 
 export function RoutingConfigWorkspace() {
   const [activeTab, setActiveTab] = useState("routing-matrix");

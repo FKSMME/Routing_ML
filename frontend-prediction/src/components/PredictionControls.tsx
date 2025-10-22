@@ -1,5 +1,5 @@
 import { hasItemCodesDragData, readItemCodesDragData } from "@lib/dragAndDrop";
-import { forwardRef, FormEvent, useCallback, useEffect, useImperativeHandle, useState } from "react";
+import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
 interface PredictionControlsProps {
   itemCodes: string[];

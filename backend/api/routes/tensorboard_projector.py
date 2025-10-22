@@ -9,13 +9,14 @@ from functools import lru_cache
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 from backend.api.security import require_auth
 from backend.api.config import get_settings
@@ -100,6 +101,30 @@ class MetricSeries(BaseModel):
     points: List[MetricPoint]
 
 
+class TsnePoint(BaseModel):
+    """Two-dimensional projection point for training progression visualization."""
+
+    id: str
+    x: float
+    y: float
+    progress: float = Field(..., ge=0.0, le=1.0)
+    step: int = Field(..., ge=1)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class TsneResponse(BaseModel):
+    """Response payload for T-SNE style training progression layout."""
+
+    projector_id: str
+    total: int
+    sampled: int
+    requested_perplexity: float
+    effective_perplexity: float
+    iterations: int
+    used_pca_fallback: bool
+    points: List[TsnePoint]
+
+
 class ExportProjectorRequest(BaseModel):
     sample_every: int = Field(1, ge=1, le=1000, description="Down-sample vectors by keeping every Nth entry.")
     max_rows: Optional[int] = Field(
@@ -132,6 +157,7 @@ class ProjectorData:
     tensor_name: str
     sample_count: int
     updated_at: Optional[str]
+    raw_vectors: np.ndarray
     coordinates: np.ndarray
     metadata: pd.DataFrame
     filters: List[FilterField]
@@ -249,6 +275,23 @@ def _reduce_to_three_dimensions(vectors: np.ndarray) -> np.ndarray:
     return reduced.astype(np.float32)
 
 
+def _reduce_to_two_dimensions(vectors: np.ndarray) -> np.ndarray:
+    if vectors.size == 0:
+        return np.empty((0, 2), dtype=np.float32)
+
+    if vectors.shape[0] >= 2 and vectors.shape[1] >= 2:
+        reducer = PCA(n_components=2, random_state=42)
+        reduced = reducer.fit_transform(vectors)
+    else:
+        base = vectors.astype(np.float32)
+        if base.shape[1] >= 2:
+            reduced = base[:, :2]
+        else:
+            padding = np.zeros((base.shape[0], 2 - base.shape[1]), dtype=np.float32)
+            reduced = np.hstack([base, padding])
+    return reduced.astype(np.float32)
+
+
 def _build_filter_fields(df: pd.DataFrame) -> List[FilterField]:
     fields: List[FilterField] = []
     for column in df.columns:
@@ -294,6 +337,57 @@ def _row_to_metadata(row: pd.Series) -> Dict[str, Any]:
         else:
             result[key] = value
     return result
+
+
+def _filtered_indices(projector: ProjectorData, filter_payload: Dict[str, List[str]]) -> np.ndarray:
+    indices = np.arange(projector.sample_count)
+    if filter_payload and not projector.metadata.empty:
+        mask = np.ones(projector.sample_count, dtype=bool)
+        for field, values in filter_payload.items():
+            if field not in projector.metadata.columns or not values:
+                continue
+            series = projector.metadata[field].astype(str)
+            mask &= series.isin(values)
+        indices = indices[mask]
+    return indices
+
+
+def _evenly_sample_indices(indices: np.ndarray, max_count: Optional[int]) -> np.ndarray:
+    if max_count is None or max_count <= 0 or indices.size <= max_count:
+        return indices
+    positions = np.linspace(0, indices.size - 1, num=max_count, dtype=int)
+    return indices[positions]
+
+
+def _compute_point_identifier(projector: ProjectorData, metadata: Dict[str, Any], fallback: int) -> str:
+    if projector.identifier_field and metadata:
+        value = metadata.get(projector.identifier_field)
+        if value is not None:
+            return str(value)
+    return str(fallback)
+
+
+def _compute_tsne_layout(vectors: np.ndarray, perplexity: float, iterations: int) -> Tuple[np.ndarray, float, bool]:
+    sample_size = vectors.shape[0]
+    if sample_size < 3:
+        return _reduce_to_two_dimensions(vectors), 0.0, True
+
+    max_perplexity = float(min(perplexity, max(2.0, sample_size - 1)))
+    if max_perplexity >= sample_size:
+        max_perplexity = float(sample_size - 1)
+    if max_perplexity < 2.0:
+        return _reduce_to_two_dimensions(vectors), 0.0, True
+
+    tsne = TSNE(
+        n_components=2,
+        init="pca",
+        learning_rate="auto",
+        perplexity=max_perplexity,
+        n_iter=iterations,
+        random_state=42,
+    )
+    embedding = tsne.fit_transform(vectors)
+    return embedding.astype(np.float32), max_perplexity, False
 
 
 def _build_metrics(projector_id: str, vectors: np.ndarray) -> List[MetricSeries]:
@@ -363,8 +457,9 @@ def _load_projector(entry: ProjectorEntry) -> ProjectorData:
         id=entry.id,
         version_label=entry.version_label,
         tensor_name=tensor_name,
-        sample_count=coordinates.shape[0],
+        sample_count=vectors.shape[0],
         updated_at=updated_at,
+        raw_vectors=vectors,
         coordinates=coordinates,
         metadata=metadata_df,
         filters=filters,
@@ -509,15 +604,7 @@ async def get_projector_points(
     projector = _get_projector(projector_id)
     filter_payload = _parse_filter_payload(filters)
 
-    indices = np.arange(projector.sample_count)
-    if filter_payload and not projector.metadata.empty:
-        mask = np.ones(projector.sample_count, dtype=bool)
-        for field, values in filter_payload.items():
-            if field not in projector.metadata.columns or not values:
-                continue
-            series = projector.metadata[field].astype(str)
-            mask &= series.isin(values)
-        indices = indices[mask]
+    indices = _filtered_indices(projector, filter_payload)
 
     if stride and stride > 1:
         indices = indices[::stride]
@@ -539,11 +626,7 @@ async def get_projector_points(
             if not projector.metadata.empty
             else {}
         )
-        point_id = None
-        if projector.identifier_field and projector.identifier_field in row_metadata:
-            point_id = row_metadata[projector.identifier_field]
-        if point_id is None:
-            point_id = str(idx)
+        point_id = _compute_point_identifier(projector, row_metadata, int(idx))
 
         coords = projector.coordinates[int(idx)]
         points.append(
@@ -561,6 +644,107 @@ async def get_projector_points(
         total=total,
         limit=limit,
         offset=offset,
+        points=points,
+    )
+
+
+@router.get("/projectors/{projector_id}/tsne", response_model=TsneResponse)
+async def get_projector_tsne(
+    projector_id: str,
+    limit: int = Query(
+        2000,
+        ge=100,
+        le=10000,
+        description="Maximum number of points to include in the 2D training progression layout.",
+    ),
+    stride: Optional[int] = Query(
+        None,
+        ge=1,
+        le=1000,
+        description="Return every Nth record before sampling (applied after filters).",
+    ),
+    perplexity: float = Query(
+        30.0,
+        ge=5.0,
+        le=100.0,
+        description="Perplexity parameter passed to T-SNE (automatically clamped by sample size).",
+    ),
+    iterations: int = Query(
+        750,
+        ge=250,
+        le=2000,
+        description="Number of optimization iterations for the T-SNE solver.",
+    ),
+    steps: int = Query(
+        12,
+        ge=3,
+        le=50,
+        description="Number of coarse-grained training steps to derive for timeline coloring.",
+    ),
+    filters: Optional[str] = Query(None, description="JSON-encoded filter criteria (field -> [values])"),
+) -> TsneResponse:
+    """Return 2D T-SNE layout approximating the model's training progression order."""
+    projector = _get_projector(projector_id)
+    filter_payload = _parse_filter_payload(filters)
+
+    indices = _filtered_indices(projector, filter_payload)
+    if stride and stride > 1:
+        indices = indices[::stride]
+
+    total = int(indices.size)
+    if total == 0:
+        return TsneResponse(
+            projector_id=projector_id,
+            total=0,
+            sampled=0,
+            requested_perplexity=float(perplexity),
+            effective_perplexity=0.0,
+            iterations=iterations,
+            used_pca_fallback=True,
+            points=[],
+        )
+
+    sampled_indices = _evenly_sample_indices(indices, limit)
+    vectors = projector.raw_vectors[sampled_indices]
+    layout, effective_perplexity, used_pca_fallback = _compute_tsne_layout(vectors, perplexity, iterations)
+
+    denominator = projector.sample_count - 1
+    step_count = max(1, min(steps, sampled_indices.size))
+
+    points: List[TsnePoint] = []
+    for pos, original_index in enumerate(sampled_indices):
+        progress = float(original_index) / float(denominator) if denominator > 0 else 1.0
+        row_metadata = (
+            _row_to_metadata(projector.metadata.iloc[int(original_index)])
+            if not projector.metadata.empty
+            else {}
+        )
+        point_id = _compute_point_identifier(projector, row_metadata, int(original_index))
+
+        raw_step = int(progress * step_count) + 1
+        if raw_step > step_count:
+            raw_step = step_count
+
+        coords = layout[pos]
+        points.append(
+            TsnePoint(
+                id=str(point_id),
+                x=float(coords[0]),
+                y=float(coords[1]),
+                progress=max(0.0, min(1.0, progress)),
+                step=raw_step,
+                metadata=row_metadata,
+            )
+        )
+
+    return TsneResponse(
+        projector_id=projector_id,
+        total=total,
+        sampled=len(points),
+        requested_perplexity=float(perplexity),
+        effective_perplexity=float(effective_perplexity),
+        iterations=iterations,
+        used_pca_fallback=used_pca_fallback,
         points=points,
     )
 

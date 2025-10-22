@@ -1,8 +1,7 @@
 import type { WorkflowConfigResponse } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
 import { fetchWorkflowConfig, fetchWorkspaceSettings, postUiAudit } from "@lib/apiClient";
-
-type WorkspaceSettingsResponse = any;
+import type { WorkspaceSettingsResponse } from "@lib/apiClient";
 import { useWorkspaceStore, type WorkspaceColumnMappingRow } from "@store/workspaceStore";
 import { AlertTriangle, Check, Plus, Shield, Trash2, XCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

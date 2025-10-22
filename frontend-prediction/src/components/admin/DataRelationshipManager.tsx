@@ -1,4 +1,4 @@
-import {
+﻿import {
   createDataMappingProfile,
   type DataMappingProfile,
   type DataMappingProfileCreate,
@@ -344,7 +344,7 @@ export function DataRelationshipManager() {
                 {relationships.length === 0 ? (
                   <div className="py-12 text-center">
                     <p className="body-text-secondary">
-                      매핑이 없습니다. "매핑 추가" 버튼을 클릭하세요
+                      매핑이 없습니다. &quot;매핑 추가&quot; 버튼을 클릭하세요
                     </p>
                   </div>
                 ) : (
@@ -614,3 +614,4 @@ export function DataRelationshipManager() {
     </div>
   );
 }
+

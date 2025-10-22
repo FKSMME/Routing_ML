@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
 import { Bell, Settings } from "lucide-react";
+import React, { useEffect,useState } from "react";
+
 import { getUnacknowledgedAlerts } from "../../services/alertService";
-import { AlertDropdown } from "./AlertDropdown";
 import { AlertConfigModal } from "./AlertConfigModal";
+import { AlertDropdown } from "./AlertDropdown";
 
 export function AlertBell() {
   const [unacknowledgedCount, setUnacknowledgedCount] = useState(0);

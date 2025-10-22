@@ -1,14 +1,15 @@
+import { Bell, BellOff,Edit2, Plus, Trash2, X } from "lucide-react";
 import React, { useState } from "react";
-import { X, Plus, Edit2, Trash2, Bell, BellOff } from "lucide-react";
-import type { AlertRule, CreateAlertRuleInput, AlertMetricType, AlertCondition, AlertSeverity } from "../../types/alerts";
-import {
-  loadAlertRules,
-  createAlertRule,
-  updateAlertRule,
-  deleteAlertRule,
-  toggleAlertRule,
-} from "../../services/alertService";
 import toast from "react-hot-toast";
+
+import {
+  createAlertRule,
+  deleteAlertRule,
+  loadAlertRules,
+  toggleAlertRule,
+  updateAlertRule,
+} from "../../services/alertService";
+import type { AlertCondition, AlertMetricType, AlertRule, AlertSeverity,CreateAlertRuleInput } from "../../types/alerts";
 
 interface AlertConfigModalProps {
   isOpen: boolean;

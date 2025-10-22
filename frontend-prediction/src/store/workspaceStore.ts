@@ -1,9 +1,8 @@
 import type { FeatureWeightsProfile, PredictionResponse } from "@app-types/routing";
+import type { WorkspaceSettingsPayload, WorkspaceSettingsResponse } from "@lib/apiClient";
 import { create } from "zustand";
 
-// import { saveWorkspaceSettings, type WorkspaceSettingsPayload, type WorkspaceSettingsResponse } from "@lib/apiClient";
-type WorkspaceSettingsPayload = any;
-type WorkspaceSettingsResponse = any;
+// import { saveWorkspaceSettings } from "@lib/apiClient";
 
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,

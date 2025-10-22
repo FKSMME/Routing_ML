@@ -1,4 +1,4 @@
-import { CheckCircle2, Save, RotateCcw } from "lucide-react";
+import { CheckCircle2, RotateCcw,Save } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface IterTrainingConfig {

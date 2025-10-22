@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { RefreshCw, Copy, Check } from "lucide-react";
 import { fetchPrometheusMetrics } from "@lib/apiClient";
+import { Check,Copy, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function PrometheusPanel() {
   const [metrics, setMetrics] = useState<string>("");

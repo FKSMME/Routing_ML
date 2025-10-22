@@ -1,9 +1,8 @@
+import { LiquidEther } from "@routing-ml/shared";
+import { useBackgroundSettings } from "@store/backgroundSettings";
 import type { CSSProperties } from "react";
 
-import { LiquidEther } from "@routing-ml/shared";
-
 import ErrorBoundary from "./ErrorBoundary";
-import { useBackgroundSettings } from "@store/backgroundSettings";
 
 type LiquidEtherBackgroundVariant = "fixed" | "absolute";
 

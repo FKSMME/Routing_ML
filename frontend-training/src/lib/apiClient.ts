@@ -8,6 +8,8 @@ import type {
   TensorboardPointResponse,
   TensorboardProjectorSummary,
   TensorboardConfig,
+  TensorboardTsneResponse,
+  TensorboardTsneRequestOptions,
 } from "@app-types/tensorboard";
 import axios from "axios";
 
@@ -95,6 +97,26 @@ const mapMetricSeries = (series: Record<string, any>): TensorboardMetricSeries =
         step: point.step ?? 0,
         value: point.value ?? 0,
         timestamp: point.timestamp ?? null,
+      }))
+    : [],
+});
+
+const mapTsneResponse = (payload: Record<string, any>): TensorboardTsneResponse => ({
+  projectorId: payload.projector_id ?? payload.projectorId ?? "",
+  total: payload.total ?? 0,
+  sampled: payload.sampled ?? (Array.isArray(payload.points) ? payload.points.length : 0),
+  requestedPerplexity: payload.requested_perplexity ?? payload.requestedPerplexity ?? 0,
+  effectivePerplexity: payload.effective_perplexity ?? payload.effectivePerplexity ?? 0,
+  iterations: payload.iterations ?? 0,
+  usedPcaFallback: Boolean(payload.used_pca_fallback ?? payload.usedPcaFallback ?? false),
+  points: Array.isArray(payload.points)
+    ? payload.points.map((point: Record<string, any>) => ({
+        id: point.id ?? "",
+        x: point.x ?? 0,
+        y: point.y ?? 0,
+        progress: point.progress ?? 0,
+        step: point.step ?? 0,
+        metadata: point.metadata ?? {},
       }))
     : [],
 });
@@ -661,6 +683,37 @@ export async function fetchTensorboardProjectorPoints(
 export async function fetchTensorboardMetrics(runId: string): Promise<TensorboardMetricSeries[]> {
   const response = await api.get<Array<Record<string, any>>>(`/training/tensorboard/metrics/${encodeURIComponent(runId)}`);
   return response.data.map(mapMetricSeries);
+}
+
+export async function fetchTensorboardTsne(
+  projectorId: string,
+  options: TensorboardTsneRequestOptions = {}
+): Promise<TensorboardTsneResponse> {
+  const params: Record<string, any> = {};
+  if (typeof options.limit === "number") {
+    params.limit = options.limit;
+  }
+  if (typeof options.perplexity === "number") {
+    params.perplexity = options.perplexity;
+  }
+  if (typeof options.iterations === "number") {
+    params.iterations = options.iterations;
+  }
+  if (typeof options.steps === "number") {
+    params.steps = options.steps;
+  }
+  if (typeof options.stride === "number") {
+    params.stride = options.stride;
+  }
+  if (options.filters && Object.keys(options.filters).length > 0) {
+    params.filters = JSON.stringify(options.filters);
+  }
+
+  const response = await api.get<Record<string, any>>(
+    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/tsne`,
+    { params }
+  );
+  return mapTsneResponse(response.data);
 }
 
 export async function exportTensorboardProjector(

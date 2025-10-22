@@ -1,19 +1,26 @@
-import { useEffect, useState } from "react";
-import { RefreshCw, ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import {
+  type DataQualityIssue,
+  type DataQualityReport,
   fetchDataQualityReport,
   fetchHistoricalIssues,
-  type DataQualityReport,
-  type DataQualityIssue,
   type HistoricalIssuesDataPoint
 } from "@lib/apiClient";
+import { BarChart3,ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+
+import { exportIssuesToCSV, exportIssuesToPDF } from "../../services/exportService";
+import { ExportButton, type ExportFormat } from "./ExportButton";
+import { HistoricalIssuesChart } from "./HistoricalIssuesChart";
 import { IssueBadge, type IssueSeverity } from "./IssueBadge";
 import { IssueFilter } from "./IssueFilter";
-import { ExportButton, type ExportFormat } from "./ExportButton";
-import { TimeRangeSelector, type TimeRange, type DateRange, getDateRangeFromSelection } from "./TimeRangeSelector";
-import { HistoricalIssuesChart } from "./HistoricalIssuesChart";
-import { exportIssuesToCSV, exportIssuesToPDF } from "../../services/exportService";
-import toast, { Toaster } from "react-hot-toast";
+import { type DateRange, getDateRangeFromSelection,type TimeRange, TimeRangeSelector } from "./TimeRangeSelector";
+
+const SEVERITY_ORDER: Record<IssueSeverity, number> = {
+  critical: 3,
+  warning: 2,
+  info: 1,
+};
 
 type SortField = "timestamp" | "severity" | "type" | "affectedRecords";
 type SortOrder = "asc" | "desc";
@@ -178,8 +185,7 @@ export function IssuesPanel() {
           comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
           break;
         case "severity":
-          const severityOrder = { critical: 3, warning: 2, info: 1 };
-          comparison = severityOrder[a.severity] - severityOrder[b.severity];
+          comparison = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
           break;
         case "type":
           comparison = a.type.localeCompare(b.type);
