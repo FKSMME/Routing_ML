@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AlgorithmWorkspace } from "@components/workspaces/AlgorithmWorkspace";
+import { AlgorithmWorkspace } from "@routing-ml/shared/components/workspaces/AlgorithmWorkspace";
 import {
   fetchWorkflowConfig,
   patchWorkflowConfig,

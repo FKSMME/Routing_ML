@@ -5,6 +5,7 @@ import { useCallback,useMemo } from "react";
 import { AnimatedCard } from "./AnimatedCard";
 import { RecommendationsTab } from "./routing/RecommendationsTab";
 import { exportAllItemsToCSV } from "@lib/csvExporter";
+import { flushRoutingPersistence } from "@lib/persistence/indexedDbPersistence";
 
 export function TimelinePanel() {
   const timeline = useRoutingStore((state) => state.timeline);
@@ -19,27 +20,36 @@ export function TimelinePanel() {
   const futureCount = useRoutingStore((state) => state.history.future.length);
   const undo = useRoutingStore((state) => state.undo);
   const redo = useRoutingStore((state) => state.redo);
+  const setLastSavedAt = useRoutingStore((state) => state.setLastSavedAt);
 
   const canUndo = historyCount > 0;
   const canRedo = futureCount > 0;
   const totalDuration = useMemo(() => timeline.reduce((acc, step) => acc + (step.runTime ?? 0), 0), [timeline]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     // Save routing configuration to localStorage
     try {
+      const timestamp = new Date().toISOString();
       const saveData = {
         productId: activeProductId,
         timeline: timeline,
-        savedAt: new Date().toISOString(),
+        savedAt: timestamp,
       };
       localStorage.setItem(`routing_timeline_${activeProductId}`, JSON.stringify(saveData));
       console.log("Routing configuration saved:", saveData);
+
+      // Update routingStore with save timestamp
+      setLastSavedAt(timestamp);
+
+      // Flush routing persistence to sync with backend (if enabled)
+      await flushRoutingPersistence("manual");
+
       alert("라우팅 구성이 저장되었습니다.");
     } catch (error) {
       console.error("Failed to save routing:", error);
       alert("저장에 실패했습니다.");
     }
-  }, [timeline, activeProductId]);
+  }, [timeline, activeProductId, setLastSavedAt]);
 
   const handleExportCSV = useCallback(() => {
     // Export all product tabs to CSV
