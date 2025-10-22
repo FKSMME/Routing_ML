@@ -18,7 +18,7 @@ import {
   readLatestRoutingWorkspaceSnapshot,
   subscribeToRoutingPersistenceFlush,
   writeRoutingWorkspaceSnapshot,
-} from "../lib/persistence";
+} from "@routing-ml/shared/lib/persistence";
 
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;

@@ -5,7 +5,7 @@ import { useCallback,useMemo } from "react";
 import { AnimatedCard } from "./AnimatedCard";
 import { RecommendationsTab } from "./routing/RecommendationsTab";
 import { exportAllItemsToCSV } from "@lib/csvExporter";
-import { flushRoutingPersistence } from "@lib/persistence/indexedDbPersistence";
+import { flushRoutingPersistence } from "@routing-ml/shared/lib/persistence/indexedDbPersistence";
 
 export function TimelinePanel() {
   const timeline = useRoutingStore((state) => state.timeline);

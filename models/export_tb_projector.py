@@ -4,7 +4,7 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Tuple, List, Optional, Dict, Any
+from typing import Tuple, List, Optional, Dict, Any, Iterable
 
 # backend 경로 (joblib 역직렬화용)
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -348,6 +348,59 @@ def export_tensorboard_projector(
 
     print(f"[OK] Projector export complete: {out_dir}")
 
+
+def export_for_tensorboard_projector(
+    *,
+    vectors: np.ndarray,
+    item_codes: Iterable[str],
+    log_dir: str,
+    metadata_df: Optional[pd.DataFrame] = None,
+    metadata_cols: Optional[List[str]] = None,
+) -> Path:
+    """Compatibility wrapper used by training pipeline to export projector assets."""
+    labels = list(item_codes)
+    if len(labels) == 0:
+        raise ValueError("item_codes must contain at least one entry.")
+
+    if vectors.shape[0] != len(labels):
+        raise ValueError(f"Vector count ({vectors.shape[0]}) does not match item_codes count ({len(labels)}).")
+
+    out_dir = Path(log_dir).expanduser().resolve()
+
+    prepared_metadata: Optional[pd.DataFrame] = None
+    if metadata_df is not None:
+        df_meta = metadata_df.copy()
+        df_meta = standardize_alias_columns(df_meta)
+        df_meta = ensure_part_type(df_meta)
+        df_meta = apply_color_by_features(df_meta, COLOR_BY_FEATURES)
+        extra_color_cols = [c for c in COLOR_BY_FEATURES.keys() if c != "ITEM_CD"]
+
+        if ADD_COLOR_KEY:
+            df_meta = add_color_key_column(df_meta, COLOR_FIELDS, new_col="COLOR_KEY")
+            if "COLOR_KEY" not in extra_color_cols:
+                extra_color_cols.append("COLOR_KEY")
+
+        requested_cols = metadata_cols or KEEP_COLS
+        if "ITEM_CD" not in requested_cols:
+            requested_cols = ["ITEM_CD"] + [col for col in requested_cols if col != "ITEM_CD"]
+
+        prepared_metadata = align_metadata_to_labels(
+            df_meta,
+            labels,
+            requested_cols,
+            extra_cols=extra_color_cols,
+        )
+
+    export_tensorboard_projector(
+        np.asarray(vectors, dtype=np.float32, copy=False),
+        labels,
+        out_dir,
+        metadata_df=prepared_metadata,
+    )
+    verify_export(out_dir)
+    return out_dir
+
+
 def verify_export(out_dir: Path):
     required_files = ["metadata.tsv", "projector_config.pbtxt"]
     checkpoint_files = list(out_dir.glob("model.ckpt*"))
@@ -444,4 +497,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

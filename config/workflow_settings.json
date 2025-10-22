@@ -1087,7 +1087,7 @@
     "compress_on_save": true
   },
   "visualization": {
-    "tensorboard_projector_dir": "logs/tensorboard",
+    "tensorboard_projector_dir": "models/default/tb_projector",
     "projector_enabled": true,
     "projector_metadata_columns": [
       "ITEM_CD",

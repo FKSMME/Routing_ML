@@ -23,6 +23,7 @@ import ReactFlow, {
   ReactFlowProvider,
 } from "reactflow";
 import { regenerateWorkflowCode } from "@lib/apiClient";
+import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 
 const NODE_TYPES = {
   module: ModuleNode,
@@ -98,12 +99,6 @@ interface ColumnAliasRow {
 interface TrainingMappingRow {
   feature: string;
   column: string;
-}
-
-interface TensorBoardLink {
-  label: string;
-  href: string;
-  description?: string;
 }
 
 type ToastKind = "success" | "error";

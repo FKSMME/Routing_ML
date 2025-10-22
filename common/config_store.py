@@ -556,7 +556,7 @@ class ExportFormatConfig:
 class VisualizationConfig:
     """TensorBoard/Neo4j 시각화 설정."""
 
-    tensorboard_projector_dir: str = "logs/tensorboard"
+    tensorboard_projector_dir: str = "models/default/tb_projector"
     projector_enabled: bool = True
     projector_metadata_columns: List[str] = field(
         default_factory=lambda: ["ITEM_CD", "ITEM_NM", "GROUP1", "ITEM_TYPE"]
