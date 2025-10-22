@@ -110,19 +110,19 @@ def stratified_sample(
 
     logger.info(f"Starting stratified sampling: n={n}, strata={strata_column}, seed={seed}")
 
-    session_gen = get_session()
-    session = next(session_gen)
-    try:
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+
         # Get stratum counts
-        query_strata = text(f"""
+        query_strata = f"""
         SELECT {strata_column}, COUNT(*) as count
         FROM {table_name}
         WHERE {strata_column} IS NOT NULL
         GROUP BY {strata_column}
         ORDER BY count DESC
-        """)
-        result = session.execute(query_strata)
-        strata_counts = {row[0]: row[1] for row in result.fetchall()}
+        """
+        cursor.execute(query_strata)
+        strata_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
         total = sum(strata_counts.values())
         if n > total:
@@ -146,26 +146,22 @@ def stratified_sample(
         all_items = []
         for stratum, stratum_n in stratum_samples.items():
             if seed is not None:
-                seed_value = (seed % 10000) / 10000.0
-                query = text(f"""
-                SELECT SETSEED({seed_value});
-                SELECT "ITEM_CD"
+                query = f"""
+                SELECT TOP {stratum_n} ITEM_CD
                 FROM {table_name}
-                WHERE "{strata_column}" = '{stratum}'
-                ORDER BY RANDOM()
-                LIMIT {stratum_n}
-                """)
+                WHERE {strata_column} = ?
+                ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
+                """
             else:
-                query = text(f"""
-                SELECT "ITEM_CD"
+                query = f"""
+                SELECT TOP {stratum_n} ITEM_CD
                 FROM {table_name}
-                WHERE "{strata_column}" = '{stratum}'
-                ORDER BY RANDOM()
-                LIMIT {stratum_n}
-                """)
+                WHERE {strata_column} = ?
+                ORDER BY NEWID()
+                """
 
-            result = session.execute(query)
-            stratum_items = [row[0] for row in result.fetchall()]
+            cursor.execute(query, stratum)
+            stratum_items = [row[0] for row in cursor.fetchall()]
             all_items.extend(stratum_items)
 
         logger.info(f"Stratified sampling complete: sampled {len(all_items)} items from {len(strata_counts)} strata")
@@ -183,9 +179,6 @@ def stratified_sample(
                 "seed": seed,
             },
         )
-
-    finally:
-        session.close()
 
 
 def recent_bias_sample(
@@ -218,9 +211,9 @@ def recent_bias_sample(
 
     logger.info(f"Starting recent-bias sampling: n={n}, days={days_window}, seed={seed}")
 
-    session_gen = get_session()
-    session = next(session_gen)
-    try:
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+
         cutoff_date = datetime.utcnow() - timedelta(days=days_window)
 
         # Query with weighted sampling (50% from recent, 50% from all)
@@ -229,69 +222,62 @@ def recent_bias_sample(
 
         # Sample recent items
         if seed is not None:
-            seed_value = (seed % 10000) / 10000.0
-            query_recent = text(f"""
-            SELECT SETSEED({seed_value});
-            SELECT "ITEM_CD"
+            query_recent = f"""
+            SELECT TOP {recent_n} ITEM_CD
             FROM {table_name}
-            WHERE "{date_column}" >= '{cutoff_date.strftime('%Y-%m-%d')}'
-            ORDER BY RANDOM()
-            LIMIT {recent_n}
-            """)
+            WHERE {date_column} >= ?
+            ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
+            """
         else:
-            query_recent = text(f"""
-            SELECT "ITEM_CD"
+            query_recent = f"""
+            SELECT TOP {recent_n} ITEM_CD
             FROM {table_name}
-            WHERE "{date_column}" >= '{cutoff_date.strftime('%Y-%m-%d')}'
-            ORDER BY RANDOM()
-            LIMIT {recent_n}
-            """)
+            WHERE {date_column} >= ?
+            ORDER BY NEWID()
+            """
 
-        result = session.execute(query_recent)
-        recent_items = [row[0] for row in result.fetchall()]
+        cursor.execute(query_recent, cutoff_date.strftime('%Y-%m-%d'))
+        recent_items = [row[0] for row in cursor.fetchall()]
 
         # Sample random items (excluding already sampled recent items)
         if len(recent_items) > 0:
-            excluded_list = "', '".join(recent_items)
-            exclusion_clause = f"AND ITEM_CD NOT IN ('{excluded_list}')"
+            placeholders = ','.join(['?' for _ in recent_items])
+            exclusion_clause = f"AND ITEM_CD NOT IN ({placeholders})"
         else:
             exclusion_clause = ""
+            recent_items = []
 
         if seed is not None:
-            seed_value = (seed % 10000) / 10000.0
-            # Convert exclusion_clause to PostgreSQL format
-            pg_exclusion = exclusion_clause.replace("ITEM_CD", '"ITEM_CD"') if exclusion_clause else ""
-            query_random = text(f"""
-            SELECT SETSEED({seed_value});
-            SELECT "ITEM_CD"
+            query_random = f"""
+            SELECT TOP {random_n} ITEM_CD
             FROM {table_name}
-            WHERE 1=1 {pg_exclusion}
-            ORDER BY RANDOM()
-            LIMIT {random_n}
-            """)
+            WHERE 1=1 {exclusion_clause}
+            ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
+            """
         else:
-            pg_exclusion = exclusion_clause.replace("ITEM_CD", '"ITEM_CD"') if exclusion_clause else ""
-            query_random = text(f"""
-            SELECT "ITEM_CD"
+            query_random = f"""
+            SELECT TOP {random_n} ITEM_CD
             FROM {table_name}
-            WHERE 1=1 {pg_exclusion}
-            ORDER BY RANDOM()
-            LIMIT {random_n}
-            """)
+            WHERE 1=1 {exclusion_clause}
+            ORDER BY NEWID()
+            """
 
-        result = session.execute(query_random)
-        random_items = [row[0] for row in result.fetchall()]
+        if recent_items:
+            cursor.execute(query_random, *recent_items)
+        else:
+            cursor.execute(query_random)
+        random_items = [row[0] for row in cursor.fetchall()]
 
         all_items = recent_items + random_items
 
         # Get total and recent counts for metadata
-        query_total = text(f"SELECT COUNT(*) FROM {table_name}")
-        result_total = session.execute(query_total)
-        total = result_total.fetchone()[0]
+        query_total = f"SELECT COUNT(*) FROM {table_name}"
+        cursor.execute(query_total)
+        total = cursor.fetchone()[0]
 
-        query_recent_count = text(f"SELECT COUNT(*) FROM {table_name} WHERE {date_column} >= '{cutoff_date.strftime('%Y-%m-%d')}'")
-        result_recent = session.execute(query_recent_count)
-        recent_count = result_recent.fetchone()[0]
+        query_recent_count = f"SELECT COUNT(*) FROM {table_name} WHERE {date_column} >= ?"
+        cursor.execute(query_recent_count, cutoff_date.strftime('%Y-%m-%d'))
+        recent_count = cursor.fetchone()[0]
 
         logger.info(f"Recent-bias sampling complete: {len(recent_items)} recent + {len(random_items)} random = {len(all_items)} total")
 
@@ -310,9 +296,6 @@ def recent_bias_sample(
                 "seed": seed,
             },
         )
-
-    finally:
-        session.close()
 
 
 def sample_items(

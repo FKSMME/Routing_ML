@@ -15,9 +15,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from sqlalchemy import text
 
-from backend.database import get_session, VIEW_WORK_RESULT
+from backend.database import _connection_pool, VIEW_WORK_RESULT
 from backend.predictor_ml import predict_items_with_ml_optimized
 from backend.iter_training.models import (
     AlertItem,
@@ -163,7 +162,11 @@ class QualityEvaluator:
         # Generate new predictions
         if uncached_items:
             try:
-                routing_df, candidates_df = predict_items_with_ml_optimized(uncached_items)
+                # Use default model directory (models/routing_rf_v1.pkl)
+                routing_df, candidates_df = predict_items_with_ml_optimized(
+                    uncached_items,
+                    model_dir="models"
+                )
 
                 # Parse predictions into structured format
                 for item_cd in uncached_items:
@@ -198,11 +201,11 @@ class QualityEvaluator:
         Returns:
             List of evaluation results with actual vs predicted comparisons
         """
-        session_gen = get_session()
-        session = next(session_gen)
         evaluation_results = []
 
-        try:
+        with _connection_pool.get_connection() as conn:
+            cursor = conn.cursor()
+
             for item_cd, prediction in predictions.items():
                 if "error" in prediction:
                     # Skip items with prediction errors
@@ -213,26 +216,26 @@ class QualityEvaluator:
                     })
                     continue
 
-                # Query actual work order results
-                query = text(f"""
+                # Query actual work order results (SQL Server syntax)
+                query = f"""
                     SELECT
-                        "ITEM_CD",
-                        "PROC_SEQ",
-                        "PROC_CD",
-                        AVG("ACT_SETUP_TIME") as avg_setup,
-                        AVG("ACT_RUN_TIME") as avg_run,
-                        AVG("ACT_WAIT_TIME") as avg_wait,
+                        ITEM_CD,
+                        PROC_SEQ,
+                        PROC_CD,
+                        AVG(ACT_SETUP_TIME) as avg_setup,
+                        AVG(ACT_RUN_TIME) as avg_run,
+                        AVG(ACT_WAIT_TIME) as avg_wait,
                         COUNT(*) as sample_count,
-                        STDDEV("ACT_RUN_TIME") as stddev_run
+                        STDEV(ACT_RUN_TIME) as stddev_run
                     FROM {VIEW_WORK_RESULT}
-                    WHERE "ITEM_CD" = :item_cd
-                      AND "ACT_RUN_TIME" IS NOT NULL
-                    GROUP BY "ITEM_CD", "PROC_SEQ", "PROC_CD"
-                    ORDER BY "PROC_SEQ"
-                """)
+                    WHERE ITEM_CD = ?
+                      AND ACT_RUN_TIME IS NOT NULL
+                    GROUP BY ITEM_CD, PROC_SEQ, PROC_CD
+                    ORDER BY PROC_SEQ
+                """
 
-                result = session.execute(query, {"item_cd": item_cd})
-                actual_processes = result.fetchall()
+                cursor.execute(query, item_cd)
+                actual_processes = cursor.fetchall()
 
                 if not actual_processes:
                     # No actual data for this item
@@ -285,9 +288,6 @@ class QualityEvaluator:
                     "actual_process_count": len(actual_processes),
                     "predicted_process_count": len(predicted_routing),
                 })
-
-        finally:
-            session.close()
 
         return evaluation_results
 
