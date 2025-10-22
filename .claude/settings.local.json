@@ -57,7 +57,10 @@
       "Bash(npm run dev:*)",
       "Bash(npx eslint:*)",
       "Bash(if not exist \"docs\\implementation\" mkdir docsimplementation)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(timeout 15 ..venvScriptspython.exe:*)",
+      "Bash(move distRoutingMLMonitor_v5.6.0.exe .)",
+      "Bash(./RoutingMLMonitor_v5.6.0.exe:*)"
     ],
     "deny": [],
     "ask": []
