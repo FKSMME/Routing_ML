@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 0 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 1 | Completed 0 | Blockers 0
 
 # Routing ML 설치 검증 보고서 (2025-09-27)
 
@@ -29,7 +29,7 @@
 | 워크플로우 GET (`/api/workflow/graph`) | ✅ `last_saved` 값 확인 가능 | GET 호출에서 `last_saved` 타임스탬프 반환.【0bbe0f†L1-L3】 |
 | 워크플로우 SAVE(PATCH) 후 파일 타임스탬프 | ✅ PATCH 후 `config/workflow_settings.json`에 ISO 타임스탬프 반영 | PATCH 응답과 파일 조회에서 `2025-09-27T01:08:10.442335` 확인.【3cae27†L1-L3】【7080ae†L1-L2】 |
 | `/api/predict` 샘플 호출 | ⚠️ 재검증 대기. 이번 학습 실행으로 `models/default/similarity_engine.joblib`이 생성되었으므로 다음 배포 점검 시 API를 재실행해야 함 | 학습 CLI 로그와 산출물 목록에서 모델 파일 존재 확인.【45e496†L1-L38】【53770f†L1-L5】 |
-| TensorBoard Projector 파일 확인 (`models/tb_projector/`) | ✅ `models/default/tb_projector/`에 `vectors.tsv`, `metadata.tsv`, `projector_config.json` 생성 | CLI가 TensorFlow 미설치 환경에서 TSV 폴백을 생성했다는 로그와 디렉터리 목록 확인.【45e496†L29-L36】【de76d1†L1-L2】 |
+| TensorBoard Projector 파일 확인 (`models/default/tb_projector/`) | ✅ `models/default/tb_projector/`에 `vectors.tsv`, `metadata.tsv`, `projector_config.json` 생성 | CLI가 TensorFlow 미설치 환경에서 TSV 폴백을 생성했다는 로그와 디렉터리 목록 확인.【45e496†L29-L36】【de76d1†L1-L2】 |
 
 ### 인증 & SAVE 검증 세부 기록
 - 폴백 계정(`tester`)으로 로그인하여 토큰 발급: `/api/auth/login` 호출 성공 후 토큰 획득.【518d0a†L1-L5】

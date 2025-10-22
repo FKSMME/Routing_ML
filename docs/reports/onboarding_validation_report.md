@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
 
 # Onboarding Validation Report
 
@@ -30,4 +30,4 @@
 
 ## 2025-09-29 Validation Notes
 - FastAPI 백엔드를 데모 모드로 구동하고 `/api/predict` 요청에 대해 정상 응답(HTTP 200)과 후보 데이터를 확인했습니다.【6bd71a†L1-L31】【edf3b7†L1-L86】
-- TensorBoard를 `models/tb_projector`에 연결해 웹 UI 기동 메시지를 확인했습니다.【1a3d70†L1-L8】
+- TensorBoard를 `models/default/tb_projector`에 연결해 웹 UI 기동 메시지를 확인했습니다.【1a3d70†L1-L8】

@@ -80,7 +80,7 @@ beforeEach(() => {
     progress: 25,
     message: null,
     version_path: null,
-    metrics: { tensorboard_url: "http://localhost:6006/" },
+    metrics: { tensorboard_url: "https://tensorboard.example/" },
     latest_version: null,
   });
 
@@ -88,7 +88,7 @@ beforeEach(() => {
     cards: [
       { id: "rmse", title: "RMSE", value: 0.42, subtitle: "↓ vs. baseline" },
     ],
-    tensorboard_url: "http://localhost:6006/",
+    tensorboard_url: "https://tensorboard.example/",
     metric_trend_label: "RMSE",
     metric_trend: [
       { timestamp: "2024-01-01T00:00:00Z", value: 0.5 },
@@ -140,7 +140,7 @@ describe("TrainingStatusWorkspace", () => {
     renderWorkspace();
 
     const iframe = await screen.findByTitle("TensorBoard dashboard");
-    expect(iframe.getAttribute("src")).toBe("http://localhost:6006/");
+    expect(iframe.getAttribute("src")).toBe("https://tensorboard.example/");
 
     const charts = await screen.findAllByTestId("echarts-mock");
     const seriesTypes = charts.map((node) => node.getAttribute("data-series-type"));

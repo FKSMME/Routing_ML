@@ -10,6 +10,7 @@ import type {
 import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import { regenerateWorkflowCode } from "@lib/apiClient";
+import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 import { cn } from "@lib/classNames";
 import { ExternalLink } from "lucide-react";
 import {
@@ -131,12 +132,6 @@ interface ColumnAliasRow {
 interface TrainingMappingRow {
   feature: string;
   column: string;
-}
-
-interface TensorBoardLink {
-  label: string;
-  href: string;
-  description?: string;
 }
 
 type ToastKind = "success" | "error";
@@ -372,7 +367,7 @@ interface NodeSettingsDialogProps {
   onClose: () => void;
   onSave: () => Promise<void>;
   saving: boolean;
-  tensorboardLinks: TensorBoardLink[];
+  tensorboardLinks: TensorboardLinkItem[];
 }
 
 function NodeSettingsDialog({
@@ -1129,66 +1124,10 @@ export function WorkflowGraphPanel() {
     setToast({ ...message, id: Date.now() });
   }, []);
 
-  const tensorboardLinks = useMemo(() => {
-    const projectorDir = data?.visualization?.tensorboard_projector_dir;
-    if (typeof projectorDir !== "string") {
-      return [];
-    }
-    const trimmed = projectorDir.trim();
-    if (trimmed.length === 0) {
-      return [];
-    }
-    const normalized = trimmed.replace(/\\/g, "/");
-    const sanitized = normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
-    const links: TensorBoardLink[] = [];
-
-    if (sanitized.startsWith("http://") || sanitized.startsWith("https://")) {
-      links.push({
-        label: "TensorBoard Projector",
-        href: sanitized,
-        description: "TensorBoard 웹 뷰어",
-      });
-      links.push({
-        label: "Projector Config (JSON)",
-        href: `${sanitized}/data/plugin/projector/projector_config.json`,
-        description: "projector_config.json",
-      });
-      links.push({
-        label: "vectors.tsv",
-        href: `${sanitized}/data/plugin/projector/vectors.tsv`,
-        description: "vectors.tsv",
-      });
-      links.push({
-        label: "metadata.tsv",
-        href: `${sanitized}/data/plugin/projector/metadata.tsv`,
-        description: "metadata.tsv",
-      });
-    } else {
-      links.push({
-        label: "Projector 디렉터리",
-        href: sanitized,
-        description: "tensorboard_projector_dir",
-      });
-      const base = sanitized;
-      links.push({
-        label: "projector_config.json",
-        href: `${base}/projector_config.json`,
-        description: "TensorBoard Projector 구성 파일",
-      });
-      links.push({
-        label: "vectors.tsv",
-        href: `${base}/vectors.tsv`,
-        description: "임베딩 벡터",
-      });
-      links.push({
-        label: "metadata.tsv",
-        href: `${base}/metadata.tsv`,
-        description: "메타데이터 파일",
-      });
-    }
-
-    return links;
-  }, [data?.visualization?.tensorboard_projector_dir]);
+  const tensorboardLinks = useMemo<TensorboardLinkItem[]>(
+    () => buildTensorboardLinks(data?.visualization?.tensorboard_projector_dir ?? null),
+    [data?.visualization?.tensorboard_projector_dir],
+  );
 
   const handleNodeDoubleClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {

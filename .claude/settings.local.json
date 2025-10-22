@@ -42,7 +42,15 @@
       "Bash(git reset:*)",
       "Bash(find:*)",
       "Bash(md5sum:*)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(while [ ! -f \"dist/RoutingMLMonitor_v5.5.0.exe\" ])",
+      "Bash(do sleep 5)",
+      "Bash(done)",
+      "Bash(move distRoutingMLMonitor_v5.5.0.exe .)",
+      "Bash(if [ ! -d \"old\" ])",
+      "Bash(then mkdir old)",
+      "Bash(fi)",
+      "Bash(./RoutingMLMonitor_v5.5.0.exe)"
     ],
     "deny": [],
     "ask": []

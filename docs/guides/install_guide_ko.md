@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 5 | Completed 11 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 5 | Completed 11 | Blockers 0
 
 
 # 절대 지령
@@ -115,7 +115,7 @@
 2025-09-30 컨테이너 환경에서 VPN 미연결로 `curl` 호출이 실패했으며, 결과는 `deliverables/onboarding_evidence/vpn_session_20250930.log`에 정리되어 있다.
 - [x] 워크플로우 UI에서 **SAVE** 버튼을 눌러보고 설정 파일의 수정 시간이 바뀌는지 확인한다.
 - [x] 샘플 품목으로 `/api/predict`를 호출해 3~4개의 라우팅 제안이 나오는지 확인한다.
-- [x] `models/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
+- [x] `models/default/tb_projector/` 폴더에 TensorBoard 파일(`projector_config.json` 등)이 있는지 확인한다.
 > ✅ 2025-10-01 기준: 프런트엔드 `npm run build`가 TypeScript 오류 없이 완료되어 재빌드 보류 상태가 해제되었습니다. 최신 빌드 결과는 [`logs/qa/frontend_build_20251001.log`](../logs/qa/frontend_build_20251001.log)을 참조하세요.
 
 ```
@@ -189,7 +189,7 @@ dist/assets/index-D_vEkLqm.js   1,589.25 kB │ gzip: 518.54 kB
 2. `http://10.204.2.28:8000/api/workflow/graph` GET → 설정 템플릿 응답 확인.
 3. 워크플로우 UI에서 SAVE → `config/workflow_settings.json` 타임스탬프 업데이트 확인.
 4. `/api/predict`에 샘플 품목 요청 → 3~4개의 라우팅 후보와 Trimmed-STD 적용 값이 반환되는지 확인.
-5. `models/tb_projector/` 경로에 TensorBoard 파일 존재 확인.
+5. `models/default/tb_projector/` 경로에 TensorBoard 파일 존재 확인.
 
 ### 5-1. 2025-09-30 검증 메모
 - 프런트엔드 빌드 오류가 해결될 때까지 Inno Setup 패키지와 PowerShell 후속 검증은 보류한다. 해결 후 `docs/install_verification_20250927.md`에 성공 로그를 추가할 것.

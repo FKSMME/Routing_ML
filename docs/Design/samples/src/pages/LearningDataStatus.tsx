@@ -85,7 +85,7 @@ export const LearningDataStatus: React.FC = () => {
 
   const openTensorboard = () => {
     // In real implementation, this would open Tensorboard
-    window.open('http://localhost:6006', '_blank');
+    window.open('https://tensorboard.example', '_blank');
     toast({
       title: "Tensorboard 연결",
       description: "Tensorboard가 새 탭에서 열립니다.",
