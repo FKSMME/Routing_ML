@@ -15,7 +15,7 @@
 - [x] Extend tensorboard types and API client to include T-SNE DTOs _(0.5h)_ — depends on backend schema
 - [x] Augment Zustand store with T-SNE state, settings, and fetch workflow _(1.0h)_
 - [x] Add T-SNE visualization tab with controls, chart, and summaries _(2.0h)_ — depends on store updates
-- [ ] Write UI regression tests for new mode toggles and loading states _(1.0h)_ — depends on UI implementation  
+- [x] Write UI regression tests for new mode toggles and loading states _(1.0h)_ — depends on UI implementation  
 **Acceptance criteria**: Users can toggle to T-SNE mode, adjust controls, and see chart refresh with no console errors.
 
 ## Phase 4 – Validation & Documentation
@@ -27,7 +27,7 @@
 ## Progress Tracking
 Phase 1: [██████████] 100% (3/3 tasks)  
 Phase 2: [██████████] 100% (5/5 tasks)  
-Phase 3: [███████░░░] 75% (3/4 tasks)  
+Phase 3: [██████████] 100% (4/4 tasks)  
 Phase 4: [██████████] 100% (3/3 tasks)
 
-Total: [██████████] 93% (14/15 tasks)
+Total: [██████████] 100% (15/15 tasks)
