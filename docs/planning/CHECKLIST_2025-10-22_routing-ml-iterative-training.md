@@ -15,9 +15,11 @@
 **Phase 1**: [▓▓▓▓▓] 100% (8/8 subsections) - 18 hours ✅
 **Phase 2**: [▓▓▓▓▓] 100% (6/6 subsections) - 28/28 hours ✅
 **Phase 3**: [▓▓▓▓▓▓] 100% (6/6 subsections) - 26/26 hours ✅
-**Phase 4**: [░░░░░] 0% (0/9 tasks) - 12 hours
+**Phase 4**: [▓░░░░] 20% (1/5 subsections) - 4/12 hours
+**Phase 5**: [▓▓▓▓░] 80% (4/5 subsections) - Implementation Complete | Deployment Pending ✅
 
-**Total**: [▓▓▓▓▓▓▓▓░░] 70% (24/54 tasks, 74/86 hours)
+**Total (Iterative Training)**: [▓▓▓▓▓▓▓▓░░] 75% (25/29 subsections, 78/86 hours)
+**Total (All Phases)**: [▓▓▓▓▓▓▓▓░░] 79% (29/34 subsections)
 
 ---
 
@@ -416,30 +418,44 @@
 - [ ] Log viewer updates every 5 seconds
 - [ ] All components responsive on mobile/tablet/desktop
 
-**Git Operations**:
-- [ ] Run monitor build validation sequence
-- [ ] Commit Phase 3
-- [ ] Push to 251014
-- [ ] Merge to main
-- [ ] Return to 251014
+**Git Operations**: ✅
+- [x] Git add -A (all changes staged)
+- [x] Git status verification (no unstaged files)
+- [x] Commit Phase 3 (ffdfb494)
+- [x] Push to 251014
+- [x] Merge to main (a8bcc910)
+- [x] Push main
+- [x] Return to 251014 ✅
 
 ---
 
 ## Phase 4: QA, Documentation & Deployment (12 hours)
 
-**Status**: Not Started
+**Status**: In Progress (20%)
 
 **Tasks**:
 
-### 4.1 Automated Testing (4 hours)
-- [ ] Write integration tests for backend (2 hours)
-  - Test: Full quality cycle (sample → predict → evaluate → metrics)
-  - Test: Retraining trigger and model deployment
-  - Test: Queue overflow handling
-- [ ] Write E2E tests for frontend (2 hours)
-  - Test: Dashboard loads and displays metrics
-  - Test: Settings save/load flow
-  - Test: Log viewer auto-refresh
+### 4.1 Automated Testing (4 hours) ✅
+- [x] Write integration tests for backend (2 hours)
+  - ✅ Test: Full quality cycle (sample → predict → evaluate → metrics)
+    - Created: `tests/backend/iter_training/test_quality_cycle_integration.py` (179 lines)
+    - 8 test methods covering full cycle, empty samples, missing predictions, metrics validation
+  - ✅ Test: Retraining trigger and model deployment
+    - Created: `tests/backend/iter_training/test_retraining_deployment.py` (238 lines)
+    - 10 test methods covering MAE triggers, cooldown, deployment, rollback, validation
+  - ✅ Test: Queue overflow handling
+    - Created: `tests/backend/iter_training/test_queue_overflow.py` (231 lines)
+    - 9 test methods covering queue limits, FIFO, recovery, corrupted files
+- [x] Write E2E tests for frontend (2 hours)
+  - ✅ Test: Dashboard loads and displays metrics
+    - Created: `tests/e2e/quality-dashboard.spec.ts` (287 lines)
+    - 8 test methods using Playwright
+  - ✅ Test: Settings save/load flow
+    - Created: `tests/e2e/iter-training-settings.spec.ts` (320 lines)
+    - 10 test methods covering validation, localStorage, reset
+  - ✅ Test: Log viewer auto-refresh
+    - Created: `tests/e2e/log-viewer-refresh.spec.ts` (381 lines)
+    - 12 test methods covering polling, pause/resume, download, auto-scroll
 
 ### 4.2 Manual QA (2 hours)
 - [ ] Test edge cases (1.5 hours)
@@ -488,6 +504,126 @@
 - [ ] Merge to main
 - [ ] Push main
 - [ ] Return to 251014
+
+---
+
+## Phase 5: Authentication State Machine & Monitoring Integration (Parallel Work)
+
+**Status**: ✅ Implementation Complete | ⏳ Deployment Pending
+**Estimated Time**: N/A (Already completed by user)
+**Purpose**: Enhance authentication flow reliability, add Prometheus metrics, and configure Grafana monitoring
+**WORKFLOW_DIRECTIVES Compliance**: Section 7.6
+
+### 5.1 Authentication State Machine Refactoring ✅
+
+**Components Modified**:
+- `frontend-prediction/src/store/authStore.ts:7-131`
+- `frontend-prediction/src/App.tsx:93-299`
+- `frontend-prediction/src/components/auth/LoginPage.tsx:14-260`
+
+**Key Changes**:
+- [x] **5.1.1** Refactored auth state machine: `unknown` → `authenticating` → `authenticated`/`guest`/`error`
+- [x] **5.1.2** Added state transitions: `beginAuthCheck()`, `setAuthError()`, `clearAuthError()`
+- [x] **5.1.3** Prevent `/api/predict` calls during `isAuthenticating` state (App.tsx:216)
+- [x] **5.1.4** Added `AuthErrorScreen` component with retry functionality for failed handshakes
+- [x] **5.1.5** Cookie expiration → immediate `guest` transition
+- [x] **5.1.6** Login flow calls `beginAuthCheck()` before authentication
+- [x] **5.1.7** Automatic button disabling during `isAuthenticating` state
+
+**Impact**: Resolved "401 on initial page load" issue by blocking queries until authentication completes.
+
+**Validation**:
+- [x] ESLint validation: `npx eslint src/App.tsx src/store/authStore.ts src/components/auth/LoginPage.tsx --max-warnings 0` → 0 errors
+
+### 5.2 Routing Store Initial State Configuration ✅
+
+**Components Modified**:
+- `frontend-prediction/src/store/routingStore.ts:1380-1428`
+- `frontend-prediction/src/components/routing/RoutingCanvas.tsx:578-604`
+- `frontend-prediction/src/store/routingStore.ts:1838-1875`
+
+**Key Changes**:
+- [x] **5.2.1** Set first tab (`tabs[0]`) as default routing on recommendations data load
+- [x] **5.2.2** Initialize timeline with first tab's data (routingStore.ts:1419-1426)
+- [x] **5.2.3** Default view set to "Recommendations" on page entry (`activeCandidateIndex` starts null → first tab selected)
+- [x] **5.2.4** Implement manual wire connection/reconnection via React Flow (`handleConnect`/`handleReconnect`)
+- [x] **5.2.5** Add keyboard shortcut (Delete) for connection removal
+- [x] **5.2.6** Tag manual connections with `metadata.createdBy="manual"`
+- [x] **5.2.7** Visual distinction between recommended and manual connections
+
+**Impact**: Improved UX with consistent default view and manual routing controls.
+
+### 5.3 Prometheus Metrics Integration ✅
+
+**Components Created/Modified**:
+- `backend/api/metrics/prometheus_auth.py:1-18` (NEW)
+- `backend/api/routes/metrics.py:12-170` (MODIFIED)
+- `requirements.txt:13` (MODIFIED)
+- `requirements_current.txt:2` (MODIFIED)
+
+**Key Changes**:
+- [x] **5.3.1** Add `prometheus-client==0.17.1` dependency
+- [x] **5.3.2** Create `routing_ml_auth_401_total` Counter for 401 errors
+- [x] **5.3.3** Create `routing_ml_auth_handshake_seconds` Histogram for `/api/auth/me` latency
+- [x] **5.3.4** Export metrics via `/metrics` endpoint (Prometheus format)
+- [x] **5.3.5** Instrument 401 responses in authentication middleware
+- [x] **5.3.6** Instrument handshake endpoint with response time tracking
+
+**Metrics Exposed**:
+- `routing_ml_auth_401_total{endpoint, method}`: Total 401 errors by endpoint
+- `routing_ml_auth_handshake_seconds_bucket`: Handshake latency histogram (p50, p95, p99)
+
+### 5.4 Grafana Dashboard & Alerting ✅
+
+**Deliverables Created**:
+- `deliverables/grafana/routing-auth-dashboard.json` (NEW)
+- `deliverables/grafana/routing-auth-alert-rule.json` (NEW)
+
+**Key Changes**:
+- [x] **5.4.1** Create Grafana dashboard for authentication monitoring
+- [x] **5.4.2** Add panels: 401 error rate, handshake latency (p50, p95, p99)
+- [x] **5.4.3** Create alert rules for high 401 rate (>10/min threshold)
+- [x] **5.4.4** Create alert rules for slow handshake (>500ms p95 threshold)
+- [x] **5.4.5** Configure datasource UID: `grafana-prometheus-datasource`
+- [x] **5.4.6** Add annotations for deployment events
+
+**Alert Conditions**:
+- **High 401 Rate**: >10 errors/min sustained for 5 minutes
+- **Slow Handshake**: p95 latency >500ms sustained for 5 minutes
+
+### 5.5 Deployment & Validation ⏳
+
+**Deployment Tasks**:
+- [ ] **5.5.1** Install `prometheus-client` on production server: `pip install -r requirements.txt`
+- [ ] **5.5.2** Restart FastAPI backend (systemd/PM2/Docker depending on environment)
+- [ ] **5.5.3** Verify `/metrics` endpoint accessibility
+- [ ] **5.5.4** Confirm `routing_ml_auth_401_total` and `routing_ml_auth_handshake_seconds_bucket` in response
+- [ ] **5.5.5** Import `routing-auth-dashboard.json` into Grafana
+- [ ] **5.5.6** Configure Prometheus datasource UID in dashboard (if different from default)
+- [ ] **5.5.7** Import `routing-auth-alert-rule.json` into Grafana Alerting
+- [ ] **5.5.8** Verify dashboard renders data correctly
+- [ ] **5.5.9** Test alert rules trigger on simulated threshold violations
+
+**Validation Commands**:
+```bash
+# Server-side validation
+curl http://localhost:PORT/metrics | grep routing_ml_auth
+
+# Browser validation
+http(s)://SERVER:PORT/metrics
+```
+
+**Notes**:
+- If Prometheus datasource UID differs from `grafana-prometheus-datasource`, edit JSON files before import
+- Ensure Prometheus scrape config includes FastAPI `/metrics` endpoint
+- Deployment can proceed independently of Iterative Training phases
+
+**Acceptance Criteria**:
+- [ ] Prometheus metrics endpoint returns expected metrics
+- [ ] Grafana dashboard displays authentication metrics
+- [ ] Alert rules trigger correctly on threshold violations
+- [ ] No authentication 401 errors on initial page load
+- [ ] Recommendations tab displayed by default
 
 ---
 
