@@ -34,6 +34,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isDraggingOverImport, setIsDraggingOverImport] = useState(false);
+  const [hasRequestedData, setHasRequestedData] = useState(false);
 
   const defaultViewName = useMemo(() => {
     if (views.length === 0) {
@@ -107,6 +108,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     setSearch("");
     setSearchDraft("");
     setCurrentPage(1);
+    setHasRequestedData(false);
   }, [selectedView]);
 
   const sampleRows = (viewSample?.data ?? []) as Array<Record<string, unknown>>;
@@ -154,6 +156,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
       const isSameKeyword = keyword === search;
       setSearch(keyword);
       setCurrentPage(1);
+      setHasRequestedData(true);
       if (isSameKeyword) {
         void refetchSample({ cancelRefetch: false });
       }
