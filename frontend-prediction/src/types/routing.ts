@@ -144,6 +144,14 @@ export interface RoutingGroupStep {
   metadata?: Record<string, unknown> | null;
 }
 
+export interface RoutingGroupConnection {
+  id: string;
+  source_node_id: string;
+  target_node_id: string;
+  created_at: string;
+  created_by: "manual";
+}
+
 export type ProcessGroupType = "machining" | "post-process";
 
 export type ProcessGroupColumnType = "string" | "number" | "boolean" | "date";
@@ -173,6 +181,7 @@ export interface RoutingGroupCreatePayload {
   steps: RoutingGroupStep[];
   erpRequired: boolean;
   metadata?: Record<string, unknown> | null;
+  connections?: RoutingGroupConnection[];
 }
 
 export interface RoutingGroupCreateResponse {
@@ -205,6 +214,7 @@ export interface RoutingGroupDetail extends RoutingGroupSummary {
   erp_required: boolean;
   metadata?: Record<string, unknown> | null;
   owner: string;
+  connections?: RoutingGroupConnection[];
 }
 
 // Data Mapping Types

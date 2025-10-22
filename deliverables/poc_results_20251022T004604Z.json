@@ -1,0 +1,32 @@
+{
+  "cycle_id": "20251022T004604Z",
+  "sample_size": 10,
+  "strategy": "random",
+  "mae": 0.0,
+  "trim_mae": 0.0,
+  "rmse": 0.0,
+  "process_match": 0.0,
+  "outsourcing_success": 0.0,
+  "cv": 0.0,
+  "sample_count": 0.0,
+  "alerts": [
+    {
+      "item_cd": "AGGREGATE",
+      "proc_cd": null,
+      "issue": "LOW_PROCESS_MATCH",
+      "value": 0.0,
+      "threshold": 0.8,
+      "message": "Process match 0.00% below threshold 80.00%",
+      "metadata": {}
+    }
+  ],
+  "timestamp": "2025-10-22T00:46:05.808200",
+  "duration_seconds": 1.5,
+  "items_evaluated": 0,
+  "items_failed": 10,
+  "metadata": {
+    "total_processes": 0,
+    "matched_processes": 0,
+    "error_count": 0
+  }
+}

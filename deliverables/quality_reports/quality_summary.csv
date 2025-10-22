@@ -1,0 +1,2 @@
+cycle_id,timestamp,strategy,sample_size,mae,trim_mae,rmse,process_match,cv,sample_count,alerts_count,items_evaluated,items_failed
+20251022T010341Z,2025-10-22T01:04:01.959001,random,5,0.00,0.00,0.00,0.0000,0.00,0.0,1,0,5

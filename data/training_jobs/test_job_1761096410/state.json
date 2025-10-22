@@ -1,0 +1,41 @@
+{
+  "job_id": "test_job_1761096410",
+  "status": "succeeded",
+  "progress": 100.0,
+  "current_step": "Training completed successfully",
+  "logs": [
+    {
+      "timestamp": "2025-10-22T10:26:51.090943",
+      "message": "Step: Loading data..."
+    },
+    {
+      "timestamp": "2025-10-22T10:26:52.093070",
+      "message": "Step: Training baseline model..."
+    },
+    {
+      "timestamp": "2025-10-22T10:26:53.096208",
+      "message": "Step: Training MLP model..."
+    },
+    {
+      "timestamp": "2025-10-22T10:26:54.103509",
+      "message": "Step: Training stacking model..."
+    },
+    {
+      "timestamp": "2025-10-22T10:26:55.106365",
+      "message": "Step: Evaluating models..."
+    },
+    {
+      "timestamp": "2025-10-22T10:26:56.108919",
+      "message": "Step: Deploying best model..."
+    }
+  ],
+  "started_at": "2025-10-22T10:26:50.803458",
+  "updated_at": "2025-10-22T10:26:57.111956",
+  "completed_at": "2025-10-22T10:26:57.111956",
+  "error_message": null,
+  "result": {
+    "best_model": "stacking",
+    "mae_improvement": 12.5,
+    "training_time": 6
+  }
+}

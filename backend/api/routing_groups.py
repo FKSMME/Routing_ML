@@ -29,6 +29,7 @@ from backend.schemas.routing_groups import (
     RoutingGroupSummary,
     RoutingGroupUpdate,
     RoutingStep,
+    RoutingConnection,
 )
 from common.logger import audit_routing_event, get_logger
 
@@ -95,6 +96,18 @@ def _serialize_steps(steps: List[RoutingStep]) -> List[Dict[str, Any]]:
     ordered = sorted(steps, key=lambda step: step.seq)
     return [step.dict() for step in ordered]
 
+def _serialize_connections(connections: List[RoutingConnection]) -> List[Dict[str, Any]]:
+    return [
+        {
+            'id': connection.id,
+            'source_node_id': connection.source_node_id,
+            'target_node_id': connection.target_node_id,
+            'created_at': connection.created_at.isoformat(),
+            'created_by': connection.created_by,
+        }
+        for connection in connections
+    ]
+
 
 def _to_response(model: RoutingGroup) -> RoutingGroupResponse:
     return RoutingGroupResponse(
@@ -108,6 +121,7 @@ def _to_response(model: RoutingGroup) -> RoutingGroupResponse:
 
 def _to_detail(model: RoutingGroup) -> RoutingGroupDetail:
     step_payload = [RoutingStep(**step) for step in model.steps or []]
+    connection_payload = [RoutingConnection(**connection) for connection in model.connections or []]
     return RoutingGroupDetail(
         group_id=model.id,
         group_name=model.group_name,
@@ -116,6 +130,7 @@ def _to_detail(model: RoutingGroup) -> RoutingGroupDetail:
         updated_at=model.updated_at,
         item_codes=list(model.item_codes or []),
         steps=step_payload,
+        connections=connection_payload,
         erp_required=bool(model.erp_required),
         metadata=
         dict(model.metadata_payload or {})
@@ -226,6 +241,7 @@ async def create_routing_group(
             owner=current_user.username,
             item_codes=list(payload.item_codes),
             steps=_serialize_steps(payload.steps),
+            connections=_serialize_connections(payload.connections),
             erp_required=payload.erp_required,
             metadata_payload=metadata_payload,
         )
@@ -451,6 +467,8 @@ async def update_routing_group(
             group.item_codes = list(payload.item_codes)
         if payload.steps is not None:
             group.steps = _serialize_steps(payload.steps)
+        if payload.connections is not None:
+            group.connections = _serialize_connections(payload.connections)
         if payload.erp_required is not None:
             group.erp_required = payload.erp_required
         if payload.metadata is not None:

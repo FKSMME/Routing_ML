@@ -5,7 +5,8 @@ import os
 import psutil
 import threading
 import time
-from typing import Dict
+from collections import defaultdict
+from typing import DefaultDict, Dict
 
 from fastapi import APIRouter, Response
 
@@ -20,6 +21,14 @@ _cached_process_cpu = 0.0
 _cached_system_cpu = 0.0
 _last_cpu_update = 0.0
 _CPU_CACHE_SECONDS = 2.0  # Cache CPU values for 2 seconds
+
+# Request outcome metrics
+_request_metrics_lock = threading.Lock()
+_auth_401_total = 0
+_auth_401_by_endpoint: DefaultDict[str, int] = defaultdict(int)
+_prediction_401_total = 0
+_request_duration_sum: DefaultDict[str, float] = defaultdict(float)
+_request_duration_count: DefaultDict[str, int] = defaultdict(int)
 
 
 def _update_cpu_metrics() -> None:
@@ -65,6 +74,26 @@ def get_system_metrics() -> Dict[str, float]:
         "system_disk_percent": psutil.disk_usage("/").percent,
         "uptime_seconds": time.time() - _START_TIME,
     }
+
+
+def record_request_metrics(path: str, status_code: int, duration_ms: float) -> None:
+    """Record per-request metrics for Prometheus exposition.
+
+    Args:
+        path: Request path (already stripped of query params)
+        status_code: Response status code
+        duration_ms: Request processing time in milliseconds
+    """
+    global _auth_401_total, _prediction_401_total
+    normalized_path = path.rstrip("/") or "/"
+    with _request_metrics_lock:
+        _request_duration_sum[normalized_path] += duration_ms
+        _request_duration_count[normalized_path] += 1
+        if status_code == 401:
+            _auth_401_total += 1
+            _auth_401_by_endpoint[normalized_path] += 1
+            if normalized_path.startswith("/api/predict"):
+                _prediction_401_total += 1
 
 
 def format_prometheus_metrics() -> str:
@@ -125,6 +154,31 @@ def format_prometheus_metrics() -> str:
     lines.append('# HELP routing_ml_info Application information')
     lines.append('# TYPE routing_ml_info gauge')
     lines.append('routing_ml_info{version="4.0.0",python_version="3.11"} 1')
+
+    with _request_metrics_lock:
+        # 401 counters
+        lines.append("# HELP routing_ml_auth_401_total Total number of 401 responses")
+        lines.append("# TYPE routing_ml_auth_401_total counter")
+        lines.append(f"routing_ml_auth_401_total {_auth_401_total}")
+
+        lines.append("# HELP routing_ml_prediction_401_total Total number of 401 responses on prediction APIs")
+        lines.append("# TYPE routing_ml_prediction_401_total counter")
+        lines.append(f"routing_ml_prediction_401_total {_prediction_401_total}")
+
+        lines.append("# HELP routing_ml_auth_401_endpoint_total 401 responses grouped by endpoint")
+        lines.append("# TYPE routing_ml_auth_401_endpoint_total counter")
+        for endpoint, count in _auth_401_by_endpoint.items():
+            lines.append(f'routing_ml_auth_401_endpoint_total{{endpoint="{endpoint}"}} {count}')
+
+        # Average latency per tracked endpoint
+        lines.append("# HELP routing_ml_request_duration_ms_average Average request duration in milliseconds per endpoint")
+        lines.append("# TYPE routing_ml_request_duration_ms_average gauge")
+        for endpoint, total in _request_duration_sum.items():
+            count = _request_duration_count[endpoint]
+            if count == 0:
+                continue
+            avg = total / count
+            lines.append(f'routing_ml_request_duration_ms_average{{endpoint="{endpoint}"}} {avg:.2f}')
 
     return "\n".join(lines) + "\n"
 
@@ -187,4 +241,4 @@ async def get_prometheus_metrics() -> Response:
     )
 
 
-__all__ = ["router", "get_system_metrics", "format_prometheus_metrics"]
+__all__ = ["router", "get_system_metrics", "format_prometheus_metrics", "record_request_metrics"]

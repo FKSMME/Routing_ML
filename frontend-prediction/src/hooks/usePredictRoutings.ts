@@ -11,6 +11,7 @@ interface UsePredictOptions {
   weightProfile?: string | null;
   exportFormats?: string[];
   withVisualization?: boolean;
+  enabled?: boolean;
 }
 
 export function usePredictRoutings({
@@ -21,6 +22,7 @@ export function usePredictRoutings({
   weightProfile,
   exportFormats,
   withVisualization,
+  enabled,
 }: UsePredictOptions) {
   return useQuery<PredictionResponse>({
     queryKey: [
@@ -43,7 +45,7 @@ export function usePredictRoutings({
         exportFormats,
         withVisualization,
       }),
-    enabled: itemCodes.length > 0,
+    enabled: enabled ?? (itemCodes.length > 0),
     staleTime: 30_000,
     retry: (failureCount, error) => {
       if (axios.isAxiosError(error) && error.response && error.response.status >= 400 && error.response.status < 500) {

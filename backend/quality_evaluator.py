@@ -159,36 +159,48 @@ class QualityEvaluator:
         for item_cd in cached_items:
             predictions[item_cd] = self._prediction_cache[item_cd]
 
-        # Generate new predictions
+        # Generate new predictions with retry logic
         if uncached_items:
-            try:
-                # Use default model directory (models/routing_rf_v1.pkl)
-                routing_df, candidates_df = predict_items_with_ml_optimized(
-                    uncached_items,
-                    model_dir="models"
-                )
+            max_retries = 3
+            retry_delay = 2  # seconds
 
-                # Parse predictions into structured format
-                for item_cd in uncached_items:
-                    item_routing = routing_df[routing_df["ITEM_CD"] == item_cd] if not routing_df.empty else pd.DataFrame()
-                    item_candidates = candidates_df[candidates_df["ITEM_CD"] == item_cd] if not candidates_df.empty else pd.DataFrame()
+            for attempt in range(max_retries):
+                try:
+                    # Use default model directory (models/routing_rf_v1.pkl)
+                    routing_df, candidates_df = predict_items_with_ml_optimized(
+                        uncached_items,
+                        model_dir="models"
+                    )
 
-                    prediction = {
-                        "routing": item_routing.to_dict("records") if not item_routing.empty else [],
-                        "candidates": item_candidates.to_dict("records") if not item_candidates.empty else [],
-                    }
+                    # Parse predictions into structured format
+                    for item_cd in uncached_items:
+                        item_routing = routing_df[routing_df["ITEM_CD"] == item_cd] if not routing_df.empty else pd.DataFrame()
+                        item_candidates = candidates_df[candidates_df["ITEM_CD"] == item_cd] if not candidates_df.empty else pd.DataFrame()
 
-                    predictions[item_cd] = prediction
+                        prediction = {
+                            "routing": item_routing.to_dict("records") if not item_routing.empty else [],
+                            "candidates": item_candidates.to_dict("records") if not item_candidates.empty else [],
+                        }
 
-                    # Cache if enabled
-                    if self.config.cache.enabled:
-                        self._prediction_cache[item_cd] = prediction
+                        predictions[item_cd] = prediction
 
-            except Exception as e:
-                logger.error(f"Prediction failed for batch: {e}", exc_info=True)
-                # Return empty predictions for failed items
-                for item_cd in uncached_items:
-                    predictions[item_cd] = {"routing": [], "candidates": [], "error": str(e)}
+                        # Cache if enabled
+                        if self.config.cache.enabled:
+                            self._prediction_cache[item_cd] = prediction
+
+                    # Success - break retry loop
+                    break
+
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Prediction attempt {attempt + 1}/{max_retries} failed: {e}. Retrying in {retry_delay}s...")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2  # Exponential backoff
+                    else:
+                        logger.error(f"Prediction failed after {max_retries} attempts: {e}", exc_info=True)
+                        # Return empty predictions for failed items
+                        for item_cd in uncached_items:
+                            predictions[item_cd] = {"routing": [], "candidates": [], "error": str(e)}
 
         return predictions
 
@@ -477,8 +489,127 @@ class QualityEvaluator:
             for alert in metrics.alerts[:5]:  # Show first 5
                 logger.warning(f"  - {alert.issue}: {alert.message}")
 
-        # TODO: Write to log files (stream log, cycle log)
-        # TODO: Generate reports (JSON, CSV, Markdown)
+        # Write to structured log file
+        self._write_cycle_log(metrics)
+
+        # Generate reports
+        self._generate_reports(metrics)
+
+    def _write_cycle_log(self, metrics: QualityMetrics) -> None:
+        """Write structured cycle log to file.
+
+        Args:
+            metrics: Quality metrics to write
+        """
+        import os
+        import json
+        from pathlib import Path
+
+        # Ensure log directory exists
+        log_dir = Path("logs/performance")
+        log_dir.mkdir(parents=True, exist_ok=True)
+
+        # Append to performance.quality.log
+        log_file = log_dir / "performance.quality.log"
+
+        with open(log_file, "a", encoding="utf-8") as f:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write(f"\n[{timestamp}] Cycle: {metrics.cycle_id}\n")
+            f.write(f"  MAE: {metrics.mae:.2f} | Trim-MAE: {metrics.trim_mae:.2f} | RMSE: {metrics.rmse:.2f}\n")
+            f.write(f"  ProcessMatch: {metrics.process_match:.1%} | CV: {metrics.cv:.2f} | Samples: {metrics.sample_count:.1f}\n")
+            f.write(f"  Evaluated: {metrics.items_evaluated}/{metrics.sample_size} | Failed: {metrics.items_failed}\n")
+
+            if metrics.alerts:
+                f.write(f"  ALERTS ({len(metrics.alerts)}):\n")
+                for alert in metrics.alerts:
+                    f.write(f"    - {alert.issue}: {alert.message}\n")
+
+    def _generate_reports(self, metrics: QualityMetrics) -> None:
+        """Generate JSON, CSV, and Markdown reports.
+
+        Args:
+            metrics: Quality metrics to report
+        """
+        import json
+        import csv
+        from pathlib import Path
+
+        # Ensure reports directory exists
+        reports_dir = Path("deliverables/quality_reports")
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
+        cycle_timestamp = metrics.cycle_id.replace(":", "").replace("-", "")
+
+        # 1. JSON Report (full details)
+        json_file = reports_dir / f"cycle_{cycle_timestamp}.json"
+        with open(json_file, "w", encoding="utf-8") as f:
+            json.dump(metrics.to_dict(), f, indent=2, ensure_ascii=False)
+
+        logger.debug(f"JSON report saved: {json_file}")
+
+        # 2. CSV Report (append to summary CSV)
+        csv_file = reports_dir / "quality_summary.csv"
+        file_exists = csv_file.exists()
+
+        with open(csv_file, "a", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+
+            if not file_exists:
+                # Write header
+                writer.writerow([
+                    "cycle_id", "timestamp", "strategy", "sample_size",
+                    "mae", "trim_mae", "rmse", "process_match",
+                    "cv", "sample_count", "alerts_count", "items_evaluated", "items_failed"
+                ])
+
+            writer.writerow([
+                metrics.cycle_id,
+                metrics.timestamp.isoformat(),
+                metrics.strategy.value,
+                metrics.sample_size,
+                f"{metrics.mae:.2f}",
+                f"{metrics.trim_mae:.2f}",
+                f"{metrics.rmse:.2f}",
+                f"{metrics.process_match:.4f}",
+                f"{metrics.cv:.2f}",
+                f"{metrics.sample_count:.1f}",
+                len(metrics.alerts),
+                metrics.items_evaluated,
+                metrics.items_failed,
+            ])
+
+        logger.debug(f"CSV report appended: {csv_file}")
+
+        # 3. Markdown Summary (latest cycle only)
+        md_file = reports_dir / "latest_cycle.md"
+        with open(md_file, "w", encoding="utf-8") as f:
+            f.write(f"# Quality Evaluation Cycle: {metrics.cycle_id}\n\n")
+            f.write(f"**Generated**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+
+            f.write("## Summary\n\n")
+            f.write(f"- **Strategy**: {metrics.strategy.value}\n")
+            f.write(f"- **Sample Size**: {metrics.sample_size}\n")
+            f.write(f"- **Items Evaluated**: {metrics.items_evaluated}\n")
+            f.write(f"- **Items Failed**: {metrics.items_failed}\n")
+            f.write(f"- **Duration**: {metrics.duration_seconds:.1f} seconds\n\n")
+
+            f.write("## Metrics\n\n")
+            f.write(f"| Metric | Value | Unit |\n")
+            f.write(f"|--------|-------|------|\n")
+            f.write(f"| MAE | {metrics.mae:.2f} | minutes |\n")
+            f.write(f"| Trim-MAE | {metrics.trim_mae:.2f} | minutes |\n")
+            f.write(f"| RMSE | {metrics.rmse:.2f} | minutes |\n")
+            f.write(f"| Process Match | {metrics.process_match:.1%} | - |\n")
+            f.write(f"| Coefficient of Variation | {metrics.cv:.2f} | - |\n")
+            f.write(f"| Avg Sample Count | {metrics.sample_count:.1f} | samples |\n\n")
+
+            if metrics.alerts:
+                f.write(f"## Alerts ({len(metrics.alerts)})\n\n")
+                for alert in metrics.alerts:
+                    f.write(f"- **{alert.issue}** ({alert.item_cd}): {alert.message}\n")
+                    f.write(f"  - Value: {alert.value:.2f} | Threshold: {alert.threshold:.2f}\n")
+
+        logger.debug(f"Markdown summary saved: {md_file}")
 
     def clear_cache(self) -> None:
         """Clear prediction cache."""
