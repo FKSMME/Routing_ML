@@ -437,16 +437,22 @@ grep -n "TODO" frontend-prediction/src/components/TimelinePanel.tsx
 ## Phase 10: Log Cleanup
 
 **Estimated Time**: 0.5 hours
-**Status**: ✅ Complete
+**Status**: ✅ Complete (Git + Local cleanup done)
 **Dependencies**: Phase 1
 
-### Tasks
+### Tasks - Initial
 
 - [x] Update .gitignore to exclude logs/ and logs/archive/
 
-**Result**: Logs excluded from Git (236 files local-only)
+### Tasks - Addendum
 
-**Action**: Added logs/ to .gitignore (local cleanup not needed for Git repo)
+- [x] Create logs/archive/ directory
+- [x] Check logs older than 30 days (0 found - all recent)
+- [x] Apply retention policy: Keep recent 10, archive rest
+- [x] Move 226 old logs to archive
+- [x] Verify: 10 logs remaining
+
+**Result**: Logs excluded from Git + 226 logs archived (236→10)
 
 **Validation**:
 ```bash
