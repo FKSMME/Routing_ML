@@ -13,11 +13,11 @@
 
 **Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks) - 2 hours
 **Phase 1**: [▓▓▓▓▓] 100% (8/8 subsections) - 18 hours ✅
-**Phase 2**: [▓░░░░] 17% (1/6 subsections) - 6/28 hours (updated from 24h)
+**Phase 2**: [▓▓░░░] 33% (2/6 subsections) - 12/28 hours (updated from 24h)
 **Phase 3**: [░░░░░] 0% (0/6 subsections) - 26 hours (updated from 20h)
 **Phase 4**: [░░░░░] 0% (0/9 tasks) - 12 hours
 
-**Total**: [▓▓▓░░░░░░░] 30% (14/54 tasks, 26/86 hours)
+**Total**: [▓▓▓░░░░░░░] 37% (15/54 tasks, 32/86 hours)
 
 ---
 
@@ -182,22 +182,30 @@
   - Test: metrics calculation accuracy, alert thresholds, retry behavior
   - ⏸️ Deferred to Phase 4 (QA section)
 
-### 2.2 Background Training Worker (6 hours) ⭐ NEW
-- [ ] Choose worker architecture (1 hour)
-  - Option A: Python `multiprocessing` (simple, no dependencies)
-  - Option B: Celery + Redis (production-grade, requires Redis)
-  - Decision: Use multiprocessing for Phase 2, Celery for Phase 4
-- [ ] Create `backend/iter_training/worker.py` (3 hours)
-  - `TrainingWorker` class with `multiprocessing.Process`
-  - `start_training(job_id)`: Launch background process
-  - `update_progress(job_id, percent, message)`: Write to state file
-  - `get_progress(job_id)`: Read current state
-  - State file: `data/training_jobs/<job_id>/state.json`
-- [ ] Implement progress tracking (1 hour)
-  - State schema: `{job_id, status, progress, current_step, logs[], started_at, updated_at}`
-  - Atomic file writes with lock
-- [ ] Add worker lifecycle tests (1 hour)
-  - Test: start/stop worker, progress updates, state persistence
+### 2.2 Background Training Worker (6 hours) ✅
+- [x] Choose worker architecture (1 hour)
+  - ✅ Decision: Python `multiprocessing.Process` (Phase 2)
+  - ✅ Future: Celery + Redis (Phase 4 production upgrade)
+- [x] Create `backend/iter_training/worker.py` (3 hours)
+  - ✅ `TrainingWorker` class with `multiprocessing.Process`
+  - ✅ `start_training()`: Launch background process
+  - ✅ `update_progress()`: Write to state file (atomic writes)
+  - ✅ `get_progress()`: Read current state
+  - ✅ `cancel_job()`: Terminate running job
+  - ✅ `list_jobs()`: List recent jobs
+  - ✅ `cleanup_old_jobs()`: Clean up old job directories
+  - ✅ State file: `data/training_jobs/<job_id>/state.json`
+- [x] Implement progress tracking (1 hour)
+  - ✅ `TrainingJobState` dataclass with all required fields
+  - ✅ Atomic file writes (temp file + rename)
+  - ✅ Retry logic for concurrent reads
+  - ✅ JSON serialization with from_dict/to_dict
+- [x] Add worker lifecycle tests (1 hour)
+  - ✅ Created `scripts/test_training_worker.py`
+  - ✅ Test: start worker, progress updates, state persistence
+  - ✅ Test: job completion, result storage
+  - ✅ Test: list_jobs(), cleanup
+  - ✅ All tests passed (6 steps, 100% success)
 
 ### 2.3 Model Training Module (8 hours)
 - [ ] Create `backend/iter_training/trainer.py` (6 hours)
