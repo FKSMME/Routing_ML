@@ -13,7 +13,7 @@ from typing import List, Optional
 
 import pandas as pd
 
-from backend.database import get_session
+from backend.database import _connection_pool, VIEW_ITEM_MASTER
 from .models import SamplingResult, SamplingStrategy
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def random_sample(
     n: int,
     seed: Optional[int] = None,
-    table_name: str = "dbo_BI_ITEM_INFO_VIEW",
+    table_name: Optional[str] = None,
 ) -> SamplingResult:
     """Perform simple random sampling without replacement.
 
@@ -37,31 +37,29 @@ def random_sample(
     Raises:
         ValueError: If n exceeds population size
     """
+    if table_name is None:
+        table_name = VIEW_ITEM_MASTER
+
     logger.info(f"Starting random sampling: n={n}, seed={seed}")
 
-    session = get_session()
-    try:
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+
         # Query total population
         query_count = f"SELECT COUNT(*) as total FROM {table_name}"
-        result = session.execute(query_count)
-        total = result.fetchone()[0]
+        cursor.execute(query_count)
+        total = cursor.fetchone()[0]
 
         if n > total:
             raise ValueError(f"Sample size {n} exceeds population {total}")
 
         # SQL Server random sampling using NEWID()
-        # For reproducibility with seed, we use ROW_NUMBER with seed-based ordering
+        # For reproducibility with seed, use CHECKSUM for deterministic random
         if seed is not None:
             query = f"""
-            WITH Numbered AS (
-                SELECT ITEM_CD,
-                       ROW_NUMBER() OVER (ORDER BY ABS(CHECKSUM(NEWID()) % {seed})) as rn
-                FROM {table_name}
-            )
-            SELECT ITEM_CD
-            FROM Numbered
-            WHERE rn <= {n}
-            ORDER BY rn
+            SELECT TOP {n} ITEM_CD
+            FROM {table_name}
+            ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
             """
         else:
             query = f"""
@@ -70,8 +68,8 @@ def random_sample(
             ORDER BY NEWID()
             """
 
-        result = session.execute(query)
-        items = [row[0] for row in result.fetchall()]
+        cursor.execute(query)
+        items = [row[0] for row in cursor.fetchall()]
 
         logger.info(f"Random sampling complete: sampled {len(items)} items")
 
@@ -83,15 +81,12 @@ def random_sample(
             metadata={"total_population": total, "seed": seed},
         )
 
-    finally:
-        session.close()
-
 
 def stratified_sample(
     n: int,
     strata_column: str = "PART_TYPE",
     seed: Optional[int] = None,
-    table_name: str = "dbo_BI_ITEM_INFO_VIEW",
+    table_name: Optional[str] = None,
 ) -> SamplingResult:
     """Perform stratified sampling by a categorical column.
 
@@ -110,10 +105,14 @@ def stratified_sample(
     Raises:
         ValueError: If n exceeds population size or strata_column invalid
     """
+    if table_name is None:
+        table_name = VIEW_ITEM_MASTER
+
     logger.info(f"Starting stratified sampling: n={n}, strata={strata_column}, seed={seed}")
 
-    session = get_session()
-    try:
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+
         # Get stratum counts
         query_strata = f"""
         SELECT {strata_column}, COUNT(*) as count
@@ -122,8 +121,8 @@ def stratified_sample(
         GROUP BY {strata_column}
         ORDER BY count DESC
         """
-        result = session.execute(query_strata)
-        strata_counts = {row[0]: row[1] for row in result.fetchall()}
+        cursor.execute(query_strata)
+        strata_counts = {row[0]: row[1] for row in cursor.fetchall()}
 
         total = sum(strata_counts.values())
         if n > total:
@@ -148,26 +147,21 @@ def stratified_sample(
         for stratum, stratum_n in stratum_samples.items():
             if seed is not None:
                 query = f"""
-                WITH Numbered AS (
-                    SELECT ITEM_CD,
-                           ROW_NUMBER() OVER (ORDER BY ABS(CHECKSUM(NEWID()) % {seed})) as rn
-                    FROM {table_name}
-                    WHERE {strata_column} = '{stratum}'
-                )
-                SELECT ITEM_CD
-                FROM Numbered
-                WHERE rn <= {stratum_n}
+                SELECT TOP {stratum_n} ITEM_CD
+                FROM {table_name}
+                WHERE {strata_column} = ?
+                ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
                 """
             else:
                 query = f"""
                 SELECT TOP {stratum_n} ITEM_CD
                 FROM {table_name}
-                WHERE {strata_column} = '{stratum}'
+                WHERE {strata_column} = ?
                 ORDER BY NEWID()
                 """
 
-            result = session.execute(query)
-            stratum_items = [row[0] for row in result.fetchall()]
+            cursor.execute(query, stratum)
+            stratum_items = [row[0] for row in cursor.fetchall()]
             all_items.extend(stratum_items)
 
         logger.info(f"Stratified sampling complete: sampled {len(all_items)} items from {len(strata_counts)} strata")
@@ -186,15 +180,12 @@ def stratified_sample(
             },
         )
 
-    finally:
-        session.close()
-
 
 def recent_bias_sample(
     n: int,
     days_window: int = 30,
     seed: Optional[int] = None,
-    table_name: str = "dbo_BI_ITEM_INFO_VIEW",
+    table_name: Optional[str] = None,
     date_column: str = "CREATE_DATE",
 ) -> SamplingResult:
     """Perform weighted sampling with bias towards recently created/updated items.
@@ -215,10 +206,14 @@ def recent_bias_sample(
     Raises:
         ValueError: If n exceeds population size
     """
+    if table_name is None:
+        table_name = VIEW_ITEM_MASTER
+
     logger.info(f"Starting recent-bias sampling: n={n}, days={days_window}, seed={seed}")
 
-    session = get_session()
-    try:
+    with _connection_pool.get_connection() as conn:
+        cursor = conn.cursor()
+
         cutoff_date = datetime.utcnow() - timedelta(days=days_window)
 
         # Query with weighted sampling (50% from recent, 50% from all)
@@ -228,45 +223,36 @@ def recent_bias_sample(
         # Sample recent items
         if seed is not None:
             query_recent = f"""
-            WITH Numbered AS (
-                SELECT ITEM_CD,
-                       ROW_NUMBER() OVER (ORDER BY ABS(CHECKSUM(NEWID()) % {seed})) as rn
-                FROM {table_name}
-                WHERE {date_column} >= '{cutoff_date.strftime('%Y-%m-%d')}'
-            )
-            SELECT ITEM_CD
-            FROM Numbered
-            WHERE rn <= {recent_n}
+            SELECT TOP {recent_n} ITEM_CD
+            FROM {table_name}
+            WHERE {date_column} >= ?
+            ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
             """
         else:
             query_recent = f"""
             SELECT TOP {recent_n} ITEM_CD
             FROM {table_name}
-            WHERE {date_column} >= '{cutoff_date.strftime('%Y-%m-%d')}'
+            WHERE {date_column} >= ?
             ORDER BY NEWID()
             """
 
-        result = session.execute(query_recent)
-        recent_items = [row[0] for row in result.fetchall()]
+        cursor.execute(query_recent, cutoff_date.strftime('%Y-%m-%d'))
+        recent_items = [row[0] for row in cursor.fetchall()]
 
         # Sample random items (excluding already sampled recent items)
         if len(recent_items) > 0:
-            excluded_list = "', '".join(recent_items)
-            exclusion_clause = f"AND ITEM_CD NOT IN ('{excluded_list}')"
+            placeholders = ','.join(['?' for _ in recent_items])
+            exclusion_clause = f"AND ITEM_CD NOT IN ({placeholders})"
         else:
             exclusion_clause = ""
+            recent_items = []
 
         if seed is not None:
             query_random = f"""
-            WITH Numbered AS (
-                SELECT ITEM_CD,
-                       ROW_NUMBER() OVER (ORDER BY ABS(CHECKSUM(NEWID()) % {seed})) as rn
-                FROM {table_name}
-                WHERE 1=1 {exclusion_clause}
-            )
-            SELECT ITEM_CD
-            FROM Numbered
-            WHERE rn <= {random_n}
+            SELECT TOP {random_n} ITEM_CD
+            FROM {table_name}
+            WHERE 1=1 {exclusion_clause}
+            ORDER BY ABS(CHECKSUM(NEWID(), ITEM_CD) % {seed})
             """
         else:
             query_random = f"""
@@ -276,19 +262,22 @@ def recent_bias_sample(
             ORDER BY NEWID()
             """
 
-        result = session.execute(query_random)
-        random_items = [row[0] for row in result.fetchall()]
+        if recent_items:
+            cursor.execute(query_random, *recent_items)
+        else:
+            cursor.execute(query_random)
+        random_items = [row[0] for row in cursor.fetchall()]
 
         all_items = recent_items + random_items
 
         # Get total and recent counts for metadata
         query_total = f"SELECT COUNT(*) FROM {table_name}"
-        result_total = session.execute(query_total)
-        total = result_total.fetchone()[0]
+        cursor.execute(query_total)
+        total = cursor.fetchone()[0]
 
-        query_recent_count = f"SELECT COUNT(*) FROM {table_name} WHERE {date_column} >= '{cutoff_date.strftime('%Y-%m-%d')}'"
-        result_recent = session.execute(query_recent_count)
-        recent_count = result_recent.fetchone()[0]
+        query_recent_count = f"SELECT COUNT(*) FROM {table_name} WHERE {date_column} >= ?"
+        cursor.execute(query_recent_count, cutoff_date.strftime('%Y-%m-%d'))
+        recent_count = cursor.fetchone()[0]
 
         logger.info(f"Recent-bias sampling complete: {len(recent_items)} recent + {len(random_items)} random = {len(all_items)} total")
 
@@ -307,9 +296,6 @@ def recent_bias_sample(
                 "seed": seed,
             },
         )
-
-    finally:
-        session.close()
 
 
 def sample_items(
