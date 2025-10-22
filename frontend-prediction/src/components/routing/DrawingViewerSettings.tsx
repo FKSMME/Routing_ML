@@ -100,6 +100,13 @@ export function DrawingViewerSettings({
 
         {/* Content */}
         <div className="p-6 space-y-4">
+          {/* General Help Text */}
+          <div className="bg-blue-900/20 border border-blue-700/50 rounded-md p-3">
+            <p className="text-sm text-blue-200">
+              ℹ️ ERP 시스템의 도면 조회 기능을 사용하기 위한 설정입니다. 설정은 브라우저에 저장됩니다.
+            </p>
+          </div>
+
           {/* ERP ID */}
           <div>
             <label

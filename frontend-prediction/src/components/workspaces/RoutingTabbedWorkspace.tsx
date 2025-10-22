@@ -1,3 +1,4 @@
+import { useRoutingStore } from "@store/routingStore";
 import { BarChart3, Settings } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
@@ -15,7 +16,6 @@ import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
 import { VisualizationSummary } from "../VisualizationSummary";
-import { useRoutingStore } from "@store/routingStore";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls
@@ -132,10 +132,11 @@ export function RoutingTabbedWorkspace({
                 <h4 className="text-sm font-semibold text-slate-200">도면 조회</h4>
                 <button
                   onClick={() => setSettingsOpen(true)}
-                  className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                  className="p-1 hover:bg-slate-700/50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded transition-colors"
                   title="도면 조회 설정"
+                  aria-label="도면 조회 설정 열기"
                 >
-                  <Settings size={16} className="text-slate-400" />
+                  <Settings size={16} className="text-slate-400 hover:text-slate-200" />
                 </button>
               </div>
               <DrawingViewerButton

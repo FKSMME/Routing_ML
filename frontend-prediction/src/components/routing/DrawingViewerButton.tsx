@@ -80,13 +80,13 @@ export function DrawingViewerButton({
       title={
         !itemCode
           ? "품목을 선택해주세요"
-          : "선택한 품목의 기술 도면을 ERP 시스템에서 조회합니다"
+          : "도면 조회: 선택한 품목의 기술 도면 보기"
       }
       className={`
         inline-flex items-center gap-2 px-4 py-2
-        bg-blue-600 hover:bg-blue-700
+        bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
         text-white font-medium rounded-md
-        transition-colors duration-200
+        transition-all duration-200
         disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50
         ${className}
       `}
