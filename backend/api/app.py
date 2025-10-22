@@ -32,7 +32,10 @@ from backend.api.routes.items import router as items_router
 from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
 from backend.api.routes.mssql import router as mssql_router
-from backend.api.routes.metrics import router as metrics_router
+from backend.api.routes.metrics import (
+    record_request_metrics,
+    router as metrics_router,
+)
 from backend.api.routes.onprem_nlp import router as onprem_nlp_router
 from backend.api.routes.prediction import router as prediction_router
 from backend.api.routes.process_groups import router as process_groups_router
@@ -92,6 +95,9 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                 "username": username,
             }
         )
+
+        # Metrics for Prometheus exposition
+        record_request_metrics(path, response.status_code, duration_ms)
 
         return response
 

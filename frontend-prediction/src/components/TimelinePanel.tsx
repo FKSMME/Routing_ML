@@ -180,7 +180,7 @@ export function TimelinePanel() {
       ) : productTabs.length === 0 ? (
         <div className="timeline-placeholder">Search items to generate routing.</div>
       ) : (
-        <RecommendationsTab />
+        <RecommendationsTab initialView="recommendations" />
       )}
 
       {activeProductId ? <p className="timeline-footer">Active item: {activeProductId}</p> : null}

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -57,6 +57,15 @@ class RoutingStep(BaseModel):
             raise ValueError("process_code는 빈 문자열일 수 없습니다")
         return cleaned
 
+class RoutingConnection(BaseModel):
+    """Represents a manual connection between routing steps."""
+
+    id: str = Field(..., min_length=1, description="연결 ID")
+    source_node_id: str = Field(..., min_length=1, description="출발 노드 ID")
+    target_node_id: str = Field(..., min_length=1, description="도착 노드 ID")
+    created_at: datetime = Field(..., description="연결 생성 시각")
+    created_by: Literal["manual"] = Field(default="manual", description="생성 주체")
+
 
 class RoutingGroupBase(BaseModel):
     group_name: str = Field(
@@ -67,6 +76,9 @@ class RoutingGroupBase(BaseModel):
     )
     steps: List[RoutingStep] = Field(
         default_factory=list, description="라우팅 공정 단계 목록"
+    )
+    connections: List[RoutingConnection] = Field(
+        default_factory=list, description="수동 연결 목록"
     )
     erp_required: bool = Field(
         default=False, description="ERP 인터페이스 필요 여부"
@@ -125,6 +137,9 @@ class RoutingGroupUpdate(BaseModel):
     )
     steps: Optional[List[RoutingStep]] = Field(
         default=None, description="새 라우팅 공정 단계 목록"
+    )
+    connections: Optional[List[RoutingConnection]] = Field(
+        default=None, description="수동 연결 목록"
     )
     erp_required: Optional[bool] = Field(
         default=None, description="ERP 인터페이스 필요 여부"
@@ -218,6 +233,7 @@ class RoutingGroupDetail(RoutingGroupResponse):
 
     item_codes: List[str] = Field(..., description="품목 코드 목록")
     steps: List[RoutingStep] = Field(..., description="라우팅 공정 단계 목록")
+    connections: List[RoutingConnection] = Field(default_factory=list, description="수동 연결 목록")
     erp_required: bool = Field(..., description="ERP 인터페이스 필요 여부")
     metadata: Dict[str, Any] | None = Field(
         default=None, description="추가 메타데이터"

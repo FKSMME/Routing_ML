@@ -358,25 +358,31 @@ function RoutingCanvasView({
 
   const flowEdges = useMemo<Edge[]>(
     () =>
-      timeline.slice(1).map((step, index) => {
-        const edgeId = `edge-${timeline[index].id}-${step.id}`;
-        const isSelected = edgeId === selectedEdgeId;
+      connections.map((connection) => {
+        const isSelected = connection.id === selectedEdgeId;
+        const createdBy = connection.metadata?.createdBy ?? "auto";
+        const isManual = createdBy === "manual";
+        const baseColor = isManual ? "rgba(251, 191, 36, 0.9)" : "rgba(148, 163, 184, 0.8)";
+        const highlightColor = isManual ? "rgb(250, 204, 21)" : "rgb(56, 189, 248)";
         return {
-          id: edgeId,
-          source: timeline[index].id,
-          target: step.id,
+          id: connection.id,
+          source: connection.sourceNodeId,
+          target: connection.targetNodeId,
           animated: isSelected,
+          selectable: true,
+          data: { createdBy },
           style: {
-            stroke: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.8)',
-            strokeWidth: isSelected ? 3 : 2,
+            stroke: isSelected ? highlightColor : baseColor,
+            strokeWidth: isManual ? (isSelected ? 3 : 2.5) : isSelected ? 3 : 2,
+            strokeDasharray: isManual ? "4 2" : "none",
           },
           markerEnd: {
-            type: 'arrowclosed' as const,
-            color: isSelected ? 'rgb(56, 189, 248)' : 'rgba(148, 163, 184, 0.8)',
+            type: "arrowclosed" as const,
+            color: isSelected ? highlightColor : baseColor,
           },
         };
       }),
-    [timeline, selectedEdgeId],
+    [connections, selectedEdgeId],
   );
 
   const canvasDimensions = useMemo(() => {
@@ -511,42 +517,66 @@ function RoutingCanvasView({
   );
 
   // Edge selection handler
-  const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
-    setSelectedEdgeId(edge.id);
-  }, []);
+  const handleEdgeClick = useCallback(
+    (_event: React.MouseEvent, edge: Edge) => {
+      setSelectedEdgeId(edge.id);
+      const createdBy = edge.data?.createdBy ?? "auto";
+      if (createdBy === "manual") {
+        setSelectedConnectionStore(edge.id);
+      } else {
+        setSelectedConnectionStore(null);
+      }
+    },
+    [setSelectedConnectionStore],
+  );
 
   // Delete key handler for removing selected edge
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Delete' && selectedEdgeId) {
-        // Note: In current implementation, edges are auto-generated from timeline
-        // To truly delete a connection, we would need to remove the corresponding timeline step
-        // For now, we just deselect
-        console.log('Delete edge:', selectedEdgeId);
+      if (event.key === "Delete" && selectedEdgeId) {
+        const connection = connections.find((item) => item.id === selectedEdgeId);
+        if (connection && connection.metadata?.createdBy === "manual") {
+          removeConnection(selectedEdgeId);
+        }
         setSelectedEdgeId(null);
-        // TODO: Implement actual edge deletion when custom connections are supported
+        setSelectedConnectionStore(null);
       }
-      if (event.key === 'Escape' && selectedEdgeId) {
+      if (event.key === "Escape" && selectedEdgeId) {
         setSelectedEdgeId(null);
+        setSelectedConnectionStore(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedEdgeId]);
+  }, [connections, removeConnection, selectedEdgeId, setSelectedConnectionStore]);
 
   // Connection handler - creates new edge when dragging from one node to another
-  const handleConnect = useCallback((connection: Connection) => {
-    if (!connection.source || !connection.target) return;
-    console.log('New connection:', connection);
-    // TODO: Update timeline to insert/reorder nodes based on new connection
-    // For now, just log the connection
-  }, []);
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) {
+        return;
+      }
+      addConnection(connection.source, connection.target);
+    },
+    [addConnection],
+  );
 
   // Reconnection handler - updates existing edge when reconnecting
   const handleReconnect = useCallback(
     (oldEdge: Edge, newConnection: Connection) => {
       if (!newConnection.source || !newConnection.target) return;
+
+      const existing = connections.find((conn) => conn.id === oldEdge.id);
+      if (existing && (existing.metadata?.createdBy ?? "auto") === "manual") {
+        updateConnection(oldEdge.id, {
+          sourceNodeId: newConnection.source,
+          targetNodeId: newConnection.target,
+        });
+        setSelectedEdgeId(oldEdge.id);
+        setSelectedConnectionStore(oldEdge.id);
+        return;
+      }
 
       // Validate: no self-connections
       if (newConnection.source === newConnection.target) {
@@ -572,15 +602,10 @@ function RoutingCanvasView({
 
       // Only move if position actually changes
       if (reconnectedNodeIndex !== newIndex) {
-        console.log('Reordering timeline:', {
-          nodeId: reconnectedNodeId,
-          from: reconnectedNodeIndex,
-          to: newIndex
-        });
         moveStep(reconnectedNodeId, newIndex);
       }
     },
-    [timeline, moveStep],
+    [connections, moveStep, setSelectedConnectionStore, timeline, updateConnection],
   );
 
   useEffect(() => {
@@ -768,10 +793,15 @@ function RoutingCanvasView({
 
 export function RoutingCanvas(props: RoutingCanvasProps) {
   const timeline = useRoutingStore((state) => state.timeline);
+  const connections = useRoutingStore((state) => state.connections);
   const moveStep = useRoutingStore((state) => state.moveStep);
   const insertOperation = useRoutingStore((state) => state.insertOperation);
   const removeStep = useRoutingStore((state) => state.removeStep);
   const updateStepTimes = useRoutingStore((state) => state.updateStepTimes);
+  const addConnection = useRoutingStore((state) => state.addConnection);
+  const removeConnection = useRoutingStore((state) => state.removeConnection);
+  const updateConnection = useRoutingStore((state) => state.updateConnection);
+  const setSelectedConnectionStore = useRoutingStore((state) => state.setSelectedConnection);
   const productTabs = useRoutingStore((state) => state.productTabs);
   const activeProductId = useRoutingStore((state) => state.activeProductId);
   const setActiveProduct = useRoutingStore((state) => state.setActiveProduct);

@@ -742,10 +742,60 @@ $ git commit -m "feat: Update predictor and feature weights"
 ```
 ❌ 모든 Phase 완료 후 한 번에 커밋
 ❌ main 병합 생략
+❌ 작업 중 변경된 파일을 일부만 커밋
 ✅ 각 Phase 완료 시마다 커밋
 ✅ Git 워크플로우 실행 직전에 Monitor build validation sequence(`.\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.2.5.spec` → `deploy\build_monitor_v5.bat` 결과 확인 → `.\.venv\Scripts\python.exe scripts\server_monitor_dashboard_v5_1.py` 실행) 수행
 ✅ 반드시 main 병합 후 251014 복귀
+✅ **작업 중 변경된 모든 파일을 커밋에 포함** (git add -A)
 ```
+
+### 8.4.1 전체 작업 내용 커밋 규칙 (필수!)
+
+**각 Phase 완료 시 작업한 모든 내용을 반드시 커밋해야 합니다**:
+
+```bash
+# Phase 완료 시 Git 작업 순서
+# 1. 모든 변경사항 확인
+git status
+
+# 2. 작업 중 수정된 모든 파일 staging (필수!)
+git add -A
+
+# 3. Staging 완전성 재확인
+git status
+# ✅ "Changes not staged for commit:" 섹션 없어야 함!
+
+# 4. Phase 커밋
+git commit -m "feat: Complete Phase X - {description}"
+
+# 5. 현재 브랜치 push
+git push origin 251014
+
+# 6. main 브랜치로 전환 및 병합
+git checkout main
+git merge 251014 -m "Merge 251014: Phase X complete"
+
+# 7. main push
+git push origin main
+
+# 8. 작업 브랜치로 복귀
+git checkout 251014
+```
+
+**포함되어야 하는 모든 파일**:
+- ✅ Claude가 직접 수정한 모든 파일
+- ✅ 사용자가 IDE에서 수정한 모든 파일
+- ✅ 스크립트/프로세스가 자동 생성한 파일
+- ✅ 설정 파일 변경사항
+- ✅ 문서 변경사항
+- ✅ 테스트 파일
+- ✅ 빌드 산출물 (.exe, .spec 등)
+
+**제외 대상** (.gitignore):
+- ❌ .env, credentials.json (시크릿)
+- ❌ __pycache__/, *.pyc (캐시)
+- ❌ node_modules/ (패키지)
+- ❌ dist/, build/ (빌드 임시 파일, .exe 제외)
 
 ### 8.5 완료 조건
 

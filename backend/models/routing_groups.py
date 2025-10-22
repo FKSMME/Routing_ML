@@ -35,6 +35,9 @@ class RoutingGroup(Base):
         MutableList.as_mutable(_json_type()), default=list, nullable=False
     )
     steps = Column(MutableList.as_mutable(_json_type()), default=list, nullable=False)
+    connections = Column(
+        MutableList.as_mutable(_json_type()), default=list, nullable=False
+    )
     erp_required = Column(Boolean, nullable=False, default=False)
     metadata_payload = Column(
         "metadata",

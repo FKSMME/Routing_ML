@@ -9,7 +9,7 @@ interface RecommendationsTabProps extends RoutingCanvasProps {
   initialView?: ViewMode;
 }
 
-export function RecommendationsTab({ initialView = "timeline", ...canvasProps }: RecommendationsTabProps) {
+export function RecommendationsTab({ initialView = "recommendations", ...canvasProps }: RecommendationsTabProps) {
   const activeProductId = useRoutingStore((state) => state.activeProductId);
   const productTabs = useRoutingStore((state) => state.productTabs);
   const insertOperation = useRoutingStore((state) => state.insertOperation);
@@ -49,9 +49,15 @@ export function RecommendationsTab({ initialView = "timeline", ...canvasProps }:
 
   useEffect(() => {
     if (!hasRecommendations) {
-      setView("timeline");
+      if (view !== "timeline") {
+        setView("timeline");
+      }
+      return;
     }
-  }, [hasRecommendations]);
+    if (initialView === "recommendations" && view === "timeline") {
+      setView("recommendations");
+    }
+  }, [hasRecommendations, initialView, view]);
 
   const handleSelectView = useCallback((mode: ViewMode) => () => {
     if (mode === "recommendations" && !hasRecommendations) {

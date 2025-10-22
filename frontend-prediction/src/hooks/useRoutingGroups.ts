@@ -78,8 +78,27 @@ const buildSteps = (timeline: ReturnType<typeof useRoutingStore.getState>["timel
     };
   });
 
+const buildConnections = (
+  timeline: ReturnType<typeof useRoutingStore.getState>["timeline"],
+  connections: ReturnType<typeof useRoutingStore.getState>["connections"],
+) =>
+  connections
+    .filter((connection) => (connection.metadata?.createdBy ?? "auto") === "manual")
+    .filter((connection) => {
+      const ids = new Set(timeline.map((step) => step.id));
+      return ids.has(connection.sourceNodeId) && ids.has(connection.targetNodeId);
+    })
+    .map((connection) => ({
+      id: connection.id,
+      source_node_id: connection.sourceNodeId,
+      target_node_id: connection.targetNodeId,
+      created_at: connection.metadata?.createdAt ?? new Date().toISOString(),
+      created_by: "manual" as const,
+    }));
+
 export function useRoutingGroups() {
   const timeline = useRoutingStore((state) => state.timeline);
+  const connections = useRoutingStore((state) => state.connections);
   const erpRequired = useRoutingStore((state) => state.erpRequired);
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const setSaving = useRoutingStore((state) => state.setSaving);
@@ -115,6 +134,7 @@ export function useRoutingGroups() {
       }
 
       const steps = buildSteps(timeline);
+      const manualConnections = buildConnections(timeline, connections);
       const itemCodes = collectItemCodes();
       const { columnMappings } = getRoutingSaveState();
 
@@ -125,6 +145,10 @@ export function useRoutingGroups() {
         if (columnMappings.length > 0) {
           metadataPayload.output_mappings = columnMappings;
           metadataPayload.output_mapping_count = columnMappings.length;
+        }
+        if (manualConnections.length > 0) {
+          metadataPayload.manual_connections = manualConnections;
+          metadataPayload.manual_connection_count = manualConnections.length;
         }
         // API removed - return mock response
         const response = {
@@ -187,6 +211,7 @@ export function useRoutingGroups() {
       setLastSavedAt,
       setSaving,
       setValidationErrors,
+      connections,
       timeline,
     ],
   );

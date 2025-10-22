@@ -50,7 +50,14 @@ const notifyReferenceMatrixSubscribers = (columns: ReferenceMatrixColumnKey[]) =
 
 type MergeStrategy = "replace" | "append";
 
-type SnapshotReason = "insert-operation" | "reorder-step" | "remove-step" | "undo" | "redo";
+type SnapshotReason =
+  | "insert-operation"
+  | "reorder-step"
+  | "remove-step"
+  | "add-connection"
+  | "remove-connection"
+  | "undo"
+  | "redo";
 
 const createId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -152,6 +159,7 @@ export const createRecommendationOperationKey = (operation: OperationStep): stri
 
 interface TimelineSnapshot {
   steps: TimelineStep[];
+  connections: NodeConnection[];
   reason: SnapshotReason;
   timestamp: string;
 }
@@ -167,6 +175,7 @@ export interface RoutingProductTab {
   productName?: string | null;
   candidateId?: string | null;
   timeline: TimelineStep[];
+  manualConnections?: NodeConnection[];
 }
 
 type LastSuccessMap = Record<string, TimelineStep[]>;
@@ -178,6 +187,7 @@ interface RoutingWorkspacePersistedState {
   activeItemId: string | null;
   productTabs: RoutingProductTab[];
   timeline: TimelineStep[];
+  connections: NodeConnection[];
   lastSuccessfulTimeline: LastSuccessMap;
   lastSavedAt?: string;
   dirty: boolean;
@@ -614,6 +624,82 @@ const cloneSuccessMap = (source: LastSuccessMap): LastSuccessMap =>
 const normalizeSequence = (steps: TimelineStep[]): TimelineStep[] =>
   steps.map((step, index) => ({ ...step, seq: index + 1, positionX: index * NODE_GAP }));
 
+const cloneConnection = (connection: NodeConnection): NodeConnection => ({
+  ...connection,
+  metadata: connection.metadata ? { ...connection.metadata } : undefined,
+});
+
+const cloneConnections = (connections: NodeConnection[]): NodeConnection[] =>
+  connections.map((connection) => cloneConnection(connection));
+
+const isManualConnection = (connection: NodeConnection): boolean =>
+  (connection.metadata?.createdBy ?? "auto") !== "auto";
+
+const filterManualConnections = (connections: NodeConnection[]): NodeConnection[] =>
+  cloneConnections(connections.filter(isManualConnection));
+
+const connectionKey = (connection: NodeConnection): string =>
+  `${connection.sourceNodeId}::${connection.targetNodeId}`;
+
+const createAutoConnections = (timeline: TimelineStep[]): NodeConnection[] => {
+  if (timeline.length < 2) {
+    return [];
+  }
+  const connections: NodeConnection[] = [];
+  for (let index = 0; index < timeline.length - 1; index += 1) {
+    const sourceStep = timeline[index];
+    const targetStep = timeline[index + 1];
+    connections.push({
+      id: `auto-${sourceStep.id}-${targetStep.id}`,
+      sourceNodeId: sourceStep.id,
+      targetNodeId: targetStep.id,
+      sourcePort: "output",
+      targetPort: "input",
+      metadata: {
+        createdAt: "auto",
+        createdBy: "auto",
+      },
+    });
+  }
+  return connections;
+};
+
+const mergeConnectionsForTimeline = (
+  timeline: TimelineStep[],
+  existingConnections: NodeConnection[],
+): NodeConnection[] => {
+  const allowedStepIds = new Set(timeline.map((step) => step.id));
+  const manualConnections = existingConnections
+    .filter(
+      (connection) =>
+        isManualConnection(connection) &&
+        allowedStepIds.has(connection.sourceNodeId) &&
+        allowedStepIds.has(connection.targetNodeId),
+    )
+    .map((connection) => cloneConnection(connection));
+  const manualKeys = new Set(manualConnections.map(connectionKey));
+  const autoConnections = createAutoConnections(timeline).filter(
+    (connection) => !manualKeys.has(connectionKey(connection)),
+  );
+  return [...autoConnections, ...manualConnections];
+};
+
+const updateActiveTabState = (
+  tabs: RoutingProductTab[],
+  tabId: string,
+  timeline: TimelineStep[],
+  manualConnections: NodeConnection[],
+): RoutingProductTab[] =>
+  tabs.map((tab) =>
+    tab.id === tabId
+      ? {
+          ...tab,
+          timeline: cloneTimeline(timeline),
+          manualConnections: cloneConnections(manualConnections),
+        }
+      : tab,
+  );
+
 const isReferenceMatrixColumnKey = (value: string): value is ReferenceMatrixColumnKey =>
   (DEFAULT_REFERENCE_MATRIX_COLUMNS as ReadonlyArray<string>).includes(value);
 
@@ -724,10 +810,12 @@ const computeDirty = (
 const pushHistory = (
   history: HistoryState,
   timeline: TimelineStep[],
+  connections: NodeConnection[],
   reason: SnapshotReason,
 ): HistoryState => {
   const snapshot: TimelineSnapshot = {
     steps: cloneTimeline(timeline),
+    connections: filterManualConnections(connections),
     reason,
     timestamp: new Date().toISOString(),
   };
@@ -856,8 +944,13 @@ const updateLastSuccess = (
 const toPersistedState = (selection: PersistedSelectionState): RoutingWorkspacePersistedState => ({
   activeProductId: selection.activeProductId,
   activeItemId: selection.activeItemId,
-  productTabs: selection.productTabs.map((tab) => ({ ...tab, timeline: cloneTimeline(tab.timeline) })),
+  productTabs: selection.productTabs.map((tab) => ({
+    ...tab,
+    timeline: cloneTimeline(tab.timeline),
+    manualConnections: cloneConnections(tab.manualConnections ?? []),
+  })),
   timeline: cloneTimeline(selection.timeline),
+  connections: filterManualConnections(selection.connections ?? []),
   lastSuccessfulTimeline: cloneSuccessMap(selection.lastSuccessfulTimeline),
   lastSavedAt: selection.lastSavedAt,
   dirty: selection.dirty,
@@ -873,6 +966,7 @@ const persistedSelector = (state: RoutingStoreState): PersistedSelectionState =>
   activeItemId: state.activeItemId,
   productTabs: state.productTabs,
   timeline: state.timeline,
+  connections: filterManualConnections(state.connections),
   lastSuccessfulTimeline: state.lastSuccessfulTimeline,
   lastSavedAt: state.lastSavedAt,
   dirty: state.dirty,
@@ -1425,11 +1519,14 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       if (!tab) {
         return state;
       }
-      const timeline = cloneTimeline(tab.timeline);
+      const timeline = normalizeSequence(cloneTimeline(tab.timeline));
+      const manualConnections = cloneConnections(tab.manualConnections ?? []);
+      const connections = mergeConnectionsForTimeline(timeline, manualConnections);
       return {
         activeProductId: tabId,
         activeItemId: tab.productCode,
         timeline,
+        connections,
         history: { past: [], future: [] },
         dirty: computeDirty(timeline, state.lastSuccessfulTimeline, tabId),
       };
@@ -1440,7 +1537,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       if (!activeProductId) {
         return state;
       }
-      const history = pushHistory(state.history, state.timeline, "insert-operation");
+      const history = pushHistory(state.history, state.timeline, state.connections, "insert-operation");
       const timeline = [...state.timeline];
       const insertIndex = typeof index === "number" && index >= 0 && index <= timeline.length ? index : timeline.length;
       const contextMetadata = payload.metadata ?? payload.operation.metadata ?? null;
@@ -1461,10 +1558,13 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       });
       timeline.splice(insertIndex, 0, newStep);
       const normalized = normalizeSequence(timeline);
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(normalized));
+      const nextConnections = mergeConnectionsForTimeline(normalized, state.connections);
+      const manualConnections = filterManualConnections(nextConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, normalized, manualConnections);
       return {
         timeline: normalized,
         productTabs: updatedTabs,
+        connections: nextConnections,
         history,
         dirty: computeDirty(normalized, state.lastSuccessfulTimeline, activeProductId),
       };
@@ -1480,15 +1580,18 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         return state;
       }
       const boundedIndex = Math.max(0, Math.min(toIndex, state.timeline.length - 1));
-      const history = pushHistory(state.history, state.timeline, "reorder-step");
+      const history = pushHistory(state.history, state.timeline, state.connections, "reorder-step");
       const timeline = [...state.timeline];
       const [step] = timeline.splice(fromIndex, 1);
       timeline.splice(boundedIndex, 0, step);
       const normalized = normalizeSequence(timeline);
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(normalized));
+      const nextConnections = mergeConnectionsForTimeline(normalized, state.connections);
+      const manualConnections = filterManualConnections(nextConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, normalized, manualConnections);
       return {
         timeline: normalized,
         productTabs: updatedTabs,
+        connections: nextConnections,
         history,
         dirty: computeDirty(normalized, state.lastSuccessfulTimeline, activeProductId),
       };
@@ -1503,14 +1606,17 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       if (index === -1) {
         return state;
       }
-      const history = pushHistory(state.history, state.timeline, "remove-step");
+      const history = pushHistory(state.history, state.timeline, state.connections, "remove-step");
       const timeline = [...state.timeline];
       timeline.splice(index, 1);
       const normalized = normalizeSequence(timeline);
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(normalized));
+      const nextConnections = mergeConnectionsForTimeline(normalized, state.connections);
+      const manualConnections = filterManualConnections(nextConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, normalized, manualConnections);
       return {
         timeline: normalized,
         productTabs: updatedTabs,
+        connections: nextConnections,
         history,
         dirty: computeDirty(normalized, state.lastSuccessfulTimeline, activeProductId),
       };
@@ -1572,11 +1678,25 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         ),
       );
       const timeline = normalizeSequence([...baseTimeline, ...converted]);
+      const manualConnectionsFromDetail =
+        detail.connections?.map<NodeConnection>((connection) => ({
+          id: connection.id,
+          sourceNodeId: connection.source_node_id,
+          targetNodeId: connection.target_node_id,
+          sourcePort: "output",
+          targetPort: "input",
+          metadata: {
+            createdAt: connection.created_at,
+            createdBy: "manual",
+          },
+        })) ?? [];
+      const mergedConnections = mergeConnectionsForTimeline(timeline, manualConnectionsFromDetail);
+      const manualConnections = filterManualConnections(mergedConnections);
 
       const tabId = detail.item_codes[0] ?? detail.group_id;
       const existing = state.productTabs.find((tab) => tab.id === tabId);
       const updatedTabs = existing
-        ? updateTabTimeline(state.productTabs, tabId, () => cloneTimeline(timeline))
+        ? updateActiveTabState(state.productTabs, tabId, timeline, manualConnections)
         : [
             ...state.productTabs,
             {
@@ -1585,6 +1705,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
               productName: detail.group_name,
               candidateId: detail.group_id,
               timeline: cloneTimeline(timeline),
+              manualConnections: cloneConnections(manualConnections),
             },
           ];
 
@@ -1595,6 +1716,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         activeProductId: tabId,
         activeItemId: detail.item_codes[0] ?? tabId,
         timeline,
+        connections: mergedConnections,
         history: { past: [], future: [] },
         dirty: false,
         lastSuccessfulTimeline: successMap,
@@ -1639,10 +1761,16 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         return state;
       }
       const restored = cloneTimeline(lastSuccess);
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(restored));
+      const timeline = normalizeSequence(restored);
+      const activeTab = state.productTabs.find((tab) => tab.id === activeProductId);
+      const manualConnections = cloneConnections(activeTab?.manualConnections ?? []);
+      const mergedConnections = mergeConnectionsForTimeline(timeline, manualConnections);
+      const manualForTab = filterManualConnections(mergedConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, timeline, manualForTab);
       return {
-        timeline: normalizeSequence(restored),
+        timeline,
         productTabs: updatedTabs,
+        connections: mergedConnections,
         history: { past: [], future: [] },
         dirty: false,
       };
@@ -1657,6 +1785,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       const snapshot = past.pop()!;
       const futureSnapshot: TimelineSnapshot = {
         steps: cloneTimeline(state.timeline),
+        connections: filterManualConnections(state.connections),
         reason: "undo",
         timestamp: new Date().toISOString(),
       };
@@ -1665,10 +1794,13 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         future.pop();
       }
       const timeline = normalizeSequence(cloneTimeline(snapshot.steps));
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(timeline));
+      const mergedConnections = mergeConnectionsForTimeline(timeline, snapshot.connections ?? []);
+      const manualConnections = filterManualConnections(mergedConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, timeline, manualConnections);
       return {
         timeline,
         productTabs: updatedTabs,
+        connections: mergedConnections,
         history: { past, future },
         dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
       };
@@ -1683,6 +1815,7 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
       const snapshot = future.shift()!;
       const pastSnapshot: TimelineSnapshot = {
         steps: cloneTimeline(state.timeline),
+        connections: filterManualConnections(state.connections),
         reason: "redo",
         timestamp: new Date().toISOString(),
       };
@@ -1691,87 +1824,141 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         past.shift();
       }
       const timeline = normalizeSequence(cloneTimeline(snapshot.steps));
-      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(timeline));
+      const mergedConnections = mergeConnectionsForTimeline(timeline, snapshot.connections ?? []);
+      const manualConnections = filterManualConnections(mergedConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, timeline, manualConnections);
       return {
         timeline,
         productTabs: updatedTabs,
+        connections: mergedConnections,
         history: { past, future },
         dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
       };
     }),
   addConnection: (source, target) =>
     set((state) => {
-      // Check for duplicate connections
-      if (state.connections.some((conn) => conn.sourceNodeId === source && conn.targetNodeId === target)) {
+      const { activeProductId } = state;
+      if (!activeProductId) {
         return state;
       }
+      const hasSource = state.timeline.some((step) => step.id === source);
+      const hasTarget = state.timeline.some((step) => step.id === target);
+      if (!hasSource || !hasTarget || source === target) {
+        return state;
+      }
+      const existingPair = state.connections.find(
+        (conn) => conn.sourceNodeId === source && conn.targetNodeId === target,
+      );
+      if (existingPair) {
+        return state;
+      }
+      const history = pushHistory(state.history, state.timeline, state.connections, "add-connection");
       const newConnection: NodeConnection = {
         id: createId(),
         sourceNodeId: source,
         targetNodeId: target,
-        sourcePort: 'output',
-        targetPort: 'input',
+        sourcePort: "output",
+        targetPort: "input",
         metadata: {
           createdAt: new Date().toISOString(),
-          createdBy: 'manual',
+          createdBy: "manual",
         },
       };
+      const nextConnections = mergeConnectionsForTimeline(state.timeline, [...state.connections, newConnection]);
+      const manualConnections = filterManualConnections(nextConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, state.timeline, manualConnections);
       return {
-        connections: [...state.connections, newConnection],
+        connections: nextConnections,
+        productTabs: updatedTabs,
+        history,
         dirty: true,
       };
     }),
   removeConnection: (connectionId) =>
     set((state) => {
+      const { activeProductId } = state;
+      if (!activeProductId) {
+        return state;
+      }
+      const connection = state.connections.find((conn) => conn.id === connectionId);
+      if (!connection || !isManualConnection(connection)) {
+        return state;
+      }
+      const history = pushHistory(state.history, state.timeline, state.connections, "remove-connection");
       const nextConnections = state.connections.filter((conn) => conn.id !== connectionId);
       if (nextConnections.length === state.connections.length) {
         return state;
       }
+      const mergedConnections = mergeConnectionsForTimeline(state.timeline, nextConnections);
+      const manualConnections = filterManualConnections(mergedConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, state.timeline, manualConnections);
       return {
-        connections: nextConnections,
+        connections: mergedConnections,
+        productTabs: updatedTabs,
         selectedConnectionId: state.selectedConnectionId === connectionId ? null : state.selectedConnectionId,
+        history,
         dirty: true,
       };
     }),
   updateConnection: (connectionId, patch) =>
     set((state) => {
+      const { activeProductId } = state;
+      if (!activeProductId) {
+        return state;
+      }
       const index = state.connections.findIndex((conn) => conn.id === connectionId);
       if (index === -1) {
         return state;
       }
-      const updated = { ...state.connections[index], ...patch };
+      const existing = state.connections[index];
+      if (!isManualConnection(existing)) {
+        return state;
+      }
+      const nextSource = patch.sourceNodeId ?? existing.sourceNodeId;
+      const nextTarget = patch.targetNodeId ?? existing.targetNodeId;
+      if (
+        nextSource === nextTarget ||
+        !state.timeline.some((step) => step.id === nextSource) ||
+        !state.timeline.some((step) => step.id === nextTarget)
+      ) {
+        return state;
+      }
+      const history = pushHistory(state.history, state.timeline, state.connections, "add-connection");
+      const updated: NodeConnection = {
+        ...existing,
+        ...patch,
+        sourceNodeId: nextSource,
+        targetNodeId: nextTarget,
+        metadata: {
+          createdAt: existing.metadata?.createdAt ?? new Date().toISOString(),
+          createdBy: "manual",
+        },
+      };
       const nextConnections = [...state.connections];
       nextConnections[index] = updated;
+      const mergedConnections = mergeConnectionsForTimeline(state.timeline, nextConnections);
+      const manualConnections = filterManualConnections(mergedConnections);
+      const updatedTabs = updateActiveTabState(state.productTabs, activeProductId, state.timeline, manualConnections);
       return {
-        connections: nextConnections,
+        connections: mergedConnections,
+        productTabs: updatedTabs,
+        history,
         dirty: true,
       };
     }),
   setSelectedConnection: (connectionId) =>
     set({ selectedConnectionId: connectionId }),
   autoGenerateConnections: (timeline) =>
-    set(() => {
-      if (timeline.length < 2) {
-        return { connections: [] };
-      }
-      const autoConnections: NodeConnection[] = [];
-      for (let i = 0; i < timeline.length - 1; i++) {
-        const sourceStep = timeline[i];
-        const targetStep = timeline[i + 1];
-        autoConnections.push({
-          id: `auto-${sourceStep.id}-${targetStep.id}`,
-          sourceNodeId: sourceStep.id,
-          targetNodeId: targetStep.id,
-          sourcePort: 'output',
-          targetPort: 'input',
-          metadata: {
-            createdAt: new Date().toISOString(),
-            createdBy: 'auto',
-          },
-        });
-      }
+    set((state) => {
+      const manualConnections = filterManualConnections(state.connections);
+      const mergedConnections = mergeConnectionsForTimeline(timeline, manualConnections);
+      const manualForTab = filterManualConnections(mergedConnections);
+      const updatedTabs = state.activeProductId
+        ? updateActiveTabState(state.productTabs, state.activeProductId, timeline, manualForTab)
+        : state.productTabs;
       return {
-        connections: autoConnections,
+        connections: mergedConnections,
+        productTabs: updatedTabs,
       };
     }),
 });
@@ -1878,6 +2065,7 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
     const restoredTabs = (persisted.productTabs ?? []).map((tab) => ({
       ...tab,
       timeline: normalizeSequence(cloneTimeline(tab.timeline ?? [])),
+      manualConnections: cloneConnections(tab.manualConnections ?? []),
     }));
     let activeProductId = persisted.activeProductId;
     if (!activeProductId || !restoredTabs.some((tab) => tab.id === activeProductId)) {
@@ -1888,6 +2076,8 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       ? restoredTabs.find((tab) => tab.id === activeProductId)?.timeline ?? fallbackTimeline
       : fallbackTimeline;
     const normalizedTimeline = normalizeSequence(cloneTimeline(activeTimelineSource));
+    const persistedManualConnections = cloneConnections(persisted.connections ?? []);
+    const mergedConnections = mergeConnectionsForTimeline(normalizedTimeline, persistedManualConnections);
     const successMap = persisted.lastSuccessfulTimeline
       ? cloneSuccessMap(persisted.lastSuccessfulTimeline)
       : {};
@@ -1912,6 +2102,7 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       routingMatrixDefinitions: restoredMatrix,
       processGroups: restoredGroups,
       activeProcessGroupId: restoredActiveProcessGroupId,
+      connections: mergedConnections,
     };
 
     store.setState((current) => ({
@@ -1923,6 +2114,7 @@ const restoreLatestSnapshot = async (store: StoreApi<RoutingStoreState>) => {
       activeProcessGroupId: restoredGroups.some((group) => group.id === restoredActiveProcessGroupId)
         ? restoredActiveProcessGroupId
         : restoredGroups[0]?.id ?? null,
+      connections: mergedConnections,
     }));
     lastPersistedSnapshotSignature = computeSnapshotSignature(toPersistedState(restoredSelection));
 
@@ -1952,16 +2144,3 @@ export const createRoutingStore = () => {
 };
 
 export const useRoutingStore = createRoutingStore();
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -84,6 +84,16 @@ const ADMIN_NAVIGATION_ITEMS = [
 
 const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
 
+const AuthLoadingScreen = () => (
+  <div className="flex min-h-screen flex-col items-center justify-center gap-4 surface-base" role="status" aria-live="polite">
+    <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+    <div className="text-center space-y-1">
+      <p className="text-base font-medium text-slate-200">세션을 확인하고 있습니다…</p>
+      <p className="text-sm text-slate-400">보안 검증이 끝날 때까지 탭을 닫지 말아 주세요. 최대 5초 정도 소요됩니다.</p>
+    </div>
+  </div>
+);
+
 interface PredictionErrorInfo {
   banner: string;
   details?: string;
@@ -165,6 +175,9 @@ export default function App() {
   // 🎨 Theme management with toggle support
   useTheme();
 
+  const hasSearchItems = itemCodes.length > 0;
+  const predictQueryEnabled = isAuthenticated && hasSearchItems;
+
   const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
     topK,
@@ -173,6 +186,7 @@ export default function App() {
     weightProfile: featureWeights.profile,
     exportFormats: exportProfile.formats,
     withVisualization: exportProfile.withVisualization,
+    enabled: predictQueryEnabled,
   });
 
   // Get selected candidate for explanation panel
@@ -239,11 +253,7 @@ export default function App() {
 
   // 인증 확인 중이면 로딩 표시
   if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center surface-base">
-        <div className="h-12 w-12 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   // 인증되지 않은 경우 로그인 페이지 표시
