@@ -36,7 +36,9 @@
       "Bash(if not exist \"frontend-shared\\public\\models\" mkdir frontend-sharedpublicmodels)",
       "Bash(git mv:*)",
       "Bash(xargs:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(copy:*)",
+      "Bash(..venvScriptspython.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.4.0.spec)"
     ],
     "deny": [],
     "ask": []
