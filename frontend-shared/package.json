@@ -15,7 +15,8 @@
     "three": "^0.158.0",
     "zustand": "^4.4.0",
     "axios": "^1.6.7",
-    "idb-keyval": "^6.2.2"
+    "idb-keyval": "^6.2.2",
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",

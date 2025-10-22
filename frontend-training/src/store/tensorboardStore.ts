@@ -5,13 +5,24 @@ import {
   fetchTensorboardProjectorPoints,
   fetchTensorboardProjectors,
   fetchTensorboardMetrics,
+  fetchTensorboardTsne,
 } from "@lib/apiClient";
 import type {
   TensorboardFilterField,
   TensorboardMetricSeries,
   TensorboardPoint,
   TensorboardProjectorSummary,
+  TensorboardTsnePoint,
+  TensorboardTsneSummary,
 } from "@app-types/tensorboard";
+
+type TsneSettings = {
+  limit: number;
+  perplexity: number;
+  iterations: number;
+  steps: number;
+  stride: number | null;
+};
 
 interface TensorboardState {
   projectors: TensorboardProjectorSummary[];
@@ -31,6 +42,7 @@ interface TensorboardState {
   selectProjector: (id: string) => Promise<void>;
   reloadProjectors: () => Promise<void>;
   refreshPoints: () => Promise<void>;
+  fetchTsne: () => Promise<void>;
   loadFilters: () => Promise<void>;
   setColorField: (field: string | null) => void;
   toggleFilterValue: (field: string, value: string) => void;
@@ -41,6 +53,12 @@ interface TensorboardState {
   pointStride: number;
   setPointLimit: (limit: number) => void;
   setPointStride: (stride: number) => void;
+  tsnePoints: TensorboardTsnePoint[];
+  tsneMeta: TensorboardTsneSummary | null;
+  tsneError: string | null;
+  loadingTsne: boolean;
+  tsneSettings: TsneSettings;
+  setTsneSettings: (settings: Partial<TsneSettings>) => void;
 }
 
 export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
@@ -56,9 +74,20 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
   loadingProjectors: false,
   loadingPoints: false,
   loadingMetrics: false,
+  loadingTsne: false,
   error: null,
   pointLimit: 10000,
   pointStride: 1,
+  tsnePoints: [],
+  tsneMeta: null,
+  tsneError: null,
+  tsneSettings: {
+    limit: 1500,
+    perplexity: 30,
+    iterations: 750,
+    steps: 12,
+    stride: null,
+  },
 
   initialize: async () => {
     await get().reloadProjectors();
@@ -77,6 +106,9 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
       totalPoints: 0,
       metrics: [],
       activeMetric: null,
+      tsnePoints: [],
+      tsneMeta: null,
+      tsneError: null,
     });
     await get().loadFilters();
     await get().refreshPoints();
@@ -132,6 +164,9 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
         totalPoints: 0,
         metrics: [],
         activeMetric: null,
+        tsnePoints: [],
+        tsneMeta: null,
+        tsneError: null,
       });
       if (selectedId) {
         await get().loadFilters();
@@ -149,6 +184,9 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
         filters: [],
         metrics: [],
         activeMetric: null,
+        tsnePoints: [],
+        tsneMeta: null,
+        tsneError: "T-SNE ��ǥ�� �ҷ����� ���߽��ϴ�.",
       });
     } finally {
       set({ loadingProjectors: false });
@@ -180,6 +218,50 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
       });
     } finally {
       set({ loadingPoints: false });
+      if (get().selectedId) {
+        void get().fetchTsne();
+      }
+    }
+  },
+
+  fetchTsne: async () => {
+    const state = get();
+    if (!state.selectedId || state.loadingTsne) {
+      return;
+    }
+    set({ loadingTsne: true, tsneError: null });
+    try {
+      const { limit, perplexity, iterations, steps, stride } = state.tsneSettings;
+      const response = await fetchTensorboardTsne(state.selectedId, {
+        limit,
+        perplexity,
+        iterations,
+        steps,
+        stride: typeof stride === "number" && stride > 0 ? stride : undefined,
+        filters: state.activeFilters,
+      });
+      set({
+        tsnePoints: response.points,
+        tsneMeta: {
+          projectorId: response.projectorId,
+          total: response.total,
+          sampled: response.sampled,
+          requestedPerplexity: response.requestedPerplexity,
+          effectivePerplexity: response.effectivePerplexity,
+          iterations: response.iterations,
+          usedPcaFallback: response.usedPcaFallback,
+        },
+        tsneError: null,
+      });
+    } catch (error) {
+      console.error("Failed to load tensorboard tsne", error);
+      set({
+        tsnePoints: [],
+        tsneMeta: null,
+        tsneError: "T-SNE ��ǥ�� �ҷ����� ���߽��ϴ�.",
+      });
+    } finally {
+      set({ loadingTsne: false });
     }
   },
 
@@ -269,6 +351,28 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
     set(() => ({
       pointStride: Math.max(1, stride),
     })),
+
+  setTsneSettings: (settings) =>
+    set((state) => {
+      const next: TsneSettings = { ...state.tsneSettings };
+      if (settings.limit !== undefined) {
+        next.limit = Math.max(200, Math.min(5000, Math.floor(settings.limit)));
+      }
+      if (settings.perplexity !== undefined) {
+        next.perplexity = Math.max(5, Math.min(100, settings.perplexity));
+      }
+      if (settings.iterations !== undefined) {
+        next.iterations = Math.max(250, Math.min(2000, Math.floor(settings.iterations)));
+      }
+      if (settings.steps !== undefined) {
+        next.steps = Math.max(3, Math.min(50, Math.floor(settings.steps)));
+      }
+      if (settings.stride !== undefined) {
+        const stride = settings.stride;
+        next.stride = typeof stride === "number" && stride > 0 ? Math.floor(stride) : null;
+      }
+      return { tsneSettings: next };
+    }),
 }));
 
 export type { TensorboardState };

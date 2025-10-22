@@ -50,7 +50,13 @@
       "Bash(if [ ! -d \"old\" ])",
       "Bash(then mkdir old)",
       "Bash(fi)",
-      "Bash(./RoutingMLMonitor_v5.5.0.exe)"
+      "Bash(./RoutingMLMonitor_v5.5.0.exe)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx eslint:*)",
+      "Bash(if not exist \"docs\\implementation\" mkdir docsimplementation)"
     ],
     "deny": [],
     "ask": []

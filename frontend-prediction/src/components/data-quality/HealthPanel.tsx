@@ -1,6 +1,6 @@
+import { type ComponentHealth,fetchDataQualityHealth, type HealthStatus } from "@lib/apiClient";
+import { Activity,AlertTriangle, CheckCircle, RefreshCw, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { RefreshCw, CheckCircle, AlertTriangle, XCircle, Activity } from "lucide-react";
-import { fetchDataQualityHealth, type HealthStatus, type ComponentHealth } from "@lib/apiClient";
 
 type HealthStatusType = "healthy" | "degraded" | "unhealthy";
 

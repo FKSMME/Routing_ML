@@ -1,11 +1,12 @@
+import type { DataQualityMetrics } from "@lib/apiClient";
+
 import type {
   Alert,
-  AlertRule,
   AlertHistory,
+  AlertRule,
   CreateAlertRuleInput,
   UpdateAlertRuleInput,
 } from "../types/alerts";
-import type { DataQualityMetrics } from "@lib/apiClient";
 
 const STORAGE_KEY_RULES = "dataQuality_alertRules";
 const STORAGE_KEY_HISTORY = "dataQuality_alertHistory";

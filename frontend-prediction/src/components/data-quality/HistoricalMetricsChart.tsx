@@ -1,18 +1,18 @@
+import type { DataQualityMetrics } from "@lib/apiClient";
+import { format } from "date-fns";
+import { Minus,TrendingDown, TrendingUp } from "lucide-react";
 import React, { useMemo } from "react";
 import {
-  LineChart,
+  CartesianGrid,
+  Legend,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  TooltipProps,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  TooltipProps,
 } from "recharts";
-import { format } from "date-fns";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { DataQualityMetrics } from "@lib/apiClient";
 
 export interface HistoricalDataPoint {
   timestamp: string;

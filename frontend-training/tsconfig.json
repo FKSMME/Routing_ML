@@ -22,11 +22,12 @@
       "@store/*": ["src/store/*"],
       "@styles/*": ["src/styles/*"],
       "@routing-ml/shared": ["../frontend-shared/src/index.ts"],
-      "@routing-ml/shared/*": ["../frontend-shared/src/*"]
+      "@routing-ml/shared/*": ["../frontend-shared/src/*"],
+      "reactflow": ["node_modules/reactflow"],
+      "reactflow/*": ["node_modules/reactflow/*"]
     }
   },
   "include": ["src", "tests", "../tests/frontend-training"],
   "exclude": ["node_modules", "dist", "build", "**/*.spec.ts", "**/*.test.ts", "../frontend", "../tests/frontend"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
-

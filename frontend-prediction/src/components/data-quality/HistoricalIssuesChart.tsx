@@ -1,18 +1,18 @@
-import React, { useMemo } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  TooltipProps,
-} from "recharts";
+import type { DataQualityIssue } from "@lib/apiClient";
 import { format } from "date-fns";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
-import type { DataQualityIssue } from "@lib/apiClient";
+import React, { useMemo } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  TooltipProps,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export interface HistoricalIssuesDataPoint {
   timestamp: string;

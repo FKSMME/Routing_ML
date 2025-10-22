@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Droplets, SlidersHorizontal } from "lucide-react";
 import { useBackgroundSettings } from "@store/backgroundSettings";
+import { Droplets, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
 
 const COLOR_LABELS = ["Primary", "Accent", "Glow"];
 

@@ -9,7 +9,7 @@ import { useTensorboardStore } from "@store/tensorboardStore";
 import type { TensorboardMetricSeries } from "@app-types/tensorboard";
 import { fetchTrainingStatus, exportTensorboardProjector, fetchTensorboardConfig } from "@lib/apiClient";
 
-type VisualizationMode = '3d' | 'heatmap' | 'scatter';
+type VisualizationMode = '3d' | 'heatmap' | 'tsne';
 
 const COLOR_PALETTE = [
   "#60a5fa",
@@ -23,6 +23,13 @@ const COLOR_PALETTE = [
   "#ef4444",
   "#6366f1",
 ];
+
+const stepColor = (step: number): string => {
+  if (step <= 0) {
+    return "#94a3b8";
+  }
+  return COLOR_PALETTE[(step - 1) % COLOR_PALETTE.length] ?? COLOR_PALETTE[0];
+};
 
 const hexToRGB = (hex: string): [number, number, number] => {
   const cleanHex = hex.replace("#", "");
@@ -300,6 +307,357 @@ const HeatmapChart = () => {
   return (
     <div className="h-full w-full">
       <ReactECharts option={option} style={{ height: "100%", width: "100%" }} />
+    </div>
+  );
+};
+
+const TsneProgressView = () => {
+  const {
+    tsnePoints,
+    tsneMeta,
+    tsneError,
+    loadingTsne,
+    tsneSettings,
+    setTsneSettings,
+    fetchTsne,
+  } = useTensorboardStore((state) => ({
+    tsnePoints: state.tsnePoints,
+    tsneMeta: state.tsneMeta,
+    tsneError: state.tsneError,
+    loadingTsne: state.loadingTsne,
+    tsneSettings: state.tsneSettings,
+    setTsneSettings: state.setTsneSettings,
+    fetchTsne: state.fetchTsne,
+  }));
+
+  const maxStep = useMemo(() => {
+    if (tsnePoints.length === 0) {
+      return 1;
+    }
+    return tsnePoints.reduce((max, point) => (point.step > max ? point.step : max), 1);
+  }, [tsnePoints]);
+
+  const [highlightStep, setHighlightStep] = useState<number>(maxStep);
+
+  useEffect(() => {
+    if (tsnePoints.length === 0) {
+      setHighlightStep(1);
+      return;
+    }
+    setHighlightStep((previous) => {
+      if (!Number.isFinite(previous) || previous <= 0) {
+        return maxStep;
+      }
+      if (previous > maxStep) {
+        return maxStep;
+      }
+      return previous;
+    });
+  }, [tsnePoints, maxStep]);
+
+  const chartData = useMemo(
+    () =>
+      tsnePoints.map((point) => ({
+        value: [point.x, point.y, point.step, point.progress],
+        name: point.id,
+        id: point.id,
+        metadata: point.metadata,
+        symbolSize: point.step <= highlightStep ? 11 : 6,
+        itemStyle: {
+          opacity: point.step <= highlightStep ? 0.9 : 0.12,
+        },
+      })),
+    [tsnePoints, highlightStep]
+  );
+
+  const option = useMemo<EChartsOption>(() => {
+    if (chartData.length === 0) {
+      return {
+        graphic: {
+          type: "text",
+          left: "center",
+          top: "middle",
+          style: {
+            text: "T-SNE ��ǥ�� �����Ͱ� �����ϴ�.\n��ǥ�� �����Ϸ� ���� T-SNE ���ΰ�ħ�� �����ּ���.",
+            fill: "#94a3b8",
+            fontSize: 13,
+            lineHeight: 20,
+            align: "center",
+          },
+        },
+      };
+    }
+    return {
+      animation: false,
+      grid: { left: 52, right: 28, top: 40, bottom: maxStep > 1 ? 90 : 50 },
+      xAxis: {
+        type: "value",
+        name: "TSNE-1",
+        nameGap: 32,
+        nameLocation: "middle",
+        scale: true,
+        axisLabel: { color: "#94a3b8" },
+        axisLine: { lineStyle: { color: "#cbd5f5" } },
+        splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.12)" } },
+      },
+      yAxis: {
+        type: "value",
+        name: "TSNE-2",
+        nameGap: 40,
+        nameLocation: "middle",
+        scale: true,
+        axisLabel: { color: "#94a3b8" },
+        axisLine: { lineStyle: { color: "#cbd5f5" } },
+        splitLine: { lineStyle: { color: "rgba(148, 163, 184, 0.12)" } },
+      },
+      tooltip: {
+        trigger: "item",
+        backgroundColor: "rgba(15, 23, 42, 0.92)",
+        borderRadius: 10,
+        padding: [10, 12],
+        textStyle: { color: "#e2e8f0", fontSize: 12 },
+        formatter(params: any) {
+          if (!params || typeof params !== "object") {
+            return "";
+          }
+          const value = Array.isArray(params.value) ? params.value : [];
+          const [x, y, step, progress] = value;
+          const data = params.data ?? {};
+          const meta = data.metadata ?? {};
+          const identifier = data.id ?? params.name ?? "";
+          const primaryLabel =
+            meta.PART_TYPE ??
+            meta.part_type ??
+            meta.ITEM_TYPE ??
+            meta.item_type ??
+            meta.ITEM_CD ??
+            meta.item_cd ??
+            "";
+          const progressPercent =
+            typeof progress === "number" && Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) * 100 : 0;
+          return [
+            `<div style="display:flex;flex-direction:column;gap:6px;">`,
+            `<div style="font-weight:600;font-size:13px;">${identifier}</div>`,
+            `<div style="font-size:12px;opacity:0.75;">${primaryLabel || "메타데이터 없음"}</div>`,
+            `<div style="font-size:11px;">Step <strong>${step ?? "-"}</strong> · Progress ${progressPercent.toFixed(1)}%</div>`,
+            `<div style="font-size:11px;opacity:0.65;">x=${Number(x ?? 0).toFixed(2)}, y=${Number(y ?? 0).toFixed(2)}</div>`,
+            `</div>`,
+          ].join("");
+        },
+      },
+      visualMap:
+        maxStep > 1
+          ? {
+              show: true,
+              min: 1,
+              max: maxStep,
+              dimension: 2,
+              orient: "horizontal",
+              left: "center",
+              bottom: 24,
+              text: ["후반", "초반"],
+              textStyle: { color: "#64748b", fontSize: 11 },
+              inRange: { color: COLOR_PALETTE },
+              calculable: false,
+            }
+          : undefined,
+      series: [
+        {
+          type: "scatter",
+          data: chartData,
+          encode: { x: 0, y: 1 },
+          itemStyle: { borderWidth: 0 },
+          emphasis: { focus: "series", scale: true },
+          large: chartData.length > 2000,
+          largeThreshold: 2000,
+          z: 2,
+        },
+      ],
+    };
+  }, [chartData, maxStep]);
+
+  const activeCount = useMemo(() => {
+    if (tsnePoints.length === 0) {
+      return 0;
+    }
+    return tsnePoints.reduce((count, point) => (point.step <= highlightStep ? count + 1 : count), 0);
+  }, [tsnePoints, highlightStep]);
+
+  const progressShare = tsnePoints.length === 0 ? 0 : (activeCount / tsnePoints.length) * 100;
+  const sampled = tsneMeta?.sampled ?? tsnePoints.length;
+  const total = tsneMeta?.total ?? tsnePoints.length;
+  const effectivePerplexity = tsneMeta?.effectivePerplexity ?? tsneSettings.perplexity;
+  const requestedPerplexity = tsneMeta?.requestedPerplexity ?? tsneSettings.perplexity;
+  const iterations = tsneMeta?.iterations ?? tsneSettings.iterations;
+  const usedFallback = Boolean(tsneMeta?.usedPcaFallback);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200/70 bg-white/70 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
+        <label className="flex items-center gap-2">
+          <span className="font-semibold text-slate-700 dark:text-slate-200">샘플 수</span>
+          <input
+            type="number"
+            min={200}
+            max={5000}
+            step={100}
+            value={tsneSettings.limit}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              if (!Number.isNaN(next)) {
+                setTsneSettings({ limit: next });
+              }
+            }}
+            className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Perplexity</span>
+          <input
+            type="range"
+            min={5}
+            max={80}
+            step={5}
+            value={tsneSettings.perplexity}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              if (!Number.isNaN(next)) {
+                setTsneSettings({ perplexity: next });
+              }
+            }}
+            className="h-1 w-32 cursor-pointer accent-indigo-500"
+          />
+          <span className="w-10 text-center font-semibold text-slate-700 dark:text-slate-200">{tsneSettings.perplexity}</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="font-semibold text-slate-700 dark:text-slate-200">스텝 분해</span>
+          <input
+            type="range"
+            min={3}
+            max={30}
+            step={1}
+            value={tsneSettings.steps}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              if (!Number.isNaN(next)) {
+                setTsneSettings({ steps: next });
+              }
+            }}
+            className="h-1 w-28 cursor-pointer accent-emerald-500"
+          />
+          <span className="w-8 text-center font-semibold text-slate-700 dark:text-slate-200">{tsneSettings.steps}</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Iterations</span>
+          <select
+            className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800"
+            value={tsneSettings.iterations}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value);
+              if (!Number.isNaN(next)) {
+                setTsneSettings({ iterations: next });
+              }
+            }}
+          >
+            {[500, 750, 1000, 1500, 2000].map((option) => (
+              <option key={option} value={option}>
+                {option.toLocaleString()}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-md border border-indigo-300 bg-indigo-500/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 dark:border-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-400"
+            onClick={() => {
+              void fetchTsne();
+            }}
+            disabled={loadingTsne}
+          >
+            {loadingTsne ? "계산 중…" : "T-SNE 재계산"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+            <span className="font-semibold">강조 단계</span>
+            <input
+              type="range"
+              min={1}
+              max={Math.max(1, maxStep)}
+              value={Math.min(highlightStep, Math.max(1, maxStep))}
+              disabled={tsnePoints.length === 0 || maxStep <= 1}
+              onChange={(event) => {
+                const next = Number(event.currentTarget.value);
+                if (!Number.isNaN(next)) {
+                  setHighlightStep(next);
+                }
+              }}
+              className="h-1 w-36 cursor-pointer accent-sky-500"
+            />
+            <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: stepColor(highlightStep) }} />
+              {tsnePoints.length === 0 ? "0 / 0" : `${highlightStep} / ${maxStep}`}
+            </span>
+          </label>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            표시된 샘플 {activeCount.toLocaleString()}개 · 누적 {progressShare.toFixed(1)}%
+          </span>
+        </div>
+
+        <div className="relative flex-1 rounded-lg border border-slate-200 bg-white/80 p-2 dark:border-slate-700 dark:bg-slate-900/70">
+          {chartData.length > 0 ? (
+            <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "canvas" }} notMerge lazyUpdate />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">
+              {loadingTsne ? "T-SNE ��ǥ�� �����ϴ�..." : "T-SNE ��ǥ�� �����Ͱ� �����ϴ�. ���ΰ�ħ�� �������ּ���."}
+            </div>
+          )}
+          {loadingTsne ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-medium text-slate-600 backdrop-blur-sm dark:bg-slate-900/60 dark:text-slate-200">
+              T-SNE ��ǥ�� �����ϴ�...
+            </div>
+          ) : null}
+        </div>
+
+        {tsneError ? (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+            {tsneError}
+          </div>
+        ) : null}
+
+        <div className="grid gap-3 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
+          <div>
+            샘플링:{" "}
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
+              {sampled.toLocaleString()} / {total.toLocaleString()}
+            </span>
+          </div>
+          <div>
+            Perplexity:{" "}
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
+              {effectivePerplexity.toFixed(1)}
+            </span>{" "}
+            (요청 {requestedPerplexity.toFixed(1)})
+          </div>
+          <div>
+            Iterations:{" "}
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{iterations.toLocaleString()}</span>
+          </div>
+          <div>
+            강조 비율:{" "}
+            <span className="font-semibold text-slate-800 dark:text-slate-100">{progressShare.toFixed(1)}%</span>
+          </div>
+          {usedFallback ? (
+            <div className="col-span-full rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-200">
+              샘플 수가 적어 PCA 기반 2D 매핑으로 대체되었습니다. 샘플 제한을 늘리고 다시 계산해 보세요.
+            </div>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 };
@@ -678,6 +1036,17 @@ export const TensorboardEmbeddingPanel = () => {
             >
               Heatmap
             </button>
+            <button
+              type="button"
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                visualizationMode === 'tsne'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+              }`}
+              onClick={() => setVisualizationMode('tsne')}
+            >
+              T-SNE Progress
+            </button>
           </div>
 
           {/* Visualization Area */}
@@ -824,6 +1193,8 @@ export const TensorboardEmbeddingPanel = () => {
               <div className="flex h-full items-center justify-center p-6">
                 <HeatmapChart />
               </div>
+            ) : visualizationMode === 'tsne' ? (
+              <TsneProgressView />
             ) : null}
           </div>
         </div>
@@ -975,9 +1346,3 @@ export const TensorboardEmbeddingPanel = () => {
     </section>
   );
 };
-
-
-
-
-
-

@@ -57,3 +57,34 @@ export interface TensorboardConfig {
   projectorPathExists: boolean;
   modelDir: string;
 }
+
+export interface TensorboardTsnePoint {
+  id: string;
+  x: number;
+  y: number;
+  progress: number;
+  step: number;
+  metadata: TensorboardPointMetadata;
+}
+
+export interface TensorboardTsneResponse {
+  projectorId: string;
+  total: number;
+  sampled: number;
+  requestedPerplexity: number;
+  effectivePerplexity: number;
+  iterations: number;
+  usedPcaFallback: boolean;
+  points: TensorboardTsnePoint[];
+}
+
+export type TensorboardTsneSummary = Omit<TensorboardTsneResponse, "points">;
+
+export interface TensorboardTsneRequestOptions {
+  limit?: number;
+  perplexity?: number;
+  iterations?: number;
+  steps?: number;
+  stride?: number;
+  filters?: Record<string, string[]>;
+}

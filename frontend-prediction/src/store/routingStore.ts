@@ -10,9 +10,6 @@ import type {
   RoutingGroupDetail,
   TimelineStepMetadata,
 } from "@app-types/routing";
-import { create, type StateCreator, type StoreApi } from "zustand";
-import { shallow } from "zustand/shallow";
-
 import {
   enableRoutingPersistenceFlush,
   enqueueAuditEntry,
@@ -21,6 +18,8 @@ import {
   subscribeToRoutingPersistenceFlush,
   writeRoutingWorkspaceSnapshot,
 } from "@routing-ml/shared/lib/persistence";
+import { create, type StateCreator, type StoreApi } from "zustand";
+import { shallow } from "zustand/shallow";
 
 const MAX_HISTORY = 50;
 const NODE_GAP = 240;

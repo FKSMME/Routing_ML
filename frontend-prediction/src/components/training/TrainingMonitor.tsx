@@ -1,6 +1,6 @@
+import axios from "axios";
 import { AlertCircle, CheckCircle2, Clock, Pause, Play, RefreshCw, X, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import axios from "axios";
 
 interface StartTrainingRequest {
   cycle_id?: string;

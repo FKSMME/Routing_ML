@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
-import { AlertCircle, AlertTriangle, Info, Check, Trash2, X } from "lucide-react";
 import { format } from "date-fns";
-import type { Alert, AlertSeverity } from "../../types/alerts";
+import { AlertCircle, AlertTriangle, Check, Info, Trash2, X } from "lucide-react";
+import React, { useEffect, useRef,useState } from "react";
+import toast from "react-hot-toast";
+
 import {
-  getRecentAlerts,
   acknowledgeAlert,
   clearAlertHistory,
+  getRecentAlerts,
 } from "../../services/alertService";
-import toast from "react-hot-toast";
+import type { Alert, AlertSeverity } from "../../types/alerts";
 
 interface AlertDropdownProps {
   onClose: () => void;

@@ -8,12 +8,12 @@
  * - Service health monitoring
  */
 
-import { useState } from "react";
-import { MetricsPanel } from "@components/data-quality/MetricsPanel";
-import { IssuesPanel } from "@components/data-quality/IssuesPanel";
-import { PrometheusPanel } from "@components/data-quality/PrometheusPanel";
-import { HealthPanel } from "@components/data-quality/HealthPanel";
 import { AlertBell } from "@components/data-quality/AlertBell";
+import { HealthPanel } from "@components/data-quality/HealthPanel";
+import { IssuesPanel } from "@components/data-quality/IssuesPanel";
+import { MetricsPanel } from "@components/data-quality/MetricsPanel";
+import { PrometheusPanel } from "@components/data-quality/PrometheusPanel";
+import { useState } from "react";
 
 // Type Definitions
 interface DataQualityMetrics {
