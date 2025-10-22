@@ -13,11 +13,11 @@
 
 **Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks) - 2 hours
 **Phase 1**: [▓▓▓▓▓] 100% (8/8 subsections) - 18 hours ✅
-**Phase 2**: [▓▓▓░░] 50% (3/6 subsections) - 20/28 hours (updated from 24h)
+**Phase 2**: [▓▓▓▓░] 67% (4/6 subsections) - 24/28 hours (updated from 24h)
 **Phase 3**: [░░░░░] 0% (0/6 subsections) - 26 hours (updated from 20h)
 **Phase 4**: [░░░░░] 0% (0/9 tasks) - 12 hours
 
-**Total**: [▓▓▓▓░░░░░░] 44% (16/54 tasks, 40/86 hours)
+**Total**: [▓▓▓▓░░░░░░] 49% (17/54 tasks, 44/86 hours)
 
 ---
 
@@ -229,14 +229,27 @@
   - ✅ Test: Model serialization (to_dict() JSON-safe)
   - ✅ All tests passed (MAE: 0.76 MLP, 0.92 Stacking)
 
-### 2.4 Model Deployment Module (4 hours)
-- [ ] Create `backend/iter_training/deployer.py` (3 hours)
-  - `save_model(model, version)`: Save to `models/version_<timestamp>`
-  - `update_manifest(version)`: Update ModelManifest
-  - `invalidate_cache()`: Clear predictor service cache
-  - `rollback(version)`: Restore previous model
-- [ ] Add deployment tests (1 hour)
-  - Test: save/load, manifest update, cache invalidation
+### 2.4 Model Deployment Module (4 hours) ✅
+- [x] Create `backend/iter_training/deployer.py` (3 hours)
+  - ✅ `ModelDeployer` class with versioning support
+  - ✅ `save_model()`: Save to `models/version_YYYYMMDD_HHMMSS/`
+  - ✅ `update_manifest()`: Update manifest.json with metadata
+  - ✅ `invalidate_cache()`: Cache invalidation marker file
+  - ✅ `rollback()`: Restore previous version
+  - ✅ `activate_version()`: Set active model version
+  - ✅ `list_versions()`: List all model versions
+  - ✅ `get_version_info()`: Get version details with metadata
+  - ✅ `cleanup_old_versions()`: Delete old versions (keep latest N)
+- [x] Add deployment tests (1 hour)
+  - ✅ Created `scripts/test_model_deployer.py`
+  - ✅ Test: save_model() with versioning (2 versions created)
+  - ✅ Test: update_manifest() with metadata
+  - ✅ Test: activate_version() and active marker
+  - ✅ Test: invalidate_cache() with timestamp
+  - ✅ Test: rollback() to previous version
+  - ✅ Test: list_versions() and get_version_info()
+  - ✅ Test: cleanup_old_versions() (kept 2, deleted 2)
+  - ✅ All tests passed
 
 ### 2.5 Training API Endpoints (4 hours) ⭐ NEW
 - [ ] Create `backend/api/routes/training.py` (3 hours)
