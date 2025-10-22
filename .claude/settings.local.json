@@ -28,7 +28,8 @@
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(PYTHONPATH=.. ../.venv/Scripts/python.exe run_api.py)",
       "Bash(.venvScriptspython.exe scriptsiter_training_poc.py --sample-size 100 --strategy random)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(if not exist \"frontend-prediction\\tests\\e2e\\screenshots\" mkdir \"frontend-prediction\\tests\\e2e\\screenshots\")"
     ],
     "deny": [],
     "ask": []
