@@ -1,0 +1,182 @@
+# Iterative Training Configuration
+# This file controls the behavior of the automated quality evaluation
+# and retraining system for Routing ML.
+
+# Sampling Configuration
+sampling:
+  # Number of items to sample for quality evaluation
+  sample_size: 500
+
+  # Sampling strategy: "random", "stratified", or "recent_bias"
+  strategy: "stratified"
+
+  # Random seed for reproducibility (null for random)
+  seed: 42
+
+  # For stratified sampling: column to stratify by
+  strata_column: "PART_TYPE"
+
+  # For recent_bias sampling: number of days to consider "recent"
+  recent_days_window: 30
+
+  # Minimum population size required to run sampling
+  min_population: 100
+
+# Quality Thresholds
+thresholds:
+  # Mean Absolute Error threshold (minutes)
+  # Alert if MAE exceeds this value
+  mae_max: 5.0
+
+  # Trimmed MAE threshold (minutes)
+  trim_mae_max: 3.5
+
+  # Process Match Rate threshold (0-1)
+  # Alert if match rate falls below this
+  process_match_min: 0.80
+
+  # Coefficient of Variation threshold
+  # Alert if CV exceeds this (indicates high variability)
+  cv_max: 0.5
+
+  # Minimum sample count per item
+  # Alert if work order samples < this value
+  sample_count_min: 3
+
+  # Trim ratio for outlier removal (0-1)
+  # Remove top/bottom X% when calculating trim statistics
+  trim_ratio: 0.10
+
+# Retraining Queue Configuration
+queue:
+  # Maximum number of concurrent retraining jobs
+  max_size: 3
+
+  # Maximum retry attempts for failed jobs
+  max_retries: 2
+
+  # Backoff multiplier for retry delays (seconds)
+  retry_backoff_seconds: 60
+
+  # Queue persistence file path
+  queue_file: "data/retraining_queue.json"
+
+# Model Training Configuration
+training:
+  # Cross-validation folds
+  cv_folds: 5
+
+  # Parallel jobs for cross-validation (-1 = all CPUs)
+  n_jobs: -1
+
+  # Minimum improvement threshold for model acceptance (%)
+  # New model must improve MAE by at least this percentage
+  min_improvement_pct: 5.0
+
+  # Model candidates to train and compare
+  # Available: "baseline", "mlp", "stacking"
+  model_candidates:
+    - "baseline"
+    - "mlp"
+    - "stacking"
+
+  # MLP-specific configuration
+  mlp:
+    hidden_layer_sizes: [128, 64]
+    activation: "relu"
+    solver: "adam"
+    alpha: 0.0001
+    learning_rate_init: 0.001
+    max_iter: 200
+    random_state: 42
+
+  # Stacking-specific configuration
+  stacking:
+    # Base estimators will be: KNN, RandomForest, MLP
+    final_estimator: "ridge"  # "ridge" or "elastic_net"
+    cv: 3
+
+# Hyperparameter Tuning Configuration
+tuning:
+  # Enable/disable automatic hyperparameter tuning
+  enabled: false
+
+  # Maximum number of tuning trials
+  max_trials: 5
+
+  # Time budget for tuning (seconds, 0 = no limit)
+  time_budget_seconds: 7200  # 2 hours
+
+  # Search method: "grid" or "random"
+  search_method: "random"
+
+  # MLP search space (for random/grid search)
+  mlp_search_space:
+    hidden_layer_sizes:
+      - [128, 64]
+      - [256, 128, 64]
+      - [256, 128]
+    alpha:
+      - 0.0001
+      - 0.001
+      - 0.01
+    learning_rate_init:
+      - 0.001
+      - 0.01
+
+# Logging Configuration
+logging:
+  # Log level: "DEBUG", "INFO", "WARNING", "ERROR"
+  level: "INFO"
+
+  # PowerShell stream log file
+  stream_log_file: "logs/performance/performance.quality.log"
+
+  # Cycle-specific log file pattern
+  cycle_log_pattern: "logs/performance/performance.quality_{cycle_id}.log"
+
+  # Enable color-coded console output
+  color_output: true
+
+  # Log format
+  format: "[{timestamp}] {level:8s} cycle={cycle_id} {message}"
+
+# Report Generation Configuration
+reports:
+  # Output directory for reports
+  output_dir: "deliverables"
+
+  # Generate JSON report
+  generate_json: true
+
+  # Generate CSV report
+  generate_csv: true
+
+  # Generate Markdown summary
+  generate_markdown: true
+
+  # Keep last N cycle reports (0 = keep all)
+  keep_last_n: 30
+
+# Schedule Configuration (for automated execution)
+schedule:
+  # Enable/disable automated scheduling
+  enabled: false
+
+  # Cron expression for quality evaluation
+  # Default: daily at 2 AM
+  cron_expression: "0 2 * * *"
+
+  # Maximum execution time (seconds)
+  max_execution_time: 3600  # 1 hour
+
+# Cache Configuration
+cache:
+  # Enable prediction result caching
+  enabled: true
+
+  # Cache TTL (seconds)
+  ttl_seconds: 3600  # 1 hour
+
+  # Maximum cache size (number of items)
+  max_size: 1000
