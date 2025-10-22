@@ -27,7 +27,11 @@ export type NavigationKey =
   | "data-mapping"
   | "data-relationship"
   | "profile-management"
-  | "data-quality";
+  | "data-quality"
+  | "quality-monitor"
+  | "training-monitor"
+  | "training-settings"
+  | "log-viewer";
 
 type ExportDestination = "local" | "clipboard" | "server";
 

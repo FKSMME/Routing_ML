@@ -325,15 +325,22 @@ export function CandidatePanel() {
                   <span className="timeline-node__meta-item">
                     <strong>Wait:</strong> {item.operation.WAIT_TIME ?? "-"}
                   </span>
-                  {item.operation.WORK_ORDER_COUNT ? (
+                  {(item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT) ? (
                     <span className="timeline-node__meta-item">
-                      <strong>Samples:</strong> {item.operation.WORK_ORDER_COUNT}
+                      <strong>샘플:</strong> {item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT}
+                      {(item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT ?? 0) < 3 && <span style={{ color: '#f59e0b', marginLeft: '2px' }} title="샘플 부족">⚠️</span>}
                     </span>
                   ) : null}
                   {item.operation.WORK_ORDER_CONFIDENCE !== undefined &&
                   item.operation.WORK_ORDER_CONFIDENCE !== null ? (
                     <span className="timeline-node__meta-item">
-                      <strong>Conf:</strong> {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100)}%
+                      <strong>신뢰도:</strong> {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100)}%
+                      {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100) >= 80 && <span style={{ color: '#10b981', marginLeft: '2px' }} title="고신뢰도">✓</span>}
+                    </span>
+                  ) : null}
+                  {item.operation.TRIM_MEAN !== undefined && item.operation.TRIM_MEAN !== null ? (
+                    <span className="timeline-node__meta-item" title="Trim-평균 (이상치 제거)">
+                      <strong>Trim:</strong> {item.operation.TRIM_MEAN.toFixed(2)}분
                     </span>
                   ) : null}
                 </div>

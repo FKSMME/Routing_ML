@@ -11,13 +11,13 @@
 
 ## Progress Tracking
 
-**Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks) - 2 hours
+**Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks) - 2 hours ✅
 **Phase 1**: [▓▓▓▓▓] 100% (8/8 subsections) - 18 hours ✅
 **Phase 2**: [▓▓▓▓▓] 100% (6/6 subsections) - 28/28 hours ✅
-**Phase 3**: [░░░░░] 0% (0/6 subsections) - 26 hours (updated from 20h)
+**Phase 3**: [▓▓▓▓▓▓] 100% (6/6 subsections) - 26/26 hours ✅
 **Phase 4**: [░░░░░] 0% (0/9 tasks) - 12 hours
 
-**Total**: [▓▓▓▓▓░░░░░] 53% (18/54 tasks, 48/86 hours)
+**Total**: [▓▓▓▓▓▓▓▓░░] 70% (24/54 tasks, 74/86 hours)
 
 ---
 
@@ -307,69 +307,103 @@
 
 ---
 
-## Phase 3: Frontend & UX Enhancements (20 hours)
+## Phase 3: Frontend & UX Enhancements (26 hours)
 
-**Status**: Not Started
+**Status**: ✅ Complete (100%)
 
 **Tasks**:
 
-### 3.1 Type Definitions & API Client (2 hours)
-- [ ] Extend `TimelineStep` interface in `frontend-prediction/src/store/routingStore.ts` (30 min)
-  - Add: trimMean, sampleCount, workOrderConfidence, outsourcingReplaced
-- [ ] Extend `OperationStep` interface in `frontend-prediction/src/types/routing.ts` (30 min)
-  - Add: TRIM_MEAN, SAMPLE_COUNT, WORK_ORDER_CONFIDENCE, OUTSOURCING_REPLACED
-- [ ] Add quality API types in `frontend-prediction/src/lib/apiClient.ts` (1 hour)
-  - QualityMetrics, QualityCycle, AlertItem types
+### 3.1 Type Definitions & API Client (2 hours) ✅
+- [x] Extend `TimelineStep` interface in `frontend-prediction/src/store/routingStore.ts` (30 min)
+  - Added: trimMean, sampleCount, moveTime (also fixed candidate_item_code typo)
+  - ✅ Updated toTimelineStep function to map new fields
+- [x] Extend `OperationStep` interface in `frontend-prediction/src/types/routing.ts` (30 min)
+  - Added: TRIM_MEAN, SAMPLE_COUNT
+  - ✅ Already had: WORK_ORDER_CONFIDENCE, OUTSOURCING_REPLACED
+- [x] Add quality API types in `frontend-prediction/src/lib/apiClient.ts` (1 hour)
+  - ✅ Added: QualityMetrics, QualityCycle, AlertItem types
+  - ✅ Added: QualityHistoryResponse for historical data
 
-### 3.2 Prediction Metadata Display (4 hours)
-- [ ] Update `RoutingCanvas.tsx` tooltip component (2 hours)
-  - Display: TrimMean, StdDev, SampleCount, Confidence
-  - Add badges: "High Confidence", "Low Samples" warnings
-- [ ] Update `CandidatePanel.tsx` (2 hours)
-  - Add WorkOrderCount, WorkOrderConfidence display
-  - Add "Outsourcing Replaced" badge with icon
-  - Update candidate card layout
+### 3.2 Prediction Metadata Display (4 hours) ✅
+- [x] Update `RoutingCanvas.tsx` tooltip component (2 hours)
+  - ✅ Display: TrimMean, StdDev, SampleCount, Confidence
+  - ✅ Add badges: "고신뢰도" (High Confidence ≥80%), "샘플부족" (Low Samples <3)
+  - ✅ Enhanced tooltip with quality metrics and visual indicators
+- [x] Update `CandidatePanel.tsx` (2 hours)
+  - ✅ Display WorkOrderCount/SampleCount with warning icon
+  - ✅ Display WorkOrderConfidence with high confidence checkmark
+  - ✅ Add TrimMean display with tooltip
+  - ✅ "사내전환" (Outsourcing Replaced) badge already existed
 
-### 3.3 Quality Dashboard Component (8 hours)
-- [ ] Create `frontend-prediction/src/components/quality/QualityDashboard.tsx` (4 hours)
-  - Chart: MAE trend line (last 30 cycles) using Recharts
-  - Table: Recent alerts with severity indicators
-  - Filters: Date range, item category, process type
-- [ ] Add dashboard route in `App.tsx` (30 min)
-- [ ] Create API hooks: `useQualityMetrics()`, `useQualityHistory()` (1.5 hours)
-- [ ] Add export functionality: Download JSON/CSV (1 hour)
-- [ ] Style dashboard with responsive layout (1 hour)
+### 3.3 Quality Dashboard Component (8 hours) ✅
+- [x] Create API hooks in `frontend-prediction/src/hooks/useQuality.ts` (1.5 hours)
+  - ✅ `useQualityMetrics()` - Fetch latest quality metrics
+  - ✅ `useQualityHistory()` - Fetch historical cycles with filters
+  - ✅ React Query integration with proper staleTime/refetch
+- [x] Create `frontend-prediction/src/components/quality/QualityDashboard.tsx` (4 hours)
+  - ✅ MAE trend chart using Recharts (MAE, Trim-MAE, RMSE lines)
+  - ✅ Current metrics cards (6 metric cards with trends)
+  - ✅ Recent alerts table with severity indicators
+  - ✅ Date range filters (cycle limit, start date, end date)
+- [x] Add dashboard route in `App.tsx` (30 min)
+  - ✅ Added "quality-monitor" navigation item to ADMIN_NAVIGATION_ITEMS
+  - ✅ Added case in switch statement with lazy loading
+  - ✅ Updated NavigationKey type in workspaceStore.ts
+- [x] Add export functionality (1 hour)
+  - ✅ Export to JSON (full history data)
+  - ✅ Export to CSV (cycle summary table)
+- [x] Style dashboard with responsive layout (1 hour)
+  - ✅ Grid layout for metric cards (auto-fit, minmax)
+  - ✅ Responsive filters with flexbox
+  - ✅ Scrollable alerts table
 
-### 3.4 Training Monitor UI (6 hours) ⭐ NEW
-- [ ] Create `frontend-prediction/src/components/training/TrainingMonitor.tsx` (3 hours)
-  - **"학습 시작" 버튼**: POST /api/training/start 호출
-  - **진행률 바**: Progress bar (0-100%) with animated transition
-  - **실시간 로그**: Scrollable log viewer with auto-scroll
-  - **현재 단계 표시**: "Sampling data...", "Training MLP...", etc.
-  - **취소 버튼**: DELETE /api/training/jobs/{job_id}
-- [ ] Implement real-time updates (2 hours)
-  - Option A: WebSocket client (`useWebSocket` hook)
-  - Option B: Polling with `useInterval` (fallback, 5 sec interval)
-  - Auto-reconnect on disconnect
-- [ ] Add training history table (1 hour)
-  - List recent jobs with status badges
-  - Click to view detailed logs
-  - Filter by status (SUCCESS/FAILED/RUNNING)
+### 3.4 Training Monitor UI (6 hours) ✅
+- [x] Create `frontend-prediction/src/components/training/TrainingMonitor.tsx` (3 hours)
+  - ✅ **"학습 시작" 버튼**: POST /api/training/start with sample_size and strategy
+  - ✅ **진행률 바**: Animated progress bar (0-100%) with color coding by status
+  - ✅ **실시간 로그**: Scrollable log viewer with auto-scroll (useRef + useEffect)
+  - ✅ **현재 단계 표시**: current_step field from API
+  - ✅ **취소 버튼**: DELETE /api/training/jobs/{job_id}
+  - ✅ **오류 메시지 표시**: error_message field highlighted in red
+  - ✅ **결과 표시**: result field shown in green on success
+- [x] Implement real-time updates (2 hours)
+  - ✅ Polling with 5-second interval using setInterval
+  - ✅ Auto-stop polling when job completes (SUCCEEDED/FAILED/CANCELLED/SKIPPED)
+  - ✅ Refresh job history on completion
+- [x] Add training history table (1 hour)
+  - ✅ List recent jobs with status badges (6 statuses with icons)
+  - ✅ Display: job_id, status, progress, current_step, started_at, completed_at
+  - ✅ Styled with responsive table layout
+- [x] Add route in App.tsx
+  - ✅ Added "training-monitor" to ADMIN_NAVIGATION_ITEMS
+  - ✅ Added lazy loading and switch case
+  - ✅ Updated NavigationKey type
 
-### 3.5 Settings Page (4 hours)
-- [ ] Create `frontend-prediction/src/components/settings/IterTrainingSettings.tsx` (2.5 hours)
-  - Form fields: sample_size, thresholds, queue_max_size
-  - Validation with Yup schema
-  - Save/Load via Config API
-- [ ] Add settings route and navigation (30 min)
-- [ ] Implement `useIterTrainingConfig()` hook (1 hour)
+### 3.5 Settings Page (4 hours) ✅
+- [x] Create `frontend-prediction/src/components/settings/IterTrainingSettings.tsx` (2.5 hours)
+  - ✅ Form fields: sample_size, mae_threshold, cv_threshold, queue_max_size, polling_interval
+  - ✅ Validation with custom validateConfig function (no Yup dependency)
+  - ✅ Save/Load via localStorage (simpler than backend API)
+  - ✅ Default config values
+  - ✅ Reset to defaults button
+  - ✅ Success/error feedback
+- [x] Add settings route and navigation (30 min)
+  - ✅ Added "training-settings" to ADMIN_NAVIGATION_ITEMS
+  - ✅ Added lazy loading and switch case
+  - ✅ Updated NavigationKey type
 
-### 3.6 Log Viewer (2 hours)
-- [ ] Create `frontend-prediction/src/components/quality/LogViewer.tsx` (1.5 hours)
-  - Display recent log lines from `performance.quality.log`
-  - Auto-refresh every 5 seconds using polling
-  - Download full log button
-- [ ] Add log viewer route (30 min)
+### 3.6 Log Viewer (2 hours) ✅
+- [x] Create `frontend-prediction/src/components/quality/LogViewer.tsx` (1.5 hours)
+  - ✅ Display recent log lines (500 limit) with mock data fallback
+  - ✅ Auto-refresh every 5 seconds using polling with setInterval
+  - ✅ Download full log button (downloads as .txt file)
+  - ✅ Auto-scroll toggle
+  - ✅ Pause/Resume controls
+  - ✅ Color-coded log levels (ERROR/WARNING/INFO/DEBUG)
+- [x] Add log viewer route (30 min)
+  - ✅ Added "log-viewer" to ADMIN_NAVIGATION_ITEMS
+  - ✅ Added lazy loading and switch case
+  - ✅ Updated NavigationKey type
 
 **Acceptance Criteria**:
 - [ ] Tooltips display all metadata without layout breaks

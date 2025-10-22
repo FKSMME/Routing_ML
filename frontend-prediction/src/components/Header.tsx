@@ -19,7 +19,6 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
 
   const handleLogout = async () => {
     await logout();
-    window.location.reload();
   };
 
   return (

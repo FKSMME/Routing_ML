@@ -59,8 +59,14 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const runStd = step.timeStd ?? null;
   const timeCvPercent = step.timeCv !== null ? Math.round(step.timeCv * 100) : null;
   const setupStd = step.setupStd ?? null;
+  const trimMean = step.trimMean ?? null;
+  const sampleCount = step.sampleCount ?? null;
   const hasWorkData = step.hasWorkData ?? false;
   const outsourcingReplaced = Boolean(step.outsourcingReplaced);
+
+  // Quality badges
+  const isHighConfidence = workConfidencePercent !== null && workConfidencePercent >= 80;
+  const isLowSamples = sampleCount !== null && sampleCount < 3;
 
   return (
     <div
@@ -124,19 +130,26 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
               )}
             </div>
           )}
-          {(hasWorkData || workSamples || workConfidencePercent !== null || runStd !== null || setupStd !== null) && (
+          {(hasWorkData || workSamples || workConfidencePercent !== null || runStd !== null || setupStd !== null || trimMean !== null || sampleCount !== null) && (
             <div style={{ borderTop: '1px solid #475569', marginTop: '6px', paddingTop: '6px' }}>
               <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
                 <span style={{ color: hasWorkData ? '#22d3ee' : '#f87171', fontWeight: 500 }}>실적 데이터:</span> {hasWorkData ? '있음' : '없음'}
               </div>
-              {workSamples ? (
+              {(workSamples !== null || sampleCount !== null) && (
                 <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
-                  <span style={{ color: '#cbd5e1', fontWeight: 500 }}>샘플 수:</span> {workSamples}
+                  <span style={{ color: '#cbd5e1', fontWeight: 500 }}>샘플 수:</span> {sampleCount ?? workSamples ?? 0}
+                  {isLowSamples && <span style={{ color: '#f59e0b', marginLeft: '4px' }}>⚠️ 낮음</span>}
                 </div>
-              ) : null}
+              )}
               {workConfidencePercent !== null && (
                 <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
                   <span style={{ color: '#34d399', fontWeight: 500 }}>신뢰도:</span> {workConfidencePercent}%
+                  {isHighConfidence && <span style={{ color: '#10b981', marginLeft: '4px' }}>✓ 높음</span>}
+                </div>
+              )}
+              {trimMean !== null && (
+                <div style={{ color: '#94a3b8', marginBottom: '3px' }}>
+                  <span style={{ color: '#60a5fa', fontWeight: 500 }}>Trim-평균:</span> {trimMean.toFixed(2)}분
                 </div>
               )}
               {runStd !== null && (
@@ -194,6 +207,16 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
           {!hasWorkData && (
             <span className="timeline-node__badge" data-severity="info">
               실적없음
+            </span>
+          )}
+          {isHighConfidence && (
+            <span className="timeline-node__badge" data-severity="success" title="신뢰도 80% 이상">
+              고신뢰도
+            </span>
+          )}
+          {isLowSamples && (
+            <span className="timeline-node__badge" data-severity="warning" title="샘플 수 3개 미만">
+              샘플부족
             </span>
           )}
         </div>
