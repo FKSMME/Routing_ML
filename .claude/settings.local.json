@@ -29,7 +29,10 @@
       "Bash(PYTHONPATH=.. ../.venv/Scripts/python.exe run_api.py)",
       "Bash(.venvScriptspython.exe scriptsiter_training_poc.py --sample-size 100 --strategy random)",
       "Bash(git pull:*)",
-      "Bash(if not exist \"frontend-prediction\\tests\\e2e\\screenshots\" mkdir \"frontend-prediction\\tests\\e2e\\screenshots\")"
+      "Bash(if not exist \"frontend-prediction\\tests\\e2e\\screenshots\" mkdir \"frontend-prediction\\tests\\e2e\\screenshots\")",
+      "Bash(move RoutingMLMonitor_v5.2.6.spec oldRoutingMLMonitor_v5.2.6.spec)",
+      "Bash(copy RoutingMLMonitor_v5.2.6.spec oldRoutingMLMonitor_v5.2.6.spec)",
+      "Bash(..venvScriptspython.exe -m PyInstaller --clean --noconfirm RoutingMLMonitor_v5.3.0.spec)"
     ],
     "deny": [],
     "ask": []
