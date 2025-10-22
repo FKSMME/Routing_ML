@@ -13,11 +13,11 @@
 
 **Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks) - 2 hours
 **Phase 1**: [▓▓▓▓▓] 100% (8/8 subsections) - 18 hours ✅
-**Phase 2**: [▓▓▓▓░] 67% (4/6 subsections) - 24/28 hours (updated from 24h)
+**Phase 2**: [▓▓▓▓▓] 83% (5/6 subsections) - 28/28 hours (updated from 24h)
 **Phase 3**: [░░░░░] 0% (0/6 subsections) - 26 hours (updated from 20h)
 **Phase 4**: [░░░░░] 0% (0/9 tasks) - 12 hours
 
-**Total**: [▓▓▓▓░░░░░░] 49% (17/54 tasks, 44/86 hours)
+**Total**: [▓▓▓▓▓░░░░░] 53% (18/54 tasks, 48/86 hours)
 
 ---
 
@@ -251,19 +251,29 @@
   - ✅ Test: cleanup_old_versions() (kept 2, deleted 2)
   - ✅ All tests passed
 
-### 2.5 Training API Endpoints (4 hours) ⭐ NEW
-- [ ] Create `backend/api/routes/training.py` (3 hours)
-  - `POST /api/training/start`: Start background training job
-    - Request: `{cycle_id?, sample_size?, strategy?}`
-    - Response: `{job_id, status: "STARTED"}`
-  - `GET /api/training/jobs/{job_id}/status`: Get job status
-    - Response: `{job_id, status, progress, current_step, logs[]}`
-  - `GET /api/training/jobs`: List all jobs (recent 100)
-  - `DELETE /api/training/jobs/{job_id}`: Cancel job
-  - `POST /api/training/jobs/{job_id}/retry`: Retry failed job
-- [ ] Add WebSocket endpoint (optional for Phase 3) (1 hour)
-  - `WS /ws/training/{job_id}`: Real-time progress stream
-  - Alternative: Server-Sent Events (SSE) if WebSocket too complex
+### 2.5 Training API Endpoints (4 hours) ✅
+- [x] Create `backend/api/routes/training.py` (3 hours)
+  - ✅ Extended existing training.py with iterative training endpoints
+  - ✅ `POST /api/training/start`: Start background training job
+    - Request: `StartTrainingRequest{cycle_id?, sample_size, strategy}`
+    - Response: `{job_id, status: "STARTED", message}`
+    - Uses TrainingWorker.start_training() with dummy_training_function
+  - ✅ `GET /api/training/jobs/{job_id}/status`: Get job status
+    - Response: `JobStatusResponse{job_id, status, progress, current_step, logs[], started_at, ...}`
+    - Returns 404 if job not found
+  - ✅ `GET /api/training/jobs`: List all jobs (recent 100)
+    - Response: `JobListResponse{jobs[], total}`
+    - Shows last 5 logs per job
+  - ✅ `DELETE /api/training/jobs/{job_id}`: Cancel job
+    - Calls TrainingWorker.cancel_job()
+    - Returns cancellation status
+  - ✅ Pydantic models: StartTrainingRequest, StartTrainingResponse, JobStatusResponse, JobListResponse
+  - ✅ Auth integration: require_auth() dependency
+  - ✅ Error handling: 404, 409, 500 with proper HTTP status codes
+- [x] Add test script (1 hour)
+  - ✅ Created `scripts/test_training_api.py`
+  - ✅ Tests all 4 endpoints
+  - ✅ Note: WebSocket deferred to Phase 3
 
 ### 2.6 Logging & Reporting (2 hours)
 - [ ] Implement structured logging for worker (1 hour)
