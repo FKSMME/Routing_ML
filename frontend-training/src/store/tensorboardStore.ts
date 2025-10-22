@@ -94,9 +94,33 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
       const preferredProjector = projectors.find(
         (projector: TensorboardProjectorSummary) => projector.id === "root"
       );
+      const freshestProjector = projectors.reduce<TensorboardProjectorSummary | null>((best, current) => {
+        if (!best) {
+          return current;
+        }
+        const bestUpdated = best.updatedAt ?? "";
+        const currentUpdated = current.updatedAt ?? "";
+        if (currentUpdated > bestUpdated) {
+          return current;
+        }
+        if (currentUpdated === bestUpdated) {
+          const bestCount = typeof best.sampleCount === "number" ? best.sampleCount : 0;
+          const currentCount = typeof current.sampleCount === "number" ? current.sampleCount : 0;
+          if (currentCount > bestCount) {
+            return current;
+          }
+        }
+        return best;
+      }, null);
       let selectedId = state.selectedId;
       if (!selectedId || !projectors.some((projector: TensorboardProjectorSummary) => projector.id === selectedId)) {
-        selectedId = preferredProjector?.id ?? (projectors.length > 0 ? projectors[0].id : null);
+        if (freshestProjector) {
+          selectedId = freshestProjector.id;
+        } else if (preferredProjector) {
+          selectedId = preferredProjector.id;
+        } else {
+          selectedId = projectors.length > 0 ? projectors[0].id : null;
+        }
       }
       set({
         projectors,

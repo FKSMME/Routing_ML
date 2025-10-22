@@ -11,7 +11,7 @@ import { CardShell } from "@components/common/CardShell";
 import { DialogContainer } from "@components/common/DialogContainer";
 import { fetchWorkflowConfig, patchWorkflowConfig, postUiAudit } from "@lib/apiClient";
 import { cn } from "@lib/classNames";
-import { useWorkflowGraphHistory } from "@store/workflowGraphStore";
+import { useWorkflowGraphHistory } from "@routing-ml/shared/store/workflowGraphStore";
 import {
   useCallback,
   useEffect,

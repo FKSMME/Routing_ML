@@ -10,7 +10,7 @@ import {
   type TrainingRunRecord,
   type TrainingStatus,
 } from "@lib/apiClient";
-import { useTrainingFeatureStore } from "@store/trainingStore";
+import { useTrainingFeatureStore } from "@routing-ml/shared/store/trainingStore";
 import { useQuery } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
