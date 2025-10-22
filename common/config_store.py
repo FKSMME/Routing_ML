@@ -584,7 +584,7 @@ class VisualizationConfig:
         if not data:
             data = {}
         return cls(
-            tensorboard_projector_dir=data.get("tensorboard_projector_dir", "logs/tensorboard"),
+            tensorboard_projector_dir=data.get("tensorboard_projector_dir", "models/default/tb_projector"),
             projector_enabled=bool(data.get("projector_enabled", True)),
             projector_metadata_columns=data.get(
                 "projector_metadata_columns", ["ITEM_CD", "ITEM_NM", "GROUP1", "ITEM_TYPE"]

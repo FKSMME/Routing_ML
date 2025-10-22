@@ -51,3 +51,9 @@ export interface TensorboardMetricSeries {
   metric: string;
   points: TensorboardMetricPoint[];
 }
+
+export interface TensorboardConfig {
+  projectorPath: string;
+  projectorPathExists: boolean;
+  modelDir: string;
+}

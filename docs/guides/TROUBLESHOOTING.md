@@ -1,4 +1,4 @@
-﻿> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
+> PRD Ref: PRD.md (v2025-09-28.1) | Tasklist Ref: Tasklist.md (v2025-09-28.1) | Sprint Pending 36 | Completed 5 | Blockers 0
 
 
 # 절대 지령
@@ -46,7 +46,7 @@
 
 ## 5. TensorBoard 파일이 없을 때
 - [x] 트레이너 서비스를 한 번 실행해 최신 임베딩을 만든다. (컨테이너에서 대체로 TensorBoard용 샘플 임베딩 파일을 생성해 절차를 검증)
-- [x] `models/tb_projector/` 폴더에 `projector_config.json`, `metadata.tsv`, `vectors.tsv`가 생겼는지 확인한다. (샘플 파일 생성 후 존재 확인)
+- [x] `models/default/tb_projector/` 폴더에 `projector_config.json`, `metadata.tsv`, `vectors.tsv`가 생겼는지 확인한다. (샘플 파일 생성 후 존재 확인)
 - [x] 없다면 `post_install_test.ps1` 로그에서 경고 메시지를 확인한다. (테스트 스크립트 로그 위치 및 확인 방법을 정리)
 
 ## 6. SQL 컬럼 이름이 달라서 저장이 실패할 때

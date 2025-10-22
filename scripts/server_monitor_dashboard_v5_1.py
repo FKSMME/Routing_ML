@@ -559,9 +559,10 @@ class WorkflowCanvas(tk.Canvas):
                     if node["id"] == node_id:
                         self.itemconfig(node["rect"], fill=workflow_node["color"])
                         # Update cursor based on enabled state
-                        cursor = "hand2" if enabled else "arrow"
-                        self.itemconfig(node["rect"], cursor=cursor)
-                        self.itemconfig(node["text"], cursor=cursor)
+                        # Note: Canvas items don't support cursor option directly
+                        # cursor = "hand2" if enabled else "arrow"
+                        # self.itemconfig(node["rect"], cursor=cursor)
+                        # self.itemconfig(node["text"], cursor=cursor)
                         break
                 break
 

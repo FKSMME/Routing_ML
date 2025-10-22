@@ -35,7 +35,7 @@
 
 ### 3.3 기타
 - `models/releases/v0.9.0` → `manifest.json`만 존재, 구버전 기록용.
-- `models/tb_projector/` → 2025-09-09 생성된 TensorBoard 체크포인트(구학습 결과). 최신 파이프라인과 차원/스키마 일치 여부 미검증 상태.
+- `models/default/tb_projector/` → 2025-09-09 생성된 TensorBoard 체크포인트(구학습 결과). 최신 파이프라인과 차원/스키마 일치 여부 미검증 상태.
 
 ## 4. 호환성 평가
 | 항목 | 최신 학습 파이프라인 요구사항 | 사전 학습 모델 현황 | 평가 |

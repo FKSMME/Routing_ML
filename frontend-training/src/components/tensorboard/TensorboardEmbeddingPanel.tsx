@@ -7,8 +7,7 @@ import * as THREE from "three";
 
 import { useTensorboardStore } from "@store/tensorboardStore";
 import type { TensorboardMetricSeries } from "@app-types/tensorboard";
-import { fetchTrainingStatus } from "@lib/apiClient";
-import { exportTensorboardProjector } from "@lib/apiClient";
+import { fetchTrainingStatus, exportTensorboardProjector, fetchTensorboardConfig } from "@lib/apiClient";
 
 type VisualizationMode = '3d' | 'heatmap' | 'scatter';
 
@@ -443,18 +442,15 @@ export const TensorboardEmbeddingPanel = () => {
 
   useEffect(() => {
     void initialize();
-    // Fetch projector configuration
-    fetch("/api/training/tensorboard/config")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.projector_path) {
-          setProjectorPath(data.projector_path);
-          setPathExists(data.projector_path_exists);
-        }
-      })
-      .catch((err) => {
-        console.warn("Failed to fetch TensorBoard config:", err);
-      });
+    void (async () => {
+      try {
+        const config = await fetchTensorboardConfig();
+        setProjectorPath(config.projectorPath);
+        setPathExists(config.projectorPathExists);
+      } catch (error) {
+        console.warn("Failed to fetch TensorBoard config:", error);
+      }
+    })();
   }, [initialize]);
 
   const statusSignatureRef = useRef<string | null>(null);
@@ -979,7 +975,6 @@ export const TensorboardEmbeddingPanel = () => {
     </section>
   );
 };
-
 
 
 

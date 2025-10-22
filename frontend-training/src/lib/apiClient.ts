@@ -7,6 +7,7 @@ import type {
   TensorboardMetricSeries,
   TensorboardPointResponse,
   TensorboardProjectorSummary,
+  TensorboardConfig,
 } from "@app-types/tensorboard";
 import axios from "axios";
 
@@ -65,6 +66,12 @@ const mapProjectorSummary = (payload: Record<string, any>): TensorboardProjector
   tensorName: payload.tensor_name ?? payload.tensorName ?? "",
   sampleCount: payload.sample_count ?? payload.sampleCount ?? 0,
   updatedAt: payload.updated_at ?? payload.updatedAt ?? null,
+});
+
+const mapTensorboardConfig = (payload: Record<string, any>): TensorboardConfig => ({
+  projectorPath: payload.projector_path ?? payload.projectorPath ?? "",
+  projectorPathExists: Boolean(payload.projector_path_exists ?? payload.projectorPathExists ?? false),
+  modelDir: payload.model_dir ?? payload.modelDir ?? "",
 });
 
 const mapFilterResponse = (payload: Record<string, any>): TensorboardFilterResponse => ({
@@ -661,6 +668,11 @@ export async function exportTensorboardProjector(
 ): Promise<Record<string, any>> {
   const response = await api.post<Record<string, any>>("/training/tensorboard/projectors/export", payload);
   return response.data;
+}
+
+export async function fetchTensorboardConfig(): Promise<TensorboardConfig> {
+  const response = await api.get<Record<string, any>>("/training/tensorboard/config");
+  return mapTensorboardConfig(response.data);
 }
 
 
