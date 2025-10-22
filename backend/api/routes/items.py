@@ -181,4 +181,77 @@ async def get_item_properties(
         raise HTTPException(status_code=500, detail=f"품목 속성 조회 실패: {str(e)}")
 
 
+@router.get("/{item_cd}/drawing-info")
+async def get_drawing_info(
+    item_cd: str,
+    current_user: AuthenticatedUser = Depends(require_auth),
+) -> Dict[str, Any]:
+    """
+    품목 도면 정보 조회 (ERP Image Viewer 연동용)
+
+    MSSQL item_info 테이블에서 DRAW_NO와 DRAW_REV를 조회하여 반환합니다.
+    ERP 도면 조회 기능에서 사용됩니다.
+
+    Args:
+        item_cd: 품목 코드
+
+    Returns:
+        {
+            "drawingNumber": str,  # DRAW_NO (도면 번호)
+            "revision": str,        # DRAW_REV (리비전)
+            "sheetNumber": str,     # DRAW_SHEET_NO (시트 번호)
+            "available": bool       # 도면 정보 존재 여부
+        }
+    """
+    logger.info(f"도면 정보 조회: item_cd={item_cd}, user={current_user.username}")
+
+    try:
+        df = fetch_single_item(item_cd)
+
+        if df.empty:
+            logger.warning(f"품목 정보 없음 (도면 조회): {item_cd}")
+            return {
+                "drawingNumber": "",
+                "revision": "",
+                "sheetNumber": "",
+                "available": False
+            }
+
+        item_data = df.iloc[0].to_dict()
+
+        # DRAW_NO, DRAW_REV, DRAW_SHEET_NO 추출
+        import pandas as pd
+        draw_no = item_data.get("DRAW_NO")
+        draw_rev = item_data.get("DRAW_REV")
+        draw_sheet_no = item_data.get("DRAW_SHEET_NO")
+
+        # NaN/None 체크
+        draw_no_str = "" if (pd.isna(draw_no) or draw_no is None) else str(draw_no)
+        draw_rev_str = "" if (pd.isna(draw_rev) or draw_rev is None) else str(draw_rev)
+        draw_sheet_str = "" if (pd.isna(draw_sheet_no) or draw_sheet_no is None) else str(draw_sheet_no)
+
+        # 도면 번호가 없으면 사용 불가
+        available = bool(draw_no_str.strip())
+
+        result = {
+            "drawingNumber": draw_no_str,
+            "revision": draw_rev_str,
+            "sheetNumber": draw_sheet_str,
+            "available": available
+        }
+
+        logger.info(f"도면 정보 반환: {item_cd}, available={available}")
+        return result
+
+    except Exception as e:
+        logger.error(f"도면 정보 조회 실패: {e}", exc_info=True)
+        # 에러 시에도 빈 응답 반환 (UI에서 "도면 없음"으로 처리)
+        return {
+            "drawingNumber": "",
+            "revision": "",
+            "sheetNumber": "",
+            "available": False
+        }
+
+
 __all__ = ["router"]
