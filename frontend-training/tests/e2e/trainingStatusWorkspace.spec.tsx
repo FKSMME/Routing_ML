@@ -39,7 +39,7 @@ vi.mock("@lib/apiClient", async (importOriginal) => {
 });
 
 import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
-import { useTrainingFeatureStore } from "@store/trainingStore";
+import { useTrainingFeatureStore } from "@routing-ml/shared/store/trainingStore";
 
 const renderWorkspace = () => {
   const queryClient = new QueryClient({

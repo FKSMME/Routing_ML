@@ -198,11 +198,11 @@ du -sh models/test_phase2 models/version_*
 
 ## Phase 5: Frontend Deduplication - Shared Modules
 
-**Estimated Time**: 2 hours
-**Status**: ✅ Complete
+**Estimated Time**: 2 hours + 1 hour extension
+**Status**: ✅ Complete (Including Full Scan Extension)
 **Dependencies**: Phase 1
 
-### Tasks
+### Tasks - Initial
 
 - [x] Move schema.ts to frontend-shared/src/lib/api/ (from prediction)
 - [x] Delete duplicate schema.ts from training
@@ -210,17 +210,60 @@ du -sh models/test_phase2 models/version_*
 - [x] Update prediction imports (HyperspeedBackground.tsx, Hyperspeed.tsx)
 - [x] Update training imports (HyperspeedBackground.tsx, Hyperspeed.tsx)
 
-**Result**: **3 duplicate files removed**
+### Tasks - Extension (Full Frontend Scan)
 
-**Deleted**:
+- [x] Scan all CSS files across frontend projects (Glob)
+- [x] Scan all Component files for duplicates (Glob)
+- [x] Scan all Store files for duplicates (Glob)
+- [x] Create MD5 hash comparison script (scripts/check_frontend_duplicates.py)
+- [x] Identify 4 duplicate file groups:
+  - Hyperspeed.css (3 copies)
+  - CardShell.module.css (2 copies)
+  - trainingStore.ts (2 copies)
+  - workflowGraphStore.ts (2 copies)
+- [x] Remove CSS duplicates (2 files + 2 files = 4 files)
+- [x] Remove Store duplicates (4 files)
+- [x] Update all imports (8 files)
+
+**Result - Initial**: **3 duplicate files removed**
+
+**Deleted - Initial**:
 1. frontend-training/src/lib/api/schema.ts
 2. frontend-prediction/src/components/hyperspeedPresets.ts
 3. frontend-training/src/components/hyperspeedPresets.ts
 
-**Moved**:
+**Moved - Initial**:
 - frontend-prediction/src/lib/api/schema.ts → frontend-shared/src/lib/api/schema.ts
 
-**Updated imports**: 4 files (2 in prediction, 2 in training)
+**Result - Extension**: **8 additional duplicate files removed**
+
+**Deleted - Extension**:
+1. frontend-prediction/src/components/Hyperspeed.css
+2. frontend-training/src/components/Hyperspeed.css
+3. frontend-prediction/src/components/common/CardShell.module.css
+4. frontend-training/src/components/common/CardShell.module.css
+5. frontend-prediction/src/store/trainingStore.ts
+6. frontend-training/src/store/trainingStore.ts
+7. frontend-prediction/src/store/workflowGraphStore.ts
+8. frontend-training/src/store/workflowGraphStore.ts
+
+**Moved - Extension**:
+- frontend-shared/src/components/common/CardShell.module.css (new)
+- frontend-shared/src/store/trainingStore.ts (new)
+- frontend-shared/src/store/workflowGraphStore.ts (new)
+
+**Updated imports - Initial**: 4 files (2 in prediction, 2 in training)
+**Updated imports - Extension**: 8 files
+- frontend-prediction/src/components/common/CardShell.tsx
+- frontend-training/src/components/common/CardShell.tsx
+- frontend-prediction/src/components/workspaces/TrainingStatusWorkspace.tsx
+- frontend-training/src/components/workspaces/TrainingStatusWorkspace.tsx
+- frontend-prediction/src/components/workspaces/AlgorithmWorkspace.tsx
+- frontend-training/src/components/workspaces/AlgorithmWorkspace.tsx
+- frontend-prediction/tests/e2e/trainingStatusWorkspace.spec.tsx
+- frontend-training/tests/e2e/trainingStatusWorkspace.spec.tsx
+
+**Total Phase 5**: **11 duplicate files removed** (3 initial + 8 extension)
 
 **Validation**:
 ```bash

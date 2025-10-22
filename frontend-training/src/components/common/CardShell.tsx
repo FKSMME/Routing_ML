@@ -2,7 +2,7 @@ import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
 import { cn } from "@lib/classNames";
 
-import styles from "./CardShell.module.css";
+import styles from "@routing-ml/shared/components/common/CardShell.module.css";
 
 type Tone = "default" | "soft" | "overlay" | "inverted" | "dialog";
 

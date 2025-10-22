@@ -16,7 +16,7 @@ import ReactECharts from "echarts-for-react";
 import { Activity, Clock, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { useTrainingFeatureStore } from "@store/trainingStore";
+import { useTrainingFeatureStore } from "@routing-ml/shared/store/trainingStore";
 
 const POLL_INTERVAL_MS = 15_000;
 

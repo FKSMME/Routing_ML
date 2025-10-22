@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
@@ -18,6 +19,7 @@ from sklearn.decomposition import PCA
 
 from backend.api.security import require_auth
 from backend.api.config import get_settings
+from backend.api.services.prediction_service import PredictionService
 
 router = APIRouter(
     prefix="/api/training/tensorboard",
@@ -27,6 +29,10 @@ router = APIRouter(
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BASE_MODELS_DIR = (REPO_ROOT / "models").resolve()
+DEFAULT_PROJECTOR_SUBDIR = "tb_projector"
+DEFAULT_PROJECTOR_PATH = (BASE_MODELS_DIR / DEFAULT_PROJECTOR_SUBDIR).resolve()
+
+logger = logging.getLogger(__name__)
 
 
 class ProjectorSummary(BaseModel):
@@ -131,6 +137,52 @@ class ProjectorData:
     filters: List[FilterField]
     metrics: List[MetricSeries]
     identifier_field: Optional[str]
+
+
+def _normalize_model_root(path: Path) -> Path:
+    """Return a directory path for model artifacts, even if a manifest file is provided."""
+    resolved = path.expanduser().resolve()
+    return resolved if resolved.is_dir() else resolved.parent
+
+
+def _resolve_active_model_dir(settings) -> Path:
+    """Find the directory containing the currently active model artifacts."""
+    candidates: List[Path] = []
+    if settings.model_directory:
+        try:
+            candidates.append(_normalize_model_root(Path(settings.model_directory)))
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Failed to normalize configured model directory: %s", exc, exc_info=exc)
+
+    try:
+        prediction_service = PredictionService()
+        candidates.append(_normalize_model_root(prediction_service.model_dir))
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("PredictionService model resolution failed; falling back to defaults: %s", exc, exc_info=exc)
+
+    for candidate in candidates:
+        try:
+            if candidate.exists():
+                return candidate
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Error checking candidate model directory %s: %s", candidate, exc, exc_info=exc)
+
+    fallback_default = (BASE_MODELS_DIR / "default").resolve()
+    if fallback_default.exists():
+        return fallback_default
+    return BASE_MODELS_DIR
+
+
+def _resolve_projector_output_dir(settings, model_dir: Path) -> Path:
+    """Determine where projector exports should be written."""
+    try:
+        configured_path = settings.tensorboard_projector_path.expanduser().resolve()
+    except Exception:  # noqa: BLE001
+        configured_path = DEFAULT_PROJECTOR_PATH
+
+    if configured_path == DEFAULT_PROJECTOR_PATH:
+        return (model_dir / DEFAULT_PROJECTOR_SUBDIR).resolve()
+    return configured_path
 
 
 def _safe_isoformat(ts: float) -> str:
@@ -343,11 +395,12 @@ def _get_projector(projector_id: str) -> ProjectorData:
 async def get_tensorboard_config() -> TensorboardConfigResponse:
     """Return TensorBoard Projector configuration."""
     settings = get_settings()
-    projector_path = settings.tensorboard_projector_path.resolve()
+    model_dir = _resolve_active_model_dir(settings)
+    projector_path = _resolve_projector_output_dir(settings, model_dir)
     return TensorboardConfigResponse(
         projector_path=str(projector_path),
         projector_path_exists=projector_path.exists(),
-        model_dir=str(BASE_MODELS_DIR),
+        model_dir=str(model_dir),
     )
 
 
@@ -380,8 +433,9 @@ async def export_projector(payload: ExportProjectorRequest) -> Dict[str, Any]:
     if not script_path.exists():
         raise HTTPException(status_code=500, detail="export_tb_projector.py not found.")
 
-    model_dir = BASE_MODELS_DIR
-    out_dir = settings.tensorboard_projector_path.resolve()
+    model_dir = _resolve_active_model_dir(settings)
+    out_dir = _resolve_projector_output_dir(settings, model_dir)
+    logger.debug("Exporting TensorBoard projector: model_dir=%s, out_dir=%s", model_dir, out_dir)
     cmd = [
         sys.executable,
         str(script_path),
