@@ -2,6 +2,11 @@ import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayloa
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
+import type {
+  WorkflowCodeSyncResponse,
+  WorkflowConfigPatch,
+  WorkflowConfigResponse,
+} from "@app-types/workflow";
 import axios from "axios";
 
 export interface ViewExplorerView {
@@ -303,9 +308,106 @@ export async function runTraining(payload: TrainingRequestPayload): Promise<Trai
 // TYPE EXPORTS
 // ============================================================================
 
-export type WorkspaceSettingsResponse = any;
-export type OutputProfileColumn = any;
-export type WorkflowConfigResponse = any;
+export interface WorkspaceColumnMappingPayload {
+  scope: string;
+  source: string;
+  target: string;
+}
+
+export interface WorkspaceOptionsPayload {
+  standard: string[];
+  similarity: string[];
+  offline_dataset_path: string | null;
+  database_target_table: string | null;
+  erp_interface: boolean;
+  column_mappings: WorkspaceColumnMappingPayload[];
+}
+
+export interface WorkspaceAccessPayload {
+  path: string | null;
+  table: string | null;
+}
+
+export interface WorkspaceSettingsPayload {
+  version: number | string;
+  layout?: Record<string, unknown>;
+  routing?: Record<string, unknown>;
+  algorithm?: Record<string, unknown>;
+  options?: WorkspaceOptionsPayload;
+  access?: WorkspaceAccessPayload;
+  metadata?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+}
+
+export interface WorkspaceOptionsResponse {
+  standard?: unknown;
+  similarity?: unknown;
+  offline_dataset_path?: string | null;
+  database_target_table?: string | null;
+  erp_interface?: boolean;
+  column_mappings?: unknown;
+  [key: string]: unknown;
+}
+
+export interface WorkspaceDataSourceSettings {
+  offline_dataset_path?: string | null;
+  [key: string]: unknown;
+}
+
+export interface WorkspaceExportSettings {
+  database_target_table?: string | null;
+  erp_interface_enabled?: boolean;
+  [key: string]: unknown;
+}
+
+export interface WorkspaceSettingsResponse {
+  version?: number | string;
+  options?: WorkspaceOptionsResponse;
+  data_source?: WorkspaceDataSourceSettings;
+  export?: WorkspaceExportSettings;
+  access?: WorkspaceAccessPayload;
+  metadata?: Record<string, unknown>;
+  updated_at: string;
+  user?: string;
+}
+
+export interface UiAuditEvent {
+  action: string;
+  username?: string;
+  entity?: string;
+  payload?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  timestamp?: string;
+}
+
+export interface UiAuditBatchRequest {
+  events: UiAuditEvent[];
+  source?: string;
+}
+
+export interface RoutingSnapshotsBatchResponse {
+  accepted_snapshot_ids: string[];
+  accepted_audit_ids: string[];
+  updated_groups: string[];
+}
+
+export interface RoutingInterfaceRequest {
+  groupId: string;
+  reason?: string;
+}
+
+export interface RoutingInterfaceResponse {
+  message?: string;
+  erp_path?: string;
+  [key: string]: unknown;
+}
+
+export interface RoutingGroupListResponse {
+  groups: Array<Record<string, unknown>>;
+  total: number;
+}
+
+export type OutputProfileColumn = OutputProfileMapping;
 
 export interface DatabaseMetadataColumn {
   name: string;
@@ -394,47 +496,90 @@ export async function testDatabaseConnection(
 // PLACEHOLDER / LEGACY APIs
 // ============================================================================
 
-export async function fetchWorkflowConfig(...args: any[]): Promise<any> {
+export async function fetchWorkflowConfig(): Promise<WorkflowConfigResponse> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function patchWorkflowConfig(...args: any[]): Promise<any> {
+export async function patchWorkflowConfig(_payload: WorkflowConfigPatch): Promise<WorkflowConfigResponse> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function regenerateWorkflowCode(...args: any[]): Promise<any> {
+export async function regenerateWorkflowCode(): Promise<WorkflowCodeSyncResponse> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function fetchWorkspaceSettings(...args: any[]): Promise<any> {
-  return {};
+export async function fetchWorkspaceSettings(): Promise<WorkspaceSettingsResponse> {
+  return {
+    version: Date.now(),
+    options: {
+      standard: [],
+      similarity: [],
+      offline_dataset_path: null,
+      database_target_table: null,
+      erp_interface: false,
+      column_mappings: [],
+    },
+    data_source: { offline_dataset_path: null },
+    export: { database_target_table: null, erp_interface_enabled: false },
+    access: { path: null, table: null },
+    updated_at: new Date().toISOString(),
+  };
 }
 
-export async function saveWorkspaceSettings(...args: any[]): Promise<any> {
-  return { updated_at: new Date().toISOString() };
+export async function saveWorkspaceSettings(payload: WorkspaceSettingsPayload): Promise<WorkspaceSettingsResponse> {
+  const options: WorkspaceOptionsPayload = payload.options ?? {
+    standard: [],
+    similarity: [],
+    offline_dataset_path: null,
+    database_target_table: null,
+    erp_interface: false,
+    column_mappings: [],
+  };
+  const access: WorkspaceAccessPayload = payload.access ?? { path: null, table: null };
+  return {
+    version: payload.version,
+    options: {
+      standard: options.standard,
+      similarity: options.similarity,
+      offline_dataset_path: options.offline_dataset_path,
+      database_target_table: options.database_target_table,
+      erp_interface: options.erp_interface,
+      column_mappings: options.column_mappings,
+    },
+    data_source: { offline_dataset_path: access.path },
+    export: {
+      database_target_table: options.database_target_table,
+      erp_interface_enabled: options.erp_interface,
+    },
+    access,
+    metadata: payload.metadata,
+    updated_at: new Date().toISOString(),
+  };
 }
 
-export async function postUiAudit(...args: any[]): Promise<void> {
+export async function postUiAudit(_event: UiAuditEvent): Promise<void> {
   return;
 }
 
-export async function postUiAuditBatch(...args: any[]): Promise<void> {
+export async function postUiAuditBatch(_request: UiAuditBatchRequest): Promise<void> {
   return;
 }
 
-export async function createRoutingGroup(...args: any[]): Promise<any> {
+export async function createRoutingGroup(): Promise<never> {
   throw new Error("Routing groups API removed - feature not available");
 }
 
-export async function fetchRoutingGroup(...args: any[]): Promise<any> {
+export async function fetchRoutingGroup(): Promise<never> {
   throw new Error("Routing groups API removed - feature not available");
 }
 
-export async function listRoutingGroups(...args: any[]): Promise<any> {
+export async function listRoutingGroups(): Promise<RoutingGroupListResponse> {
   return { groups: [], total: 0 };
 }
 
-export async function triggerRoutingInterface(...args: any[]): Promise<any> {
+export async function triggerRoutingInterface(
+  _request: RoutingInterfaceRequest
+): Promise<RoutingInterfaceResponse> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
@@ -521,7 +666,7 @@ export async function generateOutputPreview(payload: {
   return response.data;
 }
 
-export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
+export async function postRoutingSnapshotsBatch(): Promise<RoutingSnapshotsBatchResponse> {
   return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
 }
 
@@ -545,7 +690,7 @@ export interface DataMappingProfile {
   name: string;
   description?: string | null;
   relationships: DataRelationshipMapping[];
-  mappings?: any[]; // Legacy field
+  mappings?: unknown[]; // Legacy field
   created_by?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -556,14 +701,14 @@ export interface DataMappingProfileCreate {
   name: string;
   description?: string | null;
   relationships?: DataRelationshipMapping[];
-  mappings?: any[];
+  mappings?: unknown[];
 }
 
 export interface DataMappingProfileUpdate {
   name?: string | null;
   description?: string | null;
   relationships?: DataRelationshipMapping[] | null;
-  mappings?: any[] | null;
+  mappings?: unknown[] | null;
   is_active?: boolean | null;
 }
 
@@ -582,7 +727,7 @@ export interface DataMappingApplyResponse {
   profile_id: string;
   routing_group_id: string;
   columns: string[];
-  preview_rows: Array<Record<string, any>>;
+  preview_rows: Array<Record<string, unknown>>;
   total_rows: number;
   csv_path?: string | null;
   message: string;
@@ -635,7 +780,7 @@ export interface AlertItem {
   value: number;
   threshold: number;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface QualityMetrics {
@@ -654,7 +799,7 @@ export interface QualityMetrics {
   duration_seconds: number;
   items_evaluated: number;
   items_failed: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface QualityCycle {
@@ -693,7 +838,7 @@ export interface DataQualityIssue {
   message: string;
   affectedRecords: number;
   timestamp: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface DataQualityReport {
@@ -791,6 +936,45 @@ export async function fetchHistoricalIssues(params: HistoricalMetricsParams): Pr
       interval: params.interval ?? "1h",
     },
   });
+  return response.data;
+}
+
+// ============================================================================
+// DRAWING VIEWER API (ERP Integration)
+// ============================================================================
+
+export interface DrawingInfo {
+  /**
+   * 도면 번호 (DRAW_NO)
+   */
+  drawingNumber: string;
+
+  /**
+   * 리비전 (DRAW_REV)
+   */
+  revision: string;
+
+  /**
+   * 시트 번호 (DRAW_SHEET_NO)
+   */
+  sheetNumber: string;
+
+  /**
+   * 도면 정보 사용 가능 여부
+   */
+  available: boolean;
+}
+
+/**
+ * 품목의 도면 정보를 조회합니다.
+ *
+ * MSSQL item_info 테이블에서 DRAW_NO, DRAW_REV, DRAW_SHEET_NO를 조회합니다.
+ *
+ * @param itemCode - 품목 코드
+ * @returns 도면 정보
+ */
+export async function fetchDrawingInfo(itemCode: string): Promise<DrawingInfo> {
+  const response = await api.get<DrawingInfo>(`/items/${itemCode}/drawing-info`);
   return response.data;
 }
 

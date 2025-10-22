@@ -1,8 +1,8 @@
-import { useRoutingStore, type TimelineStep } from "@store/routingStore";
+import "./RoutingCombinationSelector.css";
+
+import { type TimelineStep,useRoutingStore } from "@store/routingStore";
 import { Filter } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import "./RoutingCombinationSelector.css";
 
 interface RoutingMatrixCombo {
   key: string;

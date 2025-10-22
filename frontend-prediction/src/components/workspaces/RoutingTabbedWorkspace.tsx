@@ -1,18 +1,21 @@
-import { BarChart3 } from "lucide-react";
-import React, { useEffect,useState } from "react";
+import { BarChart3, Settings } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
 import { CandidatePanel } from "../CandidatePanel";
 import { FeatureWeightPanel } from "../FeatureWeightPanel";
 import { MetricsPanel } from "../MetricsPanel";
 import { PredictionControls } from "../PredictionControls";
+import { CandidateNodeTabs } from "../routing/CandidateNodeTabs";
+import { DrawingViewerButton } from "../routing/DrawingViewerButton";
+import { DrawingViewerSettings } from "../routing/DrawingViewerSettings";
 import { ErpItemExplorer } from "../routing/ErpItemExplorer";
 import { ItemListPanel } from "../routing/ItemListPanel";
 import { RoutingCombinationSelector } from "../routing/RoutingCombinationSelector";
 import { RoutingExplanationPanel } from "../routing/RoutingExplanationPanel";
-import { CandidateNodeTabs } from "../routing/CandidateNodeTabs";
 import { TimelinePanel } from "../TimelinePanel";
 import { Tabs } from "../ui/Tabs";
 import { VisualizationSummary } from "../VisualizationSummary";
+import { useRoutingStore } from "@store/routingStore";
 
 interface RoutingTabbedWorkspaceProps {
   // Controls
@@ -65,6 +68,10 @@ export function RoutingTabbedWorkspace({
   tabKey = "default",
 }: RoutingTabbedWorkspaceProps) {
   const [activeTab, setActiveTab] = useState("control");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Get active item code from routing store
+  const activeItemId = useRoutingStore((state) => state.activeItemId);
 
   // 예측 성공 시 시각화 탭으로 자동 전환
   useEffect(() => {
@@ -112,13 +119,30 @@ export function RoutingTabbedWorkspace({
       icon: <BarChart3 size={18} />,
       content: (
         <div className="routing-visualization-tab" style={{ display: 'flex', width: '100%', minHeight: '800px', gap: '1rem', padding: '1rem' }}>
-          {/* 좌측: 품목 리스트 + 라우팅 조합 (15%) */}
+          {/* 좌측: 품목 리스트 + 라우팅 조합 + 도면 조회 (15%) */}
           <div className="item-list-section" style={{ flex: '0 0 15%', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 overflow-y-auto">
               <ItemListPanel />
             </div>
             <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50 overflow-y-auto">
               <RoutingCombinationSelector />
+            </div>
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold text-slate-200">도면 조회</h4>
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="p-1 hover:bg-slate-700/50 rounded transition-colors"
+                  title="도면 조회 설정"
+                >
+                  <Settings size={16} className="text-slate-400" />
+                </button>
+              </div>
+              <DrawingViewerButton
+                itemCode={activeItemId || ""}
+                disabled={!activeItemId}
+                className="w-full"
+              />
             </div>
           </div>
 
@@ -173,6 +197,7 @@ export function RoutingTabbedWorkspace({
   return (
     <div className="routing-tabbed-workspace" data-layout-fix="v3-tabs">
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      <DrawingViewerSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
