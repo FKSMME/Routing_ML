@@ -28,7 +28,7 @@ import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
 import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 // 🎨 Base Navigation Items
 const BASE_NAVIGATION_ITEMS = [
@@ -111,24 +111,6 @@ const AuthLoadingScreen = () => (
   </div>
 );
 
-const AuthErrorScreen = ({ message, onRetry }: { message?: string | null; onRetry: () => void }) => (
-  <div className="flex min-h-screen flex-col items-center justify-center gap-6 surface-base" role="alert">
-    <div className="text-center space-y-2 max-w-sm">
-      <h1 className="text-lg font-semibold text-slate-200">Unable to verify your session</h1>
-      <p className="text-sm text-slate-400">
-        {message ?? "The authentication service did not respond. Check your network connection and try again."}
-      </p>
-    </div>
-    <button
-      type="button"
-      className="btn-primary px-6"
-      onClick={onRetry}
-    >
-      Retry
-    </button>
-  </div>
-);
-
 interface PredictionErrorInfo {
   banner: string;
   details?: string;
@@ -176,10 +158,8 @@ export default function App() {
   const authStatus = useAuthStore((state) => state.status);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  const lastAuthError = useAuthStore((state) => state.lastError);
   const isAuthenticated = authStatus === "authenticated";
   const isAuthenticating = authStatus === "unknown" || authStatus === "authenticating";
-  const isAuthError = authStatus === "error";
 
   // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
   const NAVIGATION_ITEMS = useMemo(
@@ -276,10 +256,6 @@ export default function App() {
     await checkAuth();
   };
 
-  const handleRetryAuth = useCallback(() => {
-    void checkAuth();
-  }, [checkAuth]);
-
   const renderPredictionBanner = () =>
     predictionError ? (
       <div className="status-banner status-banner--error mb-4" role="alert">
@@ -293,10 +269,6 @@ export default function App() {
   // 인증 확인 중이면 로딩 표시
   if (isAuthenticating) {
     return <AuthLoadingScreen />;
-  }
-
-  if (isAuthError) {
-    return <AuthErrorScreen message={lastAuthError} onRetry={handleRetryAuth} />;
   }
 
   if (!isAuthenticated) {
