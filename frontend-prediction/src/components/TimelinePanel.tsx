@@ -25,10 +25,21 @@ export function TimelinePanel() {
   const totalDuration = useMemo(() => timeline.reduce((acc, step) => acc + (step.runTime ?? 0), 0), [timeline]);
 
   const handleSave = useCallback(() => {
-    // TODO: Integrate with backend save API
-    console.log("Saving routing configuration...", timeline);
-    alert("저장 기능은 백엔드 API 연동이 필요합니다.");
-  }, [timeline]);
+    // Save routing configuration to localStorage
+    try {
+      const saveData = {
+        productId: activeProductId,
+        timeline: timeline,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(`routing_timeline_${activeProductId}`, JSON.stringify(saveData));
+      console.log("Routing configuration saved:", saveData);
+      alert("라우팅 구성이 저장되었습니다.");
+    } catch (error) {
+      console.error("Failed to save routing:", error);
+      alert("저장에 실패했습니다.");
+    }
+  }, [timeline, activeProductId]);
 
   const handleExportCSV = useCallback(() => {
     // Export all product tabs to CSV
