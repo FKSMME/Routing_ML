@@ -47,23 +47,42 @@ def prepare_training_data(
     Raises:
         ValueError: If no training data found
     """
-    # TODO: Implement actual data loading from BI_WORK_ORDER_RESULTS
-    # For now, return placeholder data structure
+    from backend.database import fetch_work_results_batch
+    from backend.constants import TRAIN_FEATURES
 
     logger.info(f"Preparing training data for {len(items)} items")
 
-    # Placeholder: In real implementation, query database
-    # This would be replaced with actual SQL query to BI_WORK_ORDER_RESULTS
-    # joined with BI_ITEM_INFO_VIEW for features
+    # Fetch work order results from database
+    work_results = fetch_work_results_batch(items)
 
-    # Example structure (to be replaced):
-    # X_train = pd.DataFrame with columns: ITEM_CD, PART_TYPE, feature1, feature2, ...
-    # y_train = pd.Series with actual ACT_RUN_TIME values
+    # Combine all results into single DataFrame
+    all_data = []
+    for item_cd, df in work_results.items():
+        if not df.empty:
+            all_data.append(df)
 
-    raise NotImplementedError(
-        "Training data preparation not yet implemented. "
-        "This requires querying BI_WORK_ORDER_RESULTS and joining with item features."
-    )
+    if not all_data:
+        raise ValueError(f"No training data found for items: {items}")
+
+    combined_df = pd.concat(all_data, ignore_index=True)
+
+    # Separate features (X) and target (y)
+    # Target: ACT_RUN_TIME (actual run time)
+    if 'ACT_RUN_TIME' not in combined_df.columns:
+        raise ValueError("ACT_RUN_TIME column not found in work results")
+
+    y_train = combined_df['ACT_RUN_TIME'].copy()
+
+    # Features: TRAIN_FEATURES from constants
+    available_features = [f for f in TRAIN_FEATURES if f in combined_df.columns]
+    if not available_features:
+        raise ValueError(f"No training features found. Available columns: {list(combined_df.columns)}")
+
+    X_train = combined_df[available_features].copy()
+
+    logger.info(f"Prepared {len(X_train)} training samples with {len(available_features)} features")
+
+    return X_train, y_train
 
 
 def train_baseline(
