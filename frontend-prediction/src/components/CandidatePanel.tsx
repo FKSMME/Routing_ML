@@ -302,7 +302,7 @@ export function CandidatePanel() {
                         사내전환
                       </span>
                     ) : null}
-                    {item.operation.HAS_WORK_DATA === false ? (
+                    {item.operation.HAS_WORK_DATA === false || item.operation.HAS_WORK_DATA === "N" ? (
                       <span className="candidate-node__badge" style={{ backgroundColor: '#64748b' }}>
                         실적없음
                       </span>

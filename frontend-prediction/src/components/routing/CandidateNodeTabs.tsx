@@ -87,6 +87,17 @@ const CandidateNodeCard: React.FC<CandidateNodeCardProps> = ({
             {candidate.PROCESS_COUNT} processes
           </div>
         )}
+        {(candidate.WORK_ORDER_COUNT || candidate.WORK_ORDER_CONFIDENCE !== undefined) && (
+          <div className="text-[11px] text-gray-500 dark:text-gray-400">
+            {candidate.WORK_ORDER_COUNT ? `샘플 ${candidate.WORK_ORDER_COUNT}` : null}
+            {candidate.WORK_ORDER_CONFIDENCE !== undefined && candidate.WORK_ORDER_CONFIDENCE !== null ? (
+              <span className="ml-1">신뢰 {Math.round(candidate.WORK_ORDER_CONFIDENCE * 100)}%</span>
+            ) : null}
+          </div>
+        )}
+        {candidate.OUTSOURCING_REPLACED ? (
+          <div className="inline-flex items-center px-2 py-0.5 mt-1 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 text-[10px] font-semibold">사내전환</div>
+        ) : null}
       </div>
 
       {candidate.HAS_ROUTING === 'Y' && (

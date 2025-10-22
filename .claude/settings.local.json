@@ -20,7 +20,13 @@
       "Bash(curl:*)",
       "Bash(tasklist:*)",
       "Bash(powershell -Command:*)",
-      "Bash(..venvScriptspython.exe scriptsinspect_training_features.py)"
+      "Bash(..venvScriptspython.exe scriptsinspect_training_features.py)",
+      "Bash(git stash:*)",
+      "Bash(taskkill:*)",
+      "Bash(../.venv/Scripts/python.exe -m uvicorn:*)",
+      "Bash(cat:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(PYTHONPATH=.. ../.venv/Scripts/python.exe run_api.py)"
     ],
     "deny": [],
     "ask": []
