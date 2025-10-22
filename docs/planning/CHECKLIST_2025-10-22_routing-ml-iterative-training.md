@@ -12,12 +12,12 @@
 ## Progress Tracking
 
 **Phase 0**: [▓▓▓▓▓] 100% (5/5 tasks)
-**Phase 1**: [░░░░░] 0% (0/8 tasks)
+**Phase 1**: [▓▓▓░░] 38% (3/8 subsections complete)
 **Phase 2**: [░░░░░] 0% (0/12 tasks)
 **Phase 3**: [░░░░░] 0% (0/10 tasks)
 **Phase 4**: [░░░░░] 0% (0/9 tasks)
 
-**Total**: [▓░░░░░░░░░] 11% (5/44 tasks)
+**Total**: [▓▓░░░░░░░░] 18% (8/44 tasks)
 
 ---
 
@@ -46,43 +46,54 @@
 - [x] All Phase 0 tasks checked off
 
 **Git Operations**:
-- [ ] Commit Phase 0
-- [ ] Push to 251014
-- [ ] Merge to main
-- [ ] Return to 251014
+- [x] Commit Phase 0 (01b9c138)
+- [x] Push to 251014
+- [x] Merge to main (e86516f4)
+- [x] Return to 251014
 
 ---
 
 ## Phase 1: Backend Design & Prototype (16 hours)
 
-**Status**: Not Started
+**Status**: ⏳ In Progress (38% complete)
 
 **Tasks**:
 
-### 1.1 Data Structures & Interfaces (3 hours)
-- [ ] Define `QualityMetrics` dataclass in `backend/iter_training/models.py` (45 min)
+### 1.1 Data Structures & Interfaces (3 hours) ✅
+- [x] Define `QualityMetrics` dataclass in `backend/iter_training/models.py` (45 min)
   - Fields: cycle_id, mae, trim_mae, rmse, process_match, outsourcing_success, cv, sample_count, alerts
-- [ ] Define `RetrainingJob` dataclass (30 min)
+  - ✅ Implemented with 16 fields + to_dict() method
+- [x] Define `RetrainingJob` dataclass (30 min)
   - Fields: queue_id, cycle_id, items, metrics, status, created_at, updated_at
-- [ ] Create `SamplingStrategy` enum (random, stratified, recent_bias) (15 min)
-- [ ] Define `ModelCandidate` dataclass for comparison results (30 min)
-- [ ] Create type hints for all interfaces in `backend/iter_training/__init__.py` (30 min)
-- [ ] Add pydantic models for config validation (30 min)
+  - ✅ Implemented with full lifecycle tracking
+- [x] Create `SamplingStrategy` enum (random, stratified, recent_bias) (15 min)
+  - ✅ Implemented as str Enum with 3 strategies
+- [x] Define `ModelCandidate` dataclass for comparison results (30 min)
+  - ✅ Implemented with metrics, cv_scores, training_time tracking
+- [x] Create type hints for all interfaces in `backend/iter_training/__init__.py` (30 min)
+  - ✅ Implemented with __all__ exports
+- [x] Add pydantic models for config validation (30 min)
+  - ✅ Implemented in config_loader.py (9 pydantic models)
 
-### 1.2 Configuration Schema (2 hours)
-- [ ] Create `config/iter_training.yaml` with defaults (45 min)
+### 1.2 Configuration Schema (2 hours) ✅
+- [x] Create `config/iter_training.yaml` with defaults (45 min)
   - Sections: sampling, thresholds, queue, tuning, logging
-- [ ] Implement `backend/iter_training/config_loader.py` (45 min)
+  - ✅ Created with 9 sections (187 lines)
+- [x] Implement `backend/iter_training/config_loader.py` (45 min)
   - Load YAML, validate with pydantic, provide getters
+  - ✅ Implemented with load_config(), get_config(), reload_config()
 - [ ] Add config reload endpoint: `POST /api/config/iter_training/reload` (30 min)
+  - ⏸️ Deferred to Phase 3 (API routes section)
 
-### 1.3 Sampling Module (3 hours)
-- [ ] Implement `backend/iter_training/sampler.py` (2 hours)
+### 1.3 Sampling Module (3 hours) ✅
+- [x] Implement `backend/iter_training/sampler.py` (2 hours)
   - `random_sample(n, seed)`: Simple random sampling
   - `stratified_sample(n, strata_column, seed)`: Stratified by PART_TYPE/ITEM_TYPE
   - `recent_bias_sample(n, days_window, seed)`: Weight by CREATE_DATE/UPDATE_DATE
+  - ✅ All 3 strategies implemented (340 lines)
 - [ ] Add unit tests for sampling strategies (1 hour)
   - Test: correct sample size, reproducibility with seed, stratification balance
+  - ⏸️ Deferred to Phase 2 (testing section)
 
 ### 1.4 Quality Evaluator Skeleton (4 hours)
 - [ ] Create `backend/quality_evaluator.py` with class structure (1 hour)
