@@ -36,8 +36,7 @@ describe('PredictionControls error handling', () => {
 
     const textArea = screen.getByRole('textbox');
     await user.clear(textArea);
-    await user.type(textArea, 'ITEM-100
-ITEM-200');
+    await user.type(textArea, "ITEM-100\nITEM-200");
     await user.click(screen.getByRole('button'));
 
     expect(onChangeItemCodes).toHaveBeenCalledWith(['ITEM-100', 'ITEM-200']);
