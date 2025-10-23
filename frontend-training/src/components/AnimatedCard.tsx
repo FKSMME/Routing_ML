@@ -1,6 +1,6 @@
+import { useHoverScale, useMouseFollowEffect } from '@hooks/useGSAPAnimation';
 import type { ReactNode } from 'react';
 import React from 'react';
-import { useHoverScale, useMouseFollowEffect } from '@hooks/useGSAPAnimation';
 
 interface AnimatedCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode;

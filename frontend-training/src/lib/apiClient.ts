@@ -1,16 +1,16 @@
 import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
-import type { TrainingStatusMetrics } from "@app-types/training";
 import type {
+  TensorboardConfig,
   TensorboardFilterResponse,
   TensorboardMetricSeries,
   TensorboardPointResponse,
   TensorboardProjectorSummary,
-  TensorboardConfig,
-  TensorboardTsneResponse,
   TensorboardTsneRequestOptions,
+  TensorboardTsneResponse,
 } from "@app-types/tensorboard";
+import type { TrainingStatusMetrics } from "@app-types/training";
 import axios from "axios";
 
 // Use relative URL to leverage Vite proxy in development

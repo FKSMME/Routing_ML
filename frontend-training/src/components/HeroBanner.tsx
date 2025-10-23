@@ -1,6 +1,5 @@
-import type { CSSProperties } from "react";
-
 import type { NavigationKey } from "@store/workspaceStore";
+import type { CSSProperties } from "react";
 
 import heroImage from "../../../main/4.jpg";
 

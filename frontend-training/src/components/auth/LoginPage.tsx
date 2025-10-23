@@ -1,9 +1,10 @@
-import { useState, type FormEvent, useEffect } from "react";
 import { CardShell } from "@components/common/CardShell";
 import { LiquidEther } from "@routing-ml/shared";
-import { LogIn, UserPlus } from "lucide-react";
-import { ThemeToggle } from "../ThemeToggle";
 import { useBackgroundSettings } from "@store/backgroundSettings";
+import { LogIn, UserPlus } from "lucide-react";
+import { type FormEvent, useEffect,useState } from "react";
+
+import { ThemeToggle } from "../ThemeToggle";
 
 function LoginBackground() {
   const {

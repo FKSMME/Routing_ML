@@ -1,12 +1,3 @@
-import { create } from "zustand";
-
-import {
-  fetchTensorboardProjectorFilters,
-  fetchTensorboardProjectorPoints,
-  fetchTensorboardProjectors,
-  fetchTensorboardMetrics,
-  fetchTensorboardTsne,
-} from "@lib/apiClient";
 import type {
   TensorboardFilterField,
   TensorboardMetricSeries,
@@ -15,6 +6,14 @@ import type {
   TensorboardTsnePoint,
   TensorboardTsneSummary,
 } from "@app-types/tensorboard";
+import {
+  fetchTensorboardMetrics,
+  fetchTensorboardProjectorFilters,
+  fetchTensorboardProjectorPoints,
+  fetchTensorboardProjectors,
+  fetchTensorboardTsne,
+} from "@lib/apiClient";
+import { create } from "zustand";
 
 type TsneSettings = {
   limit: number;

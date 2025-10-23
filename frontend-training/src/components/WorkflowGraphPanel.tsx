@@ -9,7 +9,9 @@ import type {
 } from "@app-types/workflow";
 import { CardShell } from "@components/common/CardShell";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
+import { regenerateWorkflowCode } from "@lib/apiClient";
 import { cn } from "@lib/classNames";
+import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 import { ExternalLink } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import ReactFlow, {
@@ -22,8 +24,6 @@ import ReactFlow, {
   Position,
   ReactFlowProvider,
 } from "reactflow";
-import { regenerateWorkflowCode } from "@lib/apiClient";
-import { buildTensorboardLinks, type TensorboardLinkItem } from "@routing-ml/shared";
 
 const NODE_TYPES = {
   module: ModuleNode,

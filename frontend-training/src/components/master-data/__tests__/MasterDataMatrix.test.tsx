@@ -1,12 +1,11 @@
+import type { MasterDataMatrixRow } from "@app-types/masterData";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { MasterDataMatrixRow } from "@app-types/masterData";
-
 import {
   MasterDataMatrix,
-  MasterDataMatrixPanel,
   type MasterDataMatrixColumnConfig,
+  MasterDataMatrixPanel,
 } from "../MasterDataMatrix";
 
 afterEach(() => {
