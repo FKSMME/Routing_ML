@@ -101,9 +101,14 @@ export default defineConfig({
       "tests/**/*.{test,spec}.{ts,tsx}",
       "../tests/frontend/**/*.{test,spec}.{ts,tsx}",
     ],
+    exclude: [
+      "tests/e2e/**/*",
+      "tests/evidence/**/*",
+      "tests/unit/**/*",
+      "../tests/frontend/**/*",
+    ],
     coverage: {
       reporter: ["text", "lcov"],
     },
   },
 });
-

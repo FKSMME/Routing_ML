@@ -3,7 +3,7 @@
 }
 
 export function MasterDataItemInput({ onApply }: MasterDataItemInputProps) {
-  const placeholder = ["ITEM-001", "ITEM-002", "ITEM-105"].join("\n");
+  const placeholder = "품목 코드 입력\n(한 줄에 하나씩)";
 
   const handleApply = (formData: FormData) => {
     const raw = (formData.get("item-codes") as string | null) ?? "";

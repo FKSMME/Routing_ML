@@ -112,8 +112,8 @@ describe("CandidatePanel", () => {
     const user = userEvent.setup();
     render(<CandidatePanel />);
 
-    const manageButtons = screen.getAllByRole("button", { name: "추천 관리" });
-    await user.click(manageButtons[0]);
+    const manageButton = screen.getAllByRole("button", { name: /노드 추가·숨김 설정/ })[0] as HTMLButtonElement;
+    await user.click(manageButton);
 
     expect(screen.getByRole("dialog", { name: "후보 공정 관리" })).toBeInTheDocument();
     expect(screen.getByText("사용자 정의 공정 추가")).toBeInTheDocument();
@@ -136,8 +136,8 @@ describe("CandidatePanel", () => {
     const user = userEvent.setup();
     render(<CandidatePanel />);
 
-    const manageButtons = screen.getAllByRole("button", { name: "추천 관리" });
-    await user.click(manageButtons[0]);
+    const manageButton = screen.getAllByRole("button", { name: /노드 추가·숨김 설정/ })[0] as HTMLButtonElement;
+    await user.click(manageButton);
 
     await user.type(screen.getByLabelText("공정 코드*"), "NEW-OP");
     await user.clear(screen.getByLabelText("순번*"));
@@ -153,4 +153,3 @@ describe("CandidatePanel", () => {
     });
   });
 });
-

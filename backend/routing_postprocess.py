@@ -84,6 +84,10 @@ def _select_preferred_route(route_df: pd.DataFrame) -> pd.DataFrame:
     if route_df.empty:
         return route_df
 
+    # Safety guard: Check if ROUT_NO column exists
+    if "ROUT_NO" not in route_df.columns:
+        return route_df
+
     work_df = route_df.copy()
     # Safety guard: Check if JOB_CD column exists before accessing
     if "JOB_CD" in work_df.columns:

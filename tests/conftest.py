@@ -26,54 +26,8 @@ from backend.api.config import get_settings
 
 get_settings.cache_clear()
 
-# =============================================================================
-# Mock Auth Service to prevent SQLite initialization errors
-# =============================================================================
-
 import pytest
-from unittest.mock import MagicMock, patch
-
-
-@pytest.fixture(scope="session", autouse=True)
-def prevent_auth_service_initialization():
-    """
-    Prevents AuthService from initializing SQLite database during test collection.
-
-    This fixture mocks the AuthService module-level instantiation to avoid
-    'sqlite3.OperationalError: unable to open database file' errors.
-
-    Scope: session (runs once before all tests)
-    Auto-use: Yes (automatically applied)
-    """
-    # Mock AuthService before it's imported
-    with patch("backend.api.services.auth_service.AuthService") as mock_auth_class:
-        # Configure the mock to return a usable instance
-        mock_instance = MagicMock()
-
-        # Mock user creation
-        mock_instance.create_user.return_value = {
-            "id": 1,
-            "username": "testuser",
-            "status": "pending",
-            "created_at": "2025-10-20T00:00:00"
-        }
-
-        # Mock authentication
-        mock_instance.authenticate.return_value = {
-            "access_token": "mock-jwt-token",
-            "token_type": "bearer"
-        }
-
-        # Mock get current user
-        mock_instance.get_current_user.return_value = {
-            "username": "testuser",
-            "role": "admin",
-            "status": "approved"
-        }
-
-        mock_auth_class.return_value = mock_instance
-
-        yield mock_instance
+from unittest.mock import MagicMock
 
 
 @pytest.fixture

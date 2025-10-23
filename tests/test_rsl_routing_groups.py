@@ -36,6 +36,7 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
 
     database_rsl._ENGINE = None  # type: ignore[attr-defined]
     database_rsl._SESSION_FACTORY = None  # type: ignore[attr-defined]
+    database_rsl.bootstrap_schema()
 
     import backend.api.session_manager as session_manager
 
@@ -45,6 +46,7 @@ def api_client(tmp_path: Path, monkeypatch) -> Tuple[TestClient, Dict[str, str]]
 
     routing_groups_models._ENGINE = None  # type: ignore[attr-defined]
     routing_groups_models._SESSION_FACTORY = None  # type: ignore[attr-defined]
+    routing_groups_models.bootstrap_schema()
 
     from backend.api.services.auth_service import AuthService
 

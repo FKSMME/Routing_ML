@@ -163,16 +163,16 @@ ROUTING_VIEW_COLUMNS: Tuple[str, ...] = (
 WORK_RESULT_VIEW_COLUMNS: Tuple[str, ...] = (
     "ITEM_CD",
     "PROC_SEQ",
-    "WORK_CENTER",
-    "WORK_CENTER_NM",
-    "OPERATION_CD",
-    "OPERATION_NM",
+    "RES_CD",  # WORK_CENTER -> RES_CD
+    "RES_DIS",  # WORK_CENTER_NM -> RES_DIS
+    "JOB_CD",  # OPERATION_CD -> JOB_CD
+    "CD_NM",  # OPERATION_NM -> CD_NM
     "REPORT_DT",
-    "ACT_RUN_TIME",
-    "ACT_SETUP_TIME",
-    "GOOD_QTY",
+    "MACH_WORKED_HOURS",  # ACT_RUN_TIME -> MACH_WORKED_HOURS
+    "SETUP_HOURS",  # ACT_SETUP_TIME -> SETUP_HOURS
+    "ORDER_QTY",  # GOOD_QTY -> ORDER_QTY
     "BAD_QTY",
-    "RUN_QTY",
+    "ROUT_NO",  # Added ROUT_NO which is in the actual table
 )
 
 # ════════════════════════════════════════════════

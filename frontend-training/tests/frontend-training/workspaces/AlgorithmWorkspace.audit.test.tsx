@@ -2,13 +2,13 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AlgorithmWorkspace } from "@routing-ml/shared/components/workspaces/AlgorithmWorkspace";
 import {
   fetchWorkflowConfig,
   patchWorkflowConfig,
   postUiAudit,
   type WorkflowConfigResponse,
 } from "@lib/apiClient";
+import { AlgorithmWorkspace } from "@routing-ml/shared/components/workspaces/AlgorithmWorkspace";
 
 vi.mock("reactflow", () => {
   const React = require("react");

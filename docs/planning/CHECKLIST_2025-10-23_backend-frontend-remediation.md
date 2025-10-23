@@ -27,10 +27,10 @@
   - 검증 기준: 실패 시 원인 기록, 성공 로그 확보
 
 ## Phase 3 – 프론트엔드 개선
-- [ ] Task 3.1: `frontend-training` lint/타입 에러 수정 (`any` 제거, 타입 정의, 의존성 설치)  
+- [x] Task 3.1: `frontend-training` lint/타입 에러 수정 (`any` 제거, 타입 정의, 의존성 설치)  
   - 예상 소요: 1.2시간  
   - 검증 기준: `npm run lint` 통과
-- [ ] Task 3.2: `frontend-training` vitest 실패 해결 (hook 사용, WebGL mock 등)  
+- [x] Task 3.2: `frontend-training` vitest 실패 해결 (hook 사용, WebGL mock 등)  
   - 예상 소요: 1.0시간  
   - 검증 기준: `npm run test -- --run` 통과
 - [ ] Task 3.3: `frontend-prediction` lint/타입/테스트 정리  
@@ -64,7 +64,7 @@
 ## Progress Tracking
 Phase 1: [##########] 100% (3/3 tasks)  
 Phase 2: [######    ] 67% (2/3 tasks)  
-Phase 3: [          ] 0% (0/4 tasks)  
+Phase 3: [#####     ] 50% (2/4 tasks)  
 Phase 4: [          ] 0% (0/3 tasks)  
 
-Total: [###       ] 38% (5/13 tasks)
+Total: [#####     ] 54% (7/13 tasks)

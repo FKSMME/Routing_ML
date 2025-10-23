@@ -392,6 +392,10 @@ async def list_view_configs() -> List[Dict[str, Any]]:
         ]
 
     except Exception as exc:
+        # If table doesn't exist, return empty list instead of error
+        if "view_configs" in str(exc) and ("유효하지 않습니다" in str(exc) or "Invalid object name" in str(exc)):
+            logger.warning("view_configs 테이블이 존재하지 않음 - 빈 목록 반환")
+            return []
         logger.error(f"뷰 설정 목록 조회 실패: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"뷰 설정 목록 조회 실패: {exc}")
 

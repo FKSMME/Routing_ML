@@ -63,7 +63,7 @@ export function MasterDataSearchPanel({
           <input
             id="master-search"
             className="input-field"
-            placeholder="e.g. ITEM-001, A105, DN100"
+            placeholder="품목 코드 또는 이름 검색"
             value={search}
             onChange={(event) => onSearch(event.target.value)}
             aria-invalid={error ? "true" : undefined}
