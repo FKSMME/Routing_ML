@@ -66,6 +66,11 @@ const correlationToColor = (value: number): string => {
   return `#${base.getHexString()}`;
 };
 
+const HEATMAP_EMPTY_MESSAGE = "\uD3EC\uC778\uD2B8 \uD1B5\uACC4 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. 3D \uC2DC\uAC01\uD654\uB97C \uC704\uD574 \uB370\uC774\uD130\uB97C \uB0B4\uBCF4\uB0B4\uC138\uC694.";
+const HEATMAP_INFO_DESCRIPTION = "\uB9C9\uB300\uC758 \uC0C9\uC0C1\uC740 \uC0C1\uAD00\uACC4\uC218 \uBD80\uD638\uB97C, \uB192\uC774\uB294 \uC808\uB300\uAC12 \uD06C\uAE30\uB97C \uB73B\uD569\uB2C8\uB2E4. \uB9C9\uB300\uB97C hover \uD574\uC11C \uC790\uC138\uD55C \uC0C1\uAD00\uAC12\uC744 \uD655\uC778\uD558\uC138\uC694.";
+const HEATMAP_LEGEND_DESCRIPTION = "\uC0C9\uC740 \uC0C1\uAD00\uACC4\uC218\uC758 \uBD80\uD638\uB97C, \uB192\uC774\uB294 \uC808\uB300\uAC12(\uAC15\uB3C4)\uB97C \uB098\uD0C0\uB0B5\uB2C8\uB2E4.";
+const HEATMAP_AXIS_SUFFIX = "\uCD95";
+
 const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
   const option = useMemo<EChartsOption>(() => {
     if (series.points.length === 0) {
@@ -185,7 +190,7 @@ const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
 
 const HeatmapChart = () => {
   const points = useTensorboardStore((state) => state.points);
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+  const [hoveredCell, setHoveredCell] = useState<HeatmapCell | null>(null);
 
   const heatmap = useMemo(() => {
     if (points.length === 0) {
@@ -249,16 +254,16 @@ const HeatmapChart = () => {
   if (heatmap.matrixSize === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">
-        포인트 통계 데이터가 없습니다. 3D 시각화를 위해 데이터를 내보냀세요.
+        {HEATMAP_EMPTY_MESSAGE}
       </div>
     );
   }
 
   return (
     <div className="relative h-full w-full">
-      <Canvas camera={{ position: [5.4, 5.2, 5.4], fov: 45 }} shadows>
+      <Canvas camera={{ position: [5.2, 5.1, 5.2], fov: 45 }} shadows>
         <color attach="background" args={["#020817"]} />
-        <ambientLight intensity={0.6} />
+        <ambientLight intensity={0.65} />
         <directionalLight position={[6, 8, 6]} intensity={1.1} castShadow />
         <directionalLight position={[-6, 4, -6]} intensity={0.45} />
         <OrbitControls
@@ -291,7 +296,7 @@ const HeatmapChart = () => {
         </group>
         <group>
           {heatmap.cells.map((cell) => {
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            const isHovered = hoveredCell?.key === cell.key;
             return (
               <mesh
                 key={cell.key}
@@ -317,21 +322,19 @@ const HeatmapChart = () => {
       </Canvas>
 
       <div className="pointer-events-none absolute left-4 top-4 rounded-lg bg-slate-900/70 px-3 py-2 text-xs text-slate-200 shadow-lg backdrop-blur">
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+        {hoveredCell ? (
           <div className="space-y-1">
             <div className="text-[11px] uppercase tracking-wide text-slate-400">Correlation</div>
             <div className="text-sm font-semibold text-slate-100">
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+              {hoveredCell.rowLabel} {"\u00D7"} {hoveredCell.colLabel}
             </div>
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            <div className="text-lg font-semibold text-sky-300">{hoveredCell.value.toFixed(3)}</div>
             <div className="text-[11px] text-slate-400">Height = |value|, Color encodes sign</div>
           </div>
         ) : (
           <div className="max-w-xs space-y-1">
             <div className="text-[11px] uppercase tracking-wide text-slate-400">3D Heatmap</div>
-            <p className="text-sm text-slate-200">
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
-            </p>
+            <p className="text-sm text-slate-200">{HEATMAP_INFO_DESCRIPTION}</p>
           </div>
         )}
       </div>
@@ -342,20 +345,21 @@ const HeatmapChart = () => {
           <div className="h-2 w-48 rounded-full bg-gradient-to-r from-sky-500 via-slate-100 to-rose-500 shadow-inner" />
           <span className="font-semibold text-rose-300">+1.0</span>
         </div>
-        <span>색은 상관계수의 부호를, 높이는 절대값(강도)을 나타냅니다.</span>
+        <span>{HEATMAP_LEGEND_DESCRIPTION}</span>
       </div>
 
       <div className="pointer-events-none absolute right-4 bottom-4 flex flex-col items-end text-[11px] text-slate-400">
         <span className="font-semibold text-slate-200">Axis Reference</span>
         {heatmap.labels.map((label, index) => (
           <span key={label}>
-            {index + 1}. {label} 축
+            {index + 1}. {label} {HEATMAP_AXIS_SUFFIX}
           </span>
         ))}
       </div>
     </div>
   );
 };
+
 const TsneProgressView = () => {
   const {
     tsnePoints,
@@ -614,7 +618,7 @@ const TsneProgressView = () => {
         <div className="ml-auto flex items-center gap-2">
           <button
             type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            className="rounded-md border border-indigo-300 bg-indigo-500/90 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-500 dark:border-indigo-600 dark:bg-indigo-500 dark:hover:bg-indigo-400"
             onClick={() => {
               void fetchTsne();
             }}
@@ -1027,7 +1031,7 @@ export const TensorboardEmbeddingPanel = () => {
           </label>
           <button
             type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
             onClick={handleExport}
             disabled={exporting}
           >
@@ -1035,7 +1039,7 @@ export const TensorboardEmbeddingPanel = () => {
           </button>
           <button
             type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             onClick={() => {
               void reloadProjectors();
             }}
@@ -1045,7 +1049,7 @@ export const TensorboardEmbeddingPanel = () => {
           </button>
           <button
             type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             onClick={() => {
               void refreshPoints();
             }}
@@ -1064,7 +1068,7 @@ export const TensorboardEmbeddingPanel = () => {
               className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 visualizationMode === '3d'
                   ? 'bg-indigo-600 text-white shadow-md'
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                  : 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
               onClick={() => setVisualizationMode('3d')}
             >
@@ -1075,7 +1079,7 @@ export const TensorboardEmbeddingPanel = () => {
               className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 visualizationMode === 'heatmap'
                   ? 'bg-indigo-600 text-white shadow-md'
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                  : 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
               onClick={() => setVisualizationMode('heatmap')}
             >
@@ -1086,7 +1090,7 @@ export const TensorboardEmbeddingPanel = () => {
               className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 visualizationMode === 'tsne'
                   ? 'bg-indigo-600 text-white shadow-md'
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                  : 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
               onClick={() => setVisualizationMode('tsne')}
             >
@@ -1141,7 +1145,7 @@ export const TensorboardEmbeddingPanel = () => {
                 <div className="absolute top-3 right-3 z-10">
                   <button
                     type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                    className="rounded-lg bg-white/90 p-2 text-slate-700 shadow-lg backdrop-blur transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowControls(!showControls)}
                     title="3D 설정"
                   >
@@ -1209,7 +1213,7 @@ export const TensorboardEmbeddingPanel = () => {
                       {/* Reset Button */}
                       <button
                         type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                        className="mt-3 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                         onClick={() => {
                           setPointSize(0.25);
                           setPointOpacity(0.9);
@@ -1271,7 +1275,7 @@ export const TensorboardEmbeddingPanel = () => {
               <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">필터</h3>
               <button
                 type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                className="text-xs text-sky-600 underline-offset-2 hover:underline dark:text-sky-400"
                 onClick={() => {
                   clearFilters();
                   void refreshPoints();
@@ -1307,7 +1311,7 @@ export const TensorboardEmbeddingPanel = () => {
                               className={`rounded-full border px-3 py-1 text-xs transition ${
                                 selected
                                   ? "border-sky-500 bg-sky-100 text-sky-700 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-200"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                               }`}
                               onClick={() => {
                                 toggleFilterValue(field.name, value);
@@ -1341,7 +1345,7 @@ export const TensorboardEmbeddingPanel = () => {
           </div>
           <button
             type="button"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             onClick={() => {
               void fetchMetrics();
             }}
@@ -1360,7 +1364,7 @@ export const TensorboardEmbeddingPanel = () => {
                 className={`rounded-md px-3 py-1 text-sm font-medium transition ${
                   selected
                     ? "bg-indigo-600 text-white shadow-sm"
-              막대의 색상은 상관계수 부호를, 높이는 절대값 크기를 뜻합니다. 막대를 hover 해서 자세한 상관값을 확인하세요.
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                 }`}
                 onClick={() => setActiveMetric(series.metric)}
               >
