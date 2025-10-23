@@ -131,20 +131,37 @@ async def get_model_metrics():
 
     from pathlib import Path
     import json
+    import os
 
-    model_dir = Path("/workspaces/Routing_ML_4/models/default")
-    metadata_file = model_dir / "metadata.json"
+    # Use relative path from project root
+    project_root = Path(__file__).parent.parent.parent.parent
+    model_dir = project_root / "models" / "default"
+
+    # Try to load from metrics.json first, then training_metadata.json
+    metrics_file = model_dir / "metrics.json"
+    training_metadata_file = model_dir / "training_metadata.json"
 
     try:
-        if metadata_file.exists():
-            with open(metadata_file, "r") as f:
-                metadata = json.load(f)
+        metadata = {}
 
+        # Load metrics.json (contains model_version, training_samples, training_date)
+        if metrics_file.exists():
+            with open(metrics_file, "r") as f:
+                metrics_data = json.load(f)
+                metadata.update(metrics_data)
+
+        # Load training_metadata.json (contains total_items, training_date)
+        if training_metadata_file.exists():
+            with open(training_metadata_file, "r") as f:
+                training_data = json.load(f)
+                metadata.update(training_data)
+
+        if metadata:
             return ModelMetricsResponse(
-                ml_version=metadata.get("version", "unknown"),
-                trained_at=metadata.get("trained_at"),
-                total_items_trained=metadata.get("n_samples", 0),
-                feature_count=len(TRAIN_FEATURES),
+                ml_version=metadata.get("model_version", "default"),
+                trained_at=metadata.get("training_date"),
+                total_items_trained=metadata.get("training_samples") or metadata.get("total_items", 0),
+                feature_count=metadata.get("total_features") or len(TRAIN_FEATURES),
                 ml_path=str(model_dir),
                 accuracy=metadata.get("accuracy")
             )
