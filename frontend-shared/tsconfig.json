@@ -6,6 +6,16 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@routing-ml/shared": ["src/index.ts"],
+      "@routing-ml/shared/*": ["src/*"],
+      "@components/*": ["../frontend-prediction/src/components/*"],
+      "@lib/*": ["../frontend-prediction/src/lib/*"],
+      "@app-types/*": ["../frontend-prediction/src/types/*"],
+      "reactflow": ["../frontend-prediction/node_modules/reactflow"],
+      "reactflow/*": ["../frontend-prediction/node_modules/reactflow/*"]
+    },
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
