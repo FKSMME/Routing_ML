@@ -130,7 +130,7 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
           onDragEnter={handleDragOver}
           onDragLeave={handleDragLeave}
           className={`input-field prediction-panel__textarea ${isDragOver ? "prediction-panel__textarea--drag-over" : ""}`}
-          placeholder={"ITEM-001\nITEM-002"}
+          placeholder={"품목 코드 입력\n(한 줄에 하나씩)"}
         />
         <p className="text-xs text-muted">
           줄바꿈 또는 콤마로 여러 품목을 입력하세요. 좌측 ERP 리스트에서 Drag & Drop으로 빠르게 추가할 수 있습니다. 최대 {MAX_ITEM_CODES}건을
