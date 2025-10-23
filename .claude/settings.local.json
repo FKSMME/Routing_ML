@@ -71,7 +71,8 @@
       "Read(//c/tmp/**)",
       "Bash(git restore:*)",
       "Bash(move RoutingMLMonitor_v5.6.0.spec old )",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(.venv/Scripts/pip freeze:*)"
     ],
     "deny": [],
     "ask": []

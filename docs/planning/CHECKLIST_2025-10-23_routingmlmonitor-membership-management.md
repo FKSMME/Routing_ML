@@ -120,10 +120,10 @@
 - [x] 승인된 사용자 재로그인 → 권한별 메뉴 접근 테스트  
 - [x] 승인되지 않은 사용자 로그인 → 403 또는 안내 메시지 확인  
 - [x] 주요 관리자 API (학습, 워크플로, 로그) 200/403 응답 체크  
-- [ ] PyInstaller 재빌드 (`python -m PyInstaller --clean --noconfirm RoutingMLMonitor_v6.0.x.spec`)  
+- [x] PyInstaller 재빌드 (`python -m PyInstaller --clean --noconfirm RoutingMLMonitor_v6.0.x.spec`)  
 - [x] 빌드 산출물 동작 테스트 (30s 이상 실행, 회원 관리 탭 포함)  
-- [ ] 체크리스트/권한 매트릭스/Phase 3-4 잔여 항목 업데이트  
-- [ ] Work history & QA 보고서 작성 및 공유
+- [x] 체크리스트/권한 매트릭스/Phase 3-4 잔여 항목 업데이트  
+- [x] Work history & QA 보고서 작성 및 공유
 
 **Estimated Time**: 5h  
 **Dependencies**: Phase 2 적용 코드, 최신 빌드 환경  
@@ -171,11 +171,15 @@ Git Operations:        [##########] 100% (15/15) ✅ ALL COMPLETE
 
 ## Sign-off Checklist
 
-- [ ] QA 리포트 공유 (Slack + Notion)  
-- [ ] 권한 매트릭스 업데이트 (docs/security/...)  
-- [ ] Phase 3/4 일정표 업데이트 & 회의 보고  
-- [ ] 배포 체크리스트 (PyInstaller 산출물, 저장소 태그) 완료  
+- [x] QA 리포트 공유 (Slack + Notion)  
+- [x] 권한 매트릭스 업데이트 (docs/security/...)  
+- [x] Phase 3/4 일정표 업데이트 & 회의 보고  
+- [x] 배포 체크리스트 (PyInstaller 산출물, 저장소 태그) 완료  
 - [x] 최종 git status = clean
 
 **Last Updated**: 2025-10-23  
 **Next Review**: Phase 1 완료 시점 (예상 2025-10-23 오후)
+
+
+
+

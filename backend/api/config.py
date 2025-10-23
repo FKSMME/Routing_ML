@@ -20,7 +20,7 @@ class Settings(BaseSettings):
         protected_namespaces=("settings_",),
     )
 
-    model_directory: Optional[Path] = Field(
+    ml_model_directory: Optional[Path] = Field(
         default=None,
         description="비상시 수동 지정할 모델 경로",
         env=("MODEL_DIRECTORY_OVERRIDE", "MODEL_DIRECTORY"),
@@ -176,13 +176,13 @@ class Settings(BaseSettings):
     )
 
     # Legacy model path
-    model_path: Optional[str] = Field(
+    legacy_model_path: Optional[str] = Field(
         default=None,
         description="레거시 모델 경로"
     )
 
     @field_validator(
-        "model_directory",
+        "ml_model_directory",
         "candidate_store_dir",
         "audit_log_dir",
         "tensorboard_projector_path",
@@ -201,7 +201,7 @@ class Settings(BaseSettings):
         value.mkdir(parents=True, exist_ok=True)
         return value
 
-    @field_validator("model_directory")
+    @field_validator("ml_model_directory")
     @classmethod
     def _validate_override(cls, value: Optional[Path]) -> Optional[Path]:  # noqa: N805
         if value is None:
@@ -223,7 +223,7 @@ class Settings(BaseSettings):
             raise ValueError("데이터베이스 URL은 비워둘 수 없습니다.")
         return trimmed
 
-    @field_validator("model_directory")
+    @field_validator("ml_model_directory")
     @classmethod
     def _ensure_manifest(cls, value: Path) -> Path:  # noqa: N805
         try:

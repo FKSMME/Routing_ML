@@ -139,7 +139,7 @@ class TensorboardConfigResponse(BaseModel):
 
     projector_path: str = Field(..., description="Configured export path for TensorBoard Projector")
     projector_path_exists: bool = Field(..., description="Whether the path currently exists")
-    model_dir: str = Field(..., description="Model artifacts directory")
+    ml_artifacts_dir: str = Field(..., description="Model artifacts directory")
 
 
 @dataclass(frozen=True)
@@ -174,9 +174,9 @@ def _normalize_model_root(path: Path) -> Path:
 def _resolve_active_model_dir(settings) -> Path:
     """Find the directory containing the currently active model artifacts."""
     candidates: List[Path] = []
-    if settings.model_directory:
+    if settings.ml_model_directory:
         try:
-            candidates.append(_normalize_model_root(Path(settings.model_directory)))
+            candidates.append(_normalize_model_root(Path(settings.ml_model_directory)))
         except Exception as exc:  # noqa: BLE001
             logger.debug("Failed to normalize configured model directory: %s", exc, exc_info=exc)
 
@@ -495,7 +495,7 @@ async def get_tensorboard_config() -> TensorboardConfigResponse:
     return TensorboardConfigResponse(
         projector_path=str(projector_path),
         projector_path_exists=projector_path.exists(),
-        model_dir=str(model_dir),
+        ml_artifacts_dir=str(model_dir),
     )
 
 
