@@ -45,7 +45,7 @@ describe("buildErpViewerUrl", () => {
         sheet: "1",
         rev: "A",
       }),
-    ).toThrow("ERP ID");
+    ).toThrow("ERP ID는 필수입니다.");
 
     expect(() =>
       buildErpViewerUrl({
@@ -55,6 +55,6 @@ describe("buildErpViewerUrl", () => {
         sheet: "1",
         rev: "A",
       }),
-    ).toThrow("���� ��ȣ");
+    ).toThrow("도면 번호는 필수입니다.");
   });
 });
