@@ -85,7 +85,11 @@ def _select_preferred_route(route_df: pd.DataFrame) -> pd.DataFrame:
         return route_df
 
     work_df = route_df.copy()
-    work_df["__outsourcing_count"] = work_df["JOB_CD"].apply(lambda x: 1 if _detect_outsourcing(x) else 0)
+    # Safety guard: Check if JOB_CD column exists before accessing
+    if "JOB_CD" in work_df.columns:
+        work_df["__outsourcing_count"] = work_df["JOB_CD"].apply(lambda x: 1 if _detect_outsourcing(x) else 0)
+    else:
+        work_df["__outsourcing_count"] = 0
     work_df["__insrt_dt"] = _to_datetime(work_df.get("INSRT_DT")) if "INSRT_DT" in work_df else pd.Series(pd.NaT, index=work_df.index)
 
     grouped = (

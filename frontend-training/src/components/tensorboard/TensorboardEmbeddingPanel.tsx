@@ -378,7 +378,7 @@ const TsneProgressView = () => {
           left: "center",
           top: "middle",
           style: {
-            text: "T-SNE ��ǥ�� �����Ͱ� �����ϴ�.\n��ǥ�� �����Ϸ� ���� T-SNE ���ΰ�ħ�� �����ּ���.",
+            text: "T-SNE 좌표 데이터가 없습니다.\n좌표를 생성하려면 T-SNE 재계산을 실행하세요.",
             fill: "#94a3b8",
             fontSize: 13,
             lineHeight: 20,
@@ -613,12 +613,12 @@ const TsneProgressView = () => {
             <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "canvas" }} notMerge lazyUpdate />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">
-              {loadingTsne ? "T-SNE ��ǥ�� �����ϴ�..." : "T-SNE ��ǥ�� �����Ͱ� �����ϴ�. ���ΰ�ħ�� �������ּ���."}
+              {loadingTsne ? "T-SNE 좌표를 로딩중..." : "T-SNE 좌표 데이터가 없습니다. 재계산을 실행하세요."}
             </div>
           )}
           {loadingTsne ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-medium text-slate-600 backdrop-blur-sm dark:bg-slate-900/60 dark:text-slate-200">
-              T-SNE ��ǥ�� �����ϴ�...
+              T-SNE 좌표를 로딩중...
             </div>
           ) : null}
         </div>

@@ -186,7 +186,7 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
         activeMetric: null,
         tsnePoints: [],
         tsneMeta: null,
-        tsneError: "T-SNE ��ǥ�� �ҷ����� ���߽��ϴ�.",
+        tsneError: "T-SNE 좌표를 불러오지 못했습니다.",
       });
     } finally {
       set({ loadingProjectors: false });
@@ -258,7 +258,7 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
       set({
         tsnePoints: [],
         tsneMeta: null,
-        tsneError: "T-SNE ��ǥ�� �ҷ����� ���߽��ϴ�.",
+        tsneError: "T-SNE 좌표를 불러오지 못했습니다.",
       });
     } finally {
       set({ loadingTsne: false });

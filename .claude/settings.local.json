@@ -72,7 +72,13 @@
       "Bash(git restore:*)",
       "Bash(move RoutingMLMonitor_v5.6.0.spec old )",
       "Bash(move:*)",
-      "Bash(.venv/Scripts/pip freeze:*)"
+      "Bash(.venv/Scripts/pip freeze:*)",
+      "Bash(npm install)",
+      "Bash(npm install:*)",
+      "Bash(PYTHONPATH=. .venv/Scripts/python.exe:*)",
+      "Bash(timeout:*)",
+      "Bash(cmd /c \"set PYTHONPATH=. && .venv\\Scripts\\python.exe backend\\run_api.py\")",
+      "Bash(.venv\\Scripts\\python.exe:*)"
     ],
     "deny": [],
     "ask": []
