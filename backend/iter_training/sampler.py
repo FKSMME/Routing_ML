@@ -328,3 +328,60 @@ def sample_items(
         return recent_bias_sample(n, days_window=days_window, seed=seed)
     else:
         raise ValueError(f"Unknown sampling strategy: {strategy}")
+
+
+def sample_items_for_quality(
+    sample_size: int,
+    *,
+    strategy: str | SamplingStrategy = SamplingStrategy.RANDOM,
+    seed: Optional[int] = None,
+    table_name: Optional[str] = None,
+    strata_column: str = "PART_TYPE",
+    days_window: int = 30,
+) -> SamplingResult:
+    """High-level helper used by quality cycle to obtain evaluation samples.
+
+    Args:
+        sample_size: Number of items to sample (must be > 0)
+        strategy: Sampling strategy name or SamplingStrategy enum
+        seed: Optional seed for repeatability
+        table_name: Optional override for the source table/view
+        strata_column: Column to stratify by when using STRATIFIED strategy
+        days_window: Recency window when using RECENT_BIAS strategy
+
+    Returns:
+        SamplingResult describing the sampled items/metadata.
+
+    Raises:
+        ValueError: If inputs are invalid or strategy unsupported.
+    """
+    if sample_size <= 0:
+        raise ValueError("sample_size must be positive")
+
+    try:
+        strategy_enum = (
+            strategy
+            if isinstance(strategy, SamplingStrategy)
+            else SamplingStrategy(str(strategy))
+        )
+    except ValueError as exc:
+        raise ValueError(f"Unsupported sampling strategy: {strategy}") from exc
+
+    if strategy_enum is SamplingStrategy.RANDOM:
+        return random_sample(sample_size, seed=seed, table_name=table_name)
+    if strategy_enum is SamplingStrategy.STRATIFIED:
+        return stratified_sample(
+            sample_size,
+            strata_column=strata_column,
+            seed=seed,
+            table_name=table_name,
+        )
+    if strategy_enum is SamplingStrategy.RECENT_BIAS:
+        return recent_bias_sample(
+            sample_size,
+            days_window=days_window,
+            seed=seed,
+            table_name=table_name,
+        )
+
+    raise ValueError(f"Unsupported sampling strategy: {strategy_enum}")
