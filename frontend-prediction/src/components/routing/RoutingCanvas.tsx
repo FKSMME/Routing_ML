@@ -10,6 +10,7 @@ import ReactFlow, {
   ConnectionLineType,
   Controls,
   ReactFlowProvider,
+  MarkerType,
   useEdgesState,
   useNodesState,
 } from "reactflow";
@@ -55,9 +56,10 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const similarity = step.confidence ?? step.similarity ?? null;
   const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
   const workSamples = step.workOrderCount ?? null;
+  const workOrderConfidence = step.workOrderConfidence;
   const workConfidencePercent =
-    step.workOrderConfidence !== null && step.workOrderConfidence !== undefined
-      ? Math.round(step.workOrderConfidence * 100)
+    typeof workOrderConfidence === "number"
+      ? Math.round(workOrderConfidence * 100)
       : null;
   const runStd = step.timeStd ?? null;
   const timeCvPercent = step.timeCv !== null && step.timeCv !== undefined
@@ -417,7 +419,7 @@ function RoutingCanvasView({
             strokeDasharray: isManual ? "4 2" : "none",
           },
           markerEnd: {
-            type: "arrowclosed" as const,
+            type: MarkerType.ArrowClosed,
             color: isSelected ? highlightColor : baseColor,
           },
         };
@@ -794,7 +796,6 @@ function RoutingCanvasView({
             onNodeDragStop={handleNodeDragStop}
             nodesDraggable
             nodesConnectable={true}
-            edgesReconnectable={true}
             reconnectRadius={20}
             elementsSelectable
             proOptions={{ hideAttribution: true }}

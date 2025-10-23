@@ -265,14 +265,6 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     viewsError,
   ]);
 
-  const clearImportDragState = useCallback(() => {
-    const dragData = readItemCodesDragData();
-    if (!dragData) {
-      return;
-    }
-    setIsDraggingOverImport(false);
-  }, []);
-
   useEffect(() => {
     const handleDragLeaveWindow = () => {
       setIsDraggingOverImport(false);
@@ -319,7 +311,7 @@ export function ErpItemExplorer({ onAddItems }: ErpItemExplorerProps) {
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       setIsDraggingOverImport(false);
-      const data = readItemCodesDragData();
+      const data = readItemCodesDragData(event.dataTransfer);
       if (!data) {
         return;
       }
