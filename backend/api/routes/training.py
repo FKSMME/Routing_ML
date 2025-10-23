@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
@@ -94,6 +94,20 @@ class JobListResponse(BaseModel):
     total: int
 
 
+class TrainingLogEntry(BaseModel):
+    """Single log entry from training logs."""
+    timestamp: str
+    level: str
+    message: str
+
+
+class TrainingLogsResponse(BaseModel):
+    """Response model for training logs."""
+    logs: List[TrainingLogEntry]
+    total: int
+    limit: int
+
+
 _HUMANIZE_PATTERN = re.compile(r"[A-Z]+(?=[A-Z][a-z]|[0-9]|$)|[A-Z]?[a-z]+|[0-9]+")
 
 
@@ -171,6 +185,119 @@ def _feature_group_lookup(manager: FeatureWeightManager) -> Dict[str, str]:
     return mapping
 
 
+def _parse_training_logs(
+    limit: int = 500,
+    level: Optional[str] = None,
+    since: Optional[str] = None,
+) -> List[TrainingLogEntry]:
+    """Parse training logs from log files.
+
+    Args:
+        limit: Maximum number of log entries to return
+        level: Filter by log level (DEBUG, INFO, WARNING, ERROR)
+        since: ISO 8601 timestamp to filter logs after this time
+
+    Returns:
+        List of parsed log entries
+    """
+    import glob
+    from datetime import datetime as dt
+
+    logs_dir = Path("logs")
+    if not logs_dir.exists():
+        logger.warning(f"Logs directory not found: {logs_dir}")
+        return []
+
+    # Find all trainer_ml log files (sorted by modification time, newest first)
+    log_files = sorted(
+        glob.glob(str(logs_dir / "trainer_ml_*.log")),
+        key=lambda f: Path(f).stat().st_mtime,
+        reverse=True,
+    )
+
+    if not log_files:
+        logger.warning("No trainer_ml log files found")
+        return []
+
+    # Parse since timestamp if provided
+    since_dt: Optional[dt] = None
+    if since:
+        try:
+            since_dt = dt.fromisoformat(since.replace("Z", "+00:00"))
+        except ValueError as e:
+            logger.warning(f"Invalid since timestamp: {since}, error: {e}")
+
+    parsed_logs: List[TrainingLogEntry] = []
+
+    # Read log files (newest first) until we have enough entries
+    for log_file in log_files:
+        try:
+            with open(log_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+
+            # Process lines in reverse (newest first)
+            for line in reversed(lines):
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    # Parse pipe-separated format:
+                    # timestamp | module | level | [file:line] | function | thread | message
+                    parts = [p.strip() for p in line.split("|")]
+                    if len(parts) < 7:
+                        continue
+
+                    log_timestamp = parts[0]
+                    log_level = parts[2]
+                    log_message = parts[6]
+
+                    # Filter by level if specified
+                    if level and log_level.upper() != level.upper():
+                        continue
+
+                    # Filter by since timestamp if specified
+                    if since_dt:
+                        try:
+                            # Parse log timestamp: "2025-10-23 16:50:09"
+                            log_dt = dt.strptime(log_timestamp, "%Y-%m-%d %H:%M:%S")
+                            if log_dt < since_dt.replace(tzinfo=None):
+                                continue
+                        except ValueError:
+                            # Skip if timestamp parsing fails
+                            continue
+
+                    parsed_logs.append(
+                        TrainingLogEntry(
+                            timestamp=log_timestamp,
+                            level=log_level,
+                            message=log_message,
+                        )
+                    )
+
+                    # Stop if we have enough entries
+                    if len(parsed_logs) >= limit:
+                        break
+
+                except (IndexError, ValueError) as e:
+                    # Skip malformed lines
+                    logger.debug(f"Failed to parse log line: {line[:100]}, error: {e}")
+                    continue
+
+            # Stop reading files if we have enough entries
+            if len(parsed_logs) >= limit:
+                break
+
+        except Exception as e:
+            logger.error(f"Failed to read log file {log_file}: {e}")
+            continue
+
+    # Reverse to return chronological order (oldest first)
+    parsed_logs.reverse()
+
+    return parsed_logs
+
+
 @router.get("/features", response_model=List[TrainingFeatureModel])
 async def list_training_features(
     current_user: AuthenticatedUser = Depends(require_admin),
@@ -227,6 +354,55 @@ async def update_training_features(
     disabled = sorted([feature_id for feature_id, enabled in normalized.items() if not enabled])
 
     return TrainingFeaturePatchResponse(updated=updated, disabled=disabled, timestamp=timestamp)
+
+
+@router.get("/logs", response_model=TrainingLogsResponse)
+async def get_training_logs(
+    limit: int = Query(500, ge=1, le=10000),
+    level: Optional[str] = Query(None),
+    since: Optional[str] = Query(None),
+    current_user: AuthenticatedUser = Depends(require_admin),
+) -> TrainingLogsResponse:
+    """Get training logs from trainer_ml log files.
+
+    Args:
+        limit: Maximum number of log entries to return (1-10000, default: 500)
+        level: Filter by log level (DEBUG, INFO, WARNING, ERROR)
+        since: ISO 8601 timestamp to filter logs after this time
+        current_user: Authenticated user
+
+    Returns:
+        Training logs with metadata
+
+    Example:
+        GET /api/training/logs?limit=100&level=ERROR
+    """
+    try:
+        logs = _parse_training_logs(limit=limit, level=level, since=since)
+
+        logger.info(
+            "Training logs requested",
+            extra={
+                "username": current_user.username,
+                "limit": limit,
+                "level": level,
+                "since": since,
+                "returned": len(logs),
+            },
+        )
+
+        return TrainingLogsResponse(
+            logs=logs,
+            total=len(logs),
+            limit=limit,
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to get training logs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve training logs: {str(e)}",
+        )
 
 
 # ========================================
