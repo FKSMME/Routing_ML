@@ -84,6 +84,33 @@
 
 ---
 
+## Phase 2.5: Critical Fixes (옵션 A 선택) ✅ COMPLETE
+
+### Tasks
+- [x] Fix KeyError risk in `_create_user_card()` - Added username validation ✅
+- [x] Add SSL verification environment variable - ROUTING_ML_VERIFY_SSL (default: true) ✅
+- [x] Update API client SSL configuration - Conditional verification ✅
+- [x] Update documentation with fixes applied ✅
+
+**Estimated Time**: 30min
+**Actual Time**: 20min
+**Dependencies**: Phase 2 complete
+**Acceptance Criteria**: Critical issues resolved, secure by default, backward compatible ✅
+
+**Impact**:
+- KeyError prevention: App won't crash on malformed API responses
+- SSL security: Secure by default, flexible for dev environments
+
+### Git Operations (Phase 2.5) ✅ COMPLETE
+
+- [x] git status → git add -A → git status ✅
+- [x] Commit: `"fix: Phase 2.5 - Apply critical security and stability fixes"` ✅ c39bf828
+- [x] Push to 251014 ✅
+- [x] Merge to main ✅ 44d56f7c
+- [x] Return to 251014 ✅
+
+---
+
 ## Phase 3: 통합 검증 및 문서화
 
 ### Tasks
@@ -116,19 +143,19 @@
 ## Progress Tracking
 
 ```
-Phase 1 (환경 파악): [##########] 100% (6/6) ✅ COMPLETE
-Phase 2 (구현 점검): [##########] 100% (11/11) ✅ COMPLETE
-Phase 3 (검증/문서): [..........] 0% (0/9)
+Phase 1 (환경 파악):   [##########] 100% (6/6) ✅ COMPLETE
+Phase 2 (구현 점검):   [##########] 100% (11/11) ✅ COMPLETE
+Phase 2.5 (수정):     [##########] 100% (4/4) ✅ COMPLETE
+Phase 3 (검증/문서):   [..........] 0% (0/9)
 
-총합:                 [#######...] 65% (18/26)
-Git Operations:       [#######...] 67% (10/15)
+총합:                  [########..] 72% (22/30)
+Git Operations:        [##########] 100% (15/15) ✅ ALL COMPLETE
 
-**Phase 1**: ✅ Complete (277f30f7 → main 7a8b87ec, aa3fe0ec → fb5cab31)
-**Phase 2**: ✅ Complete (7e99548b → main 65dca337) - 8 verified, 6 issues documented
+**Phase 1**: ✅ Complete (277f30f7, aa3fe0ec → main fb5cab31)
+**Phase 2**: ✅ Complete (7e99548b, deb9850f → main eff01345) - 8 verified, 6 issues
+**Phase 2.5**: ✅ Complete (c39bf828 → main 44d56f7c) - 2 critical fixes applied
 **Deliverable**: docs/analysis/2025-10-23_membership-management-audit.md (1000+ lines)
-**Next**: Decision on Phase 3 approach
-  - Option A: Apply 2 critical fixes (KeyError, SSL) then test
-  - Option B: Proceed to manual testing, document workarounds
+**Next**: Phase 3 - Manual integration testing & final documentation
 ```
 
 ---
