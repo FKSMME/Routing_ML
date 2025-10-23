@@ -12,13 +12,13 @@
 
 ## Progress Tracking
 
-**Phase 0**: [?????] 100% (3/3 tasks) - 1.0h  
-**Phase 1**: [?????] 80% (4/5 tasks) - 3/4h  
-**Phase 2**: [?????] 67% (4/6 tasks) - 4/6h  
-**Phase 3**: [?????] 40% (2/5 tasks) - 2/5h  
-**Phase 4**: [?????] 0% (0/4 tasks) - 0/3h  
+**Phase 0**: [▓▓▓▓▓] 100% (3/3 tasks) - 1.0h ✅
+**Phase 1**: [▓▓▓▓░] 80% (4/5 tasks) - 3/4h ⏳
+**Phase 2**: [▓▓▓░░] 67% (4/6 tasks) - 4/6h ⏳
+**Phase 3**: [▓▓▓▓▓] 100% (5/5 tasks) - 5/5h ✅
+**Phase 4**: [░░░░░] 0% (0/4 tasks) - 0/3h ⏳
 
-**Total**: [??????????] 57% (13/23 tasks, 9/19h)
+**Total**: [▓▓▓▓▓▓▓░░░] 70% (16/23 tasks, 13/19h)
 
 ---
 
@@ -84,19 +84,19 @@
 
 ## Phase 3: 백엔드 RBAC 강화 (5h)
 
-**Status**: ☐ Pending
+**Status**: ✅ Complete
 
 **Tasks**:
 - [x] 권한 대상 라우트에 `require_admin` 적용 (`workflow`, `training`, `logs`, `data_mapping`, `database_config`, 필요 시 `prediction` 일부)
 - [x] 서버 매니저 흐름 영향 없는지 검증 (CLI/스크립트)
-- [ ] FastAPI 스키마/response 문구 업데이트 (403 메시지 등)
-- [ ] 단위 테스트 혹은 수동 API 테스트 (admin/user 토큰)
-- [ ] 로그/감사 기록 확인 (403 발생 시 기록)
+- [x] FastAPI 스키마/response 문구 업데이트 (403 메시지 등) - Enhanced with detailed context
+- [x] 단위 테스트 혹은 수동 API 테스트 (admin/user 토큰) - 6 unit tests created (all passing)
+- [x] 로그/감사 기록 확인 (403 발생 시 기록) - Comprehensive audit logging with user/IP/path/method/timestamp
 
 **Acceptance Criteria**:
-- [ ] 사용자로 관리자 API 호출 시 403
-- [ ] 관리자 계정 정상 동작
-- [ ] 서버 스크립트 기동/가입 승인 흐름 유지
+- [x] 사용자로 관리자 API 호출 시 403 - Implemented & tested
+- [x] 관리자 계정 정상 동작 - Verified in tests
+- [x] 서버 스크립트 기동/가입 승인 흐름 유지 - No impact on CLI/scripts
 
 ---
 
