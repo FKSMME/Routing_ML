@@ -366,11 +366,9 @@ async def get_view_config(
 
 
 @router.get("/configs")
-async def list_view_configs(
-    current_user: AuthenticatedUser = Depends(require_auth),
-) -> List[Dict[str, Any]]:
-    """저장된 뷰 설정 목록을 조회한다."""
-    logger.info(f"뷰 설정 목록 조회: user={current_user.username}")
+async def list_view_configs() -> List[Dict[str, Any]]:
+    """저장된 뷰 설정 목록을 조회한다 (공개 API - 인증 불필요)."""
+    logger.info("뷰 설정 목록 조회 (public access)")
 
     try:
         query = """

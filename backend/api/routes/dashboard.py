@@ -96,8 +96,8 @@ async def get_dashboard_status(_admin: AuthenticatedUser = Depends(require_admin
 
 
 @router.get("/database", response_model=DatabaseStatusResponse)
-async def get_database_status(_admin: AuthenticatedUser = Depends(require_admin)):
-    """MSSQL 연결 상태 조회"""
+async def get_database_status():
+    """MSSQL 연결 상태 조회 (공개 API - 인증 불필요)"""
 
     import os
 
@@ -126,8 +126,8 @@ async def get_database_status(_admin: AuthenticatedUser = Depends(require_admin)
 
 
 @router.get("/model", response_model=ModelMetricsResponse)
-async def get_model_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
-    """학습된 모델 메트릭 조회"""
+async def get_model_metrics():
+    """학습된 모델 메트릭 조회 (공개 API - 인증 불필요)"""
 
     from pathlib import Path
     import json
@@ -172,8 +172,8 @@ async def get_model_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
 
 
 @router.get("/items", response_model=ItemStatsResponse)
-async def get_item_statistics(_admin: AuthenticatedUser = Depends(require_admin)):
-    """품목 통계 조회"""
+async def get_item_statistics():
+    """품목 통계 조회 (공개 API - 인증 불필요)"""
 
     try:
         # Return mock data if database is not available
@@ -240,8 +240,8 @@ async def get_item_statistics(_admin: AuthenticatedUser = Depends(require_admin)
 
 
 @router.get("/routing-stats", response_model=RoutingStatsResponse)
-async def get_routing_statistics(_admin: AuthenticatedUser = Depends(require_admin)):
-    """라우팅 생성 통계 조회"""
+async def get_routing_statistics():
+    """라우팅 생성 통계 조회 (공개 API - 인증 불필요)"""
 
     try:
         # Return mock data if database is not available
@@ -318,14 +318,14 @@ async def get_routing_statistics(_admin: AuthenticatedUser = Depends(require_adm
 
 
 @router.get("/metrics", response_model=DashboardMetricsResponse)
-async def get_all_dashboard_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
-    """모든 대시보드 메트릭을 한번에 조회"""
+async def get_all_dashboard_metrics():
+    """모든 대시보드 메트릭을 한번에 조회 (공개 API - 인증 불필요)"""
 
     try:
-        database = await get_database_status(_admin=_admin)
-        model = await get_model_metrics(_admin=_admin)
-        items = await get_item_statistics(_admin=_admin)
-        routing = await get_routing_statistics(_admin=_admin)
+        database = await get_database_status()
+        model = await get_model_metrics()
+        items = await get_item_statistics()
+        routing = await get_routing_statistics()
 
         return DashboardMetricsResponse(
             database=database,
