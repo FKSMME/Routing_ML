@@ -218,7 +218,108 @@
 ### Progress Update
 - Checklist: Phase 2 marked 100% complete (11/11 tasks)
 - Progress tracking: 65% overall (18/26 tasks)
-- Git operations pending for Phase 2 commit
+- Git operations: Phase 2 complete (7e99548b → main 65dca337, deb9850f → eff01345)
 
-**Next**: Phase 2 git operations → Decision on Phase 3 approach (fixes vs. manual testing)
+**Next**: ~~Phase 2 git operations → Decision on Phase 3 approach~~ ✅ Complete
+
+---
+
+## Phase 2.5: Critical Fixes Implementation (Complete)
+
+### Completion Time
+2025-10-23 (20 minutes)
+
+### Decision
+User selected **Option A**: Apply critical fixes before Phase 3 testing
+
+### Tasks Completed
+
+#### 1. KeyError Prevention Fix ✅
+**File**: [scripts/monitor/ui/dashboard.py](../../scripts/monitor/ui/dashboard.py#L612-L616)
+
+**Problem**: Direct dictionary access `user['username']` in lambda callbacks (Lines 677, 692) could cause crashes if API returns malformed data
+
+**Solution**:
+- Added username validation at function start
+- Early return if username missing
+- Use extracted `username` variable in lambdas instead of dict access
+
+**Code Changes**:
+```python
+def _create_user_card(self, user: dict):
+    """Create compact user card"""
+    # Extract username early and validate - prevent KeyError in button callbacks
+    username = user.get('username')
+    if not username:
+        # Skip card creation if username is missing (malformed API response)
+        return
+
+    # ... (rest of function)
+    # Use username variable instead of user['username'] in lambdas:
+    command=lambda: self._approve_user(username, admin_var.get())
+    command=lambda: self._reject_user(username)
+```
+
+**Impact**: Prevents application crash on malformed API responses, improves robustness
+
+#### 2. SSL Verification Configuration Fix ✅
+**Files**:
+- [scripts/monitor/config.py](../../scripts/monitor/config.py#L30-L33)
+- [scripts/monitor/api/client.py](../../scripts/monitor/api/client.py#L14,#L34-L40)
+
+**Problem**: SSL certificate verification was hardcoded to disabled (CERT_NONE), vulnerable to MITM attacks
+
+**Solution**:
+- Added `VERIFY_SSL` environment variable (default: true for security)
+- Updated API client to conditionally disable SSL verification only when env var is false
+- Added warning comments about security implications
+
+**Code Changes**:
+
+```python
+# config.py
+VERIFY_SSL = os.getenv("ROUTING_ML_VERIFY_SSL", "true").lower() == "true"
+
+# client.py
+from monitor.config import USER_AGENT, VERIFY_SSL
+
+self.context = ssl.create_default_context()
+
+# Configure SSL verification based on environment variable
+if not VERIFY_SSL:
+    # WARNING: SSL verification disabled - vulnerable to MITM attacks
+    # Only use in development with self-signed certificates
+    self.context.check_hostname = False
+    self.context.verify_mode = ssl.CERT_NONE
+# else: use default secure settings (CERT_REQUIRED)
+```
+
+**Usage**:
+- Production: Leave env var unset or set `ROUTING_ML_VERIFY_SSL=true` (secure)
+- Development with self-signed certs: Set `ROUTING_ML_VERIFY_SSL=false`
+
+**Impact**: Secure by default, allows development flexibility with explicit opt-out
+
+### Files Modified
+- `scripts/monitor/ui/dashboard.py` - KeyError prevention
+- `scripts/monitor/config.py` - SSL verification env var
+- `scripts/monitor/api/client.py` - SSL verification logic
+- `docs/planning/CHECKLIST_2025-10-23_routingmlmonitor-membership-management.md` - Fixes documented
+- `docs/work-history/2025-10-23_routingmlmonitor-membership-management.md` - Phase 2.5 added
+
+### Remaining Issues (Not Fixed - Deferred to Future)
+**High Priority** (2):
+- Token expiration handling: Requires retry logic refactoring
+- Rejection reason persistence: Requires database migration
+
+**Medium Priority** (2):
+- Auto-refresh: UX enhancement, not critical
+- Retry logic: Nice to have, manual retry acceptable
+
+### Progress Update
+- Critical fixes: 2/2 complete (100%)
+- Total progress: 68% (18/26 tasks + 2 fixes)
+- Git operations pending for Phase 2.5 commit
+
+**Next**: Commit fixes → Phase 3 integration testing
 

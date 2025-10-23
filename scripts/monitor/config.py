@@ -27,6 +27,11 @@ MONITOR_ADMIN_PASSWORD = os.getenv("MONITOR_ADMIN_PASSWORD")
 API_TIMEOUT = float(os.getenv("MONITOR_API_TIMEOUT", "8"))
 USER_AGENT = "RoutingML-Monitor/6.0"
 
+# SSL/TLS verification setting
+# Set to "false" to disable SSL certificate verification (dev/self-signed certs only)
+# WARNING: Disabling SSL verification makes the connection vulnerable to MITM attacks
+VERIFY_SSL = os.getenv("ROUTING_ML_VERIFY_SSL", "true").lower() == "true"
+
 # ============================================================================
 # Color System - GitHub Dark + Material Design 3
 # ============================================================================

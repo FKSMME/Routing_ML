@@ -609,6 +609,12 @@ class RoutingMLDashboard:
 
     def _create_user_card(self, user: dict):
         """Create compact user card"""
+        # Extract username early and validate - prevent KeyError in button callbacks
+        username = user.get('username')
+        if not username:
+            # Skip card creation if username is missing (malformed API response)
+            return
+
         card = tk.Frame(
             self.user_list_frame,
             bg=BG_TERTIARY,
@@ -622,7 +628,7 @@ class RoutingMLDashboard:
 
         username_label = tk.Label(
             info_frame,
-            text=user.get('username', 'N/A'),
+            text=username,
             font=("Segoe UI", 12, "bold"),
             fg=TEXT_PRIMARY,
             bg=BG_TERTIARY,
@@ -674,7 +680,7 @@ class RoutingMLDashboard:
             cursor="hand2",
             padx=16,
             pady=6,
-            command=lambda: self._approve_user(user['username'], admin_var.get())
+            command=lambda: self._approve_user(username, admin_var.get())
         )
         approve_btn.pack(side="left", padx=3)
 
@@ -689,7 +695,7 @@ class RoutingMLDashboard:
             cursor="hand2",
             padx=16,
             pady=6,
-            command=lambda: self._reject_user(user['username'])
+            command=lambda: self._reject_user(username)
         )
         reject_btn.pack(side="left", padx=3)
 

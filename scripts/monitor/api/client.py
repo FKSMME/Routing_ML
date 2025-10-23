@@ -11,7 +11,7 @@ import http.cookiejar as cookiejar
 from typing import Dict, Optional
 
 from monitor.api.errors import ApiError
-from monitor.config import USER_AGENT
+from monitor.config import USER_AGENT, VERIFY_SSL
 
 
 class ApiClient:
@@ -30,8 +30,15 @@ class ApiClient:
         self.password = password
         self.timeout = timeout
         self.context = ssl.create_default_context()
-        self.context.check_hostname = False
-        self.context.verify_mode = ssl.CERT_NONE
+
+        # Configure SSL verification based on environment variable
+        if not VERIFY_SSL:
+            # WARNING: SSL verification disabled - vulnerable to MITM attacks
+            # Only use in development with self-signed certificates
+            self.context.check_hostname = False
+            self.context.verify_mode = ssl.CERT_NONE
+        # else: use default secure settings (CERT_REQUIRED)
+
         self.cookie_jar = cookiejar.CookieJar()
         self.opener = urllib.request.build_opener(
             urllib.request.HTTPSHandler(context=self.context),
