@@ -978,5 +978,27 @@ export async function fetchDrawingInfo(itemCode: string): Promise<DrawingInfo> {
   return response.data;
 }
 
+// ============================================================================
+// MODEL STATUS API (Phase 2 Task 2.2)
+// ============================================================================
+
+export interface ModelStatus {
+  loaded: boolean;
+  model_dir: string | null;
+  loaded_at: string | null;
+  version: string | null;
+  is_enhanced: boolean;
+}
+
+/**
+ * 현재 로딩된 모델 상태 정보를 조회합니다.
+ *
+ * @returns 모델 상태 정보
+ */
+export async function fetchModelStatus(): Promise<ModelStatus> {
+  const response = await api.get<ModelStatus>("/model/status");
+  return response.data;
+}
+
 
 export default api;

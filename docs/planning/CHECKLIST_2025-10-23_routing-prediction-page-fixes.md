@@ -59,29 +59,30 @@
 ## Phase 2: 모델 로딩 상태 표시
 
 **Estimated Time**: 2-3 hours
-**Status**: Not Started
+**Status**: Completed ✅
 
 ### Tasks
 
-- [ ] **2.1** 백엔드 모델 상태 조회 API 추가/확인
-  - predictor_ml.py의 현재 로딩된 모델 정보 확인
-  - `/api/model/status` 엔드포인트 추가 (새 파일: backend/api/routes/model_status.py)
-  - 응답 스키마: { "loaded": bool, "version": str, "loaded_at": str, "model_path": str }
+- [x] **2.1** 백엔드 모델 상태 조회 API 추가/확인
+  - ✅ predictor_ml.py의 get_loaded_model 함수 확인
+  - ✅ `/api/model/status` 엔드포인트 추가 (backend/api/routes/prediction.py)
+  - ✅ 응답 스키마: { "loaded": bool, "model_dir": str, "version": str, "loaded_at": str | null, "is_enhanced": bool }
 
-- [ ] **2.2** 프론트엔드 모델 상태 조회 hook 추가
-  - 새 파일 생성: frontend-prediction/src/hooks/useModelStatus.ts
-  - apiClient.ts에 fetchModelStatus() 함수 추가
-  - React Query 또는 useEffect로 주기적 폴링 (30초 간격)
+- [x] **2.2** 프론트엔드 모델 상태 조회 hook 추가
+  - ✅ 새 파일 생성: frontend-prediction/src/hooks/useModelStatus.ts
+  - ✅ apiClient.ts에 fetchModelStatus() 함수 추가
+  - ✅ React Query로 주기적 폴링 (30초 간격)
 
-- [ ] **2.3** PredictionControls에 모델 상태 UI 추가
-  - 모델 로딩 상태 인디케이터 (로딩됨: 녹색, 미로딩: 빨강)
-  - 모델 버전 및 로딩 시각 표시
-  - "추천 실행" 버튼 위/아래에 배치
+- [x] **2.3** PredictionControls에 모델 상태 UI 추가
+  - ✅ 모델 로딩 상태 인디케이터 (로딩됨: 녹색, 미로딩: 빨강)
+  - ✅ 모델 버전 표시 (version 필드)
+  - ✅ "추천 실행" 버튼 위에 배치
+  - ✅ 모델 미로딩 시 버튼 비활성화
 
-- [ ] **2.4** 모델 미로딩 시 예측 실행 차단
-  - onSubmit 핸들러에서 모델 상태 검증
-  - 모델 미로딩 시 경고 alert 표시
-  - "추천 실행" 버튼 비활성화 (선택사항)
+- [x] **2.4** 모델 미로딩 시 예측 실행 차단
+  - ✅ onSubmit 핸들러에서 모델 상태 검증
+  - ✅ 모델 미로딩 시 경고 alert 표시
+  - ✅ "추천 실행" 버튼 비활성화 (2.3에서 구현)
 
 **Acceptance Criteria**:
 - 모델 로딩 상태가 UI에 실시간 표시됨
@@ -210,11 +211,11 @@
 
 ```
 Phase 1: [█████] 100% (4/4 tasks) ✅
-Phase 2: [░░░░░] 0% (0/4 tasks)
+Phase 2: [█████] 100% (4/4 tasks) ✅
 Phase 3: [░░░░░] 0% (0/4 tasks)
 Phase 4: [░░░░░] 0% (0/4 tasks)
 
-Total: [██░░░░░░░░] 25% (4/16 tasks)
+Total: [████░░░░░░] 50% (8/16 tasks)
 ```
 
 ---

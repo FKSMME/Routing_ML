@@ -1,4 +1,5 @@
 import { hasItemCodesDragData, readItemCodesDragData } from "@lib/dragAndDrop";
+import { useModelStatus } from "@hooks/useModelStatus";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
 interface PredictionControlsProps {
@@ -58,6 +59,9 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
   const [isDragOver, setIsDragOver] = useState(false);
 
+  // Task 2.3: 모델 상태 조회
+  const { data: modelStatus, isLoading: modelStatusLoading } = useModelStatus();
+
   useEffect(() => {
     setInputValue(itemCodes.join("\n"));
   }, [itemCodes]);
@@ -83,6 +87,13 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Task 2.4: 모델 상태 검증
+    if (!modelStatus?.loaded) {
+      console.error("[PredictionControls] 모델이 로딩되지 않아 예측 실행 불가");
+      alert("모델이 로딩되지 않았습니다.\n\n시스템 관리자에게 문의하거나 잠시 후 다시 시도해주세요.");
+      return;
+    }
 
     // Task 1.4: 품목 전환 UI 피드백 - 로그 추가
     const codes = splitItemCodes(inputValue);
@@ -186,7 +197,32 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
         </p>
       ) : null}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      {/* Task 2.3: 모델 상태 인디케이터 */}
+      {!modelStatusLoading && modelStatus && (
+        <div
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
+            modelStatus.loaded
+              ? "bg-green-900/30 text-green-400 border border-green-700/50"
+              : "bg-red-900/30 text-red-400 border border-red-700/50"
+          }`}
+        >
+          <div className={`w-2 h-2 rounded-full ${modelStatus.loaded ? "bg-green-400" : "bg-red-400"}`} />
+          <div className="flex-1">
+            {modelStatus.loaded ? (
+              <>
+                <span className="font-semibold">모델 로딩됨</span>
+                {modelStatus.version && (
+                  <span className="ml-2 text-xs opacity-75">({modelStatus.version})</span>
+                )}
+              </>
+            ) : (
+              <span className="font-semibold">⚠️ 모델 미로딩</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <button type="submit" disabled={loading || !modelStatus?.loaded} className="btn-primary w-full">
         {loading ? "추천 불러오는 중..." : "추천 실행"}
       </button>
     </form>
