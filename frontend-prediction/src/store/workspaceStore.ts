@@ -260,7 +260,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
   layout: "desktop",
   activeMenu: "routing",
   itemSearch: {
-    itemCodes: ["ITEM-001"],
+    itemCodes: [],
     topK: 10,
     threshold: 0.3,
     lastRequestedAt: undefined,

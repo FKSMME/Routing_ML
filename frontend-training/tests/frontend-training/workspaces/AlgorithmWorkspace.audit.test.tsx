@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -9,47 +8,6 @@ import {
   type WorkflowConfigResponse,
 } from "@lib/apiClient";
 import { AlgorithmWorkspace } from "@routing-ml/shared/components/workspaces/AlgorithmWorkspace";
-
-vi.mock("reactflow", () => {
-  const React = require("react");
-  const MockReactFlow = ({
-    nodes = [],
-    onInit,
-    onNodeClick,
-    children,
-  }: {
-    nodes?: unknown[];
-    onInit?: (instance: unknown) => void;
-    onNodeClick?: (event: unknown, node: unknown) => void;
-    children?: ReactNode;
-  }) => {
-    React.useEffect(() => {
-      if (onInit) {
-        onInit({} as unknown);
-      }
-    }, [onInit]);
-
-    const hasSelectedRef = React.useRef(false);
-    React.useEffect(() => {
-      if (!hasSelectedRef.current && nodes.length > 0 && onNodeClick) {
-        hasSelectedRef.current = true;
-        onNodeClick({}, nodes[0]);
-      }
-    }, [nodes, onNodeClick]);
-
-    return <div data-testid="reactflow-mock">{children}</div>;
-  };
-
-  return {
-    __esModule: true,
-    default: MockReactFlow,
-    ReactFlowProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-    MiniMap: () => null,
-    Controls: () => null,
-    Background: () => null,
-    Position: { Right: "right", Left: "left" },
-  };
-});
 
 vi.mock("@lib/apiClient", () => ({
   fetchWorkflowConfig: vi.fn(),

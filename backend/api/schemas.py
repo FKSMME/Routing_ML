@@ -318,8 +318,8 @@ class OperationStep(BaseModel):
 
 
 class CandidateRouting(BaseModel):
-    candidate_item_code: str = Field(..., alias="CANDIDATE_ITEM_CD")
-    similarity_score: float = Field(..., alias="SIMILARITY_SCORE")
+    candidate_item_code: Optional[str] = Field(None, alias="CANDIDATE_ITEM_CD")
+    similarity_score: float = Field(0.0, alias="SIMILARITY_SCORE")
     routing_signature: Optional[str] = Field(None, alias="ROUTING_SIGNATURE")
     routing_summary: Optional[str] = Field(None, alias="ROUTING_SUMMARY")
     priority: Optional[str] = Field(None, alias="PRIORITY")

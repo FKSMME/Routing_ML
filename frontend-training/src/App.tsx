@@ -186,9 +186,10 @@ export default function App() {
         const url = new URL(window.location.href);
         const paramCandidate = (url.searchParams.get("menu") ?? "").trim();
         const candidate = paramCandidate || hashCandidate;
+        const currentMenu = useWorkspaceStore.getState().activeMenu;
         if (
           candidate &&
-          candidate !== activeMenu &&
+          candidate !== currentMenu &&
           navigationItems.some((item) => item.id === candidate)
         ) {
           setActiveMenu(candidate as NavigationKey);
@@ -205,7 +206,7 @@ export default function App() {
       window.removeEventListener("hashchange", resolveMenuFromUrl);
       window.removeEventListener("popstate", resolveMenuFromUrl);
     };
-  }, [activeMenu, navigationItems, setActiveMenu]);
+  }, [navigationItems, setActiveMenu]);
 
   useEffect(() => {
     const currentHash = window.location.hash.replace("#", "");

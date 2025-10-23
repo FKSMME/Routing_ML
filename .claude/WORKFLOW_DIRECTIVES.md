@@ -133,7 +133,7 @@ Phase 2 시작
 **각 Phase 완료 시마다** 다음 Git 작업을 수행합니다:
 
 ```bash
-# 1. 현재 브랜치에서 작업 커밋
+# 1. 현재 브랜치에서 작업 커밋, Changes 포함할 것. 사용자가 따로 수정한 파일이 있음
 git add -A
 git commit -m "feat: Complete Phase X - {description}"
 

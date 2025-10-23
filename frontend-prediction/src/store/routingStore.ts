@@ -1419,6 +1419,11 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         }
       });
 
+      // Task 1.1: activeItemId 설정 로그 추가
+      console.log("[routingStore.loadRecommendations] 추천 데이터 로딩 완료");
+      console.log("[routingStore.loadRecommendations] - activeTabId:", activeTabId);
+      console.log("[routingStore.loadRecommendations] - tabs:", tabs.map(t => ({ id: t.id, productCode: t.productCode })));
+
       return {
         recommendations: buckets,
         candidates: response.candidates || [],

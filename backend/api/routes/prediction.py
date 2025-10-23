@@ -408,3 +408,57 @@ async def get_metrics(current_user: AuthenticatedUser = Depends(require_auth)) -
         extra={"username": current_user.username, "has_metrics": bool(metrics)},
     )
     return metrics
+
+
+@router.get("/model/status")
+async def get_model_status(current_user: AuthenticatedUser = Depends(require_auth)) -> Dict[str, Any]:
+    """
+    현재 로딩된 모델 상태 정보 반환.
+
+    Returns:
+        {
+            "loaded": bool,  # 모델 로딩 여부
+            "model_dir": str,  # 모델 디렉토리 경로
+            "loaded_at": str | null,  # 로딩 시각 (ISO 8601)
+            "version": str | null,  # 모델 버전
+            "is_enhanced": bool,  # Enhanced 모델 여부
+        }
+    """
+    try:
+        # prediction_service에서 모델 정보 조회
+        model_dir = prediction_service.model_dir
+        loaded = model_dir is not None and model_dir.exists()
+
+        # 모델 정보 수집
+        status: Dict[str, Any] = {
+            "loaded": loaded,
+            "model_dir": str(model_dir) if model_dir else None,
+            "loaded_at": None,  # 추후 predictor_ml.py의 캐시에서 가져올 수 있음
+            "version": model_dir.name if (model_dir and loaded) else None,
+            "is_enhanced": False,
+        }
+
+        # 모델이 로딩된 경우 추가 정보 조회
+        if loaded:
+            try:
+                # predictor_ml의 get_loaded_model을 통해 더 자세한 정보 가져오기
+                from backend.predictor_ml import get_loaded_model
+                entry = get_loaded_model(model_dir)
+                status["is_enhanced"] = getattr(entry.model_manager, "is_enhanced", False)
+                # 로딩 시각은 캐시 엔트리에 없으므로 None으로 유지
+            except Exception as e:
+                logger.warning(f"모델 상세 정보 조회 실패: {e}")
+
+        audit_logger.info(
+            "model.status_read",
+            extra={"username": current_user.username, "model_loaded": loaded},
+        )
+
+        return status
+
+    except Exception as e:
+        logger.error(f"모델 상태 조회 중 오류: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"모델 상태 조회 실패: {str(e)}"
+        )
