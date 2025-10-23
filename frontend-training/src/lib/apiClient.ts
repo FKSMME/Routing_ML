@@ -729,4 +729,50 @@ export async function fetchTensorboardConfig(): Promise<TensorboardConfig> {
 }
 
 
+// ============================================================================
+// ITERATIVE TRAINING QUALITY APIs
+// ============================================================================
+
+export interface AlertItem {
+  item_cd: string;
+  proc_cd?: string | null;
+  issue: string;
+  value: number;
+  threshold: number;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface QualityMetrics {
+  cycle_id: string;
+  sample_size: number;
+  strategy: "random" | "stratified" | "recent_bias";
+  mae: number;
+  trim_mae: number;
+  rmse: number;
+  process_match: number;
+  outsourcing_success: number;
+  cv: number;
+  sample_count: number;
+  alerts: AlertItem[];
+  timestamp: string;
+  duration_seconds: number;
+  items_evaluated: number;
+  items_failed: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface QualityCycle {
+  cycle_id: string;
+  timestamp: string;
+  metrics: QualityMetrics;
+}
+
+export interface QualityHistoryResponse {
+  cycles: QualityCycle[];
+  total: number;
+  start_date?: string;
+  end_date?: string;
+}
+
 export default api;
