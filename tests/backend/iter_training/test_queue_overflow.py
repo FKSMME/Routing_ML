@@ -9,6 +9,30 @@ from backend.iter_training.worker import TrainingWorker
 from backend.iter_training.models import JobStatus
 
 
+@pytest.fixture(autouse=True)
+def inline_process(monkeypatch):
+    """Run TrainingWorker jobs synchronously during tests for determinism."""
+    class InlineProcess:
+        def __init__(self, target, args=(), name=None):
+            self._target = target
+            self._args = args
+            self.name = name
+            self.pid = 0
+
+        def start(self):
+            self._target(*self._args)
+
+        def join(self, timeout=None):
+            return None
+
+        def terminate(self):
+            return None
+
+        def is_alive(self):
+            return False
+
+    monkeypatch.setattr("backend.iter_training.worker.multiprocessing.Process", InlineProcess)
+
 @pytest.fixture
 def training_worker(tmp_path):
     """Create TrainingWorker instance for testing."""
@@ -18,13 +42,16 @@ def training_worker(tmp_path):
     return worker
 
 
+def _quick_success_training(job_id, params, worker):
+    """Helper training function that immediately marks the job as succeeded."""
+    worker.update_progress(job_id, 100, "Completed", status=JobStatus.SUCCEEDED)
+    return {"status": "success"}
+
+
 @pytest.fixture
 def mock_training_function():
-    """Mock training function that completes quickly."""
-    def _train(job_id, params, worker):
-        worker.update_progress(job_id, 100, "Completed", status=JobStatus.SUCCEEDED)
-        return {"status": "success"}
-    return _train
+    """Provide a picklable training function for multiprocessing tests."""
+    return _quick_success_training
 
 
 class TestQueueOverflow:

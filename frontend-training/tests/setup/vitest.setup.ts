@@ -48,7 +48,8 @@ vi.mock("@routing-ml/shared", async () => {
 
 vi.mock("@react-three/fiber", () => ({
   __esModule: true,
-  Canvas: ({ children }: { children?: React.ReactNode }) => <div data-testid="mock-canvas">{children}</div>,
+  Canvas: ({ children }: { children?: React.ReactNode }) =>
+    React.createElement("div", { "data-testid": "mock-canvas" }, children),
   useFrame: () => undefined,
   useThree: () => ({ invalidate: () => undefined, gl: { domElement: document.createElement("canvas") } }),
 }));
@@ -56,6 +57,20 @@ vi.mock("@react-three/fiber", () => ({
 vi.mock("@react-three/drei", () => ({
   __esModule: true,
   OrbitControls: () => null,
-  Html: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Html: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
   Stats: () => null,
 }));
+
+vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+  const url = typeof input === "string" ? input : input.toString();
+  if (url.includes("/api/auth/me")) {
+    return new Response(JSON.stringify({ username: "tester", is_admin: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+});
