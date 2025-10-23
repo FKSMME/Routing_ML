@@ -14,10 +14,6 @@ const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/Routing
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
 const DataQualityWorkspace = lazy(() => import("@components/workspaces/DataQualityWorkspace").then(m => ({ default: m.default })));
-const QualityDashboard = lazy(() => import("@components/quality/QualityDashboard").then(m => ({ default: m.QualityDashboard })));
-const TrainingMonitor = lazy(() => import("@components/training/TrainingMonitor").then(m => ({ default: m.TrainingMonitor })));
-const IterTrainingSettings = lazy(() => import("@components/settings/IterTrainingSettings").then(m => ({ default: m.IterTrainingSettings })));
-const LogViewer = lazy(() => import("@components/quality/LogViewer").then(m => ({ default: m.LogViewer })));
 import ErrorBoundary from "@components/ErrorBoundary";
 import { HeroBanner } from "@components/HeroBanner";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
@@ -76,34 +72,6 @@ const NAVIGATION_CONFIG: NavigationConfig[] = [
     id: "data-quality",
     label: "데이터 품질 대시보드",
     description: "실적 지표와 이상 징후를 모니터링합니다.",
-    icon: <Activity size={18} />,
-  },
-  {
-    key: "quality-monitor",
-    id: "quality-monitor",
-    label: "품질 모니터링",
-    description: "Iterative Training 품질 추세와 알림을 확인합니다.",
-    icon: <Activity size={18} />,
-  },
-  {
-    key: "training-monitor",
-    id: "training-monitor",
-    label: "훈련 모니터",
-    description: "Iterative Training 진행 상태를 추적합니다.",
-    icon: <Activity size={18} />,
-  },
-  {
-    key: "training-settings",
-    id: "training-settings",
-    label: "훈련 설정",
-    description: "Iterative Training 파이프라인 파라미터를 조정합니다.",
-    icon: <Settings2 size={18} />,
-  },
-  {
-    key: "log-viewer",
-    id: "log-viewer",
-    label: "로그 뷰어",
-    description: "훈련 및 예측 관련 로그를 조회합니다.",
     icon: <Activity size={18} />,
   },
 ];
@@ -365,18 +333,6 @@ export default function App() {
       break;
     case "data-quality":
       workspace = <Suspense fallback={loadingFallback}><DataQualityWorkspace /></Suspense>;
-      break;
-    case "quality-monitor":
-      workspace = <Suspense fallback={loadingFallback}><QualityDashboard /></Suspense>;
-      break;
-    case "training-monitor":
-      workspace = <Suspense fallback={loadingFallback}><TrainingMonitor /></Suspense>;
-      break;
-    case "training-settings":
-      workspace = <Suspense fallback={loadingFallback}><IterTrainingSettings /></Suspense>;
-      break;
-    case "log-viewer":
-      workspace = <Suspense fallback={loadingFallback}><LogViewer /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

@@ -17,9 +17,15 @@ import { useWorkspaceStore } from "@store/workspaceStore";
 import { useAuthStore } from "@store/authStore";
 import { useBackgroundSettings } from "@store/backgroundSettings";
 import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings, Brain, ScatterChart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { BarChart3, Menu, Route, Settings, Brain, ScatterChart, Activity, Settings2 } from "lucide-react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
+
+// Training-related components (lazy loaded)
+const QualityDashboard = lazy(() => import("@components/quality/QualityDashboard").then(m => ({ default: m.QualityDashboard })));
+const TrainingMonitor = lazy(() => import("@components/training/TrainingMonitor").then(m => ({ default: m.TrainingMonitor })));
+const IterTrainingSettings = lazy(() => import("@components/settings/IterTrainingSettings").then(m => ({ default: m.IterTrainingSettings })));
+const LogViewer = lazy(() => import("@components/quality/LogViewer").then(m => ({ default: m.LogViewer })));
 
 // 🟢 Training & Model Management Web Service
 const BASE_NAVIGATION_ITEMS = [
@@ -52,6 +58,30 @@ const BASE_NAVIGATION_ITEMS = [
     label: "시스템 옵션",
     description: "표준값 · 유사도 설정 · ERP/MSSQL 구성을 관리",
     icon: <Settings size={18} />,
+  },
+  {
+    id: "quality-monitor",
+    label: "품질 모니터링",
+    description: "Iterative Training 품질 추세와 알림을 확인합니다.",
+    icon: <Activity size={18} />,
+  },
+  {
+    id: "training-monitor",
+    label: "훈련 모니터",
+    description: "Iterative Training 진행 상태를 추적합니다.",
+    icon: <Activity size={18} />,
+  },
+  {
+    id: "training-settings",
+    label: "훈련 설정",
+    description: "Iterative Training 파이프라인 파라미터를 조정합니다.",
+    icon: <Settings2 size={18} />,
+  },
+  {
+    id: "log-viewer",
+    label: "로그 뷰어",
+    description: "훈련 및 예측 관련 로그를 조회합니다.",
+    icon: <Activity size={18} />,
   },
 ];
 
@@ -220,6 +250,18 @@ export default function App() {
       break;
     case "options":
       workspace = <OptionsWorkspace />;
+      break;
+    case "quality-monitor":
+      workspace = <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-muted">로딩 중...</div></div>}><QualityDashboard /></Suspense>;
+      break;
+    case "training-monitor":
+      workspace = <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-muted">로딩 중...</div></div>}><TrainingMonitor /></Suspense>;
+      break;
+    case "training-settings":
+      workspace = <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-muted">로딩 중...</div></div>}><IterTrainingSettings /></Suspense>;
+      break;
+    case "log-viewer":
+      workspace = <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="text-muted">로딩 중...</div></div>}><LogViewer /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;
