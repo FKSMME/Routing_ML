@@ -83,7 +83,24 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Task 1.4: 품목 전환 UI 피드백 - 로그 추가
     const codes = splitItemCodes(inputValue);
+    console.log("[PredictionControls] 추천 실행 요청 - 품목 개수:", codes.length, "품목:", codes);
+
+    // 품목 유효성 검증
+    if (codes.length === 0) {
+      console.warn("[PredictionControls] 품목 코드가 비어있습니다");
+      alert("품목 코드를 입력해주세요.");
+      return;
+    }
+
+    if (codes.length > MAX_ITEM_CODES) {
+      console.warn("[PredictionControls] 품목 개수 초과:", codes.length);
+      alert(`최대 ${MAX_ITEM_CODES}개까지 입력 가능합니다.\n현재: ${codes.length}개`);
+      return;
+    }
+
     onChangeItemCodes(codes);
     onSubmit();
   };

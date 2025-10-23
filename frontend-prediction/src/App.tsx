@@ -237,6 +237,17 @@ export default function App() {
     }
   }, [applyPredictionResponse, data]);
 
+  // Task 1.3: 품목 전환 시 상태 초기화
+  const handlePredictionSubmit = () => {
+    console.log("[App] 추천 실행 시작 - itemCodes:", itemCodes);
+
+    // 이전 예측 결과와 에러 초기화
+    setPredictionError(null);
+
+    // Refetch 실행
+    refetch();
+  };
+
   const predictionControlsError = predictionError?.details ?? predictionError?.banner ?? undefined;
 
   // Authentication bootstrap
@@ -284,7 +295,7 @@ export default function App() {
           threshold={threshold}
           onChangeThreshold={updateThreshold}
           loading={isLoading || isFetching}
-          onSubmit={refetch}
+          onSubmit={handlePredictionSubmit}
           errorMessage={predictionControlsError}
           data={data}
           selectedCandidate={selectedCandidate}

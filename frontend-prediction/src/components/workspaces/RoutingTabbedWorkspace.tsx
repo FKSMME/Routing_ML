@@ -73,9 +73,15 @@ export function RoutingTabbedWorkspace({
   // Get active item code from routing store
   const activeItemId = useRoutingStore((state) => state.activeItemId);
 
+  // Task 1.1: activeItemId 값 추적 로그
+  useEffect(() => {
+    console.log("[RoutingTabbedWorkspace] activeItemId 변경:", activeItemId);
+  }, [activeItemId]);
+
   // 예측 성공 시 시각화 탭으로 자동 전환
   useEffect(() => {
     if (!loading && data?.candidates && data.candidates.length > 0) {
+      console.log("[RoutingTabbedWorkspace] 예측 성공 - 시각화 탭으로 전환");
       setActiveTab("visualization");
     }
   }, [loading, data?.candidates]);
