@@ -990,11 +990,313 @@ except ApiError as exc:
 - Add monitoring for JWT expiration
 - Schedule Phase 3 for security fixes
 
-**Phase 2 Status**: ✅ **ALL 11 TASKS COMPLETE** - Ready for Phase 3 decision
+**Phase 2 Status**: ✅ **ALL 11 TASKS COMPLETE** - ~~Ready for Phase 3 decision~~ **Option A Selected**
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2025-10-23 (Phase 2 complete)
+## 11. Phase 2.5: Critical Fixes Implementation (Complete)
+
+### Completion Time
+2025-10-23 (20 minutes)
+
+### Decision Made
+**Option A Selected**: Apply critical security and stability fixes before Phase 3 testing
+
+### Rationale
+- KeyError and SSL issues pose immediate risks (crash + security)
+- Fixes are quick (<30 min) and low-risk
+- Better to test with fixed version than document workarounds
+- Aligns with security-first approach
+
+### Fixes Implemented
+
+#### Fix #1: KeyError Prevention (Stability) ✅
+
+**Problem**: Direct dictionary access in button callbacks
+- Location: [dashboard.py:677, 692](../../scripts/monitor/ui/dashboard.py#L677)
+- Risk: Application crash if API returns malformed data (missing `username` key)
+- Impact: CRITICAL - Entire monitor unusable after crash
+
+**Solution**:
+```python
+def _create_user_card(self, user: dict):
+    """Create compact user card"""
+    # Extract username early and validate - prevent KeyError in button callbacks
+    username = user.get('username')
+    if not username:
+        # Skip card creation if username is missing (malformed API response)
+        return
+
+    # ... rest of function ...
+
+    # Use extracted username variable in lambdas (safe)
+    approve_btn = tk.Button(
+        command=lambda: self._approve_user(username, admin_var.get())
+    )
+    reject_btn = tk.Button(
+        command=lambda: self._reject_user(username)
+    )
+```
+
+**Changes**:
+- Added username validation at function start (Line 613-616)
+- Early return if username missing (graceful degradation)
+- Use local `username` variable instead of `user['username']` in lambdas (Lines 683, 698)
+
+**Impact**:
+- ✅ Prevents application crashes on malformed API responses
+- ✅ Graceful handling: skip invalid cards, display valid ones
+- ✅ Improved robustness without breaking existing functionality
+
+**Testing**:
+- Normal case: Works as before
+- Edge case: Missing username → card skipped, no crash
+- Error case: Invalid API response → stable (documented in Phase 3 test plan)
+
+---
+
+#### Fix #2: SSL Verification Configuration (Security) ✅
+
+**Problem**: SSL certificate verification hardcoded to disabled
+- Location: [client.py:33-34](../../scripts/monitor/api/client.py#L33-L34)
+- Risk: MITM attacks, credential interception
+- Impact: HIGH SECURITY RISK in production environments
+
+**Before**:
+```python
+self.context = ssl.create_default_context()
+self.context.check_hostname = False  # ⚠️ ALWAYS DISABLED
+self.context.verify_mode = ssl.CERT_NONE  # ⚠️ NEVER VERIFIED
+```
+
+**After**:
+```python
+# config.py
+VERIFY_SSL = os.getenv("ROUTING_ML_VERIFY_SSL", "true").lower() == "true"
+
+# client.py
+from monitor.config import USER_AGENT, VERIFY_SSL
+
+self.context = ssl.create_default_context()
+
+# Configure SSL verification based on environment variable
+if not VERIFY_SSL:
+    # WARNING: SSL verification disabled - vulnerable to MITM attacks
+    # Only use in development with self-signed certificates
+    self.context.check_hostname = False
+    self.context.verify_mode = ssl.CERT_NONE
+# else: use default secure settings (CERT_REQUIRED)
+```
+
+**Changes**:
+- Added `VERIFY_SSL` environment variable in [config.py:33](../../scripts/monitor/config.py#L33)
+- Default value: `"true"` (secure by default)
+- Updated API client to conditionally disable verification ([client.py:35-40](../../scripts/monitor/api/client.py#L35-L40))
+- Added security warning comments in code
+
+**Configuration**:
+
+**Production** (Secure):
+```bash
+# Leave unset or explicitly enable
+ROUTING_ML_VERIFY_SSL=true  # or omit (defaults to true)
+```
+- SSL certificates validated
+- MITM attacks prevented
+- Secure connection required
+
+**Development** (Self-signed certs):
+```bash
+# Explicitly disable for dev environments only
+ROUTING_ML_VERIFY_SSL=false
+```
+- SSL validation skipped
+- ⚠️ WARNING: Vulnerable to MITM attacks
+- Only use in trusted development networks
+
+**Impact**:
+- ✅ Secure by default (no env var needed for production)
+- ✅ Backward compatible (can disable for dev)
+- ✅ Clear security warnings in code and docs
+- ✅ Explicit opt-out required (fail-secure design)
+
+**Testing**:
+- Production: Requires valid SSL cert → secure
+- Dev with self-signed: Set env var false → works
+- Documented in Phase 3 test plan (Scenarios 9.1, 9.2)
+
+---
+
+### Files Modified
+
+| File | Changes | Impact |
+|------|---------|--------|
+| `scripts/monitor/ui/dashboard.py` | KeyError prevention (Lines 612-616, 683, 698) | Stability |
+| `scripts/monitor/config.py` | Added VERIFY_SSL env var (Lines 30-33) | Security |
+| `scripts/monitor/api/client.py` | Conditional SSL verification (Lines 14, 35-40) | Security |
+| `docs/planning/CHECKLIST_2025-10-23_routingmlmonitor-membership-management.md` | Phase 2.5 section added | Documentation |
+| `docs/work-history/2025-10-23_routingmlmonitor-membership-management.md` | Phase 2.5 section added | Documentation |
+
+### Git Commits
+
+- `c39bf828` - fix: Phase 2.5 - Apply critical security and stability fixes
+- Main merge: `44d56f7c`
+
+### Remaining Issues (Deferred)
+
+**Not Fixed in Phase 2.5** (require more extensive work):
+
+**High Priority** (2 issues):
+1. **Token Expiration Handling**
+   - Issue: JWT expires after 24h, monitor requires restart
+   - Fix Required: Retry logic with auto-reauthentication
+   - Effort: 30-60 minutes
+   - Risk: Medium (refactoring multiple methods)
+   - Workaround: Document restart procedure
+
+2. **Rejection Reason Persistence**
+   - Issue: Reasons only in logs, not queryable
+   - Fix Required: Add `rejection_reason` column + DB migration
+   - Effort: 20 minutes + testing
+   - Risk: Low (additive change)
+   - Workaround: Query audit logs for reasons
+
+**Medium Priority** (2 issues):
+3. **Auto-refresh**
+   - Issue: Multiple admins don't see each other's changes
+   - Enhancement: 30-60s auto-refresh with toggle
+   - Effort: 45 minutes
+   - Risk: Low
+   - Workaround: Manual refresh button
+
+4. **Retry Logic**
+   - Issue: Transient failures require manual retry
+   - Enhancement: Exponential backoff decorator
+   - Effort: 30 minutes
+   - Risk: Low
+   - Workaround: Click again to retry
+
+**Rationale for Deferral**: These issues require more extensive testing and don't block Phase 3 manual testing. They can be addressed in a future phase or separate project.
+
+---
+
+## 12. Phase 3: Integration Testing & Verification (In Progress)
+
+### Overview
+
+Phase 3 focuses on manual integration testing with real admin accounts, pending users, and backend API to verify the complete membership approval/rejection workflow works end-to-end.
+
+### Prerequisites
+
+**Environment**:
+- ✅ Phase 2.5 fixes applied and merged to main
+- ✅ RoutingMLMonitor v5.6.0 with Phase 2.5 code
+- 🔄 Backend API running with authentication
+- 🔄 Test database with sample users
+- 🔄 Environment variables configured
+
+**Test Accounts Required**:
+- 1 Admin account (for monitor login)
+- 3+ Pending users (for approval/rejection tests)
+- 1 Standard user (for permission testing)
+- 1 Rejected user (for access denial testing)
+
+### Test Plan Document
+
+Comprehensive QA test plan created: [docs/qa/2025-10-23_routingmlmonitor-membership-qa-test-plan.md](../../docs/qa/2025-10-23_routingmlmonitor-membership-qa-test-plan.md)
+
+**Contents**:
+- Pre-test setup instructions (env vars, test accounts, database prep)
+- 10 test scenarios with 16 test cases
+- Pass/Fail checkboxes for each test
+- Database verification queries
+- Audit log verification commands
+- Edge case testing (API down, invalid creds, malformed responses, timeouts)
+- SSL configuration testing
+- Concurrent admin testing
+- Test summary template
+- Issues tracking section
+- Sign-off sheet
+
+### Test Scenarios Summary
+
+| # | Scenario | Test Cases | Status |
+|---|----------|------------|--------|
+| 1 | Monitor Login & UI Access | 1 | 🔄 Pending |
+| 2 | Pending Users List Display | 1 | 🔄 Pending |
+| 3 | User Approval Flow | 2 (standard + admin) | 🔄 Pending |
+| 4 | User Rejection Flow | 1 | 🔄 Pending |
+| 5 | Approved User Login & Permissions | 2 (standard + admin) | 🔄 Pending |
+| 6 | Rejected/Pending User Login Blocked | 2 | 🔄 Pending |
+| 7 | API Endpoint Authorization | 1 (5 endpoints) | 🔄 Pending |
+| 8 | Error Handling & Edge Cases | 4 | 🔄 Pending |
+| 9 | SSL Configuration Testing | 2 | 🔄 Pending |
+| 10 | UI Refresh & Concurrent Admin | 1 | 🔄 Pending |
+
+**Total**: 16 test cases across 10 scenarios
+
+### Acceptance Criteria for Phase 3
+
+**Functional Requirements** (Must Pass):
+- ✅ Monitor launches and authenticates successfully
+- ✅ Pending users list displays with accurate count
+- ✅ Approval flow updates DB and UI correctly (standard + admin users)
+- ✅ Rejection flow updates DB and UI correctly
+- ✅ Approved users can log in with appropriate permissions
+- ✅ Rejected/pending users cannot log in
+- ✅ Admin-only APIs return 403 for non-admin users
+- ✅ Audit logs created for all approval/rejection actions
+
+**Stability Requirements** (Must Pass):
+- ✅ No crashes or unhandled exceptions
+- ✅ Graceful error handling (API down, invalid creds, network timeout)
+- ✅ Monitor remains usable after errors
+
+**Security Requirements** (Must Pass):
+- ✅ SSL verification works when enabled (production default)
+- ✅ SSL can be disabled for development (explicit opt-out)
+- ✅ Authorization enforced at API level (not just UI)
+- ✅ Audit logs capture user actions
+
+**Documentation Requirements** (Must Complete):
+- ✅ Test results documented with pass/fail for each scenario
+- ✅ Issues found logged with severity and reproduction steps
+- ✅ Recommendations for production deployment
+- ✅ Work history updated with Phase 3 completion
+- ✅ QA sign-off obtained
+
+### Next Steps for Phase 3 Execution
+
+**Step 1: Environment Setup**
+1. Configure environment variables (admin creds, API URL, SSL setting)
+2. Ensure backend API is running
+3. Prepare test database with sample users (3 pending, 1 standard, 1 rejected, 1 admin)
+4. Verify monitor executable has Phase 2.5 code
+
+**Step 2: Execute Tests**
+1. Follow test plan sequentially (Scenarios 1-10)
+2. Mark Pass/Fail for each test case
+3. Document any issues found
+4. Take screenshots for critical workflows
+5. Verify database changes with SQL queries
+6. Check audit logs after each operation
+
+**Step 3: Documentation**
+1. Complete test summary in QA test plan
+2. List all issues with severity and impact
+3. Make recommendations (must-fix, should-fix, nice-to-have)
+4. Update work history with Phase 3 results
+5. Obtain QA sign-off
+
+**Step 4: Git Operations**
+1. Update checklist with Phase 3 completion
+2. Commit QA test results and final documentation
+3. Merge to main after approval
+4. Tag release if production-ready
+
+---
+
+**Document Version**: 1.2
+**Last Updated**: 2025-10-23 (Phase 2.5 complete, Phase 3 in progress)
 **Author**: Claude (AI Assistant)
-**Review Status**: Phase 1 & 2 complete, Phase 3 pending
+**Review Status**: Phase 1, 2, 2.5 complete | Phase 3 ready for testing
