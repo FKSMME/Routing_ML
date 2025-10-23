@@ -58,7 +58,7 @@ function toMappingRow(column: OutputProfileColumn): MappingRow {
     mapped: column.mapped ?? "",
     type: column.type ?? "string",
     required: Boolean(column.required),
-    defaultValue: column.default_value ?? column.defaultValue ?? "",
+    defaultValue: column.default_value ?? "",
   });
 }
 

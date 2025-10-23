@@ -28,7 +28,8 @@ vi.mock("@lib/apiClient", () => {
       ],
     },
     access: { path: "", table: "dbo.ROUTING_MASTER" },
-    metadata: null,
+    metadata: undefined,
+    updated_at: new Date().toISOString(),
   };
 
   return {

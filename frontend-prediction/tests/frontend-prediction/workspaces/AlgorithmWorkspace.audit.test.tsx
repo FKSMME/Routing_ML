@@ -7,8 +7,8 @@ import {
   fetchWorkflowConfig,
   patchWorkflowConfig,
   postUiAudit,
-  type WorkflowConfigResponse,
 } from "@lib/apiClient";
+import type { WorkflowConfigResponse } from "@app-types/workflow";
 
 vi.mock("reactflow", () => {
   const React = require("react");
@@ -142,6 +142,7 @@ const createWorkflowResponse = (): WorkflowConfigResponse & { correlation_id?: s
     enable_txt: false,
     enable_parquet: false,
     enable_json: true,
+    enable_database_export: false,
     erp_interface_enabled: false,
     erp_protocol: null,
     erp_endpoint: null,
