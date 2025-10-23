@@ -39,6 +39,33 @@ const hexToRGB = (hex: string): [number, number, number] => {
   return [r / 255, g / 255, b / 255];
 };
 
+const HEATMAP_CELL_SIZE = 1.6;
+const HEATMAP_HEIGHT_SCALE = 2.4;
+const HEATMAP_NEGATIVE = new THREE.Color("#2563eb");
+const HEATMAP_ZERO = new THREE.Color("#e2e8f0");
+const HEATMAP_POSITIVE = new THREE.Color("#ef4444");
+
+type HeatmapCell = {
+  key: string;
+  row: number;
+  col: number;
+  value: number;
+  height: number;
+  color: string;
+  position: [number, number, number];
+  rowLabel: string;
+  colLabel: string;
+};
+
+const correlationToColor = (value: number): string => {
+  const clamped = Math.max(-1, Math.min(1, value));
+  const base =
+    clamped >= 0
+      ? HEATMAP_ZERO.clone().lerp(HEATMAP_POSITIVE, clamped)
+      : HEATMAP_ZERO.clone().lerp(HEATMAP_NEGATIVE, Math.abs(clamped));
+  return `#${base.getHexString()}`;
+};
+
 const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
   const option = useMemo<EChartsOption>(() => {
     if (series.points.length === 0) {
