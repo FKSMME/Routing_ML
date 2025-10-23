@@ -1,7 +1,6 @@
-import { useEffect } from "react";
-
 import { RoutingCanvas } from "@components/routing/RoutingCanvas";
 import { useRoutingStore } from "@store/routingStore";
+import { useEffect } from "react";
 
 export function RuleBadgeDemo() {
   useEffect(() => {

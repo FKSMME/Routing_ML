@@ -1,6 +1,5 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-
 import { cn } from "@lib/classNames";
+import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import { CardShell } from "./CardShell";
 import styles from "./DialogContainer.module.css";

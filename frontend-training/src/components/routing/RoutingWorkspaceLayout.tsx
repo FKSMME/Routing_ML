@@ -1,6 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
-
 import { pastelSkyTheme } from "@styles/theme";
+import type { CSSProperties, ReactNode } from "react";
 
 interface RoutingWorkspaceLayoutProps {
   header?: ReactNode;

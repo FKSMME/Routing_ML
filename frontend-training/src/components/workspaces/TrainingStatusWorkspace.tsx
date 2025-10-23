@@ -10,13 +10,12 @@ import {
   type TrainingRunRecord,
   type TrainingStatus,
 } from "@lib/apiClient";
+import { useTrainingFeatureStore } from "@routing-ml/shared/store/trainingStore";
 import { useQuery } from "@tanstack/react-query";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { Activity, Clock, ExternalLink, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import { useTrainingFeatureStore } from "@routing-ml/shared/store/trainingStore";
 
 const POLL_INTERVAL_MS = 15_000;
 

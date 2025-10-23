@@ -1,12 +1,12 @@
 import {
   createDataMappingProfile,
+  type DataMappingProfile,
+  type DataMappingProfileCreate,
+  type DataRelationshipMapping,
   deleteDataMappingProfile,
   fetchDataMappingProfile,
   fetchDataMappingProfiles,
   updateDataMappingProfile,
-  type DataMappingProfile,
-  type DataMappingProfileCreate,
-  type DataRelationshipMapping,
 } from "@lib/apiClient";
 import { AlertCircle, ArrowRight, Plus, Save, Settings, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";

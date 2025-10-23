@@ -1,7 +1,4 @@
 import type { OperationStep } from "@app-types/routing";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
-
 import { ReferenceMatrixPanel } from "@components/routing/ReferenceMatrixPanel";
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
@@ -9,6 +6,8 @@ import {
   useRoutingStore,
 } from "@store/routingStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 
 const SAMPLE_OPERATIONS: OperationStep[] = [
   {

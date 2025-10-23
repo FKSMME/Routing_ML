@@ -1,21 +1,23 @@
 // @ts-nocheck - ReactFlow v12 type compatibility issues
-import { useCallback, useMemo } from 'react';
+import './blueprint.css';
+
 import {
-  ReactFlow,
+  addEdge,
   Background,
   Controls,
-  MiniMap,
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  type OnConnect,
-  type Node,
   type Edge,
   type FitViewOptions,
+  MiniMap,
+  type Node,
+  type OnConnect,
+  ReactFlow,
+  useEdgesState,
+  useNodesState,
 } from '@xyflow/react';
 import dagre from 'dagre';
+import { useCallback, useMemo } from 'react';
+
 import { BlueprintNode, type BlueprintNodeData } from './BlueprintNode';
-import './blueprint.css';
 
 const nodeTypes = {
   blueprint: BlueprintNode,

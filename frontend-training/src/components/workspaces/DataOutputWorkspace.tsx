@@ -6,13 +6,12 @@ import {
   postUiAudit,
   saveWorkspaceSettings,
 } from "@lib/apiClient";
-import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
-import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-
 import {
   OutputMappingRow as MappingRow,
   useWorkspaceStore,
 } from "@store/workspaceStore";
+import { AlertCircle, DownloadCloud, Plus, Save, Trash2, Upload } from "lucide-react";
+import { DragEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 const COLUMN_TYPES: Array<{ value: string; label: string }> = [
   { value: "string", label: "Text" },

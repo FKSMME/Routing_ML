@@ -1,25 +1,23 @@
-import { LiquidEther } from "@routing-ml/shared";
-import { BlueprintGraphPanel } from "@components/blueprint/BlueprintGraphPanel";
+import { LoginPage } from "@components/auth/LoginPage";
+import ErrorBoundary from "@components/ErrorBoundary";
 import { Header } from "@components/Header";
 import { HeroBanner } from "@components/HeroBanner";
 import { MainNavigation } from "@components/MainNavigation";
-import { BackgroundControls } from "@components/BackgroundControls";
-import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
-import { LoginPage } from "@components/auth/LoginPage";
-import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
-import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
-import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
-import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
 import { ModelTrainingPanel } from "@components/ModelTrainingPanel";
+import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
+import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
+import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
+import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
+import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
-import { useWorkspaceStore } from "@store/workspaceStore";
+import { LiquidEther } from "@routing-ml/shared";
 import { useAuthStore } from "@store/authStore";
 import { useBackgroundSettings } from "@store/backgroundSettings";
-import ErrorBoundary from "@components/ErrorBoundary";
-import { BarChart3, Menu, Route, Settings, Brain, ScatterChart, Activity, Settings2 } from "lucide-react";
-import { lazy, Suspense, useEffect, useState } from "react";
 import type { NavigationKey } from "@store/workspaceStore";
+import { useWorkspaceStore } from "@store/workspaceStore";
+import { Activity, BarChart3, Brain, Menu, Route, ScatterChart, Settings, Settings2 } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 // Training-related components (lazy loaded)
 const QualityDashboard = lazy(() => import("@components/quality/QualityDashboard").then(m => ({ default: m.QualityDashboard })));
@@ -155,8 +153,7 @@ export default function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const checkAuth = useAuthStore((state) => state.checkAuth);
   const [authLoading, setAuthLoading] = useState(true);
-
-  const NAVIGATION_ITEMS = BASE_NAVIGATION_ITEMS;
+  const navigationItems = useMemo(() => BASE_NAVIGATION_ITEMS, []);
 
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
@@ -180,7 +177,7 @@ export default function App() {
     await checkAuth();
   };
 
-  const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
+  const headerData = navigationItems.find((item) => item.id === activeMenu) ?? navigationItems[0];
 
   useEffect(() => {
     const resolveMenuFromUrl = () => {
@@ -192,7 +189,7 @@ export default function App() {
         if (
           candidate &&
           candidate !== activeMenu &&
-          NAVIGATION_ITEMS.some((item) => item.id === candidate)
+          navigationItems.some((item) => item.id === candidate)
         ) {
           setActiveMenu(candidate as NavigationKey);
         }
@@ -208,7 +205,7 @@ export default function App() {
       window.removeEventListener("hashchange", resolveMenuFromUrl);
       window.removeEventListener("popstate", resolveMenuFromUrl);
     };
-  }, [activeMenu, setActiveMenu]);
+  }, [activeMenu, navigationItems, setActiveMenu]);
 
   useEffect(() => {
     const currentHash = window.location.hash.replace("#", "");
@@ -273,10 +270,10 @@ export default function App() {
     <div className="app-shell" data-nav-mode={isDrawerMode ? "drawer" : "persistent"}>
       <LiquidEtherBackdrop />
       {isPersistent ? (
-        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
+        <MainNavigation items={navigationItems} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
         <ResponsiveNavigationDrawer
-          items={NAVIGATION_ITEMS}
+          items={navigationItems}
           activeId={activeMenu}
           onSelect={(id) => setActiveMenu(id as NavigationKey)}
           open={isNavOpen}
