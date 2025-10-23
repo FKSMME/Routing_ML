@@ -44,6 +44,17 @@ interface FunctionNodeData {
   sourceCode?: string;
 }
 
+interface FunctionNodeData {
+  label: string;
+  type: 'function' | 'class' | 'method';
+  params?: string[];
+  returns?: string;
+  docstring?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  sourceCode?: string;
+}
+
 interface APINode {
   id: string;
   label: string;

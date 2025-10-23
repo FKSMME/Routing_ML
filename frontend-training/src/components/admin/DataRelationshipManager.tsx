@@ -342,7 +342,7 @@ export function DataRelationshipManager() {
                 {relationships.length === 0 ? (
                   <div className="py-12 text-center">
                     <p className="body-text-secondary">
-                      매핑이 없습니다. "매핑 추가" 버튼을 클릭하세요
+                      ë§¤íì´ ììµëë¤. &quot;ë§¤í ì¶ê°&quot; ë²í¼ì í´ë¦­íì¸ì
                     </p>
                   </div>
                 ) : (

@@ -30,13 +30,7 @@ const DEFAULT_OPTIONS = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-interface ErrorWithDetail {
-  response?: {
-    data?: {
-      detail?: string;
-    };
-  };
-}
+
 
 const randomId = (): string =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"

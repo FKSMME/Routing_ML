@@ -15,7 +15,7 @@ import {
   useNodesState,
 } from '@xyflow/react';
 import dagre from 'dagre';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
 import { BlueprintNode, type BlueprintNodeData } from './BlueprintNode';
 
@@ -240,7 +240,7 @@ const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
 );
 
 export function BlueprintGraphPanel() {
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
+  const [nodes, _setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
 
   const onConnect: OnConnect = useCallback(

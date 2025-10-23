@@ -205,35 +205,7 @@ function createVariableMap(theme: RoutingMLTheme): Record<string, string> {
   const borderGradient = `linear-gradient(135deg, ${hsl(theme.brand.primary)} 0%, ${hsl(
     theme.brand.primaryGlow
   )} 45%, ${hsl(theme.brand.secondary)} 100%)`;
-const baseVariableMap: Record<string, string> = {
-  "--gradient-start": pastelSkyTheme.gradient.start,
-  "--gradient-mid": pastelSkyTheme.gradient.mid,
-  "--gradient-end": pastelSkyTheme.gradient.end,
-  "--surface": pastelSkyTheme.surface.base,
-  "--surface-card": pastelSkyTheme.surface.card,
-  "--surface-menu": pastelSkyTheme.surface.menu,
-  "--surface-overlay": pastelSkyTheme.surface.overlay,
-  "--border": pastelSkyTheme.surface.border,
-  "--border-strong": pastelSkyTheme.surface.borderStrong,
-  "--accent": pastelSkyTheme.accent.base,
-  "--accent-hover": pastelSkyTheme.accent.hover,
-  "--accent-strong": pastelSkyTheme.accent.strong,
-  "--accent-soft": pastelSkyTheme.accent.subtle,
-  "--text-primary": pastelSkyTheme.typography.bodyColor,
-  "--text-heading": pastelSkyTheme.typography.headingColor,
-  "--text-muted": pastelSkyTheme.typography.mutedColor,
-  "--text-emphasis": pastelSkyTheme.typography.emphasisColor,
-  "--shadow-resting": pastelSkyTheme.shadows.resting,
-  "--shadow-hover": pastelSkyTheme.shadows.hover,
-  "--shadow-focus": pastelSkyTheme.shadows.focus,
-  "--transition-emphasis": pastelSkyTheme.transitions.emphasis,
-  "--transition-lift": pastelSkyTheme.transitions.lift,
-  "--transition-glow": pastelSkyTheme.transitions.glow,
-  "--layout-max-width": pastelSkyTheme.layout.maxWidth,
-  "--layout-column-gap": pastelSkyTheme.layout.columnGap,
-  "--layout-radius": pastelSkyTheme.layout.radius,
-  "--layout-workspace-columns": pastelSkyTheme.layout.workspaceColumns,
-};
+
 
   return {
     "--primary": hsl(theme.brand.primary),

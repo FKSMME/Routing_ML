@@ -197,7 +197,16 @@ export function DataOutputWorkspace() {
       setPreviewErrorMessage("");
       setPreviewLoading(false);
     }
-  }, [mappingRows, selectedProfileId, workflowConfig?.sql.output_columns]);
+  }, [
+    mappingRows,
+    selectedProfileId,
+    setOutputMappings,
+    setPreviewRows,
+    setPreviewColumnsState,
+    setPreviewErrorMessage,
+    setPreviewLoading,
+    workflowConfig?.sql.output_columns,
+  ]);
 
   useEffect(() => {
     const detail = profileDetailQuery.data;
@@ -227,7 +236,19 @@ export function DataOutputWorkspace() {
       setFormat(detail.format);
     }
     setDirty(false);
-  }, [dirty, profileDetailQuery.data, profileDetailQuery.isRefetching]);
+  }, [
+    dirty,
+    mappingRows,
+    profileDetailQuery.data,
+    profileDetailQuery.isRefetching,
+    setOutputMappings,
+    setPreviewRows,
+    setPreviewColumnsState,
+    setPreviewErrorMessage,
+    setPreviewLoading,
+    setFormat,
+    setDirty,
+  ]);
 
   useEffect(() => {
     if (profileDetailQuery.isLoading) {

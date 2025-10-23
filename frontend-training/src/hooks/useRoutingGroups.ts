@@ -114,8 +114,8 @@ export function useRoutingGroups() {
         return { ok: false, message: "Add steps to the timeline before saving." };
       }
 
-      const steps = buildSteps(timeline);
-      const itemCodes = collectItemCodes();
+      const _steps = buildSteps(timeline);
+      const _itemCodes = collectItemCodes();
       const { columnMappings } = getRoutingSaveState();
 
       try {
@@ -179,7 +179,6 @@ export function useRoutingGroups() {
       captureLastSuccess,
       clearValidation,
       collectItemCodes,
-      erpRequired,
       getRoutingSaveState,
       rollbackToLastSuccess,
       setActiveGroup,

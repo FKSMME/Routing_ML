@@ -1173,8 +1173,7 @@ export function RoutingGroupControls({ variant = "panel" }: RoutingGroupControls
       timelineLength,
       erpRequired,
       setGroupName,
-      setStatus,
-      triggerRoutingInterface,
+      setStatus
     ],
   );
 
