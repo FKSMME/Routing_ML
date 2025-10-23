@@ -1,0 +1,400 @@
+{
+  "users": [
+    {
+      "username": "sjlee",
+      "full_name": "이석중",
+      "display_name": "이석중",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "sylee",
+      "full_name": "이승용",
+      "display_name": "이승용",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "YHLee",
+      "full_name": "이연홍",
+      "display_name": "이연홍",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "hmkim",
+      "full_name": "김형민",
+      "display_name": "김형민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "syyun",
+      "full_name": "윤수용",
+      "display_name": "윤수용",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "sangmkim",
+      "full_name": "김상민(FKSM)",
+      "display_name": "김상민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "kjlee",
+      "full_name": "이경재",
+      "display_name": "이경재",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "dsseo",
+      "full_name": "서동수",
+      "display_name": "서동수",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "nrkim",
+      "full_name": "김나리",
+      "display_name": "김나리",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "kbkim",
+      "full_name": "김기범",
+      "display_name": "김기범",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "tkyunkim",
+      "full_name": "김택균",
+      "display_name": "김택균",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "ecshin",
+      "full_name": "신은철",
+      "display_name": "신은철",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "celim",
+      "full_name": "임채언",
+      "display_name": "임채언",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "shyoon",
+      "full_name": "윤석현",
+      "display_name": "윤석현",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jaeblee",
+      "full_name": "이재범",
+      "display_name": "이재범",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "hmna",
+      "full_name": "나현민",
+      "display_name": "나현민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "moongkim",
+      "full_name": "김문기",
+      "display_name": "김문기",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "bjpark",
+      "full_name": "박지석",
+      "display_name": "박지석",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "sbshin",
+      "full_name": "신상범",
+      "display_name": "신상범",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "crpark",
+      "full_name": "박차라",
+      "display_name": "박차라",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jwjun",
+      "full_name": "전재원",
+      "display_name": "전재원",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "nylee",
+      "full_name": "이남용",
+      "display_name": "이남용",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "mgsong",
+      "full_name": "송민권",
+      "display_name": "송민권",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "minscho",
+      "full_name": "조민상",
+      "display_name": "조민상",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "yskang",
+      "full_name": "강연수",
+      "display_name": "강연수",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "minjea",
+      "full_name": "김민제",
+      "display_name": "김민제",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "sjyang",
+      "full_name": "양소진",
+      "display_name": "양소진",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jihmin",
+      "full_name": "민지현",
+      "display_name": "민지현",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "dhsung",
+      "full_name": "성대훈",
+      "display_name": "성대훈",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "smkim",
+      "full_name": "김상민(KSM)",
+      "display_name": "김상민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "splee",
+      "full_name": "이순필",
+      "display_name": "이순필",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jongjlee",
+      "full_name": "이종주",
+      "display_name": "이종주",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "kjhwang",
+      "full_name": "황광준",
+      "display_name": "황광준",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jyshin",
+      "full_name": "신주용",
+      "display_name": "신주용",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jrcho",
+      "full_name": "조정래",
+      "display_name": "조정래",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "gwangman",
+      "full_name": "안광민",
+      "display_name": "안광민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "ijyoon",
+      "full_name": "윤인중",
+      "display_name": "윤인중",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "csoh",
+      "full_name": "오창성",
+      "display_name": "오창성",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "arsmproctec",
+      "full_name": "강동진",
+      "display_name": "강동진",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "kbim",
+      "full_name": "임경복",
+      "display_name": "임경복",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "sungjbang",
+      "full_name": "방성진",
+      "display_name": "방성진",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "ywoh",
+      "full_name": "오영원",
+      "display_name": "오영원",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "smko",
+      "full_name": "고승민",
+      "display_name": "고승민",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "minsukim",
+      "full_name": "김민수",
+      "display_name": "김민수",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jhapark",
+      "full_name": "박정하",
+      "display_name": "박정하",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "shjun",
+      "full_name": "전상현",
+      "display_name": "전상현",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "khoh",
+      "full_name": "오기호",
+      "display_name": "오기호",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "hsbyun",
+      "full_name": "변호석",
+      "display_name": "변호석",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "ygkim",
+      "full_name": "김영곤",
+      "display_name": "김영곤",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "jnmoon",
+      "full_name": "문정남",
+      "display_name": "문정남",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "drkim",
+      "full_name": "김동록",
+      "display_name": "김동록",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "hgjung",
+      "full_name": "정혜경",
+      "display_name": "정혜경",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "hdbyun",
+      "full_name": "변희동",
+      "display_name": "변희동",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "mwkim",
+      "full_name": "김민우",
+      "display_name": "김민우",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "joohwan",
+      "full_name": "김주환",
+      "display_name": "김주환",
+      "password": "ksm@1234",
+      "make_admin": false
+    },
+    {
+      "username": "choh",
+      "full_name": "오창훈",
+      "display_name": "오창훈",
+      "password": "ksm@1234",
+      "make_admin": false
+    }
+  ],
+  "auto_approve": true,
+  "force_password_change": false,
+  "notify": false,
+  "overwrite_existing": false
+}

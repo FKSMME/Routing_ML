@@ -380,3 +380,80 @@ class ModelDeployer:
 
         logger.info(f"Cleanup complete: deleted {deleted} versions, kept {len(to_keep)}")
         return deleted
+
+
+def deploy_model(
+    artifact_dir: Path | str,
+    *,
+    models_dir: Path | str = "models",
+    version_name: Optional[str] = None,
+    activate: bool = True,
+    metadata: Optional[Dict[str, Any]] = None,
+    keep_latest: int = 5,
+) -> Dict[str, Any]:
+    """Convenience helper to deploy a trained model artifact directory.
+
+    Args:
+        artifact_dir: Directory containing the trained model artifacts.
+        models_dir: Target models directory managed by :class:`ModelDeployer`.
+        version_name: Optional override for the version name. When omitted the
+            helper prefers the artifact directory name, falling back to a
+            timestamped identifier.
+        activate: Whether to mark the deployed version as the active version.
+        metadata: Optional metadata to embed in the generated manifest.
+        keep_latest: Number of latest versions to preserve during cleanup.
+
+    Returns:
+        Dictionary describing the deployed version (path, version, activated).
+
+    Raises:
+        FileNotFoundError: When ``artifact_dir`` does not exist.
+        NotADirectoryError: When ``artifact_dir`` is not a directory.
+        FileExistsError: When the destination version already exists.
+    """
+    source_dir = Path(artifact_dir).expanduser().resolve()
+    if not source_dir.exists():
+        raise FileNotFoundError(f"Artifact directory not found: {source_dir}")
+    if not source_dir.is_dir():
+        raise NotADirectoryError(f"Artifact path is not a directory: {source_dir}")
+
+    deployer = ModelDeployer(str(models_dir))
+
+    version = version_name or source_dir.name
+    if not version.startswith("version_"):
+        version = datetime.now().strftime("version_%Y%m%d_%H%M%S")
+
+    target_dir = deployer.models_dir / version
+    if target_dir.exists():
+        raise FileExistsError(f"Target version already exists: {target_dir}")
+
+    logger.info("Deploying model from %s to %s", source_dir, target_dir)
+    shutil.copytree(source_dir, target_dir)
+
+    try:
+        # Generate or refresh manifest with optional metadata.
+        write_manifest(target_dir, strict=False, metadata=metadata)
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.warning("Failed to rebuild manifest for %s: %s", target_dir, exc)
+
+    activated = False
+    if activate:
+        deployer.activate_version(version)
+        deployer.invalidate_cache()
+        activated = True
+
+    if keep_latest is not None and keep_latest > 0:
+        try:
+            deployer.cleanup_old_versions(keep_latest=keep_latest)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            logger.warning("Model cleanup failed (non-fatal): %s", exc)
+
+    version_info = {
+        "version": version,
+        "path": str(target_dir),
+        "activated": activated,
+        "deployed_at": datetime.now().isoformat(),
+    }
+
+    logger.info("Model deployment complete: %s", version_info)
+    return version_info

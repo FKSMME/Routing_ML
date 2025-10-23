@@ -31,6 +31,7 @@ async def _require_auth(user=None):
     return user
 
 security_stub.require_auth = _require_auth
+security_stub.require_admin = _require_auth
 sys.modules.setdefault("backend.api.security", security_stub)
 
 sys.modules.setdefault(
@@ -97,7 +98,10 @@ def database_api_client(
             session_id="test-session",
         )
 
-    app.dependency_overrides[database_route.require_auth] = fake_user
+    dependency = getattr(database_route, "require_admin", None)
+    if dependency is None:
+        dependency = getattr(database_route, "require_auth")
+    app.dependency_overrides[dependency] = fake_user
     client = TestClient(app)
     try:
         yield client, store

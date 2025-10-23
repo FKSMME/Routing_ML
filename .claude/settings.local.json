@@ -78,7 +78,8 @@
       "Bash(PYTHONPATH=. .venv/Scripts/python.exe:*)",
       "Bash(timeout:*)",
       "Bash(cmd /c \"set PYTHONPATH=. && .venv\\Scripts\\python.exe backend\\run_api.py\")",
-      "Bash(.venv\\Scripts\\python.exe:*)"
+      "Bash(.venv\\Scripts\\python.exe:*)",
+      "Bash(../.venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []
