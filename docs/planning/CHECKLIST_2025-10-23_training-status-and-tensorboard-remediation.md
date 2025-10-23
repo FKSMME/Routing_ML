@@ -19,6 +19,10 @@
   - Estimate: 0.5 day  
   - Depends on: Task 2.1  
 
+- [ ] Task 2.3: Extend embedding payloads with numeric feature vectors and similarity clusters  
+  - Estimate: 0.4 day  
+  - Depends on: Task 2.2  
+
 ## Phase 3 – Frontend Updates
 - [ ] Task 3.1: Implement 3D feature weight visual (top 5 + scroll), remove legacy cards  
   - Estimate: 0.4 day  
@@ -38,6 +42,10 @@
 - [ ] Task 3.7: Validate 3D heatmap correlation grid performance and hover guidance  
   - Estimate: 0.2 day  
   - Depends on: Task 3.2  
+
+- [ ] Task 3.8: Add axis-selection UI and clustering legend for embedding scatter  
+  - Estimate: 0.4 day  
+  - Depends on: Task 2.3  
 
 ## Phase 4 – Integration & Reporting
 - [ ] Task 4.1: Run lint/test/build pipelines and targeted manual 3D/admin regression  

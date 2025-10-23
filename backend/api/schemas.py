@@ -114,16 +114,26 @@ class UserStatusResponse(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    """비밀번호 변경 요청."""
+    """비밀번호 변경 요청 (유연한 정책)."""
 
     current_password: str = Field(..., min_length=1, description="현재 비밀번호")
-    new_password: str = Field(..., min_length=6, description="새 비밀번호 (최소 6자)")
+    new_password: str = Field(..., min_length=1, max_length=128, description="새 비밀번호 (최소 1자)")
+    confirm_password: str = Field(..., min_length=1, max_length=128, description="새 비밀번호 확인")
 
     @field_validator("new_password")
     @classmethod
-    def _validate_password_strength(cls, value: str) -> str:
-        if len(value) < 6:
-            raise ValueError("비밀번호는 최소 6자 이상이어야 합니다")
+    def _validate_password_minimal(cls, value: str) -> str:
+        """최소 비밀번호 검증 (유연한 정책)"""
+        if len(value) < 1:
+            raise ValueError("비밀번호는 최소 1자 이상이어야 합니다")
+        return value
+
+    @field_validator("confirm_password")
+    @classmethod
+    def _validate_passwords_match(cls, value: str, info) -> str:
+        """비밀번호 일치 확인"""
+        if "new_password" in info.data and value != info.data["new_password"]:
+            raise ValueError("비밀번호가 일치하지 않습니다")
         return value
 
 

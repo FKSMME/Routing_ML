@@ -327,10 +327,52 @@ class AuthService:
     # ------------------------------------------------------------------
     # 비밀번호 변경
     # ------------------------------------------------------------------
+    def calculate_password_strength(self, password: str) -> dict:
+        """
+        비밀번호 강도 계산 (참고용, 강제하지 않음)
+
+        Args:
+            password: 평가할 비밀번호
+
+        Returns:
+            dict: {
+                'score': 0-3,
+                'label': 'weak' | 'medium' | 'strong'
+            }
+
+        Examples:
+            >>> service.calculate_password_strength("a")
+            {'score': 0, 'label': 'weak'}
+            >>> service.calculate_password_strength("password")
+            {'score': 1, 'label': 'medium'}
+            >>> service.calculate_password_strength("Pass123!")
+            {'score': 3, 'label': 'strong'}
+        """
+        if len(password) < 4:
+            return {"score": 0, "label": "weak"}
+
+        score = 0
+        if len(password) >= 8:
+            score += 1
+
+        has_lower = any(c.islower() for c in password)
+        has_upper = any(c.isupper() for c in password)
+        has_digit = any(c.isdigit() for c in password)
+        has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
+
+        char_variety = sum([has_lower, has_upper, has_digit, has_special])
+        if char_variety >= 2:
+            score += 1
+        if char_variety >= 3:
+            score += 1
+
+        labels = ["weak", "medium", "medium", "strong"]
+        return {"score": score, "label": labels[score]}
+
     def change_password(
         self, username: str, payload: ChangePasswordRequest
     ) -> ChangePasswordResponse:
-        """사용자 비밀번호 변경"""
+        """사용자 비밀번호 변경 (유연한 정책)"""
         normalized = normalize_username(username)
         with session_scope() as session:
             user = (
@@ -356,8 +398,11 @@ class AuthService:
             user.must_change_password = False
             session.add(user)
 
+            # 비밀번호 강도 로깅 (참고용)
+            strength = self.calculate_password_strength(payload.new_password)
             self._logger.info(
-                "비밀번호 변경 성공", extra={"username": user.username}
+                "비밀번호 변경 성공",
+                extra={"username": user.username, "password_strength": strength["label"]},
             )
 
         return ChangePasswordResponse(

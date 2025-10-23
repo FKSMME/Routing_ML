@@ -1,11 +1,11 @@
 import type { TensorboardMetricSeries } from "@app-types/tensorboard";
-import { exportTensorboardProjector, fetchTensorboardConfig,fetchTrainingStatus } from "@lib/apiClient";
-import { Grid,OrbitControls } from "@react-three/drei";
+import { exportTensorboardProjector, fetchTensorboardConfig, fetchTrainingStatus } from "@lib/apiClient";
+import { Grid, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useTensorboardStore } from "@store/tensorboardStore";
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 type VisualizationMode = '3d' | 'heatmap' | 'tsne';
@@ -45,7 +45,7 @@ const HEATMAP_NEGATIVE = new THREE.Color("#2563eb");
 const HEATMAP_ZERO = new THREE.Color("#e2e8f0");
 const HEATMAP_POSITIVE = new THREE.Color("#ef4444");
 
-type HeatmapCell = {
+type \uc5f4\ub839\ub9f5Cell = {
   key: string;
   row: number;
   col: number;
@@ -85,7 +85,7 @@ const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
           left: "center",
           top: "middle",
           style: {
-            text: "표시할 지표 데이터가 없습니다.",
+            text: "\ud45c\uc2dc\ud560 \uc9c0\ud45c \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.",
             fill: "#94a3b8",
             fontSize: 13,
           },
@@ -190,11 +190,11 @@ const MetricChart = ({ series }: { series: TensorboardMetricSeries }) => {
 
 const HeatmapChart = () => {
   const points = useTensorboardStore((state) => state.points);
-  const [hoveredCell, setHoveredCell] = useState<HeatmapCell | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<\uc5f4\ub839\ub9f5Cell | null>(null);
 
   const heatmap = useMemo(() => {
     if (points.length === 0) {
-      return { cells: [] as HeatmapCell[], labels: [] as string[], matrixSize: 0, planeSize: 0 };
+      return { cells: [] as \uc5f4\ub839\ub9f5Cell[], labels: [] as string[], matrixSize: 0, planeSize: 0 };
     }
 
     const coordinates = points.map((point) => [point.x, point.y, point.z]);
@@ -202,7 +202,7 @@ const HeatmapChart = () => {
     const matrixSize = labels.length;
     const offset = ((matrixSize - 1) * HEATMAP_CELL_SIZE) / 2;
 
-    const cells: HeatmapCell[] = [];
+    const cells: \uc5f4\ub839\ub9f5Cell[] = [];
 
     for (let row = 0; row < matrixSize; row += 1) {
       for (let col = 0; col < matrixSize; col += 1) {
@@ -333,7 +333,7 @@ const HeatmapChart = () => {
           </div>
         ) : (
           <div className="max-w-xs space-y-1">
-            <div className="text-[11px] uppercase tracking-wide text-slate-400">3D Heatmap</div>
+            <div className="text-[11px] uppercase tracking-wide text-slate-400">3D \uc5f4\ub839\ub9f5</div>
             <p className="text-sm text-slate-200">{HEATMAP_INFO_DESCRIPTION}</p>
           </div>
         )}
@@ -427,7 +427,7 @@ const TsneProgressView = () => {
           left: "center",
           top: "middle",
           style: {
-            text: "T-SNE 좌표 데이터가 없습니다.\n좌표를 생성하려면 T-SNE 재계산을 실행하세요.",
+            text: "T-SNE \uc88c\ud45c \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.\n\uc88c\ud45c\ub97c \uc0dd\uc131\ud558\ub824\uba74 T-SNE \uc7ac\uacc4\uc0b0\uc744 \uc2e4\ud589\ud558\uc138\uc694.",
             fill: "#94a3b8",
             fontSize: 13,
             lineHeight: 20,
@@ -487,8 +487,8 @@ const TsneProgressView = () => {
           return [
             `<div style="display:flex;flex-direction:column;gap:6px;">`,
             `<div style="font-weight:600;font-size:13px;">${identifier}</div>`,
-            `<div style="font-size:12px;opacity:0.75;">${primaryLabel || "메타데이터 없음"}</div>`,
-            `<div style="font-size:11px;">Step <strong>${step ?? "-"}</strong> · Progress ${progressPercent.toFixed(1)}%</div>`,
+            `<div style="font-size:12px;opacity:0.75;">${primaryLabel || "\uba54\ud0c0\ub370\uc774\ud130 \uc5c6\uc74c"}</div>`,
+            `<div style="font-size:11px;">Step <strong>${step ?? "-"}</strong> \u00b7 Progress ${progressPercent.toFixed(1)}%</div>`,
             `<div style="font-size:11px;opacity:0.65;">x=${Number(x ?? 0).toFixed(2)}, y=${Number(y ?? 0).toFixed(2)}</div>`,
             `</div>`,
           ].join("");
@@ -504,7 +504,7 @@ const TsneProgressView = () => {
               orient: "horizontal",
               left: "center",
               bottom: 24,
-              text: ["후반", "초반"],
+              text: ["\ud6c4\ubc18", "\ucd08\ubc18"],
               textStyle: { color: "#64748b", fontSize: 11 },
               inRange: { color: COLOR_PALETTE },
               calculable: false,
@@ -544,7 +544,7 @@ const TsneProgressView = () => {
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-3 border-b border-slate-200/70 bg-white/70 px-4 py-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
         <label className="flex items-center gap-2">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">샘플 수</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">\uc0d8\ud50c \uc218</span>
           <input
             type="number"
             min={200}
@@ -579,7 +579,7 @@ const TsneProgressView = () => {
           <span className="w-10 text-center font-semibold text-slate-700 dark:text-slate-200">{tsneSettings.perplexity}</span>
         </label>
         <label className="flex items-center gap-2">
-          <span className="font-semibold text-slate-700 dark:text-slate-200">스텝 분해</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">\uc2a4\ud15d \ubd84\ud574</span>
           <input
             type="range"
             min={3}
@@ -624,7 +624,7 @@ const TsneProgressView = () => {
             }}
             disabled={loadingTsne}
           >
-            {loadingTsne ? "계산 중…" : "T-SNE 재계산"}
+            {loadingTsne ? "\uacc4\uc0b0 \uc911\u2026" : "T-SNE \uc7ac\uacc4\uc0b0"}
           </button>
         </div>
       </div>
@@ -632,7 +632,7 @@ const TsneProgressView = () => {
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-            <span className="font-semibold">강조 단계</span>
+            <span className="font-semibold">\uac15\uc870 \ub2e8\uacc4</span>
             <input
               type="range"
               min={1}
@@ -653,7 +653,7 @@ const TsneProgressView = () => {
             </span>
           </label>
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            표시된 샘플 {activeCount.toLocaleString()}개 · 누적 {progressShare.toFixed(1)}%
+            \ud45c\uc2dc\ub41c \uc0d8\ud50c {activeCount.toLocaleString()}\uac1c \u00b7 \ub204\uc801 {progressShare.toFixed(1)}%
           </span>
         </div>
 
@@ -662,12 +662,12 @@ const TsneProgressView = () => {
             <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "canvas" }} notMerge lazyUpdate />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">
-              {loadingTsne ? "T-SNE 좌표를 로딩중..." : "T-SNE 좌표 데이터가 없습니다. 재계산을 실행하세요."}
+              {loadingTsne ? "T-SNE \uc88c\ud45c\ub97c \ub85c\ub529\uc911..." : "T-SNE \uc88c\ud45c \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc7ac\uacc4\uc0b0\uc744 \uc2e4\ud589\ud558\uc138\uc694."}
             </div>
           )}
           {loadingTsne ? (
             <div className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-medium text-slate-600 backdrop-blur-sm dark:bg-slate-900/60 dark:text-slate-200">
-              T-SNE 좌표를 로딩중...
+              T-SNE \uc88c\ud45c\ub97c \ub85c\ub529\uc911...
             </div>
           ) : null}
         </div>
@@ -680,7 +680,7 @@ const TsneProgressView = () => {
 
         <div className="grid gap-3 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
           <div>
-            샘플링:{" "}
+            \uc0d8\ud50c\ub9c1:{" "}
             <span className="font-semibold text-slate-800 dark:text-slate-100">
               {sampled.toLocaleString()} / {total.toLocaleString()}
             </span>
@@ -690,19 +690,19 @@ const TsneProgressView = () => {
             <span className="font-semibold text-slate-800 dark:text-slate-100">
               {effectivePerplexity.toFixed(1)}
             </span>{" "}
-            (요청 {requestedPerplexity.toFixed(1)})
+            (\uc694\uccad {requestedPerplexity.toFixed(1)})
           </div>
           <div>
             Iterations:{" "}
             <span className="font-semibold text-slate-800 dark:text-slate-100">{iterations.toLocaleString()}</span>
           </div>
           <div>
-            강조 비율:{" "}
+            \uac15\uc870 \ube44\uc728:{" "}
             <span className="font-semibold text-slate-800 dark:text-slate-100">{progressShare.toFixed(1)}%</span>
           </div>
           {usedFallback ? (
             <div className="col-span-full rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-700 dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-200">
-              샘플 수가 적어 PCA 기반 2D 매핑으로 대체되었습니다. 샘플 제한을 늘리고 다시 계산해 보세요.
+              \uc0d8\ud50c \uc218\uac00 \uc801\uc5b4 PCA \uae30\ubc18 2D \ub9e4\ud551\uc73c\ub85c \ub300\uccb4\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc0d8\ud50c \uc81c\ud55c\uc744 \ub298\ub9ac\uace0 \ub2e4\uc2dc \uacc4\uc0b0\ud574 \ubcf4\uc138\uc694.
             </div>
           ) : null}
         </div>
@@ -716,7 +716,7 @@ interface PointCloudProps {
   pointOpacity?: number;
 }
 
-const PointCloud = ({ pointSize = 0.25, pointOpacity = 0.9 }: PointCloudProps) => {
+const PointCloud = ({ pointSize = 0.12, pointOpacity = 0.9 }: PointCloudProps) => {
   const points = useTensorboardStore((state) => state.points);
   const colorField = useTensorboardStore((state) => state.colorField);
 
@@ -782,6 +782,17 @@ const PointCloud = ({ pointSize = 0.25, pointOpacity = 0.9 }: PointCloudProps) =
     return colorBuffer;
   }, [points, colorField]);
 
+  const scaledPointSize = useMemo(() => {
+    const count = points.length;
+    if (count === 0) {
+      return pointSize;
+    }
+    const scale =
+      count >= 40000 ? 0.22 : count >= 20000 ? 0.3 : count >= 10000 ? 0.45 : count >= 5000 ? 0.65 : 1;
+    const adjusted = pointSize * scale;
+    return adjusted < 0.02 ? 0.02 : adjusted;
+  }, [points.length, pointSize]);
+
   if (points.length === 0) {
     return null;
   }
@@ -795,7 +806,7 @@ const PointCloud = ({ pointSize = 0.25, pointOpacity = 0.9 }: PointCloudProps) =
         ) : null}
       </bufferGeometry>
       <pointsMaterial
-        size={pointSize}
+        size={scaledPointSize}
         sizeAttenuation
         depthWrite={false}
         vertexColors
@@ -840,28 +851,53 @@ export const TensorboardEmbeddingPanel = () => {
   const [exporting, setExporting] = useState(false);
   const [exportNote, setExportNote] = useState<string | null>(null);
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3d');
-  const [pointSize, setPointSize] = useState(0.25);
+  const [pointSize, setPointSize] = useState(0.12);
   const [pointOpacity, setPointOpacity] = useState(0.9);
   const [showGrid, setShowGrid] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [projectorPath, setProjectorPath] = useState<string | null>(null);
   const [pathExists, setPathExists] = useState(false);
+  const [initializing, setInitializing] = useState(false);
+  const [initializedOnce, setInitializedOnce] = useState(false);
+  const [configError, setConfigError] = useState<string | null>(null);
+  const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void initialize();
-    void (async () => {
-      try {
-        const config = await fetchTensorboardConfig();
-        setProjectorPath(config.projectorPath);
-        setPathExists(config.projectorPathExists);
-      } catch (error) {
-        console.warn("Failed to fetch TensorBoard config:", error);
-      }
-    })();
-  }, [initialize]);
+  const loadTensorboardConfig = useCallback(async () => {
+    try {
+      const config = await fetchTensorboardConfig();
+      setProjectorPath(config.projectorPath);
+      setPathExists(config.projectorPathExists);
+      setConfigError(null);
+    } catch (error) {
+      console.warn("Failed to fetch TensorBoard config:", error);
+      setConfigError("\uD150\uC11C\uBCF4\uB4DC \uC124\uC815 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+      throw error;
+    }
+  }, []);
+
+  const handleInitialLoad = useCallback(async () => {
+    if (initializing) {
+      return;
+    }
+    setInitializing(true);
+    setInitialLoadError(null);
+    try {
+      await initialize();
+      await loadTensorboardConfig();
+      setInitializedOnce(true);
+    } catch (error) {
+      console.error("TensorBoard initial load failed", error);
+      setInitialLoadError("\uD150\uC11C\uBCF4\uB4DC \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uB294 \uB3C4\uC911 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+    } finally {
+      setInitializing(false);
+    }
+  }, [initializing, initialize, loadTensorboardConfig]);
 
   const statusSignatureRef = useRef<string | null>(null);
   useEffect(() => {
+    if (!initializedOnce) {
+      return;
+    }
     let timerId: number | undefined;
     let cancelled = false;
 
@@ -884,6 +920,7 @@ export const TensorboardEmbeddingPanel = () => {
           statusSignatureRef.current = signature;
           if (!loadingProjectors) {
             await initialize();
+            await loadTensorboardConfig();
           }
         }
       } catch (error) {
@@ -903,25 +940,26 @@ export const TensorboardEmbeddingPanel = () => {
         window.clearTimeout(timerId);
       }
     };
-  }, [initialize, loadingProjectors]);
+  }, [initialize, initializedOnce, loadTensorboardConfig, loadingProjectors]);
 
   const handleExport = async () => {
     if (exporting) {
       return;
     }
     setExporting(true);
-    setExportNote("Exporting embeddings, please wait...");
+    setExportNote("\uB0B4\uBCF4\uB0B4\uAE30\uB97C \uC9C4\uD589 \uC911\uC785\uB2C8\uB2E4...");
     try {
       await exportTensorboardProjector({
         sample_every: Math.max(1, pointStride),
         max_rows: pointLimit,
       });
-      setExportNote("Export complete. Reloading projector list...");
+      setExportNote("\uB0B4\uBCF4\uB0B4\uAE30\uAC00 \uC644\uB8CC\uB418\uC5B4 \uD504\uB85C\uC81D\uD130 \uBAA9\uB85D\uC744 \uC7AC\uB85C\uB529\uD569\uB2C8\uB2E4...");
       await reloadProjectors();
-      setExportNote("Export complete!");
+      await loadTensorboardConfig();
+      setExportNote("\uB0B4\uBCF4\uB0B4\uAE30\uAC00 \uC131\uACF5\uC801\uC73C\uB85C \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4!");
     } catch (error) {
       console.error("Failed to export TensorBoard projector", error);
-      setExportNote("Export failed. Check console for details.");
+      setExportNote("\uB0B4\uBCF4\uB0B4\uAE30\uAC00 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC138\uBD80 \uB0B4\uC6A9\uC740 \uCF58\uC194\uC744 \uD655\uC778\uD558\uC138\uC694.");
     } finally {
       setExporting(false);
       window.setTimeout(() => setExportNote(null), 6000);
@@ -932,131 +970,158 @@ export const TensorboardEmbeddingPanel = () => {
     <section className="mt-12 rounded-xl border border-slate-200 bg-white/80 p-6 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">TensorBoard Embedding Viewer</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">\ud150\uc11c\ubcf4\ub4dc \uc784\ub514\ub9c1 \ud654\uba74</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Inspect model embeddings in 3D and review key training metrics.
+            3D \ubc29\uc2dd\uc73c\ub85c \ubaa8\ub378 \uc784\ub514\ub9c1 \ubd84\ud3ec\ub97c \uc2dc\uccad\ud558\uace0 \ud559\uc2b5 \uc9c4\ud589 \uc0c1\ud0dc\ub97c \ud655\uc778\ud574 \ubcf4\uc138\uc694.
           </p>
           {projectorPath ? (
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              Export path: <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{projectorPath}</code>
+              \uc800\uc7a5 \uacbd\ub85c: <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">{projectorPath}</code>
               {pathExists ? (
-                <span className="ml-2 text-emerald-600 dark:text-emerald-400">✓ exists</span>
+                <span className="ml-2 text-emerald-600 dark:text-emerald-400">\uac00\uc785 \uac00\ub2a5</span>
               ) : (
-                <span className="ml-2 text-amber-600 dark:text-amber-400">⚠ not found</span>
+                <span className="ml-2 text-amber-600 dark:text-amber-400">\uacbd\ub85c \ubbf8\uac00\uc785</span>
               )}
             </p>
+          ) : null}
+          {configError ? (
+            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{configError}</p>
           ) : null}
           {exportNote ? (
             <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">{exportNote}</p>
           ) : null}
+          {initialLoadError ? (
+            <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{initialLoadError}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <span>Projector</span>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-800"
-              value={selectedId ?? ""}
-              onChange={(event) => {
-                const value = event.target.value;
-                if (!value) {
-                  return;
-                }
-                void selectProjector(value);
-              }}
-              disabled={loadingProjectors || projectors.length === 0}
-            >
-              {projectors.length === 0 ? <option value="">(no data)</option> : null}
-              {projectors.map((projector) => (
-                <option key={projector.id} value={projector.id}>
-                  {projector.versionLabel ?? projector.id ?? "Unnamed"} - {typeof projector.sampleCount === "number" ? projector.sampleCount.toLocaleString() : "0"} points
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <span>Color</span>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800"
-              value={colorField ?? ""}
-              onChange={(event) => {
-                const value = event.target.value || null;
-                setColorField(value);
-              }}
-              disabled={filters.length === 0}
-            >
-              {filters.length === 0 ? <option value="">(none)</option> : null}
-              {filters.map((field) => (
-                <option key={field.name} value={field.name}>
-                  {field.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <span>Point count</span>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-700 dark:bg-slate-800"
-              value={pointLimit}
-              onChange={(event) => {
-                const value = Number(event.target.value) || 1000;
-                setPointLimit(value);
-                void refreshPoints();
-              }}
-            >
-              {[5000, 10000, 20000, 50000, 100000, 200000, 400000].map((option) => (
-                <option key={option} value={option}>
-                  {option.toLocaleString()} points
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-            <span>Stride</span>
-            <select
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-800"
-              value={pointStride}
-              onChange={(event) => {
-                const value = Number(event.target.value) || 1;
-                setPointStride(value);
-                void refreshPoints();
-              }}
-              disabled={projectors.length === 0}
-            >
-              {[1, 2, 5, 10, 20, 50].map((option) => (
-                <option key={option} value={option}>
-                  x{option}
-                </option>
-              ))}
-            </select>
-          </label>
           <button
             type="button"
-            className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
-            onClick={handleExport}
-            disabled={exporting}
-          >
-            {exporting ? "Exporting…" : "Export from model"}
-          </button>
-          <button
-            type="button"
-            className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="rounded-md border border-sky-400 bg-sky-500/90 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 dark:border-sky-500 dark:bg-sky-500/80 dark:hover:bg-sky-500"
             onClick={() => {
-              void reloadProjectors();
+              void handleInitialLoad();
             }}
-            disabled={loadingProjectors}
+            disabled={initializing}
           >
-            {loadingProjectors ? "Refreshing…" : "Reload list"}
+            {initializing
+              ? "\uB370\uC774\uD130 \uB85C\uB4DC \uC911..."
+              : initializedOnce
+                ? "\uB370\uC774\uD130 \uC7AC\uB85C\uB529"
+                : "\uB370\uC774\uD130 \uBD88\uB7EC\uC624\uAE30"}
           </button>
-          <button
-            type="button"
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-            onClick={() => {
-              void refreshPoints();
-            }}
-            disabled={loadingPoints || !selectedId}
-          >
-            {loadingPoints ? "Loading points…" : "Update points"}
-          </button>
+          {initializedOnce ? (
+            <>
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <span>\ud504\ub85c\uc81d\ud130</span>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-800"
+                  value={selectedId ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (!value) {
+                      return;
+                    }
+                    void selectProjector(value);
+                  }}
+                  disabled={loadingProjectors || projectors.length === 0}
+                >
+                  {projectors.length === 0 ? <option value="">(\ub370\uc774\ud130 \uc5c6\uc74c)</option> : null}
+                  {projectors.map((projector) => (
+                    <option key={projector.id} value={projector.id}>
+                      {projector.versionLabel ?? projector.id ?? "\uc774\ub984 \ubbf8\uc9c0\uc815"} -{' '}
+                      {typeof projector.sampleCount === "number"
+                        ? `${projector.sampleCount.toLocaleString()} \ud3ec\uc778\ud2b8`
+                        : "0 \ud3ec\uc778\ud2b8"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <span>\uc0c9\uc0c1</span>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800"
+                  value={colorField ?? ""}
+                  onChange={(event) => {
+                    const nextColor = event.target.value || null;
+                    setColorField(nextColor);
+                  }}
+                  disabled={filters.length === 0}
+                >
+                  {filters.length === 0 ? <option value="">(\uc120\ud0dd \uac00\ub2a5 \ud544\ud130 \uc5c6\uc74c)</option> : null}
+                  {filters.map((field) => (
+                    <option key={field.name} value={field.name}>
+                      {field.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <span>\uc810\uc218 \uc81c\ud55c</span>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-800"
+                  value={pointLimit}
+                  onChange={(event) => {
+                    const value = Number(event.target.value) || 1000;
+                    setPointLimit(value);
+                    void refreshPoints();
+                  }}
+                >
+                  {[5000, 10000, 20000, 50000, 100000, 200000, 400000].map((option) => (
+                    <option key={option} value={option}>
+                      {option.toLocaleString()} \ud3ec\uc778\ud2b8
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                <span>\uc2a4\ud0c0\uc774\ub4dc</span>
+                <select
+                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-700 dark:bg-slate-800"
+                  value={pointStride}
+                  onChange={(event) => {
+                    const value = Number(event.target.value) || 1;
+                    setPointStride(value);
+                    void refreshPoints();
+                  }}
+                  disabled={projectors.length === 0}
+                >
+                  {[1, 2, 5, 10, 20, 50].map((option) => (
+                    <option key={option} value={option}>
+                      x{option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                onClick={handleExport}
+                disabled={exporting}
+              >
+                {exporting ? "\uB0B4\uBCF4\uB0B4\uAE30 \uC9C4\uD589 \uC911..." : "\uBAA8\uB378\uC5D0\uC11C \uB0B4\uBCF4\uAE30"}
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                onClick={() => {
+                  void reloadProjectors();
+                }}
+                disabled={loadingProjectors}
+              >
+                {loadingProjectors ? "\uBAA9\uB85D \uC7AC\uB85C\uB529 \uC911..." : "\uBAA9\uB85D \uC7AC\uB85C\uB529"}
+              </button>
+              <button
+                type="button"
+                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                onClick={() => {
+                  void refreshPoints();
+                }}
+                disabled={loadingPoints || !selectedId}
+              >
+                {loadingPoints ? "\uD3EC\uC778\uD2B8 \uB85C\uB4DC \uC911..." : "\uD3EC\uC778\uD2B8 \uAC31\uC2E0"}
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
       <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_minmax(240px,1fr)]">
@@ -1072,7 +1137,7 @@ export const TensorboardEmbeddingPanel = () => {
               }`}
               onClick={() => setVisualizationMode('3d')}
             >
-              3D View
+              3D \ubcf4\uae30
             </button>
             <button
               type="button"
@@ -1083,7 +1148,7 @@ export const TensorboardEmbeddingPanel = () => {
               }`}
               onClick={() => setVisualizationMode('heatmap')}
             >
-              Heatmap
+              \uc5f4\ub839\ub9f5
             </button>
             <button
               type="button"
@@ -1094,13 +1159,18 @@ export const TensorboardEmbeddingPanel = () => {
               }`}
               onClick={() => setVisualizationMode('tsne')}
             >
-              T-SNE Progress
+              T-SNE \uc9c4\ud589
             </button>
           </div>
 
           {/* Visualization Area */}
           <div className="relative h-[520px] min-h-[520px] overflow-hidden rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950">
-            {visualizationMode === '3d' ? (
+            {!initializedOnce ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-300">
+                <span>\uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uBA74 \uC2DC\uAC01\uD654\uAC00 \uCD9C\uB825\uB429\uB2C8\uB2E4.</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">\uC0C1\uB2E8\uc758 "\uB370\uC774\uD130 \uBD88\uB7EC\uC624\uAE30" \ubc84\ud2bc\uc744 \ud074\ub9ad\ud574 \uc8fc\uc138\uc694.</span>
+              </div>
+            ) : visualizationMode === '3d' ? (
               <>
                 <Canvas camera={{ position: [8, 8, 8], fov: 50 }}>
                   {/* Improved lighting */}
@@ -1147,7 +1217,7 @@ export const TensorboardEmbeddingPanel = () => {
                     type="button"
                     className="rounded-lg bg-white/90 p-2 text-slate-700 shadow-lg backdrop-blur transition hover:bg-white dark:bg-slate-800/90 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowControls(!showControls)}
-                    title="3D 설정"
+                    title="3D \uc124\uc815"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
@@ -1156,19 +1226,19 @@ export const TensorboardEmbeddingPanel = () => {
 
                   {showControls && (
                     <div className="absolute right-0 top-12 w-72 rounded-lg border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-800/95">
-                      <h4 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">3D 시각화 설정</h4>
+                      <h4 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">3D \uc2dc\uac01\ud654 \uc124\uc815</h4>
 
                       {/* Point Size Control */}
                       <div className="mb-4">
                         <label className="mb-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-                          <span>포인트 크기</span>
+                          <span>\ud3ec\uc778\ud2b8 \ud06c\uae30</span>
                           <span className="font-mono text-indigo-600 dark:text-indigo-400">{pointSize.toFixed(2)}</span>
                         </label>
                         <input
                           type="range"
-                          min="0.1"
-                          max="1.0"
-                          step="0.05"
+                          min="0.02"
+                          max="0.6"
+                          step="0.02"
                           value={pointSize}
                           onChange={(e) => setPointSize(Number(e.target.value))}
                           className="w-full accent-indigo-600"
@@ -1178,7 +1248,7 @@ export const TensorboardEmbeddingPanel = () => {
                       {/* Point Opacity Control */}
                       <div className="mb-4">
                         <label className="mb-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-                          <span>포인트 투명도</span>
+                          <span>\ud3ec\uc778\ud2b8 \ud22c\uba85\ub3c4</span>
                           <span className="font-mono text-indigo-600 dark:text-indigo-400">{(pointOpacity * 100).toFixed(0)}%</span>
                         </label>
                         <input
@@ -1194,7 +1264,7 @@ export const TensorboardEmbeddingPanel = () => {
 
                       {/* Grid Toggle */}
                       <div className="mb-3 flex items-center justify-between">
-                        <label className="text-xs text-slate-600 dark:text-slate-300">그리드 표시</label>
+                        <label className="text-xs text-slate-600 dark:text-slate-300">\uadf8\ub9ac\ub4dc \ud45c\uc2dc</label>
                         <button
                           type="button"
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
@@ -1215,12 +1285,12 @@ export const TensorboardEmbeddingPanel = () => {
                         type="button"
                         className="mt-3 w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
                         onClick={() => {
-                          setPointSize(0.25);
+                          setPointSize(0.12);
                           setPointOpacity(0.9);
                           setShowGrid(true);
                         }}
                       >
-                        기본값으로 초기화
+                        \uae30\ubcf8\uac12\uc73c\ub85c \ucd08\uae30\ud654
                       </button>
                     </div>
                   )}
@@ -1228,13 +1298,13 @@ export const TensorboardEmbeddingPanel = () => {
 
                 {loadingPoints ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-sm font-medium text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                    임베딩 데이터를 불러오는 중입니다...
+                    \uc784\ubca0\ub529 \ub370\uc774\ud130\ub97c \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...
                   </div>
                 ) : null}
                 {!loadingPoints && totalPoints === 0 ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/80 text-center text-sm text-slate-500 dark:bg-slate-900/70 dark:text-slate-300">
-                    <span className="font-medium">표시할 임베딩이 없습니다.</span>
-                    <span>Projector를 선택하거나 새로고침을 눌러주세요.</span>
+                    <span className="font-medium">\ud45c\uc2dc\ud560 \uc784\ubca0\ub529\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</span>
+                    <span>\uD504\uB85C\uC81D\uD130\ub97c \uc120\ud0dd\ud558\uac70\ub098 \uc0c8\ub85c\uace0\uce68\uc744 \ub20c\ub7ec\uc8fc\uc138\uc694.</span>
                   </div>
                 ) : null}
               </>
@@ -1248,19 +1318,25 @@ export const TensorboardEmbeddingPanel = () => {
           </div>
         </div>
         <aside className="space-y-4 rounded-lg border border-slate-200 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/80">
+          {!initializedOnce ? (
+            <div className="text-sm text-slate-600 dark:text-slate-300">
+              \uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uBA74 \uD544\uD130\uC640 \uC0C1\uD0DC \uC815\uBCF4\uAC00 \uC5F4\uB9BD\uB429\uB2C8\uB2E4.
+            </div>
+          ) : (
+            <>
           <div>
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">데이터 상태</h3>
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\ub370\uc774\ud130 \uc0c1\ud0dc</h3>
             <dl className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
               <div className="flex justify-between">
-                <dt>선택된 Projector</dt>
+                <dt>\uc120\ud0dd\ub41c Projector</dt>
                 <dd>{selectedId ?? "-"}</dd>
               </div>
               <div className="flex justify-between">
-                <dt>포인트 수</dt>
+                <dt>\ud3ec\uc778\ud2b8 \uc218</dt>
                 <dd>{totalPoints.toLocaleString()}</dd>
               </div>
               <div className="flex justify-between">
-                <dt>Projector 개수</dt>
+                <dt>Projector \uac1c\uc218</dt>
                 <dd>{projectors.length}</dd>
               </div>
             </dl>
@@ -1272,7 +1348,7 @@ export const TensorboardEmbeddingPanel = () => {
           ) : null}
           <div>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">필터</h3>
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\ud544\ud130</h3>
               <button
                 type="button"
                 className="text-xs text-sky-600 underline-offset-2 hover:underline dark:text-sky-400"
@@ -1282,18 +1358,18 @@ export const TensorboardEmbeddingPanel = () => {
                 }}
                 disabled={Object.keys(activeFilters).length === 0}
               >
-                필터 초기화
+                \ud544\ud130 \ucd08\uae30\ud654
               </button>
             </div>
             {filters.length === 0 ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">필터링 가능한 메타데이터가 없습니다.</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">\ud544\ud130\ub9c1 \uac00\ub2a5\ud55c \uba54\ud0c0\ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {filters.map((field) => {
                   if (field.kind !== "categorical" || !field.values) {
                     return (
                       <li key={field.name} className="text-xs text-slate-500 dark:text-slate-400">
-                        {field.label} - 지원 준비 중
+                        {field.label} - \uc9c0\uc6d0 \uc900\ube44 \uc911
                       </li>
                     );
                   }
@@ -1330,17 +1406,19 @@ export const TensorboardEmbeddingPanel = () => {
             )}
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            <p>필터와 색상 매핑은 상태에 반영되어 3D 렌더링과 지표 탭에서 공유됩니다.</p>
-            <p className="mt-1">다음 단계에서 실제 TensorBoard 지표 탭과 자동 업데이트 로직을 연결할 예정입니다.</p>
+            <p>\ud544\ud130\uc640 \uc0c9\uc0c1 \ub9e4\ud551\uc740 \uc0c1\ud0dc\uc5d0 \ubc18\uc601\ub418\uc5b4 3D \ub80c\ub354\ub9c1\uacfc \uc9c0\ud45c \ud0ed\uc5d0\uc11c \uacf5\uc720\ub429\ub2c8\ub2e4.</p>
+            <p className="mt-1">\ub2e4\uc74c \ub2e8\uacc4\uc5d0\uc11c \uc2e4\uc81c TensorBoard \uc9c0\ud45c \ud0ed\uacfc \uc790\ub3d9 \uc5c5\ub370\uc774\ud2b8 \ub85c\uc9c1\uc744 \uc5f0\uacb0\ud560 \uc608\uc815\uc785\ub2c8\ub2e4.</p>
           </div>
+            </>
+          )}
         </aside>
       </div>
       <div className="mt-6 rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">지표 탭</h3>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">\uc9c0\ud45c \ud0ed</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              TensorBoard Scalars에서 추출한 값을 탭으로 전환하면서 비교합니다.
+              TensorBoard Scalars\uc5d0\uc11c \ucd94\ucd9c\ud55c \uac12\uc744 \ud0ed\uc73c\ub85c \uc804\ud658\ud558\uba74\uc11c \ube44\uad50\ud569\ub2c8\ub2e4.
             </p>
           </div>
           <button
@@ -1351,7 +1429,7 @@ export const TensorboardEmbeddingPanel = () => {
             }}
             disabled={loadingMetrics || !selectedId}
           >
-            {loadingMetrics ? "지표 갱신 중..." : "지표 새로고침"}
+            {loadingMetrics ? "\uc9c0\ud45c \uac31\uc2e0 \uc911..." : "\uc9c0\ud45c \uc0c8\ub85c\uace0\uce68"}
           </button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -1373,13 +1451,13 @@ export const TensorboardEmbeddingPanel = () => {
             );
           })}
           {metrics.length === 0 ? (
-            <span className="text-sm text-slate-500 dark:text-slate-400">표시할 지표가 없습니다.</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">\ud45c\uc2dc\ud560 \uc9c0\ud45c\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</span>
           ) : null}
         </div>
         <div className="mt-4">
           {loadingMetrics ? (
             <div className="flex h-40 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-              지표 데이터를 불러오는 중입니다...
+              \uc9c0\ud45c \ub370\uc774\ud130\ub97c \ubd88\ub7ec\uc624\ub294 \uc911\uc785\ub2c8\ub2e4...
             </div>
           ) : null}
           {!loadingMetrics && metrics.length > 0 ? (
@@ -1387,7 +1465,7 @@ export const TensorboardEmbeddingPanel = () => {
           ) : null}
           {!loadingMetrics && metrics.length === 0 ? (
             <div className="flex h-40 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-              표시할 지표가 없습니다.
+              \ud45c\uc2dc\ud560 \uc9c0\ud45c\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.
             </div>
           ) : null}
         </div>

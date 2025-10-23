@@ -10,53 +10,54 @@
 ## Phase 1: 백엔드 API 구현
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: In Progress
 
 ### Tasks
 
-- [ ] **1.1** 기존 인증 시스템 분석
-  - backend/api/routes/ 디렉토리에서 인증 관련 파일 확인
-  - 사용자 모델 구조 파악 (User 모델, password 필드)
-  - 비밀번호 해싱 방식 확인 (bcrypt, passlib 등)
-  - 현재 인증 함수 위치 파악 (verify_password, hash_password)
+- [x] **1.1** 기존 인증 시스템 분석
+  - ✅ backend/api/routes/auth.py 확인 - POST /api/auth/change-password 이미 존재
+  - ✅ UserAccount 모델 확인 (database_rsl.py) - password_hash 필드
+  - ✅ Argon2 해싱 사용 확인 (PasswordHasher)
+  - ✅ auth_service.change_password() 메서드 위치 파악
+  - **발견**: 기존 API 존재, confirm_password 없음, 최소 6자 정책
 
-- [ ] **1.2** Pydantic 스키마 정의
-  - PasswordChangeRequest 스키마 작성
-    - current_password: str
-    - new_password: str (min_length=1, max_length=128)
-    - confirm_password: str (min_length=1, max_length=128)
-  - PasswordChangeResponse 스키마 작성
-    - message: str
-    - changed_at: datetime
-  - Validator 추가: confirm_password == new_password 확인
+- [x] **1.2** Pydantic 스키마 수정
+  - ✅ PasswordChangeRequest 스키마 수정 (schemas.py:116-137)
+    - current_password: str (min_length=1) ← 유지
+    - new_password: str (min_length=1, max_length=128) ← 6→1 변경
+    - confirm_password: str (min_length=1, max_length=128) ← 추가
+  - ✅ PasswordChangeResponse 확인 (schemas.py:140-145) ← 기존 유지
+    - username, message, changed_at 포함
+  - ✅ Validator 추가: _validate_passwords_match() ← confirm 일치 확인
+  - ✅ Validator 수정: _validate_password_minimal() ← 1자 이상 검증
 
-- [ ] **1.3** 비밀번호 최소 검증 함수 구현
-  - validate_password_minimal() 함수 작성
-  - 최소 1자 검증 (빈 비밀번호만 방지)
-  - 유연한 정책 적용
+- [x] **1.3** 비밀번호 최소 검증 함수 구현
+  - ✅ Pydantic validator로 구현 (schemas.py:123-129)
+  - ✅ _validate_password_minimal() - 1자 검증
+  - ✅ 유연한 정책 적용
 
-- [ ] **1.4** 비밀번호 강도 계산 함수 구현 (참고용)
-  - calculate_password_strength() 함수 작성
-  - 강도 레벨: weak/medium/strong 반환
-  - 강제하지 않음, UI 표시용
+- [x] **1.4** 비밀번호 강도 계산 함수 구현 (참고용)
+  - ✅ calculate_password_strength() 메서드 추가 (auth_service.py:330-370)
+  - ✅ 강도 레벨: weak/medium/strong 반환
+  - ✅ 참고용, 강제하지 않음
 
-- [ ] **1.5** API 엔드포인트 구현
-  - POST /api/auth/change-password 엔드포인트 추가
-  - 인증 의존성 추가 (Depends(require_auth))
-  - Request body 파싱 (PasswordChangeRequest)
+- [x] **1.5** API 엔드포인트 확인
+  - ✅ POST /api/auth/change-password 이미 존재 (auth.py:181-198)
+  - ✅ 인증 의존성 확인 (Depends(require_auth)) ← 기존 유지
+  - ✅ Request body 파싱 (ChangePasswordRequest) ← 스키마 수정 완료
 
-- [ ] **1.6** 비즈니스 로직 구현
-  - 현재 비밀번호 확인 (verify_password)
-  - 현재 비밀번호 불일치 시 401 반환
-  - 비밀번호 최소 검증 (validate_password_minimal - 1자 이상)
-  - 빈 비밀번호 시 422 반환
-  - 새 비밀번호 해싱 (hash_password)
-  - DB 업데이트 (update_user_password)
+- [x] **1.6** 비즈니스 로직 확인 및 수정
+  - ✅ 현재 비밀번호 확인 (auth_service.py:387-394) ← 기존 유지
+  - ✅ 현재 비밀번호 불일치 시 401 반환 ← 기존 유지
+  - ✅ 비밀번호 최소 검증 (Pydantic validator) ← 스키마에서 처리
+  - ✅ 빈 비밀번호 시 422 반환 ← Pydantic에서 자동 처리
+  - ✅ 새 비밀번호 해싱 (auth_service.py:397-399) ← 기존 유지
+  - ✅ DB 업데이트 (session.add(user)) ← 기존 유지
 
-- [ ] **1.7** 에러 처리 및 로깅
-  - HTTPException 처리
-  - 로그 기록 (비밀번호 평문 제외, 강도 레벨 포함)
-  - 성공 시 200 OK 반환
+- [x] **1.7** 에러 처리 및 로깅 확인 및 개선
+  - ✅ HTTPException 처리 (auth.py:188-192) ← 기존 유지
+  - ✅ 비밀번호 강도 로깅 추가 (auth_service.py:401-406) ← 추가 완료
+  - ✅ 성공 시 200 OK 반환 ← 기존 유지
 
 **Acceptance Criteria**:
 - POST /api/auth/change-password 엔드포인트 정상 작동
@@ -253,11 +254,11 @@
 ## Progress Tracking
 
 ```
-Phase 1: [░░░░░░░] 0% (0/7 tasks)
+Phase 1: [▓▓▓▓▓▓▓] 100% (7/7 tasks) ✅
 Phase 2: [░░░░░░░] 0% (0/7 tasks)
 Phase 3: [░░░░░] 0% (0/5 tasks)
 
-Total: [░░░░░░░░░░] 0% (0/19 tasks)
+Total: [▓▓▓▓░░░░░░] 36% (7/19 tasks)
 ```
 
 ---
@@ -304,7 +305,31 @@ Total: [░░░░░░░░░░] 0% (0/19 tasks)
 ## Notes
 
 ### 발견된 이슈
-- (Phase 진행 중 발견된 이슈를 여기에 기록)
+- **[1.1]** 기존 API 존재: POST /api/auth/change-password가 이미 구현되어 있음
+- **[1.1]** ChangePasswordRequest 스키마에 confirm_password 필드 없음 → 추가 필요
+- **[1.1]** 기존 최소 비밀번호 길이: 6자 → 사용자 요구사항 1자로 변경 필요
+- **[1.1]** 비밀번호 강도 계산 기능 없음 → 추가 필요 (참고용)
+
+### 분석 결과 (Task 1.1)
+**파일 위치**:
+- 인증 라우터: `backend/api/routes/auth.py:181-198`
+- 인증 서비스: `backend/api/services/auth_service.py:330-365`
+- 사용자 모델: `backend/database_rsl.py:135-158`
+- 스키마: `backend/api/schemas.py:116-135`
+
+**기술 스택**:
+- 비밀번호 해싱: Argon2 (PasswordHasher)
+- 검증 함수: `self._hasher.verify()`, `self._hasher.hash()`
+- 데이터베이스 필드: `UserAccount.password_hash` (String 255)
+
+**기존 vs 요구사항 차이**:
+| 항목 | 기존 | 요구사항 | 액션 |
+|------|------|---------|------|
+| current_password | ✅ min_length=1 | ✅ | 유지 |
+| new_password | ✅ min_length=6 | ✅ min_length=1 | 수정 |
+| confirm_password | ❌ 없음 | ✅ 필요 | 추가 |
+| 비밀번호 강도 계산 | ❌ 없음 | ✅ 참고용 | 추가 |
+| validator | 6자 강제 | 1자 이상, 권장만 | 수정 |
 
 ### 결정 사항 (사용자 요구사항 반영)
 - **비밀번호 정책**: 유연한 정책 적용
