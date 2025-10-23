@@ -1,12 +1,16 @@
 # Checklist: ESLint ��ü ���� ����ȭ
 
-## Phase 1 - �ڵ� ����/���� ���� (ETA 0.5��)
-- [ ] `npx eslint "src/**/*.{ts,tsx}" --fix --rule "simple-import-sort/imports:error"` 실행 (의존성: npm scripts 정상 동작)
-  - Acceptance: import 정렬 관련 오류 31건 → 0건, 주요 파일 diff 확인
-- [ ] JSX 특수문자(`react/no-unescaped-entities`) 6건 HTML 엔티티로 치환
-  - Acceptance: eslint 동일 규칙 재실행 시 경고 없음
-- [ ] `switch` 내 변수 선언(`no-case-declarations`) 케이스 블록 감싸기
-  - Acceptance: 해당 규칙 재실행 시 오류 0건
+## Phase 1 - �ڵ� ����/���� ���� (ETA 0.5��) ✅ COMPLETE
+
+- [x] `npx eslint "src/**/*.{ts,tsx}" --fix --rule "simple-import-sort/imports:error"` 실행 (의존성: npm scripts 정상 동작)
+  - Acceptance: import 정렬 관련 오류 31건 → 0건 ✅, 주요 파일 diff 확인 ✅
+  - Result: 1213 problems → 92 problems (92% reduction)
+- [x] JSX 특수문자(`react/no-unescaped-entities`) 6건 HTML 엔티티로 치환
+  - Acceptance: eslint 동일 규칙 재실행 시 경고 없음 ✅
+  - Result: 0 violations (already clean)
+- [x] `switch` 내 변수 선언(`no-case-declarations`) 케이스 블록 감싸기
+  - Acceptance: 해당 규칙 재실행 시 오류 0건 ✅
+  - Result: 0 violations (already clean)
 
 ## Phase 2 - Ÿ��/�̻�� ���� 정리 (ETA 1.5��)
 - [ ] `frontend-prediction/src/lib/apiClient.ts` `any` → 명시적 DTO/Generic으로 대체 (의존성: `frontend-shared` schema 파악)
@@ -35,9 +39,15 @@
 - Git branch `251014` 최신 코드 기준
 
 ## Progress Tracking
-Phase 1: [□□□□□□□□□□] 0% (0/3 tasks)  
-Phase 2: [□□□□□□□□□□] 0% (0/3 tasks)  
-Phase 3: [□□□□□□□□□□] 0% (0/2 tasks)  
-Phase 4: [□□□□□□□□□□] 0% (0/3 tasks)  
-Total: [□□□□□□□□□□] 0% (0/11 tasks)
+Phase 1: [▓▓▓▓▓▓▓▓▓▓] 100% (3/3 tasks) ✅ COMPLETE
+Phase 2: [░░░░░░░░░░] 0% (0/3 tasks) ⏳
+Phase 3: [░░░░░░░░░░] 0% (0/2 tasks) ⏳
+Phase 4: [░░░░░░░░░░] 0% (0/3 tasks) ⏳
+Total: [▓▓▓░░░░░░░] 27% (3/11 tasks)
+
+**ESLint Status**: 1213 problems → 92 problems (92% reduction)
+**Remaining Issues**:
+- @typescript-eslint/no-explicit-any: 41 violations (Phase 2)
+- @typescript-eslint/no-unused-vars: 36 violations (Phase 2)
+- react-hooks/exhaustive-deps: 15 warnings (Phase 3)
 
