@@ -301,7 +301,7 @@ class TrainingService:
         version_name = version_label or f"version_{started_at.strftime('%Y%m%d%H%M%S')}"
         job_id = f"api-train-{started_at.strftime('%Y%m%d%H%M%S')}"
 
-        base_dir = Path(settings.model_directory or "models")
+        base_dir = Path(settings.ml_model_directory or "models")
         if base_dir.suffix.lower() == ".json":
             base_dir = base_dir.parent
         version_dir = (base_dir / version_name).expanduser().resolve()
@@ -422,7 +422,7 @@ class TrainingService:
             runtime_settings = _trainer_runtime_settings()
 
             settings = get_settings()
-            base_dir = Path(settings.model_directory or "models")
+            base_dir = Path(settings.ml_model_directory or "models")
             if base_dir.suffix.lower() == ".json":
                 base_dir = base_dir.parent
             version_directory = (version_directory or base_dir / resolved_version).expanduser().resolve()

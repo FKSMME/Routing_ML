@@ -235,7 +235,7 @@ class PredictionService:
         4. RuntimeError with helpful message
         """
 
-        override = self.settings.model_directory
+        override = self.settings.ml_model_directory
         if override is not None:
             return Path(override).expanduser().resolve(strict=False)
 
@@ -304,7 +304,7 @@ class PredictionService:
             logger.warning("데모 아티팩트 생성 실패 (%s): %s", target_dir, exc, exc_info=exc)
 
     def _refresh_manifest(self, *, strict: bool = True) -> ModelManifest:
-        override = self.settings.model_directory
+        override = self.settings.ml_model_directory
         if override is not None:
             resolved_reference = Path(override).expanduser().resolve(strict=False)
             if resolved_reference != self._model_reference:

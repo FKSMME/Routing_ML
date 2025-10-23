@@ -40,11 +40,11 @@ class DatabaseStatusResponse(BaseModel):
 
 class ModelMetricsResponse(BaseModel):
     """모델 메트릭 정보"""
-    model_version: str
+    ml_version: str
     trained_at: Optional[str]
     total_items_trained: int
     feature_count: int
-    model_path: str
+    ml_path: str
     accuracy: Optional[float] = None
 
 
@@ -141,32 +141,32 @@ async def get_model_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
                 metadata = json.load(f)
 
             return ModelMetricsResponse(
-                model_version=metadata.get("version", "unknown"),
+                ml_version=metadata.get("version", "unknown"),
                 trained_at=metadata.get("trained_at"),
                 total_items_trained=metadata.get("n_samples", 0),
                 feature_count=len(TRAIN_FEATURES),
-                model_path=str(model_dir),
+                ml_path=str(model_dir),
                 accuracy=metadata.get("accuracy")
             )
         else:
             # Default values if no metadata exists
             return ModelMetricsResponse(
-                model_version="default",
+                ml_version="default",
                 trained_at=None,
                 total_items_trained=0,
                 feature_count=len(TRAIN_FEATURES),
-                model_path=str(model_dir),
+                ml_path=str(model_dir),
                 accuracy=None
             )
 
     except Exception as e:
         logger.error(f"Failed to load model metadata: {e}")
         return ModelMetricsResponse(
-            model_version="error",
+            ml_version="error",
             trained_at=None,
             total_items_trained=0,
             feature_count=len(TRAIN_FEATURES),
-            model_path=str(model_dir),
+            ml_path=str(model_dir),
             accuracy=None
         )
 

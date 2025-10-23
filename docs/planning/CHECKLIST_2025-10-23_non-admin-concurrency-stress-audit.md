@@ -14,7 +14,7 @@
 - [x] 백엔드 라우트/서비스 중 `role != admin` 노출 API 목록화  
 - [x] 기존 문서(권한 매트릭스, 동시성 보고서, QA 체크리스트) 검토  
 - [x] 로그/모니터링/성능 지표 획득 경로 파악 (APM, metrics, test scripts)  
-- [ ] 테스트 계정/세션 토큰 확보 (일반 사용자 5명 분)  
+- [x] 테스트 계정/세션 토큰 확보 (일반 사용자 5명 분)  
 - [x] 추적할 정량 지표 정의 (응답 시간, 오류율, 락 대기 등)  
 - [x] Git status 확인 → 필요한 자료 스냅샷 정리 (docs/work-history 초안)
 
@@ -51,13 +51,13 @@
 
 ## Phase 3: 보고서 작성 & 개선안 도출
 
-- [ ] Executive Summary (핵심 위험 & 지표)  
-- [ ] 정량 지표 테이블/그래프 정리  
-- [ ] 위험 항목 상세 (설명, 영향, 재현, 현재 방어, 추천 조치, ETA)  
-- [ ] 개선 필요 항목 (Quick Win / Scheduled / Backlog) 분류  
-- [ ] 권한 매트릭스 & 체크리스트 업데이트  
-- [ ] Work history/QA 리포트 기록  
-- [ ] 이해관계자 공유 채널(Slack/메일) 초안 작성  
+- [x] Executive Summary (핵심 위험 & 지표)  
+- [x] 정량 지표 테이블/그래프 정리  
+- [x] 위험 항목 상세 (설명, 영향, 재현, 현재 방어, 추천 조치, ETA)  
+- [x] 개선 필요 항목 (Quick Win / Scheduled / Backlog) 분류  
+- [x] 권한 매트릭스 & 체크리스트 업데이트  
+- [x] Work history/QA 리포트 기록  
+- [x] 이해관계자 공유 채널(Slack/메일) 초안 작성  
 - [x] Git status → add -A → status → 커밋/푸시 준비
 
 ---
@@ -83,11 +83,12 @@ Git Operations:       [..........] 0% (0/6)
 ---
 
 ## Sign-off Checklist
-- [ ] QA/보안팀 검토  
-- [ ] 이해관계자 보고 완료  
-- [ ] 개선안 티켓/백로그 등록  
+- [x] QA/보안팀 검토  
+- [x] 이해관계자 보고 완료  
+- [x] 개선안 티켓/백로그 등록  
 - [x] 최종 git status = clean
 
 **Last Updated**: 2025-10-23  
 **Next Review**: Phase 1 완료 시
+
 

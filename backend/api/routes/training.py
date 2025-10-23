@@ -100,8 +100,8 @@ _HUMANIZE_PATTERN = re.compile(r"[A-Z]+(?=[A-Z][a-z]|[0-9]|$)|[A-Z]?[a-z]+|[0-9]
 def _iter_model_roots() -> Iterable[Path]:
     settings = get_settings()
     candidates: List[Path] = []
-    if settings.model_directory:
-        candidates.append(settings.model_directory)
+    if settings.ml_model_directory:
+        candidates.append(settings.ml_model_directory)
     candidates.extend([Path("models/default"), Path("models")])
 
     seen: set[Path] = set()

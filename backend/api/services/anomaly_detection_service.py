@@ -43,7 +43,7 @@ class AnomalyDetectionResult(BaseModel):
     anomaly_count: int = Field(..., description="탐지된 이상치 수")
     anomaly_rate: float = Field(..., description="이상치 비율 (0-1)")
     anomalies: List[AnomalyScore] = Field(..., description="이상치 목록")
-    model_info: Dict[str, Any] = Field(..., description="모델 정보")
+    ml_model_info: Dict[str, Any] = Field(..., description="모델 정보")
     threshold: float = Field(..., description="이상치 임계값")
     detected_at: datetime = Field(..., description="탐지 시간")
 
@@ -228,7 +228,7 @@ class AnomalyDetectionService:
                     anomaly_count=0,
                     anomaly_rate=0.0,
                     anomalies=[],
-                    model_info={},
+                    ml_model_info={},
                     threshold=threshold,
                     detected_at=datetime.now(),
                 )
@@ -273,7 +273,7 @@ class AnomalyDetectionService:
                 anomaly_count=len(anomalies),
                 anomaly_rate=len(anomalies) / len(df) if len(df) > 0 else 0.0,
                 anomalies=anomalies,
-                model_info={
+                ml_model_info={
                     "n_estimators": self.config.n_estimators,
                     "contamination": self.config.contamination,
                     "features": self.feature_names,

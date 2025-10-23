@@ -48,8 +48,7 @@ class RoutingSnapshotPayload(BaseModel):
     version: Optional[int] = None
     state: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 class RoutingSnapshotAuditPayload(BaseModel):
@@ -62,8 +61,7 @@ class RoutingSnapshotAuditPayload(BaseModel):
     context: Optional[Dict[str, Any]] = None
     created_at: datetime
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {"populate_by_name": True}
 
 
 class RoutingSnapshotGroupResult(BaseModel):
