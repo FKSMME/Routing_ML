@@ -200,6 +200,14 @@ class PredictionService:
         self._manifest_loader = ManifestLoader()
         self._json_artifacts = JsonArtifactCache()
         self.time_aggregator = TimeAggregator()
+        self._compatibility_notes: List[str] = []
+        self._loader_strategy: str = "default"
+
+        self._model_registry_url = self.settings.model_registry_url
+        initialize_schema(self._model_registry_url)
+        self._model_reference = self._resolve_model_reference()
+        self._model_manifest: Optional[ModelManifest] = None
+        self._model_root: Optional[Path] = None
 
     @staticmethod
     def _sanitize_token(value: Optional[str], fallback: str = "anonymous") -> str:
@@ -216,14 +224,6 @@ class PredictionService:
         primary = self._sanitize_token(username, fallback="user")
         secondary = self._sanitize_token(session_id, fallback="session")
         return f"{primary}_{secondary}"
-        self._compatibility_notes: List[str] = []
-        self._loader_strategy: str = "default"
-
-        self._model_registry_url = self.settings.model_registry_url
-        initialize_schema(self._model_registry_url)
-        self._model_reference = self._resolve_model_reference()
-        self._model_manifest: Optional[ModelManifest] = None
-        self._model_root: Optional[Path] = None
 
     def _resolve_model_reference(self) -> Path:
         """Determine the manifest or directory to load the model from.
@@ -239,7 +239,16 @@ class PredictionService:
         if override is not None:
             return Path(override).expanduser().resolve(strict=False)
 
-        active_version = get_active_version(db_url=self._model_registry_url)
+        registry_url = getattr(self, "_model_registry_url", None) or self.settings.model_registry_url
+        if not registry_url:
+            raise RuntimeError(
+                "MODEL_REGISTRY_URL 환경 변수가 비어 있습니다. 모델 레지스트리 연결을 확인하세요."
+            )
+        if registry_url != getattr(self, "_model_registry_url", None):
+            # 핫 리로드 중 __init__이 건너뛰어진 경우를 방지하기 위해 보정
+            self._model_registry_url = registry_url
+
+        active_version = get_active_version(db_url=registry_url)
         if active_version is None:
             fallback_dir = Path(__file__).resolve().parents[3] / "models" / "default"
             if fallback_dir.exists():

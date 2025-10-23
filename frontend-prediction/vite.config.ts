@@ -30,6 +30,12 @@ export default defineConfig({
       "@routing-ml/shared": fileURLToPath(new URL("../frontend-shared/src", import.meta.url)),
     },
   },
+  optimizeDeps: {
+    include: [
+      "zustand/traditional",
+      "use-sync-external-store/shim/with-selector.js",
+    ],
+  },
   build: {
     target: "es2020",
     minify: "esbuild",
@@ -73,6 +79,7 @@ export default defineConfig({
       },
     },
     headers: {
+      'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0',
