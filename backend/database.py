@@ -986,6 +986,28 @@ def fetch_single_item(
     return result
 
 
+def _safe_datetime(col: pd.Series) -> pd.Series:
+    """
+    안전한 datetime → string 변환 (Pydantic 검증용)
+
+    Args:
+        col: pandas Series with datetime values
+
+    Returns:
+        pandas Series with ISO 8601 strings or None
+
+    Examples:
+        >>> import pandas as pd
+        >>> s = pd.Series([pd.Timestamp('2001-01-01'), pd.NaT, None])
+        >>> _safe_datetime(s)
+        0    2001-01-01T00:00:00
+        1                   None
+        2                   None
+        dtype: object
+    """
+    return col.apply(lambda x: x.isoformat() if pd.notna(x) else None)
+
+
 def fetch_routing_for_item(
     item_cd: str,
     latest_only: bool = True,
@@ -1071,6 +1093,14 @@ def fetch_routing_for_item(
                 "selection_mode": selection_mode,
             },
         )
+
+    # Task 1.2: Datetime 컬럼 문자열 변환 (Pydantic 검증용)
+    if not result.empty:
+        datetime_columns = ['VALID_FROM_DT', 'VALID_TO_DT', 'NC_WRITE_DATE', 'NC_REVIEW_DT']
+        for col in datetime_columns:
+            if col in result.columns:
+                result[col] = _safe_datetime(result[col])
+                logger.debug(f"[DB] datetime 컬럼 변환 완료: {col}")
 
     return result
 
