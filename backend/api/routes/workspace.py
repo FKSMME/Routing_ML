@@ -5,7 +5,8 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from filelock import FileLock
 from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
@@ -41,17 +42,36 @@ def _settings_file(settings_dir: Path) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     return target
 
+def _workspace_lock(path: Path) -> FileLock:
+    return FileLock(str(path) + ".lock")
+
+def _normalize_version(value: Optional[int | str]) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None
+
 
 @router.get("/settings/workspace", response_model=WorkspaceSettingsResponse)
 async def get_workspace_settings(user: AuthenticatedUser = Depends(require_auth)) -> WorkspaceSettingsResponse:
     file_path = _settings_file(settings.audit_log_dir)
-    if file_path.exists():
-        try:
-            data = json.loads(file_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
+    lock = _workspace_lock(file_path)
+    with lock:
+        if file_path.exists():
+            try:
+                data = json.loads(file_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                data = {}
+        else:
             data = {}
-    else:
-        data = {}
+        version = _normalize_version(data.get("version"))
+        if version is None:
+            version = 0
+            data["version"] = version
 
     return WorkspaceSettingsResponse(
         **data,
@@ -67,13 +87,32 @@ async def save_workspace_settings(
     user: AuthenticatedUser = Depends(require_auth),
 ) -> WorkspaceSettingsResponse:
     file_path = _settings_file(settings.audit_log_dir)
+    lock = _workspace_lock(file_path)
+    with lock:
+        existing: dict[str, Any] = {}
+        if file_path.exists():
+            try:
+                existing = json.loads(file_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                existing = {}
+        current_version = _normalize_version(existing.get("version"))
+        incoming_version = _normalize_version(payload.version)
+        if current_version is not None:
+            if incoming_version is None or incoming_version != current_version:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Workspace settings version conflict. Please reload before saving.",
+                )
+        next_version = (current_version or 0) + 1
 
-    record = payload.dict()
-    record["updated_at"] = utc_isoformat()
-    record["user"] = user.username
-    record["ip_address"] = request.client.host if request.client else None
+        record = dict(existing)
+        record.update({k: v for k, v in payload.dict(exclude_none=True).items()})
+        record["updated_at"] = utc_isoformat()
+        record["user"] = user.username
+        record["ip_address"] = request.client.host if request.client else None
+        record["version"] = next_version
 
-    file_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+        file_path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
     options = payload.options if isinstance(payload.options, dict) else {}
     mappings_raw = options.get("column_mappings")
     mapping_count = 0

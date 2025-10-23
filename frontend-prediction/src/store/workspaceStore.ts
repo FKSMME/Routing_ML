@@ -1,8 +1,7 @@
 import type { FeatureWeightsProfile, PredictionResponse } from "@app-types/routing";
 import type { WorkspaceSettingsPayload, WorkspaceSettingsResponse } from "@lib/apiClient";
+import { saveWorkspaceSettings } from "@lib/apiClient";
 import { create } from "zustand";
-
-// import { saveWorkspaceSettings } from "@lib/apiClient";
 import {
   DEFAULT_REFERENCE_MATRIX_COLUMNS,
   type ReferenceMatrixColumnKey,
@@ -108,6 +107,7 @@ interface WorkspaceOptionsState {
   saving: boolean;
   dirty: boolean;
   lastSyncedAt?: string;
+  version: string | number | null;
 }
 
 interface SaveWorkspaceOptionsArgs {
@@ -166,7 +166,7 @@ interface WorkspaceStoreState {
   markExportSynced: () => void;
   applyPredictionResponse: (response: PredictionResponse) => void;
   setWorkspaceOptionsLoading: (loading: boolean) => void;
-  setWorkspaceOptionsSnapshot: (snapshot: WorkspaceOptionsSnapshot, options?: { dirty?: boolean; lastSyncedAt?: string }) => void;
+  setWorkspaceOptionsSnapshot: (snapshot: WorkspaceOptionsSnapshot, options?: { dirty?: boolean; lastSyncedAt?: string; version?: string | number | null }) => void;
   updateWorkspaceOptions: (
     patch: Partial<WorkspaceOptionsSnapshot> | ((prev: WorkspaceOptionsSnapshot) => WorkspaceOptionsSnapshot),
   ) => void;
@@ -247,6 +247,7 @@ const createWorkspaceOptionsState = (): WorkspaceOptionsState => ({
   saving: false,
   dirty: false,
   lastSyncedAt: undefined,
+  version: null,
 });
 const createMappingRowId = () => {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -517,6 +518,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         saving: false,
         dirty: options?.dirty ?? state.workspaceOptions.dirty,
         lastSyncedAt: options?.lastSyncedAt ?? state.workspaceOptions.lastSyncedAt,
+        version: options?.version ?? state.workspaceOptions.version,
       },
     }));
   },
@@ -551,7 +553,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
       },
     })),
   saveWorkspaceOptions: async (args) => {
-    const current = get().workspaceOptions.data;
+    const currentState = get().workspaceOptions;
+    const current = currentState.data;
     const standard = Array.from(new Set(current.standard.map((value) => value.trim()).filter(Boolean)));
     const similarity = Array.from(new Set(current.similarity.map((value) => value.trim()).filter(Boolean)));
     const offlineDatasetPath = current.offlineDatasetPath.trim();
@@ -570,8 +573,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         target: row.target,
       }))
       .filter((row) => row.scope || row.source || row.target);
+    const payloadVersion = args?.version ?? currentState.version ?? 0;
     const payload: WorkspaceSettingsPayload = {
-      version: args?.version ?? Date.now(),
+      version: payloadVersion,
       options: {
         standard,
         similarity,
@@ -593,9 +597,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
       },
     }));
     try {
-      // API function removed - workspace settings feature not used
-      const response = {} as WorkspaceSettingsResponse;
-      // const response = await saveWorkspaceSettings(payload);
+      const response = await saveWorkspaceSettings(payload);
       useRoutingStore.getState().setERPRequired(current.erpInterface);
       set((state) => ({
         erpInterfaceEnabled: current.erpInterface,
@@ -613,6 +615,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
           saving: false,
           dirty: false,
           lastSyncedAt: response.updated_at ?? nowIsoString(),
+          version: response.version ?? payloadVersion,
         },
       }));
       return response;
