@@ -32,7 +32,7 @@ export function ThemeToggle({
   variant = 'icon',
   className = '',
 }: ThemeToggleProps) {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { toggleTheme, isDark } = useTheme();
 
   const sizeClasses = {
     sm: 'w-8 h-8 text-sm',

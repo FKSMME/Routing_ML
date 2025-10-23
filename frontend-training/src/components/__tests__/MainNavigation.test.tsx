@@ -25,8 +25,6 @@ describe("MainNavigation", () => {
     const onSelect = vi.fn();
     render(<MainNavigation items={ITEMS} activeId="one" onSelect={onSelect} />);
 
-    const navs = screen.getAllByRole("tablist");
-    const nav = navs[navs.length - 1];
     const target = within(nav).getAllByRole("tab", { name: /두번째/ })[0];
     fireEvent.click(target);
 
@@ -38,8 +36,6 @@ describe("MainNavigation", () => {
     render(<MainNavigation items={ITEMS} activeId="one" onSelect={onSelect} />);
 
     const user = userEvent.setup();
-    const navs = screen.getAllByRole("tablist");
-    const nav = navs[navs.length - 1];
     await user.tab();
     expect(document.activeElement).toHaveAttribute("aria-label", "첫번째 - First");
 

@@ -44,23 +44,18 @@ interface FunctionNodeData {
   sourceCode?: string;
 }
 
-interface APINode {
-  id: string;
+interface FunctionNodeData {
   label: string;
   type: 'function' | 'class' | 'method';
-  params: string[];
-  returns: string;
-  docstring: string;
-  lineStart: number;
-  lineEnd: number;
-  sourceCode: string;
+  params?: string[];
+  returns?: string;
+  docstring?: string;
+  lineStart?: number;
+  lineEnd?: number;
+  sourceCode?: string;
 }
 
-interface APIEdge {
-  source: string;
-  target: string;
-  label?: string;
-}
+
 
 const normalizeBackendPath = (value?: string | null): string | undefined => {
   if (!value) {

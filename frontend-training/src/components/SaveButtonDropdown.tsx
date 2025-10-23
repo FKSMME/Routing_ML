@@ -4,12 +4,6 @@ import { type MouseEvent,useEffect, useRef, useState } from "react";
 type FileFormat = "CSV" | "XML" | "JSON" | "Excel" | "ACCESS";
 type Destination = "local" | "clipboard";
 
-interface SaveOption {
-  format: FileFormat;
-  destination: Destination;
-  enabled: boolean;
-}
-
 interface SaveButtonDropdownProps {
   onSave: (format: FileFormat, destination: Destination) => Promise<void>;
   disabled?: boolean;

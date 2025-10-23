@@ -450,6 +450,18 @@
     <div class="section" id="configSection" style="display: none;">
       <div class="section-title">Step 3: 컬럼 설정 (드래그로 순서 변경 가능)</div>
 
+      <!-- Mapping Info Callout -->
+      <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+        <strong style="color: #1e40af; display: block; margin-bottom: 0.5rem;">📊 데이터 매핑 정보</strong>
+        <p style="color: #1e3a8a; font-size: 0.875rem; line-height: 1.5; margin: 0;">
+          이 뷰는 <strong>index.html의 "SQL View 데이터 테이블"</strong>에 표시됩니다.<br>
+          선택한 컬럼들이 테이블의 열(Column)로 표시되며, 순서와 표시 이름을 자유롭게 설정할 수 있습니다.
+        </p>
+        <p style="color: #3b82f6; font-size: 0.75rem; margin-top: 0.5rem; font-family: 'Courier New', monospace;">
+          Data Flow: <span id="mappingFlow">MSSQL View → /api/view-explorer/data/{view_name} → index.html 데이터 테이블</span>
+        </p>
+      </div>
+
       <div class="form-group">
         <label class="form-label">표시 이름</label>
         <input type="text" id="displayName" class="form-input" placeholder="예: 대시보드 작업 목록">

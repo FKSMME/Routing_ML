@@ -263,6 +263,9 @@
           <div>
             <div class="chart-title">라우팅 생성 추세</div>
             <div class="chart-subtitle">최근 30일간 일별 라우팅 생성 건수</div>
+            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: 'Courier New', monospace;">
+              📊 Data: /api/dashboard/metrics → routing.daily
+            </div>
           </div>
         </div>
         <div class="chart-canvas">
@@ -275,6 +278,9 @@
           <div>
             <div class="chart-title">품목 분포</div>
             <div class="chart-subtitle">라우팅 보유 현황</div>
+            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: 'Courier New', monospace;">
+              📊 Data: /api/dashboard/metrics → items.items_with_routing, items.items_without_routing
+            </div>
           </div>
         </div>
         <div class="chart-canvas">
@@ -287,6 +293,9 @@
           <div>
             <div class="chart-title">모델 성능 지표</div>
             <div class="chart-subtitle">정확도 및 성능 메트릭</div>
+            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: 'Courier New', monospace;">
+              📊 Data: /api/dashboard/metrics → model.accuracy
+            </div>
           </div>
         </div>
         <div class="chart-canvas">
@@ -299,6 +308,9 @@
           <div>
             <div class="chart-title">시스템 상태</div>
             <div class="chart-subtitle">데이터베이스 및 서비스 연결</div>
+            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: 'Courier New', monospace;">
+              📊 Data: /api/dashboard/metrics → database.connected, model.total_items_trained
+            </div>
           </div>
         </div>
         <div class="chart-canvas">
@@ -631,8 +643,19 @@
       const bodyEl = document.getElementById('dataTableBody');
 
       section.style.display = 'block';
-      titleEl.textContent = result.display_name || result.view_name;
-      subtitleEl.textContent = `${result.row_count}개 행`;
+      titleEl.innerHTML = `
+        ${result.display_name || result.view_name}
+        <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; font-weight: normal; font-family: 'Courier New', monospace;">
+          📊 Data Source: MSSQL View "${result.view_name}"
+        </div>
+      `;
+      const columnNames = result.columns.map(c => c.name).join(', ');
+      subtitleEl.innerHTML = `
+        ${result.row_count}개 행
+        <span style="margin-left: 1rem; color: #9ca3af; font-size: 0.75rem; font-family: 'Courier New', monospace;">
+          Columns: ${columnNames}
+        </span>
+      `;
 
       // 테이블 헤더
       let headerHTML = '<tr>';

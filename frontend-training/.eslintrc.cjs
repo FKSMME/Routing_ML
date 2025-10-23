@@ -31,7 +31,36 @@ module.exports = {
       { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
     ],
     // Allow React Three Fiber properties
-    "react/no-unknown-property": ["error", { ignore: ["args", "attach", "intensity", "position", "rotation", "scale", "object", "castShadow", "receiveShadow", "metalness", "roughness", "emissive", "emissiveIntensity", "toneMapped"] }],
+    "react/no-unknown-property": [
+      "error",
+      {
+        ignore: [
+          "args",
+          "attach",
+          "intensity",
+          "position",
+          "rotation",
+          "scale",
+          "object",
+          "castShadow",
+          "receiveShadow",
+          "metalness",
+          "roughness",
+          "emissive",
+          "emissiveIntensity",
+          "toneMapped",
+          "array",
+          "count",
+          "itemSize",
+          "sizeAttenuation",
+          "depthWrite",
+          "vertexColors",
+          "transparent",
+          "map",
+          "alphaTest",
+        ],
+      },
+    ],
   },
   settings: {
     react: {

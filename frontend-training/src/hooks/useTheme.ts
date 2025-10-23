@@ -12,14 +12,6 @@ const DEFAULT_THEME: Theme = 'light'; // 현장 환경 고려하여 라이트 �
 /**
  * 시스템 다크 모드 선호도 확인
  */
-function getSystemTheme(): Theme {
-  if (typeof window === 'undefined') return DEFAULT_THEME;
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
-
 /**
  * LocalStorage에서 저장된 테마 로드
  */
@@ -112,7 +104,7 @@ export function useTheme() {
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-    const handleChange = (e: MediaQueryListEvent) => {
+    const handleChange = (_event: MediaQueryListEvent) => {
       // 현장 환경에서는 시스템 변경 무시
       // 필요시 주석 해제:
       // setTheme(e.matches ? 'dark' : 'light');

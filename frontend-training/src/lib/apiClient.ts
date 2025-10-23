@@ -406,47 +406,47 @@ export async function testDatabaseConnection(
 // PLACEHOLDER / LEGACY APIs
 // ============================================================================
 
-export async function fetchWorkflowConfig(...args: any[]): Promise<any> {
+export async function fetchWorkflowConfig(): Promise<any> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function patchWorkflowConfig(...args: any[]): Promise<any> {
+export async function patchWorkflowConfig(): Promise<any> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function regenerateWorkflowCode(...args: any[]): Promise<any> {
+export async function regenerateWorkflowCode(): Promise<any> {
   throw new Error("Workflow API removed - feature not available");
 }
 
-export async function fetchWorkspaceSettings(...args: any[]): Promise<any> {
+export async function fetchWorkspaceSettings(): Promise<any> {
   return {};
 }
 
-export async function saveWorkspaceSettings(...args: any[]): Promise<any> {
+export async function saveWorkspaceSettings(): Promise<any> {
   return { updated_at: new Date().toISOString() };
 }
 
-export async function postUiAudit(...args: any[]): Promise<void> {
+export async function postUiAudit(): Promise<void> {
   return;
 }
 
-export async function postUiAuditBatch(...args: any[]): Promise<void> {
+export async function postUiAuditBatch(): Promise<void> {
   return;
 }
 
-export async function createRoutingGroup(...args: any[]): Promise<any> {
+export async function createRoutingGroup(): Promise<any> {
   throw new Error("Routing groups API removed - feature not available");
 }
 
-export async function fetchRoutingGroup(...args: any[]): Promise<any> {
+export async function fetchRoutingGroup(): Promise<any> {
   throw new Error("Routing groups API removed - feature not available");
 }
 
-export async function listRoutingGroups(...args: any[]): Promise<any> {
+export async function listRoutingGroups(): Promise<any> {
   return { groups: [], total: 0 };
 }
 
-export async function triggerRoutingInterface(...args: any[]): Promise<any> {
+export async function triggerRoutingInterface(): Promise<any> {
   throw new Error("Routing interface API removed - feature not available");
 }
 
@@ -533,7 +533,7 @@ export async function generateOutputPreview(payload: {
   return response.data;
 }
 
-export async function postRoutingSnapshotsBatch(...args: any[]): Promise<any> {
+export async function postRoutingSnapshotsBatch(): Promise<any> {
   return { accepted_snapshot_ids: [], accepted_audit_ids: [], updated_groups: [] };
 }
 

@@ -5,31 +5,6 @@ import React, { useEffect, useState } from 'react';
 // Types
 // ============================================================================
 
-interface AnomalyScore {
-  item_id: number;
-  item_code: string;
-  anomaly_score: number;
-  is_anomaly: boolean;
-  confidence: number;
-  detected_at: string;
-  features: Record<string, number>;
-  reason: string;
-}
-
-interface AnomalyDetectionResult {
-  total_items: number;
-  anomaly_count: number;
-  anomaly_rate: number;
-  anomalies: AnomalyScore[];
-  model_info: {
-    contamination: number;
-    n_estimators: number;
-    features: string[];
-  };
-  threshold: number;
-  detected_at: string;
-}
-
 interface AnomalyStats {
   total_items: number;
   anomaly_count: number;
