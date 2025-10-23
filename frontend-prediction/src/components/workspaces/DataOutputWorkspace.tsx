@@ -1,15 +1,15 @@
-﻿import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
+﻿import { DatabaseSettings } from "@components/DatabaseSettings";
+import { type Tab,TabContainer } from "@components/TabContainer";
+import { useOutputProfile, useOutputProfiles } from "@hooks/useOutputProfiles";
 import { useWorkflowConfig } from "@hooks/useWorkflowConfig";
 import {
   createOutputProfile,
   type CreateOutputProfilePayload,
   generateOutputPreview,
+  type OutputProfileColumn,
   postUiAudit,
   saveWorkspaceSettings,
-  type OutputProfileColumn,
 } from "@lib/apiClient";
-import { DatabaseSettings } from "@components/DatabaseSettings";
-import { type Tab,TabContainer } from "@components/TabContainer";
 import {
   OutputMappingRow as MappingRow,
   useWorkspaceStore,
