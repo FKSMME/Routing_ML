@@ -69,7 +69,9 @@
       "Bash(git log:*)",
       "Bash(tee:*)",
       "Read(//c/tmp/**)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(move RoutingMLMonitor_v5.6.0.spec old )",
+      "Bash(move:*)"
     ],
     "deny": [],
     "ask": []

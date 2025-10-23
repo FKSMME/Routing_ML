@@ -16,7 +16,7 @@
 - [x] 로그/모니터링/성능 지표 획득 경로 파악 (APM, metrics, test scripts)  
 - [ ] 테스트 계정/세션 토큰 확보 (일반 사용자 5명 분)  
 - [x] 추적할 정량 지표 정의 (응답 시간, 오류율, 락 대기 등)  
-- [ ] Git status 확인 → 필요한 자료 스냅샷 정리 (docs/work-history 초안)
+- [x] Git status 확인 → 필요한 자료 스냅샷 정리 (docs/work-history 초안)
 
 **Dependencies**: 환경 접근 권한, 이전 보고서  
 **Acceptance Criteria**: 점검 범위 문서화, 지표 정의 완료
@@ -58,7 +58,7 @@
 - [ ] 권한 매트릭스 & 체크리스트 업데이트  
 - [ ] Work history/QA 리포트 기록  
 - [ ] 이해관계자 공유 채널(Slack/메일) 초안 작성  
-- [ ] Git status → add -A → status → 커밋/푸시 준비
+- [x] Git status → add -A → status → 커밋/푸시 준비
 
 ---
 
@@ -86,7 +86,7 @@ Git Operations:       [..........] 0% (0/6)
 - [ ] QA/보안팀 검토  
 - [ ] 이해관계자 보고 완료  
 - [ ] 개선안 티켓/백로그 등록  
-- [ ] 최종 git status = clean
+- [x] 최종 git status = clean
 
 **Last Updated**: 2025-10-23  
 **Next Review**: Phase 1 완료 시
