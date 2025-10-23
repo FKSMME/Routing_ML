@@ -39,71 +39,71 @@ const NAVIGATION_CONFIG: NavigationConfig[] = [
   {
     key: "routing",
     id: "routing",
-    label: "����� ����",
-    description: "Drag&Drop Ÿ�Ӷ��� �� �ĺ� ���� ī��",
+    label: "라우팅 생성",
+    description: "Drag&Drop 타임라인으로 공정 라우팅을 예측하고 구성합니다.",
     icon: <Workflow size={18} />,
   },
   {
     key: "master-data",
     id: "master-data",
-    label: "��������",
-    description: "������ Ž�� �� �����丮",
+    label: "마스터 데이터",
+    description: "기준 데이터를 탐색하고 필요한 자료를 정비합니다.",
     icon: <Database size={18} />,
   },
   {
     key: "routing-config",
     id: "routing-config",
-    label: "����� ����",
-    description: "����� ���� �� ���� �׷�",
+    label: "라우팅 구성",
+    description: "라우팅 규칙과 공정 그룹을 설정합니다.",
     icon: <Table size={18} />,
   },
   {
     key: "data-relationship",
     id: "data-relationship",
-    label: "������ ���� ����",
-    description: "�н� �� ���� �� ��� ����",
+    label: "데이터 관계 매핑",
+    description: "학습 · 예측 · 출력 데이터 간 관계를 정의합니다.",
     icon: <Settings2 size={18} />,
   },
   {
     key: "profile-management",
     id: "profile-management",
-    label: "�������� ����",
-    description: "������ ���� �������� ����",
+    label: "프로필 관리",
+    description: "가중치와 환경 프로필을 구성원별로 관리합니다.",
     icon: <Settings2 size={18} />,
   },
   {
     key: "data-quality",
     id: "data-quality",
-    label: "������ ǰ�� ����͸�",
-    description: "�ǽð� ǰ�� ��ǥ �� �̽� ����",
+    label: "데이터 품질 대시보드",
+    description: "실적 지표와 이상 징후를 모니터링합니다.",
     icon: <Activity size={18} />,
   },
   {
     key: "quality-monitor",
     id: "quality-monitor",
-    label: "ǰ�� ����͸� ��ú���",
-    description: "Iterative Training ǰ�� ��Ʈ�� �� �˸�",
+    label: "품질 모니터링",
+    description: "Iterative Training 품질 추세와 알림을 확인합니다.",
     icon: <Activity size={18} />,
   },
   {
     key: "training-monitor",
     id: "training-monitor",
-    label: "�н� �����",
-    description: "Iterative Training ���� �� ���� ��Ȳ ����",
+    label: "훈련 모니터",
+    description: "Iterative Training 진행 상태를 추적합니다.",
     icon: <Activity size={18} />,
   },
   {
     key: "training-settings",
     id: "training-settings",
-    label: "�н� ����",
-    description: "Iterative Training �Ķ���� �� �Ӱ谪 ����",
+    label: "훈련 설정",
+    description: "Iterative Training 파이프라인 파라미터를 조정합니다.",
     icon: <Settings2 size={18} />,
   },
   {
     key: "log-viewer",
     id: "log-viewer",
-    label: "�α� ���",
-    description: "�ǽð� �н� �� ǰ�� �� �α�",
+    label: "로그 뷰어",
+    description: "훈련 및 예측 관련 로그를 조회합니다.",
     icon: <Activity size={18} />,
   },
 ];
@@ -428,7 +428,6 @@ export default function App() {
     </div>
   );
 }
-
 
 
 
