@@ -4,7 +4,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -85,7 +85,7 @@ class JobStatusResponse(BaseModel):
     updated_at: Optional[str]
     completed_at: Optional[str]
     error_message: Optional[str]
-    result: Optional[Dict[str, any]]
+    result: Optional[Dict[str, Any]]
 
 
 class JobListResponse(BaseModel):
