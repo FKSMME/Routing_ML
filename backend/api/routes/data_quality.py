@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Response
+from backend.api.schemas import AuthenticatedUser
+from backend.api.security import require_admin
+
 from sqlalchemy.orm import Session
 
 from backend.database import get_session
@@ -22,7 +25,7 @@ router = APIRouter(prefix="/api/data-quality", tags=["data-quality"])
 
 
 @router.get("/metrics", response_model=DataQualityMetrics)
-async def get_quality_metrics(session: Session = Depends(get_session)) -> DataQualityMetrics:
+async def get_quality_metrics(_admin: AuthenticatedUser = Depends(require_admin), session: Session = Depends(get_session)) -> DataQualityMetrics:
     """
     현재 데이터 품질 메트릭을 반환합니다.
 
@@ -47,7 +50,7 @@ async def get_quality_metrics(session: Session = Depends(get_session)) -> DataQu
 
 
 @router.get("/report", response_model=DataQualityReport)
-async def get_quality_report(session: Session = Depends(get_session)) -> DataQualityReport:
+async def get_quality_report(_admin: AuthenticatedUser = Depends(require_admin), session: Session = Depends(get_session)) -> DataQualityReport:
     """
     데이터 품질 보고서를 생성합니다.
 
@@ -81,7 +84,7 @@ async def get_quality_report(session: Session = Depends(get_session)) -> DataQua
 
 
 @router.get("/prometheus")
-async def get_prometheus_format(session: Session = Depends(get_session)) -> Response:
+async def get_prometheus_format(_admin: AuthenticatedUser = Depends(require_admin), session: Session = Depends(get_session)) -> Response:
     """
     Prometheus 형식으로 메트릭을 반환합니다.
 
@@ -121,7 +124,10 @@ async def get_prometheus_format(session: Session = Depends(get_session)) -> Resp
 
 
 @router.get("/health", response_model=HealthStatus)
-async def health_check(session: Session = Depends(get_session)) -> HealthStatus:
+async def health_check(_admin: AuthenticatedUser = Depends(require_admin), session: Session = Depends(get_session)) -> HealthStatus:
     """데이터 품질 서비스 헬스 체크."""
     service = DataQualityService(session)
     return service.get_health_status()
+
+
+

@@ -28,7 +28,7 @@ from backend.api.schemas import (
     WorkflowGraphModel,
     WorkflowGraphNode,
 )
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from backend.predictor_ml import apply_runtime_config as apply_predictor_runtime_config
 
 OFFLINE_DATASET_SUFFIXES = {".csv", ".parquet"}
@@ -109,7 +109,7 @@ def _build_response(snapshot: dict) -> WorkflowConfigResponse:
 @router.get("/config", response_model=WorkflowConfigResponse)
 @router.get("/graph", response_model=WorkflowConfigResponse)
 async def get_workflow_graph(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> WorkflowConfigResponse:
     """현재 워크플로우 그래프 및 런타임 설정을 반환한다."""
 
@@ -125,7 +125,7 @@ async def get_workflow_graph(
 @router.patch("/graph", response_model=WorkflowConfigResponse)
 async def patch_workflow_graph(
     payload: WorkflowConfigPatch,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> WorkflowConfigResponse:
     """워크플로우 그래프와 런타임 설정을 갱신한다."""
 
@@ -557,7 +557,7 @@ async def patch_workflow_graph(
 
 @router.post("/code", response_model=WorkflowCodeSyncResponse)
 async def regenerate_workflow_code(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> WorkflowCodeSyncResponse:
     """재생성된 워크플로우 코드 모듈 목록과 TensorBoard 경로를 반환한다."""
 
@@ -594,3 +594,5 @@ async def regenerate_workflow_code(
 
 
 __all__ = ["router"]
+
+

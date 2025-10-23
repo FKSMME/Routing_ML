@@ -9,6 +9,8 @@ except ImportError:
     PYODBC_AVAILABLE = False
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from backend.api.schemas import AuthenticatedUser
+from backend.api.security import require_admin
 
 from backend.database import get_db_connection
 from backend.api.services.anomaly_detection_service import (
@@ -37,6 +39,7 @@ def train_anomaly_model(
     ),
     n_estimators: int = Query(100, ge=50, le=500, description="트리 개수 (50-500)"),
     conn: pyodbc.Connection = Depends(get_db_connection),
+    _admin: AuthenticatedUser = Depends(require_admin),
 ):
     """
     Isolation Forest 모델을 학습합니다.
@@ -76,6 +79,7 @@ def detect_anomalies(
         -0.5, ge=-1.0, le=1.0, description="이상치 점수 임계값 (-1.0 ~ 1.0)"
     ),
     conn: pyodbc.Connection = Depends(get_db_connection),
+    _admin: AuthenticatedUser = Depends(require_admin),
 ):
     """
     품목의 이상치를 탐지합니다.
@@ -111,6 +115,7 @@ def get_item_anomaly_score(
     item_code: str,
     threshold: float = Query(-0.5, ge=-1.0, le=1.0, description="이상치 점수 임계값"),
     conn: pyodbc.Connection = Depends(get_db_connection),
+    _admin: AuthenticatedUser = Depends(require_admin),
 ):
     """
     특정 품목의 이상치 점수를 조회합니다.
@@ -147,7 +152,8 @@ def get_item_anomaly_score(
 
 
 @router.get("/config", response_model=AnomalyDetectionConfig, summary="현재 설정 조회")
-def get_anomaly_config():
+def get_anomaly_config(_admin: AuthenticatedUser = Depends(require_admin)):
+
     """
     현재 이상 탐지 설정을 조회합니다.
 
@@ -174,7 +180,11 @@ def get_anomaly_config():
 
 
 @router.put("/config", response_model=AnomalyDetectionConfig, summary="설정 업데이트")
-def update_anomaly_config(config: AnomalyDetectionConfig):
+def update_anomaly_config(
+    config: AnomalyDetectionConfig,
+    _admin: AuthenticatedUser = Depends(require_admin),
+):
+
     """
     이상 탐지 설정을 업데이트합니다.
 
@@ -207,7 +217,10 @@ def update_anomaly_config(config: AnomalyDetectionConfig):
 
 
 @router.get("/stats", response_model=AnomalyStats, summary="이상 탐지 통계")
-def get_anomaly_stats(conn: pyodbc.Connection = Depends(get_db_connection)):
+def get_anomaly_stats(
+    conn: pyodbc.Connection = Depends(get_db_connection),
+    _admin: AuthenticatedUser = Depends(require_admin),
+):
     """
     전체 이상 탐지 통계를 조회합니다.
 
@@ -226,3 +239,6 @@ def get_anomaly_stats(conn: pyodbc.Connection = Depends(get_db_connection)):
     except Exception as e:
         logger.error(f"통계 조회 중 오류: {e}")
         raise HTTPException(status_code=500, detail="통계 조회 중 오류가 발생했습니다")
+
+
+

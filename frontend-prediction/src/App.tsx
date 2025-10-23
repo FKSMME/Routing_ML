@@ -2,7 +2,7 @@ import { LoginPage } from "@components/auth/LoginPage";
 import { BackgroundControls } from "@components/BackgroundControls";
 import { Header } from "@components/Header";
 import { LiquidEtherBackground } from "@components/LiquidEtherBackground";
-import { MainNavigation } from "@components/MainNavigation";
+import { MainNavigation, type NavigationItem as MainNavigationItem } from "@components/MainNavigation";
 import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDrawer";
 import { RoutingProductTabs } from "@components/routing/RoutingProductTabs";
 // 🚀 Workspace lazy loading (코드 분할)
@@ -25,80 +25,88 @@ import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
-import { type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
+import { isMenuAllowedForRoles, type AppRole, type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
 import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 
-// 🎨 Base Navigation Items
-const BASE_NAVIGATION_ITEMS = [
+// Role-aware navigation configuration
+interface NavigationConfig extends MainNavigationItem {
+  key: NavigationKey;
+}
+
+const NAVIGATION_CONFIG: NavigationConfig[] = [
   {
+    key: "routing",
     id: "routing",
-    label: "라우팅 생성",
-    description: "Drag&Drop 타임라인 · 후보 공정 카드",
+    label: "����� ����",
+    description: "Drag&Drop Ÿ�Ӷ��� �� �ĺ� ���� ī��",
     icon: <Workflow size={18} />,
   },
   {
+    key: "master-data",
     id: "master-data",
-    label: "기준정보",
-    description: "데이터 탐색 · 히스토리",
+    label: "��������",
+    description: "������ Ž�� �� �����丮",
     icon: <Database size={18} />,
   },
   {
+    key: "routing-config",
     id: "routing-config",
-    label: "라우팅 설정",
-    description: "라우팅 조합 · 공정 그룹",
+    label: "����� ����",
+    description: "����� ���� �� ���� �׷�",
     icon: <Table size={18} />,
   },
-  // "출력설정" 메뉴 삭제됨 (프로파일 관리로 기능 이관)
-];
-
-// 관리자 전용 메뉴
-const ADMIN_NAVIGATION_ITEMS = [
   {
+    key: "data-relationship",
     id: "data-relationship",
-    label: "데이터 관계 설정",
-    description: "학습 → 예측 → 출력 매핑",
+    label: "������ ���� ����",
+    description: "�н� �� ���� �� ��� ����",
     icon: <Settings2 size={18} />,
   },
   {
+    key: "profile-management",
     id: "profile-management",
-    label: "프로파일 관리",
-    description: "데이터 매핑 프로파일 편집",
+    label: "�������� ����",
+    description: "������ ���� �������� ����",
     icon: <Settings2 size={18} />,
   },
   {
+    key: "data-quality",
     id: "data-quality",
-    label: "데이터 품질 모니터링",
-    description: "실시간 품질 지표 · 이슈 추적",
+    label: "������ ǰ�� ����͸�",
+    description: "�ǽð� ǰ�� ��ǥ �� �̽� ����",
     icon: <Activity size={18} />,
   },
   {
+    key: "quality-monitor",
     id: "quality-monitor",
-    label: "품질 모니터링 대시보드",
-    description: "Iterative Training 품질 메트릭 · 알림",
+    label: "ǰ�� ����͸� ��ú���",
+    description: "Iterative Training ǰ�� ��Ʈ�� �� �˸�",
     icon: <Activity size={18} />,
   },
   {
+    key: "training-monitor",
     id: "training-monitor",
-    label: "학습 모니터",
-    description: "Iterative Training 실행 및 진행 상황 추적",
+    label: "�н� �����",
+    description: "Iterative Training ���� �� ���� ��Ȳ ����",
     icon: <Activity size={18} />,
   },
   {
+    key: "training-settings",
     id: "training-settings",
-    label: "학습 설정",
-    description: "Iterative Training 파라미터 및 임계값 설정",
+    label: "�н� ����",
+    description: "Iterative Training �Ķ���� �� �Ӱ谪 ����",
     icon: <Settings2 size={18} />,
   },
   {
+    key: "log-viewer",
     id: "log-viewer",
-    label: "로그 뷰어",
-    description: "실시간 학습 및 품질 평가 로그",
+    label: "�α� ���",
+    description: "�ǽð� �н� �� ǰ�� �� �α�",
     icon: <Activity size={18} />,
   },
 ];
-
 const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
 
 const AuthLoadingScreen = () => (
@@ -162,12 +170,18 @@ export default function App() {
   const isAuthenticating = authStatus === "unknown" || authStatus === "authenticating";
 
   // 네비게이션 아이템 (관리자는 추가 메뉴 표시)
-  const NAVIGATION_ITEMS = useMemo(
-    () => (isAdmin ? [...BASE_NAVIGATION_ITEMS, ...ADMIN_NAVIGATION_ITEMS] : BASE_NAVIGATION_ITEMS),
-    [isAdmin]
+    const userRoles = useMemo<AppRole[]>(() => (isAdmin ? ["admin", "user"] : ["user"]), [isAdmin]);
+
+  const allowedNavigation = useMemo(
+    () => NAVIGATION_CONFIG.filter((item) => isMenuAllowedForRoles(item.key, userRoles)),
+    [userRoles]
   );
 
-  // All hooks must be called before any conditional returns
+  const navigationItems = useMemo<MainNavigationItem[]>(
+    () => allowedNavigation.map(({ key: _key, ...item }) => item),
+    [allowedNavigation]
+  );
+// All hooks must be called before any conditional returns
   const activeMenu = useWorkspaceStore((state) => state.activeMenu);
   const setActiveMenu = useWorkspaceStore((state) => state.setActiveMenu);
   const itemCodes = useWorkspaceStore((state) => state.itemSearch.itemCodes);
@@ -183,6 +197,18 @@ export default function App() {
   const exportProfile = useWorkspaceStore((state) => state.exportProfile);
   const applyPredictionResponse = useWorkspaceStore((state) => state.applyPredictionResponse);
   const setWorkspaceLayout = useWorkspaceStore((state) => state.setLayout);
+
+  useEffect(() => {
+    if (allowedNavigation.length === 0) {
+      return;
+    }
+    if (!allowedNavigation.some((item) => item.key === activeMenu)) {
+      const fallbackKey = allowedNavigation[0].key;
+      if (fallbackKey !== activeMenu) {
+        setActiveMenu(fallbackKey);
+      }
+    }
+  }, [allowedNavigation, activeMenu, setActiveMenu]);
 
   useEffect(() => {
     // Currently only desktop layout is supported in workspaceStore
@@ -264,7 +290,10 @@ export default function App() {
       </div>
     ) : null;
 
-  const headerData = NAVIGATION_ITEMS.find((item) => item.id === activeMenu) ?? NAVIGATION_ITEMS[0];
+  const headerConfig =
+    allowedNavigation.find((item) => item.key === activeMenu) ??
+    allowedNavigation[0] ??
+    NAVIGATION_CONFIG[0];
 
   // 인증 확인 중이면 로딩 표시
   if (isAuthenticating) {
@@ -360,10 +389,10 @@ export default function App() {
       <LiquidEtherBackground />
       <BackgroundControls />
       {isPersistent ? (
-        <MainNavigation items={NAVIGATION_ITEMS} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
+        <MainNavigation items={navigationItems} activeId={activeMenu} onSelect={(id) => setActiveMenu(id as NavigationKey)} />
       ) : (
         <ResponsiveNavigationDrawer
-          items={NAVIGATION_ITEMS}
+          items={navigationItems}
           activeId={activeMenu}
           onSelect={(id) => setActiveMenu(id as NavigationKey)}
           open={isNavOpen}
@@ -388,8 +417,8 @@ export default function App() {
       <Header
         onRefresh={activeMenu === "routing" ? refetch : () => undefined}
         loading={activeMenu === "routing" ? isLoading || isFetching : false}
-        title={headerData.label}
-        description={headerData.description}
+        title={headerConfig.label}
+        description={headerConfig.description}
       />
       <ErrorBoundary>
         <div key={activeMenu} className="workspace-transition dust-effect">
@@ -399,3 +428,8 @@ export default function App() {
     </div>
   );
 }
+
+
+
+
+

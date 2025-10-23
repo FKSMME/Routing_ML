@@ -14,7 +14,7 @@ from backend.api.schemas import (
     BulkUploadResponse,
     BulkUploadValidationError,
 )
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from common.logger import get_logger, audit_routing_event
 
 router = APIRouter(prefix="/api/bulk-upload", tags=["bulk-upload"])
@@ -94,7 +94,7 @@ def validate_routing_row(row: Dict[str, Any], row_index: int) -> List[BulkUpload
 async def preview_bulk_upload(
     file: UploadFile = File(..., description="엑셀 또는 CSV 파일"),
     encoding: str = 'utf-8',
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> BulkUploadPreviewResponse:
     """대량 업로드 미리보기"""
     logger.info(
@@ -196,7 +196,7 @@ async def preview_bulk_upload(
 async def execute_bulk_upload(
     file: UploadFile = File(..., description="엑셀 또는 CSV 파일"),
     encoding: str = 'utf-8',
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> BulkUploadResponse:
     """대량 업로드 실행"""
     logger.info(
@@ -335,3 +335,5 @@ async def execute_bulk_upload(
 
 
 __all__ = ["router"]
+
+

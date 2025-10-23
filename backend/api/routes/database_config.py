@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 
 from backend.api.schemas import AuthenticatedUser
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from backend.database import (
     MSSQL_CONFIG,
     VIEW_ITEM_MASTER,
@@ -68,7 +68,7 @@ class DatabaseConnectionTest(BaseModel):
 
 @router.get("/config")
 async def get_database_config(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, Any]:
     """현재 MSSQL 연결 설정을 조회한다."""
 
@@ -130,7 +130,7 @@ async def get_database_config(
 @router.post("/config")
 async def update_database_config(
     config: DatabaseConfig,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, Any]:
     """MSSQL 설정을 workflow_config_store에 저장합니다 (.env 파일 쓰기 대신 config_store 사용)."""
 
@@ -212,7 +212,7 @@ async def update_database_config(
 @router.post("/test-connection")
 async def test_database_connection(
     payload: DatabaseConnectionTest,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, Any]:
     """MSSQL 연결을 검증한다 (모듈 리로드 없이 직접 연결 테스트)."""
 
@@ -287,7 +287,7 @@ async def test_database_connection(
 
 @router.get("/info")
 async def database_info(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, Any]:
     """현재 데이터베이스의 기본 정보를 반환한다."""
 
@@ -296,3 +296,5 @@ async def database_info(
 
 
 __all__ = ["router"]
+
+

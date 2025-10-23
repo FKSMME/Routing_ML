@@ -64,7 +64,8 @@
       "Bash(.venv/Scripts/pip.exe:*)",
       "Bash(timeout 10 ../.venv/Scripts/python.exe:*)",
       "Bash(timeout 10 .venv/Scripts/python.exe:*)",
-      "Bash(PYTHONPATH=. timeout 10 .venv/Scripts/python.exe:*)"
+      "Bash(PYTHONPATH=. timeout 10 .venv/Scripts/python.exe:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

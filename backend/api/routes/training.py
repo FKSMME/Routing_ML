@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
 from backend.api.schemas import AuthenticatedUser
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from backend.feature_weights import FeatureWeightManager
 from backend.iter_training.worker import TrainingWorker
 from backend.iter_training.models import JobStatus
@@ -173,7 +173,7 @@ def _feature_group_lookup(manager: FeatureWeightManager) -> Dict[str, str]:
 
 @router.get("/features", response_model=List[TrainingFeatureModel])
 async def list_training_features(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> List[TrainingFeatureModel]:
     manager = _load_feature_manager()
     logger.debug("Feature list requested", extra={"username": current_user.username})
@@ -207,7 +207,7 @@ async def list_training_features(
 @router.patch("/features", response_model=TrainingFeaturePatchResponse)
 async def update_training_features(
     request: TrainingFeaturePatchRequest,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> TrainingFeaturePatchResponse:
     if not request.features:
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -281,7 +281,7 @@ def _dummy_training_function(job_id: str, params: Dict, worker: TrainingWorker):
 @router.post("/start", response_model=StartTrainingResponse)
 async def start_training(
     request: StartTrainingRequest,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> StartTrainingResponse:
     """Start a background training job.
 
@@ -339,7 +339,7 @@ async def start_training(
 @router.get("/jobs/{job_id}/status", response_model=JobStatusResponse)
 async def get_job_status(
     job_id: str,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> JobStatusResponse:
     """Get status of a training job.
 
@@ -378,7 +378,7 @@ async def get_job_status(
 @router.get("/jobs", response_model=JobListResponse)
 async def list_jobs(
     limit: int = 100,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> JobListResponse:
     """List recent training jobs.
 
@@ -420,7 +420,7 @@ async def list_jobs(
 @router.delete("/jobs/{job_id}")
 async def cancel_job(
     job_id: str,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, str]:
     """Cancel a running training job.
 
@@ -452,3 +452,5 @@ async def cancel_job(
 
 
 __all__ = ["router"]
+
+

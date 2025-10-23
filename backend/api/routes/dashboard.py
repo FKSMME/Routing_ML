@@ -7,11 +7,12 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from backend.api.schemas import AuthenticatedUser
 from pydantic import BaseModel
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from common.datetime_utils import utc_isoformat
 from backend.database import (
     get_db_connection,
@@ -73,7 +74,7 @@ class DashboardMetricsResponse(BaseModel):
 
 
 @router.get("/status", response_model=Dict[str, Any])
-async def get_dashboard_status():
+async def get_dashboard_status(_admin: AuthenticatedUser = Depends(require_admin)):
     """대시보드 전체 상태 조회"""
 
     try:
@@ -95,7 +96,7 @@ async def get_dashboard_status():
 
 
 @router.get("/database", response_model=DatabaseStatusResponse)
-async def get_database_status():
+async def get_database_status(_admin: AuthenticatedUser = Depends(require_admin)):
     """MSSQL 연결 상태 조회"""
 
     import os
@@ -125,7 +126,7 @@ async def get_database_status():
 
 
 @router.get("/model", response_model=ModelMetricsResponse)
-async def get_model_metrics():
+async def get_model_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
     """학습된 모델 메트릭 조회"""
 
     from pathlib import Path
@@ -171,7 +172,7 @@ async def get_model_metrics():
 
 
 @router.get("/items", response_model=ItemStatsResponse)
-async def get_item_statistics():
+async def get_item_statistics(_admin: AuthenticatedUser = Depends(require_admin)):
     """품목 통계 조회"""
 
     try:
@@ -239,7 +240,7 @@ async def get_item_statistics():
 
 
 @router.get("/routing-stats", response_model=RoutingStatsResponse)
-async def get_routing_statistics():
+async def get_routing_statistics(_admin: AuthenticatedUser = Depends(require_admin)):
     """라우팅 생성 통계 조회"""
 
     try:
@@ -317,14 +318,14 @@ async def get_routing_statistics():
 
 
 @router.get("/metrics", response_model=DashboardMetricsResponse)
-async def get_all_dashboard_metrics():
+async def get_all_dashboard_metrics(_admin: AuthenticatedUser = Depends(require_admin)):
     """모든 대시보드 메트릭을 한번에 조회"""
 
     try:
-        database = await get_database_status()
-        model = await get_model_metrics()
-        items = await get_item_statistics()
-        routing = await get_routing_statistics()
+        database = await get_database_status(_admin=_admin)
+        model = await get_model_metrics(_admin=_admin)
+        items = await get_item_statistics(_admin=_admin)
+        routing = await get_routing_statistics(_admin=_admin)
 
         return DashboardMetricsResponse(
             database=database,
@@ -335,3 +336,6 @@ async def get_all_dashboard_metrics():
     except Exception as e:
         logger.error(f"Failed to get dashboard metrics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
