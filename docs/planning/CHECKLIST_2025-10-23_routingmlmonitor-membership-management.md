@@ -68,6 +68,10 @@
 - 🟡 2 High Priority: Token expiration, rejection reason not persisted
 - 🟢 2 Medium Priority: No auto-refresh, no retry logic
 
+**Critical Fixes Applied** (Phase 2.5):
+- ✅ KeyError prevention: Added username validation in `_create_user_card()` (dashboard.py:612-616)
+- ✅ SSL verification option: Added `VERIFY_SSL` env var with secure default (config.py:33, client.py:35-40)
+
 **Deliverable**: Updated audit document Section 10 with detailed findings
 
 ### Git Operations (Phase 2) ✅ COMPLETE
