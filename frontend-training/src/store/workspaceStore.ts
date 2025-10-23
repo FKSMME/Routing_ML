@@ -542,7 +542,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()((set, get) => ({
         target: row.target,
       }))
       .filter((row) => row.scope || row.source || row.target);
-    const payload: WorkspaceSettingsPayload = {
+    const _payload: WorkspaceSettingsPayload = {
       version: args?.version ?? Date.now(),
       options: {
         standard,

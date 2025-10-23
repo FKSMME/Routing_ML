@@ -80,7 +80,6 @@ const buildSteps = (timeline: ReturnType<typeof useRoutingStore.getState>["timel
 
 export function useRoutingGroups() {
   const timeline = useRoutingStore((state) => state.timeline);
-  const erpRequired = useRoutingStore((state) => state.erpRequired);
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const setSaving = useRoutingStore((state) => state.setSaving);
   const setLoading = useRoutingStore((state) => state.setLoading);
@@ -91,7 +90,7 @@ export function useRoutingGroups() {
   const clearValidation = useRoutingStore((state) => state.clearValidation);
   const captureLastSuccess = useRoutingStore((state) => state.captureLastSuccess);
   const rollbackToLastSuccess = useRoutingStore((state) => state.rollbackToLastSuccess);
-  const applyGroup = useRoutingStore((state) => state.applyGroup);
+  const _applyGroup = useRoutingStore((state) => state.applyGroup);
   const getRoutingSaveState = useWorkspaceStore((state) => state.saveRouting);
 
   const collectItemCodes = useCallback((): string[] => {
@@ -228,11 +227,11 @@ export function useRoutingGroups() {
         setLoading(false);
       }
     },
-    [applyGroup, captureLastSuccess, setDirty, setLoading, setValidationErrors],
+    [setLoading, setValidationErrors],
   );
 
   const fetchGroups = useCallback(
-    async (params?: { owner?: string; search?: string; limit?: number; offset?: number }): Promise<RoutingGroupListResponse> => {
+    async (_params?: { owner?: string; search?: string; limit?: number; offset?: number }): Promise<RoutingGroupListResponse> => {
       // API removed - return empty list
       return { items: [], pagination: { total: 0, limit: 0, offset: 0 } } as RoutingGroupListResponse;
       // return listRoutingGroups(params);

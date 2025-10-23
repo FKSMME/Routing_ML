@@ -25,7 +25,7 @@ describe("MainNavigation", () => {
     const onSelect = vi.fn();
     render(<MainNavigation items={ITEMS} activeId="one" onSelect={onSelect} />);
 
-    const target = within(nav).getAllByRole("tab", { name: /두번째/ })[0];
+    const target = within(screen.getAllByRole("tablist").pop() as HTMLElement).getAllByRole("tab", { name: /�ι�°/ })[0];
     fireEvent.click(target);
 
     expect(onSelect).toHaveBeenCalledWith("two");
