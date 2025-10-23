@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(cmd /c \"git commit -m \"\"fix: Remove ITEM-001 hardcoded default in prediction workspace\"\"\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []

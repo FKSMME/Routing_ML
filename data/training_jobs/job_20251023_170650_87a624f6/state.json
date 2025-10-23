@@ -1,0 +1,31 @@
+{
+  "job_id": "job_20251023_170650_87a624f6",
+  "status": "succeeded",
+  "progress": 100.0,
+  "current_step": "Training completed successfully",
+  "logs": [
+    {
+      "timestamp": "2025-10-23T17:06:55.569939",
+      "message": "Starting training job"
+    },
+    {
+      "timestamp": "2025-10-23T17:06:55.573942",
+      "message": "Training in progress"
+    },
+    {
+      "timestamp": "2025-10-23T17:06:57.577451",
+      "message": "Deployment phase"
+    }
+  ],
+  "started_at": "2025-10-23T17:06:50.210830",
+  "updated_at": "2025-10-23T17:06:58.583753",
+  "completed_at": "2025-10-23T17:06:58.583753",
+  "error_message": null,
+  "result": {
+    "job_id": "job_20251023_170650_87a624f6",
+    "status": "SUCCESS",
+    "message": "Training completed (Phase 2 placeholder)",
+    "best_model": "baseline",
+    "improvement": 0.0
+  }
+}

@@ -9,6 +9,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const CERT_KEY_PATH = path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key");
 const CERT_CERT_PATH = path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt");
 
+const isVitest = Boolean(process.env.VITEST);
+
 const toNumber = (value: string | undefined): number | undefined => {
   if (!value) {
     return undefined;
@@ -23,14 +25,16 @@ const hmrProtocol = (process.env.VITE_HMR_PROTOCOL ?? "wss") as HmrOptions["prot
 const hmrPort = toNumber(process.env.VITE_HMR_PORT) ?? defaultDevPort;
 const hmrClientPort = toNumber(process.env.VITE_HMR_CLIENT_PORT) ?? defaultDevPort;
 
-const hmrOptions: HmrOptions = {
-  protocol: hmrProtocol,
-  host: hmrHost,
-  port: hmrPort,
-  clientPort: hmrClientPort,
-};
+const hmrOptions: HmrOptions | false = isVitest
+  ? false
+  : {
+      protocol: hmrProtocol,
+      host: hmrHost,
+      port: hmrPort,
+      clientPort: hmrClientPort,
+    };
 
-const testAliases: Record<string, string> = process.env.VITEST
+const testAliases: Record<string, string> = isVitest
   ? {
       reactflow: fileURLToPath(new URL("./tests/mocks/reactflow.tsx", import.meta.url)),
     }
@@ -39,20 +43,40 @@ const testAliases: Record<string, string> = process.env.VITEST
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   resolve: {
-    alias: {
-      "@components": fileURLToPath(new URL("./src/components", import.meta.url)),
-      "@hooks": fileURLToPath(new URL("./src/hooks", import.meta.url)),
-      "@lib": fileURLToPath(new URL("./src/lib", import.meta.url)),
-      "@app-types": fileURLToPath(new URL("./src/types", import.meta.url)),
-      "@store": fileURLToPath(new URL("./src/store", import.meta.url)),
-      "@routing-ml/shared": fileURLToPath(new URL("../frontend-shared/src", import.meta.url)),
-      ...testAliases,
-    },
+    alias: [
+      { find: "@components", replacement: fileURLToPath(new URL("./src/components", import.meta.url)) },
+      { find: "@hooks", replacement: fileURLToPath(new URL("./src/hooks", import.meta.url)) },
+      { find: "@lib", replacement: fileURLToPath(new URL("./src/lib", import.meta.url)) },
+      { find: "@app-types", replacement: fileURLToPath(new URL("./src/types", import.meta.url)) },
+      { find: "@store", replacement: fileURLToPath(new URL("./src/store", import.meta.url)) },
+      { find: "@routing-ml/shared", replacement: fileURLToPath(new URL("../frontend-shared/src", import.meta.url)) },
+      { find: /^zustand$/, replacement: fileURLToPath(new URL("./shims/zustand-legacy.ts", import.meta.url)) },
+      {
+        find: /^zustand\/shallow$/,
+        replacement: fileURLToPath(new URL("./shims/zustand-shallow-legacy.ts", import.meta.url)),
+      },
+      ...Object.entries(testAliases).map(([find, replacement]) => ({
+        find,
+        replacement,
+      })),
+    ],
     // Deduplicate React packages to prevent "multiple React copies" error
-    dedupe: ["react", "react-dom", "zustand", "use-sync-external-store"],
+    dedupe: [
+      "react",
+      "react-dom",
+      "zustand",
+      "zustand/react",
+      "zustand/vanilla",
+      "use-sync-external-store",
+    ],
   },
   optimizeDeps: {
-    include: ["zustand/traditional", "use-sync-external-store/shim/with-selector.js"],
+    include: [
+      "zustand/react",
+      "zustand/vanilla",
+      "zustand/shallow",
+      "use-sync-external-store/shim/with-selector.js",
+    ],
   },
   build: {
     target: "es2020",
