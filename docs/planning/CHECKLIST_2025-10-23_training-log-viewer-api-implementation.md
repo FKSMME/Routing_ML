@@ -68,37 +68,39 @@
 
 **Goal**: `/api/training/logs` 엔드포인트를 구현합니다.
 
-- [ ] 로그 조회 함수 구현
-  - 위치: backend/api/routes/ (신규 파일 또는 기존 파일)
-  - 로그 파일 읽기 (tail 방식)
-  - 파싱 및 필터링 (level, since, limit)
+- [x] 로그 조회 함수 구현
+  - 위치: backend/api/routes/training.py (기존 파일에 추가) ✅
+  - 함수: _parse_training_logs() ✅
+  - 로그 파일 읽기 (tail 방식, reversed lines) ✅
+  - 파싱: pipe-separated format, 7 fields ✅
+  - 필터링: level, since, limit 모두 구현 ✅
 
-- [ ] Pydantic 스키마 정의
-  - backend/api/schemas.py에 추가
-  - TrainingLogEntry (timestamp, level, module, message)
-  - TrainingLogsResponse (logs, total, limit)
+- [x] Pydantic 스키마 정의
+  - backend/api/routes/training.py에 추가 ✅
+  - TrainingLogEntry (timestamp, level, message) ✅
+  - TrainingLogsResponse (logs, total, limit) ✅
 
-- [ ] FastAPI 라우터 생성/업데이트
-  - training_logs.py 신규 생성 또는
-  - 기존 training.py에 추가
-  - GET /api/training/logs 엔드포인트
+- [x] FastAPI 라우터 생성/업데이트
+  - 기존 training.py에 추가 ✅
+  - GET /api/training/logs 엔드포인트 ✅
+  - Lines 359-405 in training.py ✅
 
-- [ ] Query parameters 구현
-  - limit (default=500, min=1, max=10000)
-  - level (optional, filter by log level)
-  - since (optional, ISO 8601 timestamp)
+- [x] Query parameters 구현
+  - limit (default=500, min=1, max=10000) ✅
+  - level (optional, filter by log level) ✅
+  - since (optional, ISO 8601 timestamp) ✅
 
-- [ ] Error handling
-  - 파일 없음 (FileNotFoundError)
-  - 파싱 실패 (ValueError)
-  - 권한 없음 (PermissionError)
+- [x] Error handling
+  - 로그 디렉토리 없음 처리 ✅
+  - 파싱 실패 처리 (skip malformed lines) ✅
+  - 전체 try-except with HTTPException ✅
 
-- [ ] 라우터 등록
-  - backend/api/app.py에서 include_router
-  - 또는 자동 등록 로직 확인
+- [x] 라우터 등록
+  - training.py의 router에 자동 등록 ✅
+  - 테스트: GET /api/training/logs → 401 (인증 필요, 404 해결!) ✅
 
 **Estimated Time**: 1.5 hours
-**Status**: Not Started
+**Status**: ✅ Completed
 
 ---
 
@@ -222,11 +224,11 @@
 ```
 Phase 1: [▓▓▓▓] 100% (4/4 tasks) ✓
 Phase 2: [▓▓▓▓] 100% (4/4 tasks) ✓
-Phase 3: [░░░░░░] 0% (0/6 tasks)
+Phase 3: [▓▓▓▓▓▓] 100% (6/6 tasks) ✓
 Phase 4: [░░░] 0% (0/3 tasks) - 선택
 Phase 5: [░░░░░░] 0% (0/6 tasks)
 
-Total: [▓▓▓▓░░░░░░] 35% (8/23 tasks)
+Total: [▓▓▓▓▓▓▓▓░░] 61% (14/23 tasks)
 ```
 
 ---
