@@ -65,7 +65,10 @@
       "Bash(timeout 10 ../.venv/Scripts/python.exe:*)",
       "Bash(timeout 10 .venv/Scripts/python.exe:*)",
       "Bash(PYTHONPATH=. timeout 10 .venv/Scripts/python.exe:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(git log:*)",
+      "Bash(tee:*)",
+      "Read(//c/tmp/**)"
     ],
     "deny": [],
     "ask": []

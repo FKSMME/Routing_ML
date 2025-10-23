@@ -25,7 +25,7 @@ import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
-import { isMenuAllowedForRoles, type AppRole, type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
+import { type AppRole, isMenuAllowedForRoles, type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
 import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
