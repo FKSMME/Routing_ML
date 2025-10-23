@@ -73,14 +73,35 @@ class RoutingMLDashboard:
         self.worker.start()
 
     def _ensure_api_client(self) -> bool:
-        """Ensure API client is available; authentication is optional."""
-        if self.api_client is None:
+        """Ensure API client is available; surface authentication issues to the user."""
+        if self.api_client is not None:
+            return True
+
+        try:
             self.api_client = ApiClient(
                 API_BASE_URL,
                 MONITOR_ADMIN_USERNAME or None,
                 MONITOR_ADMIN_PASSWORD or None,
                 timeout=API_TIMEOUT,
             )
+        except ApiError as exc:
+            self.api_client = None
+            messagebox.showerror(
+                "API 인증 실패",
+                "관리자 API에 연결하지 못했습니다.\n"
+                "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 확인해 주세요.\n\n"
+                f"상세: {exc}",
+            )
+            if hasattr(self, "user_status_label"):
+                self.user_status_label.config(text=f"API 인증 실패: {exc}")
+            return False
+        except Exception as exc:
+            self.api_client = None
+            messagebox.showerror("API 초기화 오류", str(exc))
+            if hasattr(self, "user_status_label"):
+                self.user_status_label.config(text=f"API 초기화 오류: {exc}")
+            return False
+
         return True
 
 
@@ -551,7 +572,6 @@ class RoutingMLDashboard:
             widget.destroy()
 
         if not self._ensure_api_client():
-            self.user_status_label.config(text="관리자 인증이 필요합니다")
             return
 
         try:
