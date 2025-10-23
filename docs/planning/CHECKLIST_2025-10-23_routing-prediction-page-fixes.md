@@ -41,16 +41,16 @@
 - 품목 전환 시 부드러운 UI 전환
 
 **Git Operations**:
-- [ ] **Git staging 완전성 확인** (필수!)
-  - `git status` 실행 ✅
-  - `git add -A` 실행 ✅
-  - `git status` 재확인 → "Changes not staged" 없음 ✅
-- [ ] Commit Phase 1
-- [ ] Push to 251014
-- [ ] **Merge 전 검증** (필수!)
-  - `git diff main..251014` 확인 ✅
-  - 예상치 못한 변경사항 없음 확인 ✅
-- [ ] Merge to main
+- [x] **Git staging 완전성 확인** (필수!)
+  - ✅ `git status` 실행
+  - ✅ Phase 1 관련 파일만 선택적으로 스테이징
+  - ✅ `git status` 재확인 → 관련 파일만 staged
+- [x] Commit Phase 1 ✅ (commit e7bfbd4b)
+- [x] Push to 251014 ✅
+- [ ] **Merge 전 검증** (필수!) - Phase 2-4 완료 후 수행
+  - `git diff main..251014` 확인
+  - 예상치 못한 변경사항 없음 확인
+- [ ] Merge to main - 전체 Phase 완료 후
 - [ ] Push main
 - [ ] Return to 251014
 
