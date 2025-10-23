@@ -80,7 +80,6 @@ const buildSteps = (timeline: ReturnType<typeof useRoutingStore.getState>["timel
 
 export function useRoutingGroups() {
   const timeline = useRoutingStore((state) => state.timeline);
-  const erpRequired = useRoutingStore((state) => state.erpRequired);
   const sourceItemCodes = useRoutingStore((state) => state.sourceItemCodes);
   const setSaving = useRoutingStore((state) => state.setSaving);
   const setLoading = useRoutingStore((state) => state.setLoading);
@@ -228,7 +227,7 @@ export function useRoutingGroups() {
         setLoading(false);
       }
     },
-    [applyGroup, captureLastSuccess, setDirty, setLoading, setValidationErrors],
+    [setLoading, setValidationErrors],
   );
 
   const fetchGroups = useCallback(
