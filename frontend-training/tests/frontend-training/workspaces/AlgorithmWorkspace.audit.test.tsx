@@ -75,6 +75,13 @@ const mockedFetchWorkflowConfig = vi.mocked(fetchWorkflowConfig);
 const mockedPatchWorkflowConfig = vi.mocked(patchWorkflowConfig);
 const mockedPostUiAudit = vi.mocked(postUiAudit);
 
+type AuditEventCall = [{ action: string; payload?: Record<string, unknown> }, ...unknown[]];
+
+const getAuditCalls = (): AuditEventCall[] => mockedPostUiAudit.mock.calls as AuditEventCall[];
+
+const findAuditCall = (action: string) =>
+  getAuditCalls().find(([event]) => event.action === action);
+
 const createWorkflowResponse = (): WorkflowConfigResponse & { correlation_id?: string } => ({
   graph: {
     nodes: [
@@ -172,11 +179,13 @@ describe("AlgorithmWorkspace audit logging", () => {
     workflowHistoryMock.reset.mockClear();
     const workflowResponse = createWorkflowResponse();
     mockedFetchWorkflowConfig.mockResolvedValue(workflowResponse);
-    mockedPatchWorkflowConfig.mockImplementation(async (payload) => {
+    mockedPatchWorkflowConfig.mockImplementation(async (...args: unknown[]) => {
+      const [payload] = args as [{ graph?: { nodes?: unknown[]; edges?: unknown[] } | undefined }] | [];
       const base = createWorkflowResponse();
+      const patchPayload = payload ?? {};
       const nextGraph = {
-        nodes: payload.graph?.nodes ?? base.graph.nodes,
-        edges: payload.graph?.edges ?? base.graph.edges,
+        nodes: patchPayload.graph?.nodes ?? base.graph.nodes,
+        edges: patchPayload.graph?.edges ?? base.graph.edges,
         design_refs: base.graph.design_refs,
         last_saved: base.graph.last_saved,
       };
@@ -189,7 +198,7 @@ describe("AlgorithmWorkspace audit logging", () => {
     render(<AlgorithmWorkspace />);
 
     await waitFor(() => {
-      const readCall = mockedPostUiAudit.mock.calls.find(([event]) => event.action === "ui.algorithm.read");
+      const readCall = findAuditCall("ui.algorithm.read");
       expect(readCall).toBeDefined();
       expect(readCall?.[0]?.payload).toMatchObject({
         node_count: 1,
@@ -210,14 +219,14 @@ describe("AlgorithmWorkspace audit logging", () => {
     });
 
     await waitFor(() => {
-      const graphCall = mockedPostUiAudit.mock.calls.find(([event]) => event.action === "ui.algorithm.graph.save");
+      const graphCall = findAuditCall("ui.algorithm.graph.save");
       expect(graphCall).toBeDefined();
       expect(graphCall?.[0]?.payload).toMatchObject({
         node_count: 1,
         edge_count: 1,
         correlation_id: "test-correlation-id",
       });
-      const persistCall = mockedPostUiAudit.mock.calls.find(([event]) => event.action === "ui.algorithm.save");
+      const persistCall = findAuditCall("ui.algorithm.save");
       expect(persistCall).toBeDefined();
       expect(persistCall?.[0]?.payload).toMatchObject({
         node_count: 1,
@@ -244,17 +253,13 @@ describe("AlgorithmWorkspace audit logging", () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      const nodeErrorCall = mockedPostUiAudit.mock.calls.find(
-        ([event]) => event.action === "ui.algorithm.node.save.error",
-      );
+      const nodeErrorCall = findAuditCall("ui.algorithm.node.save.error");
       expect(nodeErrorCall).toBeDefined();
       expect(nodeErrorCall?.[0]?.payload).toMatchObject({
         node_id: "trainer",
         node_label: "Trainer",
       });
-      const persistErrorCall = mockedPostUiAudit.mock.calls.find(
-        ([event]) => event.action === "ui.algorithm.save.error",
-      );
+      const persistErrorCall = findAuditCall("ui.algorithm.save.error");
       expect(persistErrorCall).toBeDefined();
     });
   });

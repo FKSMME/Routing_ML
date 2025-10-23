@@ -1,9 +1,9 @@
 {
-  "timestamp": "2025-10-23T05:07:02.945Z",
+  "timestamp": "2025-10-23T06:06:54.016Z",
   "totalCommits": 204,
   "stepCount": 100,
-  "averageFrameMs": 2.453,
-  "maxFrameMs": 247.862,
+  "averageFrameMs": 3.404,
+  "maxFrameMs": 392.885,
   "framesOver16ms": 1,
   "targetMet": false
 }
