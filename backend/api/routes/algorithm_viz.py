@@ -9,13 +9,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from backend.api.security import require_admin
 from pydantic import BaseModel
 
 from backend.ml.code_analyzer import FileAnalysis, analyze_python_file, list_python_files
 from common.logger import get_logger
 
-router = APIRouter(prefix="/api/algorithm-viz", tags=["algorithm-visualization"])
+router = APIRouter(prefix="/api/algorithm-viz", tags=["algorithm-visualization"], dependencies=[Depends(require_admin)])
 logger = get_logger(__name__)
 
 
@@ -422,3 +423,4 @@ async def analyze_file(
 async def health_check() -> dict[str, str]:
     """헬스 체크"""
     return {"status": "ok", "service": "algorithm-visualization"}
+

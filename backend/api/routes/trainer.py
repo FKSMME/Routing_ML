@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from backend.api.config import get_settings
 from backend.api.schemas import AuthenticatedUser
-from backend.api.security import require_auth
+from backend.api.security import require_admin
 from backend.api.services.training_service import training_service
 from backend.maintenance.model_registry import (
     ModelVersion,
@@ -60,7 +60,7 @@ class ModelVersionModel(BaseModel):
 
 @router.get("/status", response_model=TrainingStatusModel)
 async def get_training_status(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> TrainingStatusModel:
     status_payload = training_service.get_status()
     logger.debug("학습 상태 조회", extra={"username": current_user.username, "status": status_payload.get("status")})
@@ -70,7 +70,7 @@ async def get_training_status(
 @router.post("/run", status_code=status.HTTP_202_ACCEPTED)
 async def run_training(
     payload: TrainingRequest,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> TrainingStatusModel:
     """모델 학습을 시작합니다."""
     logger.info(
@@ -110,7 +110,7 @@ async def run_training(
 @router.get("/versions", response_model=List[ModelVersionModel])
 async def get_model_versions(
     limit: Optional[int] = None,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> List[ModelVersionModel]:
     if limit is not None and limit <= 0:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="limit must be positive")
@@ -127,7 +127,7 @@ async def get_model_versions(
 @router.post("/versions/{version_name}/activate", response_model=ModelVersionModel)
 async def activate_model_version(
     version_name: str,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> ModelVersionModel:
     try:
         record = activate_version(db_url=settings.model_registry_url, version_name=version_name)
@@ -147,7 +147,7 @@ async def activate_model_version(
 
 @router.get("/metrics")
 async def get_trainer_metrics(
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> Dict[str, Any]:
     """학습 메트릭 조회"""
     logger.debug("학습 메트릭 조회", extra={"username": current_user.username})
@@ -162,7 +162,7 @@ async def get_trainer_metrics(
 @router.get("/runs")
 async def get_trainer_runs(
     limit: int = 15,
-    current_user: AuthenticatedUser = Depends(require_auth),
+    current_user: AuthenticatedUser = Depends(require_admin),
 ) -> List[Dict[str, Any]]:
     """학습 실행 이력 조회"""
     logger.debug("학습 실행 이력 조회", extra={"username": current_user.username, "limit": limit})
@@ -170,3 +170,5 @@ async def get_trainer_runs(
 
 
 __all__ = ["router"]
+
+

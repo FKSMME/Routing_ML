@@ -13,12 +13,12 @@
 ## Progress Tracking
 
 **Phase 0**: [?????] 100% (3/3 tasks) - 1.0h  
-**Phase 1**: [?????] 0% (0/5 tasks) - 0/4h  
-**Phase 2**: [?????] 0% (0/6 tasks) - 0/6h  
-**Phase 3**: [?????] 0% (0/5 tasks) - 0/5h  
+**Phase 1**: [?????] 80% (4/5 tasks) - 3/4h  
+**Phase 2**: [?????] 67% (4/6 tasks) - 4/6h  
+**Phase 3**: [?????] 40% (2/5 tasks) - 2/5h  
 **Phase 4**: [?????] 0% (0/4 tasks) - 0/3h  
 
-**Total**: [??????????] 7% (3/23 tasks, 1/19h)
+**Total**: [??????????] 57% (13/23 tasks, 9/19h)
 
 ---
 
@@ -50,10 +50,10 @@
 **Status**: ☐ Pending
 
 **Tasks**:
-- [ ] NavigationKey 전체 수집 및 역할 매핑 초안 작성
-- [ ] 관리자 전용 API 라우트 목록화 (`require_auth` → `require_admin` 대상)
-- [ ] 서버 매니저 운영 시나리오 영향 분석
-- [ ] 권한 매트릭스 문서 초안 (`docs/requirements/` 등) 작성
+- [x] NavigationKey 전체 수집 및 역할 매핑 초안 작성
+- [x] 관리자 전용 API 라우트 목록화 (`require_auth` → `require_admin` 대상)
+- [x] 서버 매니저 운영 시나리오 영향 분석
+- [x] 권한 매트릭스 문서 초안 (`docs/requirements/` 등) 작성
 - [ ] 이해관계자 검토 요청/피드백 반영
 
 **Acceptance Criteria**:
@@ -68,10 +68,10 @@
 **Status**: ☐ Pending
 
 **Tasks**:
-- [ ] Navigation 데이터 구조에 `allowedRoles` 추가 (App.tsx 등)
-- [ ] Zustand `workspaceStore` / `routingStore` 역할 필터 로직 반영
-- [ ] 현재 탭이 접근 불가일 때 기본 탭으로 리다이렉션
-- [ ] 관리자 전용 Lazy 컴포넌트 보호(조건부 렌더링/가드)
+- [x] Navigation 데이터 구조에 `allowedRoles` 추가 (App.tsx 등)
+- [x] Zustand `workspaceStore` / `routingStore` 역할 필터 로직 반영
+- [x] 현재 탭이 접근 불가일 때 기본 탭으로 리다이렉션
+- [x] 관리자 전용 Lazy 컴포넌트 보호(조건부 렌더링/가드)
 - [ ] 사용자/관리자 시나리오 UI 수동 검증
 - [ ] 회귀 위험 식별 및 메모
 
@@ -87,8 +87,8 @@
 **Status**: ☐ Pending
 
 **Tasks**:
-- [ ] 권한 대상 라우트에 `require_admin` 적용 (`workflow`, `training`, `logs`, `data_mapping`, `database_config`, 필요 시 `prediction` 일부)
-- [ ] 서버 매니저 흐름 영향 없는지 검증 (CLI/스크립트)
+- [x] 권한 대상 라우트에 `require_admin` 적용 (`workflow`, `training`, `logs`, `data_mapping`, `database_config`, 필요 시 `prediction` 일부)
+- [x] 서버 매니저 흐름 영향 없는지 검증 (CLI/스크립트)
 - [ ] FastAPI 스키마/response 문구 업데이트 (403 메시지 등)
 - [ ] 단위 테스트 혹은 수동 API 테스트 (admin/user 토큰)
 - [ ] 로그/감사 기록 확인 (403 발생 시 기록)
@@ -151,4 +151,7 @@
 **Document Version**: 1.0  
 **Last Updated**: 2025-10-22  
 **Next Update**: Phase 1 완료 시
+
+
+
 

@@ -11,7 +11,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from backend.api.security import get_current_user, require_admin
+from backend.api.security import require_admin
 from backend.api.schemas import (
     AuthenticatedUser,
     DataMappingApplyRequest,
@@ -34,7 +34,7 @@ router = APIRouter(prefix="/api/data-mapping", tags=["data-mapping"])
     summary="데이터 매핑 프로파일 목록 조회",
 )
 def list_profiles(
-    _user: AuthenticatedUser = Depends(get_current_user),
+    _user: AuthenticatedUser = Depends(require_admin),
 ) -> DataMappingProfileListResponse:
     """
     모든 데이터 매핑 프로파일 목록을 반환합니다.
@@ -53,7 +53,7 @@ def list_profiles(
 )
 def get_profile(
     profile_id: str,
-    _user: AuthenticatedUser = Depends(get_current_user),
+    _user: AuthenticatedUser = Depends(require_admin),
 ) -> DataMappingProfile:
     """
     특정 프로파일의 상세 정보를 조회합니다.
@@ -165,7 +165,7 @@ def delete_profile(
 )
 def apply_mapping(
     request: DataMappingApplyRequest,
-    user: AuthenticatedUser = Depends(get_current_user),
+    user: AuthenticatedUser = Depends(require_admin),
 ) -> DataMappingApplyResponse:
     """
     라우팅 그룹 데이터에 매핑 프로파일을 적용합니다.
@@ -239,3 +239,5 @@ def apply_mapping(
     except Exception as e:
         logger.error(f"Failed to apply mapping: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to apply data mapping")
+
+

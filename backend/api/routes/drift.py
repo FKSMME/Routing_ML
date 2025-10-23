@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Dict, Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from backend.api.schemas import AuthenticatedUser
+from backend.api.security import require_admin
 from pydantic import BaseModel
 
 from backend.ml.concept_drift_detector import get_drift_detector
@@ -36,7 +38,7 @@ class DriftSummaryResponse(BaseModel):
 
 
 @router.get("/status", response_model=DriftStatusResponse)
-async def get_drift_status() -> DriftStatusResponse:
+async def get_drift_status(_admin: AuthenticatedUser = Depends(require_admin)) -> DriftStatusResponse:
     """
     Get current concept drift status.
 
@@ -107,3 +109,5 @@ async def reset_drift_detector() -> Dict[str, str]:
 
 
 __all__ = ["router"]
+
+

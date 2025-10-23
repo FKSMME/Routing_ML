@@ -32,6 +32,33 @@ export type NavigationKey =
   | "training-settings"
   | "log-viewer";
 
+export type AppRole = "admin" | "user";
+
+export const NAVIGATION_ACCESS: Record<NavigationKey, AppRole[]> = {
+  routing: ["admin", "user"],
+  "master-data": ["admin", "user"],
+  "routing-config": ["admin"],
+  "routing-matrix": ["admin"],
+  "process-groups": ["admin"],
+  "data-output": ["admin"],
+  algorithm: ["admin"],
+  "algorithm-viz": ["admin"],
+  "training-status": ["admin"],
+  options: ["admin"],
+  "data-mapping": ["admin"],
+  "data-relationship": ["admin"],
+  "profile-management": ["admin"],
+  "data-quality": ["admin"],
+  "quality-monitor": ["admin"],
+  "training-monitor": ["admin"],
+  "training-settings": ["admin"],
+  "log-viewer": ["admin"],
+};
+
+export const isMenuAllowedForRoles = (menu: NavigationKey, roles: AppRole[]): boolean => {
+  const allowedRoles = NAVIGATION_ACCESS[menu] ?? ["admin"];
+  return roles.some((role) => allowedRoles.includes(role));
+};
 type ExportDestination = "local" | "clipboard" | "server";
 
 interface ItemSearchState {
@@ -645,3 +672,5 @@ useRoutingStore.subscribe(
     }
   }
 );
+
+

@@ -12,7 +12,7 @@
 |---------------|-----------|---------------|-----------|----------------|
 | `routing` | 라우팅 예측 및 후보 비교 | `RoutingProductTabs`, `RoutingTabbedWorkspace` | admin, user | `/api/predict`, `/api/routing/*`, `/api/similarity/*` |
 | `master-data` | 품목/공정 마스터 조회 | `MasterDataSimpleWorkspace` | admin, user | `/api/master-data/*` |
-| `routing-config` | 라우팅 설정(요약) | `RoutingConfigWorkspace` | admin, user | `/api/routing/*`, `/api/workspace/settings` |
+| `routing-config` | 라우팅 설정(요약) | `RoutingConfigWorkspace` | admin only | `/api/routing/*`, `/api/workspace/settings` |
 | `routing-matrix` | 라우팅 매트릭스 (config) | `RoutingConfigWorkspace` | admin only | `/api/routing/*` |
 | `process-groups` | 공정 그룹 관리 | `RoutingConfigWorkspace` | admin only | `/api/workflow/*`, `/api/process-groups/*` |
 | `data-output` | 출력 프로필, 내보내기 관리 | `DataOutputWorkspace` | admin only | `/api/routing/output-profiles*`, `workflow_config_store` |
@@ -53,4 +53,6 @@
 - Phase 2에서 Navigation 데이터 구조에 `allowedRoles` 추가.
 - Phase 3에서 위 관리자 전용 API 목록을 기준으로 `require_admin` 적용 및 테스트.
 - 테스트 시나리오: `admin`/`user` 계정 각각 메뉴 가시성, 직접 URL 접근, API 403 응답 검증.
+
+
 

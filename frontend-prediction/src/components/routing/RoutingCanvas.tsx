@@ -4,9 +4,10 @@ import type { DraggableOperationPayload, RuleViolation, TimelineStep } from "@st
 import { useRoutingStore } from "@store/routingStore";
 import { Edit2,Trash2 } from "lucide-react";
 import { type DragEvent, memo, type UIEvent,useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Connection, Edge, Node, NodeProps, ReactFlowInstance, Reconnect, Viewport } from "reactflow";
+import type { Connection, Edge, Node, NodeProps, ReactFlowInstance, Viewport } from "reactflow";
 import ReactFlow, {
   Background,
+  ConnectionLineType,
   Controls,
   ReactFlowProvider,
   useEdgesState,
@@ -55,9 +56,13 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
   const similarityPercent = similarity !== null ? Math.round(similarity * 100) : null;
   const workSamples = step.workOrderCount ?? null;
   const workConfidencePercent =
-    step.workOrderConfidence !== null ? Math.round(step.workOrderConfidence * 100) : null;
+    step.workOrderConfidence !== null && step.workOrderConfidence !== undefined
+      ? Math.round(step.workOrderConfidence * 100)
+      : null;
   const runStd = step.timeStd ?? null;
-  const timeCvPercent = step.timeCv !== null ? Math.round(step.timeCv * 100) : null;
+  const timeCvPercent = step.timeCv !== null && step.timeCv !== undefined
+    ? Math.round(step.timeCv * 100)
+    : null;
   const setupStd = step.setupStd ?? null;
   const trimMean = step.trimMean ?? null;
   const sampleCount = step.sampleCount ?? null;
@@ -291,6 +296,12 @@ interface CanvasViewProps extends RoutingCanvasProps {
   productTabs: Array<{ id: string; productCode: string; productName?: string | null; candidateId?: string | null; timeline: TimelineStep[] }>;
   activeProductId: string | null;
   onCandidateSelect: (tabId: string) => void;
+  // Connection management props
+  connections: Array<{ id: string; sourceNodeId: string; targetNodeId: string; metadata?: { createdBy?: string } }>;
+  addConnection: (sourceId: string, targetId: string) => void;
+  removeConnection: (connectionId: string) => void;
+  updateConnection: (connectionId: string, updates: { sourceNodeId: string; targetNodeId: string }) => void;
+  setSelectedConnection: (connectionId: string | null) => void;
 }
 
 function RoutingCanvasView({
@@ -306,6 +317,12 @@ function RoutingCanvasView({
   activeProductId,
   onCandidateSelect,
   onProfileReady,
+  // Connection props
+  connections,
+  addConnection,
+  removeConnection,
+  updateConnection,
+  setSelectedConnection,
 }: CanvasViewProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const instanceRef = useRef<ReactFlowInstance | null>(null);
@@ -545,12 +562,12 @@ function RoutingCanvasView({
       setSelectedEdgeId(edge.id);
       const createdBy = edge.data?.createdBy ?? "auto";
       if (createdBy === "manual") {
-        setSelectedConnectionStore(edge.id);
+        setSelectedConnection(edge.id);
       } else {
-        setSelectedConnectionStore(null);
+        setSelectedConnection(null);
       }
     },
-    [setSelectedConnectionStore],
+    [setSelectedConnection],
   );
 
   // Delete key handler for removing selected edge
@@ -562,17 +579,17 @@ function RoutingCanvasView({
           removeConnection(selectedEdgeId);
         }
         setSelectedEdgeId(null);
-        setSelectedConnectionStore(null);
+        setSelectedConnection(null);
       }
       if (event.key === "Escape" && selectedEdgeId) {
         setSelectedEdgeId(null);
-        setSelectedConnectionStore(null);
+        setSelectedConnection(null);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [connections, removeConnection, selectedEdgeId, setSelectedConnectionStore]);
+  }, [connections, removeConnection, selectedEdgeId, setSelectedConnection]);
 
   // Connection handler - creates new edge when dragging from one node to another
   const handleConnect = useCallback(
@@ -597,7 +614,7 @@ function RoutingCanvasView({
           targetNodeId: newConnection.target,
         });
         setSelectedEdgeId(oldEdge.id);
-        setSelectedConnectionStore(oldEdge.id);
+        setSelectedConnection(oldEdge.id);
         return;
       }
 
@@ -628,7 +645,7 @@ function RoutingCanvasView({
         moveStep(reconnectedNodeId, newIndex);
       }
     },
-    [connections, moveStep, setSelectedConnectionStore, timeline, updateConnection],
+    [connections, moveStep, setSelectedConnection, timeline, updateConnection],
   );
 
   useEffect(() => {
@@ -790,7 +807,7 @@ function RoutingCanvasView({
               stroke: 'rgb(56, 189, 248)',
               strokeWidth: 2,
             }}
-            connectionLineType="bezier"
+            connectionLineType={ConnectionLineType.SmoothStep}
           >
             <Controls showZoom={false} showInteractive={false} />
             <Background gap={32} size={1} />
@@ -824,7 +841,7 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
   const addConnection = useRoutingStore((state) => state.addConnection);
   const removeConnection = useRoutingStore((state) => state.removeConnection);
   const updateConnection = useRoutingStore((state) => state.updateConnection);
-  const setSelectedConnectionStore = useRoutingStore((state) => state.setSelectedConnection);
+  const setSelectedConnection = useRoutingStore((state) => state.setSelectedConnection);
   const productTabs = useRoutingStore((state) => state.productTabs);
   const activeProductId = useRoutingStore((state) => state.activeProductId);
   const setActiveProduct = useRoutingStore((state) => state.setActiveProduct);
@@ -840,6 +857,11 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
         productTabs={productTabs}
         activeProductId={activeProductId}
         onCandidateSelect={setActiveProduct}
+        connections={connections}
+        addConnection={addConnection}
+        removeConnection={removeConnection}
+        updateConnection={updateConnection}
+        setSelectedConnection={setSelectedConnection}
         {...props}
       />
     </ReactFlowProvider>
