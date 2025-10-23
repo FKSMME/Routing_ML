@@ -257,7 +257,7 @@ export function OptionsWorkspace() {
             erpInterface: erpEnabled,
             columnMappings: mappingRows,
           },
-          { dirty: false, lastSyncedAt: data.updated_at },
+          { dirty: false, lastSyncedAt: data.updated_at, version: data.version ?? null },
         );
         setColumnMappingSource(mappingSource);
       } catch {
@@ -272,7 +272,7 @@ export function OptionsWorkspace() {
               erpInterface: false,
               columnMappings: [makeRow({ scope: "Routing Generation" })],
             },
-            { dirty: false },
+            { dirty: false, version: null },
           );
         }
       } finally {
@@ -432,7 +432,7 @@ export function OptionsWorkspace() {
         }))
         .filter((row) => row.scope || row.source || row.target);
       const mappingScopes = Array.from(new Set(payloadMappings.map((row) => row.scope).filter(Boolean)));
-      await saveWorkspaceOptions({ version: Date.now(), columnMappings: normalizedRows });
+      await saveWorkspaceOptions({ columnMappings: normalizedRows });
       setColumnMappingSource("workspace");
       await postUiAudit({
         action: "ui.options.save",

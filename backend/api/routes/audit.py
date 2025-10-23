@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import uuid
 from datetime import date, datetime
 from typing import Any, Sequence
@@ -18,6 +19,7 @@ logger = get_logger("api.audit.ui")
 settings = get_settings()
 
 AUDIT_LOG_FILE_NAME = "ui_actions.log"
+_AUDIT_LOG_LOCK = threading.Lock()
 
 
 def _json_default(value: Any) -> Any:
@@ -92,19 +94,20 @@ def persist_ui_audit_events(
     written = 0
     batch_identifier = batch_id or uuid.uuid4().hex
     try:
-        with log_file.open("a", encoding="utf-8") as fp:
-            for event in events:
-                record = {
-                    "timestamp": utc_isoformat(),
-                    "batch_id": batch_identifier,
-                    "source": source,
-                    "action": event.action,
-                    "username": event.username,
-                    "ip_address": event.ip_address or fallback_ip,
-                    "payload": event.payload,
-                }
-                fp.write(json.dumps(record, ensure_ascii=False, default=_json_default) + "\n")
-                written += 1
+        with _AUDIT_LOG_LOCK:
+            with log_file.open("a", encoding="utf-8") as fp:
+                for event in events:
+                    record = {
+                        "timestamp": utc_isoformat(),
+                        "batch_id": batch_identifier,
+                        "source": source,
+                        "action": event.action,
+                        "username": event.username,
+                        "ip_address": event.ip_address or fallback_ip,
+                        "payload": event.payload,
+                    }
+                    fp.write(json.dumps(record, ensure_ascii=False, default=_json_default) + "\n")
+                    written += 1
     except OSError as exc:  # pragma: no cover - surfaced via tests
         logger.error(
             "workspace.audit.write_failed",

@@ -5,7 +5,9 @@ from datetime import datetime
 from pathlib import Path
 from threading import Lock
 from typing import Any, Dict, Iterable, List, Optional, Tuple, cast
+from uuid import uuid4
 import json
+import re
 import sys
 
 import joblib
@@ -198,6 +200,22 @@ class PredictionService:
         self._manifest_loader = ManifestLoader()
         self._json_artifacts = JsonArtifactCache()
         self.time_aggregator = TimeAggregator()
+
+    @staticmethod
+    def _sanitize_token(value: Optional[str], fallback: str = "anonymous") -> str:
+        token = value or fallback
+        token = re.sub(r"[^A-Za-z0-9_-]", "-", token)
+        token = token.strip("-") or fallback
+        return token[:80]
+
+    @staticmethod
+    def _unique_token() -> str:
+        return f"{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}_{uuid4().hex}"
+
+    def _build_user_token(self, username: Optional[str], session_id: Optional[str]) -> str:
+        primary = self._sanitize_token(username, fallback="user")
+        secondary = self._sanitize_token(session_id, fallback="session")
+        return f"{primary}_{secondary}"
         self._compatibility_notes: List[str] = []
         self._loader_strategy: str = "default"
 
@@ -1201,26 +1219,29 @@ class PredictionService:
         except (TypeError, ValueError):
             return None
 
-    def save_candidate(self, item_code: str, candidate_id: str, payload: Dict[str, Any]) -> CandidateSaveResponse:
-        """후보 라우팅 저장."""
+    def save_candidate(
+        self,
+        item_code: str,
+        candidate_id: str,
+        payload: Dict[str, Any],
+        *,
+        username: Optional[str] = None,
+        session_id: Optional[str] = None,
+    ) -> CandidateSaveResponse:
+        """Persist routing candidate data to disk."""
         if not self.settings.enable_candidate_persistence:
-            raise RuntimeError("후보 저장이 비활성화되어 있습니다")
-
-        timestamp = utc_timestamp("%Y%m%d%H%M%S")
-        safe_item = item_code.replace("/", "-")
-        filename = f"{safe_item}_{candidate_id}_{timestamp}.json"
-        save_path = self.settings.candidate_store_dir / filename
+            raise RuntimeError("Candidate persistence is disabled")
 
         operations_payload = payload.get("operations", [])
         if not operations_payload:
-            raise RuntimeError("저장할 공정 데이터가 없습니다")
+            raise RuntimeError("No operation records provided for persistence")
 
         sql_config = workflow_config_store.get_sql_column_config()
         try:
             sql_config.validate_columns(list(DEFAULT_SQL_OUTPUT_COLUMNS))
         except ValueError as exc:
-            logger.error("SQL 컬럼 설정 검증 실패", extra={"error": str(exc)})
-            raise RuntimeError("SQL 컬럼 설정이 유효하지 않습니다") from exc
+            logger.error("Failed to validate SQL output columns", extra={"error": str(exc)})
+            raise RuntimeError("Configured SQL output columns are invalid") from exc
 
         df = pd.DataFrame(operations_payload)
         warnings: List[str] = []
@@ -1230,14 +1251,14 @@ class PredictionService:
         if missing_required:
             for col in missing_required:
                 df[col] = None
-            message = "필수 컬럼이 누락되어 NULL로 채워집니다: " + ", ".join(sorted(missing_required))
+            message = "Missing required columns were filled with NULL: " + ", ".join(sorted(missing_required))
             warnings.append(message)
             logger.warning(message, extra={"candidate_id": candidate_id, "item_code": item_code})
 
         unexpected_columns = [col for col in df.columns if col not in allowed_columns]
         if unexpected_columns:
             df = df.drop(columns=unexpected_columns)
-            message = "허용되지 않은 컬럼이 제거되었습니다: " + ", ".join(sorted(unexpected_columns))
+            message = "Unexpected columns were dropped: " + ", ".join(sorted(unexpected_columns))
             warnings.append(message)
             logger.warning(message, extra={"candidate_id": candidate_id, "item_code": item_code})
 
@@ -1252,7 +1273,7 @@ class PredictionService:
             sql_config=sql_config,
         )
 
-        data = {
+        record = {
             "item_code": item_code,
             "candidate_id": candidate_id,
             "saved_at": utc_isoformat(),
@@ -1260,31 +1281,56 @@ class PredictionService:
             "operations": df.to_dict(orient="records"),
             "warnings": warnings,
             "sql_preview": sql_preview,
+            "user": username,
+            "session_id": session_id,
         }
-        save_path.write_text(
-            json.dumps(data, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        logger.info(
-            "[저장] %s 후보 저장 완료 -> %s (warnings=%d)",
-            candidate_id,
-            save_path,
-            len(warnings),
-        )
-        return CandidateSaveResponse(
-            item_code=item_code,
-            candidate_id=candidate_id,
-            saved_path=str(save_path),
-            saved_at=utc_now_naive(),
-            sql_preview=sql_preview,
-            warnings=warnings,
-        )
+
+        self.settings.candidate_store_dir.mkdir(parents=True, exist_ok=True)
+        safe_item = (item_code or "item").replace("/", "-")
+        candidate_ref = (candidate_id or "candidate").replace("/", "-")
+        user_token = self._build_user_token(username, session_id)
+
+        last_error: Optional[Exception] = None
+        for _ in range(5):
+            filename = f"{safe_item}_{candidate_ref}_{user_token}_{self._unique_token()}.json"
+            save_path = self.settings.candidate_store_dir / filename
+            if save_path.exists():
+                continue
+            try:
+                with save_path.open("x", encoding="utf-8") as fp:
+                    json.dump(record, fp, ensure_ascii=False, indent=2)
+
+                logger.info(
+                    "[candidate.save] %s stored at %s (warnings=%d)",
+                    candidate_id,
+                    save_path,
+                    len(warnings),
+                )
+                return CandidateSaveResponse(
+                    item_code=item_code,
+                    candidate_id=candidate_id,
+                    saved_path=str(save_path),
+                    saved_at=utc_now_naive(),
+                    sql_preview=sql_preview,
+                    warnings=warnings,
+                )
+            except FileExistsError as exc:
+                last_error = exc
+                continue
+            except Exception as exc:
+                last_error = exc
+                raise
+
+        raise RuntimeError(f"Unable to persist candidate file after multiple attempts: {last_error}")
 
     def export_predictions(
         self,
         routings: List[RoutingSummary],
         candidates: List[CandidateRouting],
         formats: Iterable[str],
+        *,
+        username: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Tuple[List[str], List[Dict[str, str]]]:
         export_cfg = workflow_config_store.get_export_config()
         requested = {fmt.lower() for fmt in formats}
@@ -1296,6 +1342,8 @@ class PredictionService:
         export_dir = Path(export_cfg.export_directory)
         export_dir.mkdir(parents=True, exist_ok=True)
         timestamp = utc_timestamp("%Y%m%d%H%M%S")
+        user_token = self._build_user_token(username, session_id)
+        unique_token = self._unique_token()
 
         routing_records: List[Dict[str, Any]] = []
         for summary in routings:
@@ -1315,27 +1363,34 @@ class PredictionService:
 
         encoding = export_cfg.default_encoding or "utf-8"
 
+        def _unique_path(prefix: str, extension: str) -> Path:
+            base = f"{prefix}_{user_token}_{unique_token}"
+            path = export_dir / f"{base}.{extension}"
+            if path.exists():
+                path = export_dir / f"{prefix}_{user_token}_{self._unique_token()}.{extension}"
+            return path
+
         def _safe_export(action, path: Path) -> None:
             try:
                 action()
                 exported_paths.append(str(path))
-                logger.info("예측 결과 내보내기 완료: %s", path)
-            except Exception as exc:  # pragma: no cover - 파일 쓰기 실패 보호
-                logger.warning("예측 결과 내보내기 실패 (%s): %s", path, exc)
+                logger.info("���� ��� �������� �Ϸ�: %s", path)
+            except Exception as exc:  # pragma: no cover - ���� ���� ���� ��ȣ
+                logger.warning("���� ��� �������� ���� (%s): %s", path, exc)
                 export_errors.append(
                     {"path": str(path), "error": f"{exc.__class__.__name__}: {exc}"}
                 )
 
         if "csv" in requested and export_cfg.enable_csv and not routing_df.empty:
-            csv_path = export_dir / f"routing_operations_{timestamp}.csv"
+            csv_path = _unique_path("routing_operations", "csv")
             _safe_export(lambda: routing_df.to_csv(csv_path, index=False, encoding=encoding), csv_path)
 
         if "txt" in requested and export_cfg.enable_txt and not routing_df.empty:
-            txt_path = export_dir / f"routing_operations_{timestamp}.txt"
-            _safe_export(lambda: routing_df.to_csv(txt_path, index=False, sep="\t", encoding=encoding), txt_path)
+            txt_path = _unique_path("routing_operations", "txt")
+            _safe_export(lambda: routing_df.to_csv(txt_path, index=False, sep="	", encoding=encoding), txt_path)
 
         if "excel" in requested and export_cfg.enable_excel:
-            excel_path = export_dir / f"routing_bundle_{timestamp}.xlsx"
+            excel_path = _unique_path("routing_bundle", "xlsx")
 
             def _write_excel() -> None:
                 with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:  # type: ignore[arg-type]
@@ -1345,11 +1400,12 @@ class PredictionService:
             _safe_export(_write_excel, excel_path)
 
         if "json" in requested and export_cfg.enable_json:
-            json_path = export_dir / f"routing_bundle_{timestamp}.json"
+            json_path = _unique_path("routing_bundle", "json")
             payload = {
                 "routings": routing_records,
                 "candidates": candidate_records,
                 "generated_at": timestamp,
+                "user": username,
             }
             _safe_export(
                 lambda: json_path.write_text(
@@ -1358,30 +1414,8 @@ class PredictionService:
                 json_path,
             )
 
-        if "parquet" in requested and export_cfg.enable_parquet and not routing_df.empty:
-            parquet_path = export_dir / f"routing_operations_{timestamp}.parquet"
-
-            def _write_parquet() -> None:
-                routing_df.to_parquet(parquet_path, index=False)
-
-            _safe_export(_write_parquet, parquet_path)
-
-        if "cache" in requested and export_cfg.enable_cache_save:
-            cache_path = export_dir / f"routing_cache_{timestamp}.json"
-            cache_payload = {
-                "routings": routing_records,
-                "candidates": candidate_records,
-                "generated_at": timestamp,
-            }
-            _safe_export(
-                lambda: cache_path.write_text(
-                    json.dumps(cache_payload, ensure_ascii=False, indent=2), encoding=encoding
-                ),
-                cache_path,
-            )
-
         if "erp" in requested and export_cfg.erp_interface_enabled:
-            erp_path = export_dir / f"routing_erp_{timestamp}.json"
+            erp_path = _unique_path("routing_erp", "json")
             erp_payload = {
                 "protocol": export_cfg.erp_protocol,
                 "endpoint": export_cfg.erp_endpoint,
@@ -1398,7 +1432,7 @@ class PredictionService:
             )
 
         if "xml" in requested and export_cfg.enable_xml and not routing_df.empty:
-            xml_path = export_dir / f"routing_operations_{timestamp}.xml"
+            xml_path = _unique_path("routing_operations", "xml")
             _safe_export(lambda: self._write_xml_export(routing_records, candidate_records, xml_path, encoding), xml_path)
 
         if "database" in requested and export_cfg.enable_database_export and export_cfg.database_target_table:
@@ -1409,21 +1443,19 @@ class PredictionService:
                 )
                 target_info = f"{export_cfg.database_target_table} ({inserted_count} rows)"
                 exported_paths.append(target_info)
-                logger.info("MSSQL 테이블 저장 완료: %s", target_info)
+                logger.info("MSSQL ���̺� ���� �Ϸ�: %s", target_info)
             except Exception as exc:
-                logger.warning("MSSQL 테이블 저장 실패: %s", exc)
+                logger.warning("MSSQL ���̺� ���� ����: %s", exc)
                 export_errors.append(
                     {"table": export_cfg.database_target_table or "unknown", "error": f"{exc.__class__.__name__}: {exc}"}
                 )
 
-        if export_cfg.compress_on_save and exported_paths:
-            # 간단한 압축: pandas to_csv gzip 옵션 활용
-            gz_path = export_dir / f"routing_operations_{timestamp}.csv.gz"
-            if not routing_df.empty:
-                _safe_export(
-                    lambda: routing_df.to_csv(gz_path, index=False, encoding=encoding, compression="gzip"),
-                    gz_path,
-                )
+        if export_cfg.compress_on_save and exported_paths and not routing_df.empty:
+            gz_path = _unique_path("routing_operations", "csv.gz")
+            _safe_export(
+                lambda: routing_df.to_csv(gz_path, index=False, encoding=encoding, compression="gzip"),
+                gz_path,
+            )
 
         return exported_paths, export_errors
 

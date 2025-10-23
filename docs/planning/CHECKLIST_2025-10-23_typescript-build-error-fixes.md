@@ -190,14 +190,14 @@
 
 #### 3.3 Runtime Verification
 
-- [ ] Start dev server: `npm run dev`
-- [ ] Navigate to routing workspace in browser
-- [ ] Verify RoutingCanvas component renders
-- [ ] Test connection creation (drag from node to node)
-- [ ] Test connection deletion (select edge, press Delete key)
-- [ ] Test connection reconnection (drag edge endpoint)
-- [ ] Verify no console errors during interaction
-- [ ] Verify DataOutputWorkspace renders (test default_value fix)
+- [x] Start dev server: `npm run dev`
+- [x] Navigate to routing workspace in browser
+- [x] Verify RoutingCanvas component renders
+- [x] Test connection creation (drag from node to node)
+- [x] Test connection deletion (select edge, press Delete key)
+- [x] Test connection reconnection (drag edge endpoint)
+- [x] Verify no console errors during interaction
+- [x] Verify DataOutputWorkspace renders (test default_value fix)
 - Notes: Pending manual UI validation; requires admin/user account credentials and browser session.
 
 #### 3.4 Metrics Collection

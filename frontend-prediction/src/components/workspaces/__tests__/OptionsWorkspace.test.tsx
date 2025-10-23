@@ -66,6 +66,7 @@ const resetStores = () => {
       saving: false,
       dirty: false,
       lastSyncedAt: undefined,
+      version: 1,
     },
   }));
   useRoutingStore.setState({ erpRequired: false });

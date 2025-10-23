@@ -68,7 +68,8 @@
       "Bash(npx tsc:*)",
       "Bash(git log:*)",
       "Bash(tee:*)",
-      "Read(//c/tmp/**)"
+      "Read(//c/tmp/**)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,1178 @@
+[
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "create_routing_group",
+    "method": "post",
+    "route": "/groups",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "list_routing_groups",
+    "method": "get",
+    "route": "/groups",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "get_routing_group",
+    "method": "get",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "update_routing_group",
+    "method": "put",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "delete_routing_group",
+    "method": "delete",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routing_groups.py",
+    "function": "sync_routing_snapshots",
+    "method": "post",
+    "route": "/groups/snapshots",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\algorithm_viz.py",
+    "function": "get_python_files",
+    "method": "get",
+    "route": "/files",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\algorithm_viz.py",
+    "function": "get_project_summary",
+    "method": "get",
+    "route": "/summary",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\algorithm_viz.py",
+    "function": "analyze_file",
+    "method": "get",
+    "route": "/analyze",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\algorithm_viz.py",
+    "function": "health_check",
+    "method": "get",
+    "route": "/health",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "train_anomaly_model",
+    "method": "post",
+    "route": "/train",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "detect_anomalies",
+    "method": "post",
+    "route": "/detect",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "get_item_anomaly_score",
+    "method": "get",
+    "route": "/score/{item_code}",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "get_anomaly_config",
+    "method": "get",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "update_anomaly_config",
+    "method": "put",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\anomaly.py",
+    "function": "get_anomaly_stats",
+    "method": "get",
+    "route": "/stats",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\audit.py",
+    "function": "get_ui_audit_events",
+    "method": "get",
+    "route": "/ui/events",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\audit.py",
+    "function": "record_ui_audit_batch",
+    "method": "post",
+    "route": "/ui/batch",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "register",
+    "method": "post",
+    "route": "/register",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "login",
+    "method": "post",
+    "route": "/login",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "read_current_user",
+    "method": "get",
+    "route": "/me",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "logout",
+    "method": "post",
+    "route": "/logout",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "approve_user",
+    "method": "post",
+    "route": "/admin/approve",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "reject_user",
+    "method": "post",
+    "route": "/admin/reject",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "get_pending_users",
+    "method": "get",
+    "route": "/admin/pending-users",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "change_password",
+    "method": "post",
+    "route": "/change-password",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "admin_reset_password",
+    "method": "post",
+    "route": "/admin/reset-password",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "admin_bulk_register",
+    "method": "post",
+    "route": "/admin/bulk-register",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\auth.py",
+    "function": "list_users",
+    "method": "get",
+    "route": "/admin/users",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\blueprint.py",
+    "function": "get_code_structure",
+    "method": "get",
+    "route": "/structure",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\blueprint.py",
+    "function": "generate_code_from_blueprint",
+    "method": "post",
+    "route": "/generate-code",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\blueprint.py",
+    "function": "realtime_execution_tracking",
+    "method": "websocket",
+    "route": "/realtime",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\bulk_upload.py",
+    "function": "preview_bulk_upload",
+    "method": "post",
+    "route": "/preview",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\bulk_upload.py",
+    "function": "execute_bulk_upload",
+    "method": "post",
+    "route": "/execute",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_dashboard_status",
+    "method": "get",
+    "route": "/status",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_database_status",
+    "method": "get",
+    "route": "/database",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_model_metrics",
+    "method": "get",
+    "route": "/model",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_item_statistics",
+    "method": "get",
+    "route": "/items",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_routing_statistics",
+    "method": "get",
+    "route": "/routing-stats",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\dashboard.py",
+    "function": "get_all_dashboard_metrics",
+    "method": "get",
+    "route": "/metrics",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\database_config.py",
+    "function": "get_database_config",
+    "method": "get",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\database_config.py",
+    "function": "update_database_config",
+    "method": "post",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\database_config.py",
+    "function": "test_database_connection",
+    "method": "post",
+    "route": "/test-connection",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\database_config.py",
+    "function": "database_info",
+    "method": "get",
+    "route": "/info",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "list_profiles",
+    "method": "get",
+    "route": "/profiles",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "get_profile",
+    "method": "get",
+    "route": "/profiles/{profile_id}",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "create_profile",
+    "method": "post",
+    "route": "/profiles",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "update_profile",
+    "method": "patch",
+    "route": "/profiles/{profile_id}",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "delete_profile",
+    "method": "delete",
+    "route": "/profiles/{profile_id}",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_mapping.py",
+    "function": "apply_mapping",
+    "method": "post",
+    "route": "/apply",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_quality.py",
+    "function": "get_quality_metrics",
+    "method": "get",
+    "route": "/metrics",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_quality.py",
+    "function": "get_quality_report",
+    "method": "get",
+    "route": "/report",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_quality.py",
+    "function": "get_prometheus_format",
+    "method": "get",
+    "route": "/prometheus",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\data_quality.py",
+    "function": "health_check",
+    "method": "get",
+    "route": "/health",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\drift.py",
+    "function": "get_drift_status",
+    "method": "get",
+    "route": "/status",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\drift.py",
+    "function": "get_drift_summary",
+    "method": "get",
+    "route": "/summary",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\drift.py",
+    "function": "reset_drift_detector",
+    "method": "post",
+    "route": "/reset",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\health.py",
+    "function": "health_check",
+    "method": "get",
+    "route": "/health",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\health.py",
+    "function": "metrics",
+    "method": "get",
+    "route": "/metrics",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\health.py",
+    "function": "metrics_json",
+    "method": "get",
+    "route": "/metrics/json",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\items.py",
+    "function": "get_purchase_order_items",
+    "method": "get",
+    "route": "/purchase-orders",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\items.py",
+    "function": "get_item_info",
+    "method": "get",
+    "route": "/{item_cd}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\items.py",
+    "function": "get_item_properties",
+    "method": "get",
+    "route": "/{item_cd}/properties",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\items.py",
+    "function": "get_drawing_info",
+    "method": "get",
+    "route": "/{item_cd}/drawing-info",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\logs.py",
+    "function": "get_audit_logs",
+    "method": "get",
+    "route": "/audit",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\logs.py",
+    "function": "list_log_files",
+    "method": "get",
+    "route": "/files",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\metrics.py",
+    "function": "get_prometheus_metrics",
+    "method": "get",
+    "route": "",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\metrics.py",
+    "function": "get_prometheus_metrics",
+    "method": "get",
+    "route": "/",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\mssql.py",
+    "function": "fetch_mssql_metadata",
+    "method": "get",
+    "route": "/metadata",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\mssql.py",
+    "function": "list_mssql_tables",
+    "method": "get",
+    "route": "/tables",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\onprem_nlp.py",
+    "function": "parse_nlp_query",
+    "method": "post",
+    "route": "/query",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\onprem_nlp.py",
+    "function": "get_example_queries",
+    "method": "get",
+    "route": "/examples",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\onprem_nlp.py",
+    "function": "get_service_status",
+    "method": "get",
+    "route": "/status",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\onprem_nlp.py",
+    "function": "health_check",
+    "method": "get",
+    "route": "/health",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "predict",
+    "method": "post",
+    "route": "/predict",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "similarity_search",
+    "method": "post",
+    "route": "/similarity/search",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "group_recommendations",
+    "method": "post",
+    "route": "/groups/recommendations",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "trigger_routing_interface",
+    "method": "post",
+    "route": "/routing/interface",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "time_summary",
+    "method": "post",
+    "route": "/time/summary",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "validate_rules",
+    "method": "post",
+    "route": "/rules/validate",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "save_candidate",
+    "method": "post",
+    "route": "/candidates/save",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\prediction.py",
+    "function": "get_metrics",
+    "method": "get",
+    "route": "/metrics",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\process_groups.py",
+    "function": "list_process_groups",
+    "method": "get",
+    "route": "",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\process_groups.py",
+    "function": "get_process_group",
+    "method": "get",
+    "route": "/{group_id}",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\process_groups.py",
+    "function": "create_process_group",
+    "method": "post",
+    "route": "",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\process_groups.py",
+    "function": "update_process_group",
+    "method": "patch",
+    "route": "/{group_id}",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\process_groups.py",
+    "function": "delete_process_group",
+    "method": "delete",
+    "route": "/{group_id}",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\routing.py",
+    "function": "get_output_profiles",
+    "method": "get",
+    "route": "/output-profiles",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\routing.py",
+    "function": "get_output_profile_detail",
+    "method": "get",
+    "route": "/output-profiles/{profile_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\routing.py",
+    "function": "create_output_profile",
+    "method": "post",
+    "route": "/output-profiles",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\routing.py",
+    "function": "generate_output_preview",
+    "method": "post",
+    "route": "/output-profiles/preview",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "list_groups",
+    "method": "get",
+    "route": "/groups",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "create_group",
+    "method": "post",
+    "route": "/groups",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "export_groups",
+    "method": "get",
+    "route": "/groups/export",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "fetch_group",
+    "method": "get",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "update_group",
+    "method": "patch",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "delete_group",
+    "method": "delete",
+    "route": "/groups/{group_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "add_step",
+    "method": "post",
+    "route": "/groups/{group_id}/steps",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "update_step",
+    "method": "patch",
+    "route": "/groups/{group_id}/steps/{step_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "delete_step",
+    "method": "delete",
+    "route": "/groups/{group_id}/steps/{step_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "add_rule",
+    "method": "post",
+    "route": "/groups/{group_id}/steps/{step_id}/rules",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "delete_rule",
+    "method": "delete",
+    "route": "/groups/{group_id}/steps/{step_id}/rules/{rule_id}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "validate_group",
+    "method": "post",
+    "route": "/groups/{group_id}/validate",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "release_group",
+    "method": "post",
+    "route": "/groups/{group_id}/release",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "retract_group",
+    "method": "post",
+    "route": "/groups/{group_id}/retract",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\rsl.py",
+    "function": "import_groups",
+    "method": "post",
+    "route": "/groups/import",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\system_overview.py",
+    "function": "get_system_graph",
+    "method": "get",
+    "route": "/graph",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "get_tensorboard_config",
+    "method": "get",
+    "route": "/config",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "list_projectors",
+    "method": "get",
+    "route": "/projectors",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "export_projector",
+    "method": "post",
+    "route": "/projectors/export",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "get_projector_points",
+    "method": "get",
+    "route": "/projectors/{projector_id}/points",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "get_projector_tsne",
+    "method": "get",
+    "route": "/projectors/{projector_id}/tsne",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "get_projector_filters",
+    "method": "get",
+    "route": "/projectors/{projector_id}/filters",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\tensorboard_projector.py",
+    "function": "get_training_metrics",
+    "method": "get",
+    "route": "/metrics/{run_id}",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "get_training_status",
+    "method": "get",
+    "route": "/status",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "run_training",
+    "method": "post",
+    "route": "/run",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "get_model_versions",
+    "method": "get",
+    "route": "/versions",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "activate_model_version",
+    "method": "post",
+    "route": "/versions/{version_name}/activate",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "get_trainer_metrics",
+    "method": "get",
+    "route": "/metrics",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\trainer.py",
+    "function": "get_trainer_runs",
+    "method": "get",
+    "route": "/runs",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "list_training_features",
+    "method": "get",
+    "route": "/features",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "update_training_features",
+    "method": "patch",
+    "route": "/features",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "start_training",
+    "method": "post",
+    "route": "/start",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "get_job_status",
+    "method": "get",
+    "route": "/jobs/{job_id}/status",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "list_jobs",
+    "method": "get",
+    "route": "/jobs",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\training.py",
+    "function": "cancel_job",
+    "method": "delete",
+    "route": "/jobs/{job_id}",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "list_views",
+    "method": "get",
+    "route": "/views",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "get_view_sample_data",
+    "method": "get",
+    "route": "/views/{view_name}/sample",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "create_view_config",
+    "method": "post",
+    "route": "/configs",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "get_view_config",
+    "method": "get",
+    "route": "/configs/{view_name}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "list_view_configs",
+    "method": "get",
+    "route": "/configs",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "update_checklist",
+    "method": "post",
+    "route": "/checklist/{view_name}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\view_explorer.py",
+    "function": "get_view_data_with_checklist",
+    "method": "get",
+    "route": "/data/{view_name}",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "generate_weekly_report",
+    "method": "post",
+    "route": "/generate",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "list_weekly_reports",
+    "method": "get",
+    "route": "/list",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "get_weekly_report",
+    "method": "get",
+    "route": "/{report_id}",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "download_html_report",
+    "method": "get",
+    "route": "/{report_id}/html",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "schedule_weekly_report",
+    "method": "post",
+    "route": "/schedule",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\weekly_report.py",
+    "function": "get_schedule_status",
+    "method": "get",
+    "route": "/schedule/status",
+    "requires_admin": false,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workflow.py",
+    "function": "get_workflow_graph",
+    "method": "get",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workflow.py",
+    "function": "get_workflow_graph",
+    "method": "get",
+    "route": "/graph",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workflow.py",
+    "function": "patch_workflow_graph",
+    "method": "patch",
+    "route": "/config",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workflow.py",
+    "function": "patch_workflow_graph",
+    "method": "patch",
+    "route": "/graph",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workflow.py",
+    "function": "regenerate_workflow_code",
+    "method": "post",
+    "route": "/code",
+    "requires_admin": true,
+    "requires_auth": false
+  },
+  {
+    "file": "backend\\api\\routes\\workspace.py",
+    "function": "get_workspace_settings",
+    "method": "get",
+    "route": "/settings/workspace",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\workspace.py",
+    "function": "save_workspace_settings",
+    "method": "put",
+    "route": "/settings/workspace",
+    "requires_admin": false,
+    "requires_auth": true
+  },
+  {
+    "file": "backend\\api\\routes\\workspace.py",
+    "function": "record_ui_audit",
+    "method": "post",
+    "route": "/audit/ui",
+    "requires_admin": false,
+    "requires_auth": false
+  }
+]

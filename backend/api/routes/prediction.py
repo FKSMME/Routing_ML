@@ -122,6 +122,8 @@ async def predict(
                 items,
                 candidates,
                 request.export_formats,
+                username=current_user.username,
+                session_id=current_user.session_id,
             )
             if exported_files:
                 metrics["exported_files"] = exported_files
@@ -377,6 +379,8 @@ async def save_candidate(
             item_code=request.item_code,
             candidate_id=request.candidate_id,
             payload=request.payload,
+            username=current_user.username,
+            session_id=current_user.session_id,
         )
         audit_logger.info(
             "candidate.save",
