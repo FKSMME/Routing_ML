@@ -35,6 +35,9 @@
   - Estimate: 0.2 day  
 - [ ] Task 3.6: Remove prediction quality monitoring navigation, routes, and assets  
   - Estimate: 0.2 day  
+- [ ] Task 3.7: Validate 3D heatmap correlation grid performance and hover guidance  
+  - Estimate: 0.2 day  
+  - Depends on: Task 3.2  
 
 ## Phase 4 – Integration & Reporting
 - [ ] Task 4.1: Run lint/test/build pipelines and targeted manual 3D/admin regression  

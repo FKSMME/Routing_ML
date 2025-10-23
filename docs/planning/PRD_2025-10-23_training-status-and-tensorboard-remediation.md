@@ -25,11 +25,12 @@ Operators of the Training Frontend currently face usability and reliability issu
 ## Requirements
 - **UI:**  
   - Feature weights card shows top 5 weights by default with internal scroll and an interactive 3D view (e.g., Three.js).  
-  - Feature statistics are rendered with a 3D surface/point cloud instead of the current 2D heatmap.  
+  - Feature statistics tab replaces the legacy 2D heatmap with a 3D correlation bar grid (Three.js) that highlights pairwise axis strength, offers hover guidance, and exposes a clear empty-state message.  
   - All other cards (metrics summary, TensorBoard iframe, run history, etc.) are removed from the training-status page.  
 - **Data:**  
   - Feature statistics endpoint returns structured data (or a clearly indicated empty state) suitable for 3D rendering.  
   - TensorBoard endpoints return existing projector data and stabilise the T-SNE progress view; 404s only occur for genuinely missing assets.  
+  - Projector outputs omit NaN/undefined coordinates and document sampling defaults so that the client-side correlation grid renders reliably without runaway memory usage.  
 - **Security:**  
   - Non-admin users do not see or cannot interact with training start/monitor/settings actions.  
 - **Cleanup:**  
