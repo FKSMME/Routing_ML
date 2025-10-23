@@ -47,24 +47,37 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
   const operations = activeBucket?.operations ?? [];
   const hasRecommendations = operations.length > 0;
 
+  // Task 3.3: 뷰 상태 변경 추적
+  useEffect(() => {
+    console.log("[RecommendationsTab] 뷰 상태 변경:", view);
+  }, [view]);
+
   useEffect(() => {
     if (!hasRecommendations) {
       if (view !== "timeline") {
+        console.log("[RecommendationsTab] 추천 데이터 없음 - Timeline 뷰로 강제 전환");
         setView("timeline");
       }
       return;
     }
     if (initialView === "recommendations" && view === "timeline") {
+      console.log("[RecommendationsTab] initialView=recommendations이므로 Recommendations 뷰로 전환");
       setView("recommendations");
     }
   }, [hasRecommendations, initialView, view]);
 
   const handleSelectView = useCallback((mode: ViewMode) => () => {
+    // Task 3.3: Canvas 탭 전환 로그 추가
+    console.log("[RecommendationsTab] 뷰 전환 요청:", mode, "| 현재 뷰:", view, "| 추천 데이터 존재:", hasRecommendations);
+
     if (mode === "recommendations" && !hasRecommendations) {
+      console.warn("[RecommendationsTab] Recommendations 뷰 전환 차단 - 추천 데이터 없음");
       return;
     }
+
+    console.log("[RecommendationsTab] 뷰 전환 실행:", mode);
     setView(mode);
-  }, [hasRecommendations]);
+  }, [hasRecommendations, view]);
 
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {

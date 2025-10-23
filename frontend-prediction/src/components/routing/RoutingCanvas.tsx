@@ -464,6 +464,13 @@ function RoutingCanvasView({
 
   const handleInit = useCallback(
     (instance: ReactFlowInstance) => {
+      // Task 3.3: RoutingCanvas 초기화 로그
+      console.log("[RoutingCanvas] ReactFlow 초기화 완료", {
+        nodeCount: flowNodes.length,
+        autoFit,
+        fitPadding,
+      });
+
       instanceRef.current = instance;
       setIsReady(true);
       ensureProfileController();
@@ -473,10 +480,11 @@ function RoutingCanvasView({
           const viewport = instance.getViewport();
           viewportRef.current = viewport;
           syncScrollToViewport(viewport);
+          console.log("[RoutingCanvas] Auto-fit viewport 적용:", viewport);
         });
       }
     },
-    [autoFit, fitPadding, ensureProfileController, scheduleFrame, syncScrollToViewport],
+    [autoFit, fitPadding, ensureProfileController, scheduleFrame, syncScrollToViewport, flowNodes.length],
   );
 
   const handleDrop = useCallback(
