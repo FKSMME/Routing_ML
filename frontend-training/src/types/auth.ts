@@ -52,3 +52,15 @@ export interface AuthenticatedUserPayload extends UserStatusResponsePayload {
   session_id?: string | null;
   client_host?: string | null;
 }
+
+export interface ChangePasswordRequestPayload {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface ChangePasswordResponsePayload {
+  username: string;
+  message: string;
+  changed_at: string;
+}

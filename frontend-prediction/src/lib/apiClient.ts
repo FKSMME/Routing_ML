@@ -1,4 +1,4 @@
-import type { AuthenticatedUserPayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
+import type { AuthenticatedUserPayload, ChangePasswordRequestPayload, ChangePasswordResponsePayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
@@ -87,6 +87,11 @@ export async function loginUser(payload: LoginRequestPayload): Promise<LoginResp
 
 export async function logoutUser(): Promise<void> {
   await api.post("/auth/logout");
+}
+
+export async function changePassword(payload: ChangePasswordRequestPayload): Promise<ChangePasswordResponsePayload> {
+  const response = await api.post<ChangePasswordResponsePayload>("/auth/change-password", payload);
+  return response.data;
 }
 
 export async function fetchCurrentUser(): Promise<UserSession | null> {

@@ -66,6 +66,129 @@ const correlationToColor = (value: number): string => {
   return `#${base.getHexString()}`;
 };
 
+const FEATURE_AXIS_RANGE = 6;
+const MAX_CLUSTER_SAMPLE = 4000;
+const KMEANS_MAX_ITERATIONS = 20;
+
+type AxisMapping = {
+  x: string | null;
+  y: string | null;
+  z: string | null;
+};
+
+type NumericFieldStat = {
+  name: string;
+  min: number;
+  max: number;
+  count: number;
+};
+
+const normalizeToRange = (value: number, min: number, max: number): number => {
+  if (!Number.isFinite(value) || !Number.isFinite(min) || !Number.isFinite(max)) {
+    return 0;
+  }
+  if (max <= min) {
+    return 0;
+  }
+  return (value - min) / (max - min) * 2 - 1;
+};
+
+const computeKMeansAssignments = (
+  positions: Float32Array,
+  pointCount: number,
+  clusterCount: number
+): number[] | null => {
+  if (clusterCount < 2 || pointCount === 0 || positions.length < pointCount * 3) {
+    return null;
+  }
+  const stride = Math.max(1, Math.floor(pointCount / MAX_CLUSTER_SAMPLE));
+  const sampleIndices: number[] = [];
+  for (let index = 0; index < pointCount; index += stride) {
+    sampleIndices.push(index);
+  }
+  if (sampleIndices.length < clusterCount) {
+    return null;
+  }
+  const centroids: Array<Float32Array> = new Array(clusterCount).fill(0).map(() => new Float32Array(3));
+  const step = Math.max(1, Math.floor(sampleIndices.length / clusterCount));
+  for (let c = 0; c < clusterCount; c += 1) {
+    const sampleIndex = sampleIndices[Math.min(c * step, sampleIndices.length - 1)];
+    const base = sampleIndex * 3;
+    centroids[c][0] = positions[base];
+    centroids[c][1] = positions[base + 1];
+    centroids[c][2] = positions[base + 2];
+  }
+  const sampleAssignments = new Array(sampleIndices.length).fill(0);
+  const sums: Array<Float64Array> = new Array(clusterCount).fill(0).map(() => new Float64Array(3));
+  for (let iteration = 0; iteration < KMEANS_MAX_ITERATIONS; iteration += 1) {
+    let moved = false;
+    const counts = new Array(clusterCount).fill(0);
+    for (let c = 0; c < clusterCount; c += 1) {
+      sums[c][0] = 0;
+      sums[c][1] = 0;
+      sums[c][2] = 0;
+    }
+    for (let sIdx = 0; sIdx < sampleIndices.length; sIdx += 1) {
+      const index = sampleIndices[sIdx];
+      const base = index * 3;
+      let bestCluster = 0;
+      let bestDist = Number.POSITIVE_INFINITY;
+      for (let c = 0; c < clusterCount; c += 1) {
+        const dx = positions[base] - centroids[c][0];
+        const dy = positions[base + 1] - centroids[c][1];
+        const dz = positions[base + 2] - centroids[c][2];
+        const dist = dx * dx + dy * dy + dz * dz;
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestCluster = c;
+        }
+      }
+      if (sampleAssignments[sIdx] !== bestCluster) {
+        sampleAssignments[sIdx] = bestCluster;
+        moved = true;
+      }
+      counts[bestCluster] += 1;
+      sums[bestCluster][0] += positions[base];
+      sums[bestCluster][1] += positions[base + 1];
+      sums[bestCluster][2] += positions[base + 2];
+    }
+    for (let c = 0; c < clusterCount; c += 1) {
+      if (counts[c] === 0) {
+        const randomIndex = sampleIndices[Math.floor(Math.random() * sampleIndices.length)];
+        const base = randomIndex * 3;
+        centroids[c][0] = positions[base];
+        centroids[c][1] = positions[base + 1];
+        centroids[c][2] = positions[base + 2];
+        continue;
+      }
+      centroids[c][0] = sums[c][0] / counts[c];
+      centroids[c][1] = sums[c][1] / counts[c];
+      centroids[c][2] = sums[c][2] / counts[c];
+    }
+    if (!moved && iteration > 0) {
+      break;
+    }
+  }
+  const assignments = new Array(pointCount).fill(0);
+  for (let index = 0; index < pointCount; index += 1) {
+    const base = index * 3;
+    let bestCluster = 0;
+    let bestDist = Number.POSITIVE_INFINITY;
+    for (let c = 0; c < clusterCount; c += 1) {
+      const dx = positions[base] - centroids[c][0];
+      const dy = positions[base + 1] - centroids[c][1];
+      const dz = positions[base + 2] - centroids[c][2];
+      const dist = dx * dx + dy * dy + dz * dz;
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestCluster = c;
+      }
+    }
+    assignments[index] = bestCluster;
+  }
+  return assignments;
+};
+
 const HEATMAP_EMPTY_MESSAGE = "\uD3EC\uC778\uD2B8 \uD1B5\uACC4 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. 3D \uC2DC\uAC01\uD654\uB97C \uC704\uD574 \uB370\uC774\uD130\uB97C \uB0B4\uBCF4\uB0B4\uC138\uC694.";
 const HEATMAP_INFO_DESCRIPTION = "\uB9C9\uB300\uC758 \uC0C9\uC0C1\uC740 \uC0C1\uAD00\uACC4\uC218 \uBD80\uD638\uB97C, \uB192\uC774\uB294 \uC808\uB300\uAC12 \uD06C\uAE30\uB97C \uB73B\uD569\uB2C8\uB2E4. \uB9C9\uB300\uB97C hover \uD574\uC11C \uC790\uC138\uD55C \uC0C1\uAD00\uAC12\uC744 \uD655\uC778\uD558\uC138\uC694.";
 const HEATMAP_LEGEND_DESCRIPTION = "\uC0C9\uC740 \uC0C1\uAD00\uACC4\uC218\uC758 \uBD80\uD638\uB97C, \uB192\uC774\uB294 \uC808\uB300\uAC12(\uAC15\uB3C4)\uB97C \uB098\uD0C0\uB0B5\uB2C8\uB2E4.";
@@ -714,9 +837,16 @@ const TsneProgressView = () => {
 interface PointCloudProps {
   pointSize?: number;
   pointOpacity?: number;
+  positionsOverride?: Float32Array | null;
+  colorOverride?: Float32Array | null;
 }
 
-const PointCloud = ({ pointSize = 0.12, pointOpacity = 0.9 }: PointCloudProps) => {
+const PointCloud = ({
+  pointSize = 0.12,
+  pointOpacity = 0.9,
+  positionsOverride = null,
+  colorOverride = null,
+}: PointCloudProps) => {
   const points = useTensorboardStore((state) => state.points);
   const colorField = useTensorboardStore((state) => state.colorField);
 
@@ -740,6 +870,9 @@ const PointCloud = ({ pointSize = 0.12, pointOpacity = 0.9 }: PointCloudProps) =
   }, []);
 
   const positions = useMemo(() => {
+    if (positionsOverride && positionsOverride.length > 0) {
+      return positionsOverride;
+    }
     if (points.length === 0) {
       return new Float32Array();
     }
@@ -755,6 +888,9 @@ const PointCloud = ({ pointSize = 0.12, pointOpacity = 0.9 }: PointCloudProps) =
   }, [points]);
 
   const colors = useMemo(() => {
+    if (colorOverride && colorOverride.length > 0) {
+      return colorOverride;
+    }
     if (points.length === 0) {
       return new Float32Array();
     }
@@ -853,6 +989,10 @@ export const TensorboardEmbeddingPanel = () => {
   const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('3d');
   const [pointSize, setPointSize] = useState(0.12);
   const [pointOpacity, setPointOpacity] = useState(0.9);
+  const [axisMode, setAxisMode] = useState<'embedding' | 'feature'>('embedding');
+  const [axisMapping, setAxisMapping] = useState<AxisMapping>({ x: null, y: null, z: null });
+  const [colorMode, setColorMode] = useState<'metadata' | 'cluster'>('metadata');
+  const [clusterCount, setClusterCount] = useState(0);
   const [showGrid, setShowGrid] = useState(true);
   const [showControls, setShowControls] = useState(false);
   const [projectorPath, setProjectorPath] = useState<string | null>(null);
@@ -861,6 +1001,145 @@ export const TensorboardEmbeddingPanel = () => {
   const [initializedOnce, setInitializedOnce] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
   const [initialLoadError, setInitialLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (colorMode === 'cluster' && clusterCount < 2) {
+      setClusterCount(3);
+    }
+  }, [colorMode, clusterCount]);
+
+  const numericFieldStats = useMemo<NumericFieldStat[]>(() => {
+    if (points.length === 0) {
+      return [];
+    }
+    const statsMap = new Map<string, { min: number; max: number; count: number }>();
+    points.forEach((point) => {
+      const metadata = point.metadata ?? {};
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          const current = statsMap.get(key);
+          if (current) {
+            current.count += 1;
+            if (value < current.min) {
+              current.min = value;
+            }
+            if (value > current.max) {
+              current.max = value;
+            }
+          } else {
+            statsMap.set(key, { min: value, max: value, count: 1 });
+          }
+        }
+      });
+    });
+    return Array.from(statsMap.entries())
+      .map(([name, info]) => ({ name, min: info.min, max: info.max, count: info.count }))
+      .filter((stat) => stat.count >= Math.min(points.length, 5));
+  }, [points]);
+
+  const numericFieldMap = useMemo<Record<string, NumericFieldStat>>(() => {
+    const map: Record<string, NumericFieldStat> = {};
+    numericFieldStats.forEach((stat) => {
+      map[stat.name] = stat;
+    });
+    return map;
+  }, [numericFieldStats]);
+
+  useEffect(() => {
+    if (numericFieldStats.length === 0) {
+      setAxisMapping({ x: null, y: null, z: null });
+      setAxisMode('embedding');
+      return;
+    }
+    setAxisMapping((prev) => {
+      const names = numericFieldStats.map((stat) => stat.name);
+      const nextX = prev.x && names.includes(prev.x) ? prev.x : names[0] ?? null;
+      const nextY = prev.y && names.includes(prev.y) ? prev.y : names[1] ?? names[0] ?? null;
+      const nextZ = prev.z && names.includes(prev.z) ? prev.z : names[2] ?? names[1] ?? names[0] ?? null;
+      if (nextX === prev.x && nextY === prev.y && nextZ === prev.z) {
+        return prev;
+      }
+      return { x: nextX, y: nextY, z: nextZ };
+    });
+  }, [numericFieldStats]);
+
+  const embeddingPositions = useMemo(() => {
+    if (points.length === 0) {
+      return new Float32Array();
+    }
+    const buffer = new Float32Array(points.length * 3);
+    for (let index = 0; index < points.length; index += 1) {
+      const base = index * 3;
+      buffer[base] = points[index].x;
+      buffer[base + 1] = points[index].y;
+      buffer[base + 2] = points[index].z;
+    }
+    return buffer;
+  }, [points]);
+
+  const positionsBuffer = useMemo(() => {
+    if (axisMode !== 'feature') {
+      return embeddingPositions;
+    }
+    if (!axisMapping.x || !axisMapping.y || !axisMapping.z) {
+      return embeddingPositions;
+    }
+    const xStats = numericFieldMap[axisMapping.x];
+    const yStats = numericFieldMap[axisMapping.y];
+    const zStats = numericFieldMap[axisMapping.z];
+    if (!xStats || !yStats || !zStats) {
+      return embeddingPositions;
+    }
+    const buffer = new Float32Array(points.length * 3);
+    const halfRange = FEATURE_AXIS_RANGE / 2;
+    for (let index = 0; index < points.length; index += 1) {
+      const metadata = points[index].metadata ?? {};
+      const xRaw = Number(metadata[axisMapping.x]);
+      const yRaw = Number(metadata[axisMapping.y]);
+      const zRaw = Number(metadata[axisMapping.z]);
+      const base = index * 3;
+      buffer[base] = normalizeToRange(xRaw, xStats.min, xStats.max) * halfRange;
+      buffer[base + 1] = normalizeToRange(yRaw, yStats.min, yStats.max) * halfRange;
+      buffer[base + 2] = normalizeToRange(zRaw, zStats.min, zStats.max) * halfRange;
+    }
+    return buffer;
+  }, [axisMode, axisMapping, embeddingPositions, numericFieldMap, points]);
+
+  const clusterVisual = useMemo(() => {
+    if (colorMode !== 'cluster' || clusterCount < 2 || points.length === 0) {
+      return { colors: null as Float32Array | null, legend: [] as Array<{ id: number; count: number; color: string }> };
+    }
+    const assignments = computeKMeansAssignments(positionsBuffer, points.length, clusterCount);
+    if (!assignments) {
+      return { colors: null as Float32Array | null, legend: [] as Array<{ id: number; count: number; color: string }> };
+    }
+    const colors = new Float32Array(points.length * 3);
+    const counts = new Array(clusterCount).fill(0);
+    for (let index = 0; index < points.length; index += 1) {
+      const cluster = assignments[index] ?? 0;
+      counts[cluster] += 1;
+      const paletteColor = COLOR_PALETTE[cluster % COLOR_PALETTE.length];
+      const rgb = hexToRGB(paletteColor);
+      const base = index * 3;
+      colors[base] = rgb[0];
+      colors[base + 1] = rgb[1];
+      colors[base + 2] = rgb[2];
+    }
+    const legend = counts
+      .map((count, clusterIndex) => ({
+        id: clusterIndex,
+        count,
+        color: COLOR_PALETTE[clusterIndex % COLOR_PALETTE.length],
+      }))
+      .filter((entry) => entry.count > 0)
+      .sort((a, b) => b.count - a.count);
+    return { colors, legend };
+  }, [clusterCount, colorMode, points.length, positionsBuffer]);
+
+  const clusterColorBuffer = clusterVisual.colors;
+  const clusterLegend = clusterVisual.legend;
+  const featureAxisAvailable = numericFieldStats.length > 0;
+  const axisMappingComplete = axisMapping.x != null && axisMapping.y != null && axisMapping.z != null;
 
   const loadTensorboardConfig = useCallback(async () => {
     try {
@@ -1036,25 +1315,27 @@ export const TensorboardEmbeddingPanel = () => {
                   ))}
                 </select>
               </label>
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <span>\uc0c9\uc0c1</span>
-                <select
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800"
-                  value={colorField ?? ""}
-                  onChange={(event) => {
-                    const nextColor = event.target.value || null;
-                    setColorField(nextColor);
-                  }}
-                  disabled={filters.length === 0}
-                >
-                  {filters.length === 0 ? <option value="">(\uc120\ud0dd \uac00\ub2a5 \ud544\ud130 \uc5c6\uc74c)</option> : null}
-                  {filters.map((field) => (
-                    <option key={field.name} value={field.name}>
-                      {field.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {colorMode === 'metadata' ? (
+                <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                  <span>\uc0c9\uc0c1</span>
+                  <select
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-700 dark:bg-slate-800"
+                    value={colorField ?? ""}
+                    onChange={(event) => {
+                      const nextColor = event.target.value || null;
+                      setColorField(nextColor);
+                    }}
+                    disabled={filters.length === 0}
+                  >
+                    {filters.length === 0 ? <option value="">(\uc120\ud0dd \uac00\ub2a5 \ud544\ud130 \uc5c6\uc74c)</option> : null}
+                    {filters.map((field) => (
+                      <option key={field.name} value={field.name}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <span>\uc810\uc218 \uc81c\ud55c</span>
                 <select
@@ -1122,6 +1403,93 @@ export const TensorboardEmbeddingPanel = () => {
               </button>
             </>
           ) : null}
+        {initializedOnce ? (
+          <div className="w-full rounded-lg border border-slate-200 bg-white/70 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">\uCD95 \uC120\uD0DD</span>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="tensorboard-axis-mode"
+                  value="embedding"
+                  checked={axisMode === 'embedding'}
+                  onChange={() => setAxisMode('embedding')}
+                />
+                <span>\uC784\uBCA0\uB529 \uCD95</span>
+              </label>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="tensorboard-axis-mode"
+                  value="feature"
+                  checked={axisMode === 'feature'}
+                  onChange={() => setAxisMode('feature')}
+                  disabled={!featureAxisAvailable}
+                />
+                <span>\uD53C\uCC98 \uCD95</span>
+              </label>
+            </div>
+            {axisMode === 'feature' ? (
+              featureAxisAvailable && axisMappingComplete ? (
+                <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
+                  {(['x', 'y', 'z'] as const).map((axisKey) => (
+                    <label key={axisKey} className="flex flex-col gap-1">
+                      <span className="font-medium text-slate-500 dark:text-slate-300">{`${axisKey.toUpperCase()} \uCD95`}</span>
+                      <select
+                        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:border-slate-600 dark:bg-slate-800"
+                        value={axisMapping[axisKey] ?? ''}
+                        onChange={(event) => {
+                          const nextField = event.target.value || null;
+                          setAxisMapping((prev) => ({ ...prev, [axisKey]: nextField }));
+                        }}
+                      >
+                        {numericFieldStats.map((stat) => (
+                          <option key={stat.name} value={stat.name}>
+                            {stat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">\uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uC218\uCE58 \uD53C\uCC98 \uC815\uBCF4\uAC00 \uBD80\uC871\uD569\uB2C8\uB2E4.</p>
+              )
+            ) : null}
+          </div>
+        ) : null}
+        {initializedOnce ? (
+          <div className="w-full rounded-lg border border-slate-200 bg-white/70 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-300">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-semibold text-slate-700 dark:text-slate-200">\uC0C9\uC0C1 \uC120\uD0DD</span>
+              <select
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs shadow-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200 dark:border-slate-600 dark:bg-slate-800"
+                value={colorMode}
+                onChange={(event) => setColorMode(event.target.value as 'metadata' | 'cluster')}
+              >
+                <option value="metadata">\uBA54\uD0C0\uB370\uC774\uD130 \uC0C9\uC0C1</option>
+                <option value="cluster">\uD074\uB7EC\uC2A4\uD130 \uC0C9\uC0C1</option>
+              </select>
+              {colorMode === 'cluster' ? (
+                <label className="flex items-center gap-1">
+                  <span>\uD074\uB7EC\uC2A4\uD130 \uAC1C\uC218</span>
+                  <select
+                    className="rounded-md border border-slate-300 bg-white px-2 py-1 text-xs shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:border-slate-600 dark:bg-slate-800"
+                    value={clusterCount}
+                    onChange={(event) => setClusterCount(Number(event.target.value))}
+                    disabled={points.length === 0}
+                  >
+                    {[3, 4, 5, 6].map((option) => (
+                      <option key={option} value={option}>
+                        {`${option} \uAC1C`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         </div>
       </header>
       <div className="mt-4 grid gap-4 lg:grid-cols-[2fr_minmax(240px,1fr)]">
@@ -1198,7 +1566,12 @@ export const TensorboardEmbeddingPanel = () => {
                   )}
 
                   {/* Point cloud */}
-                  <PointCloud pointSize={pointSize} pointOpacity={pointOpacity} />
+                  <PointCloud
+                    pointSize={pointSize}
+                    pointOpacity={pointOpacity}
+                    positionsOverride={positionsBuffer}
+                    colorOverride={colorMode === 'cluster' ? clusterColorBuffer : null}
+                  />
 
                   {/* Controls */}
                   <OrbitControls
@@ -1324,91 +1697,108 @@ export const TensorboardEmbeddingPanel = () => {
             </div>
           ) : (
             <>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\ub370\uc774\ud130 \uc0c1\ud0dc</h3>
-            <dl className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-              <div className="flex justify-between">
-                <dt>\uc120\ud0dd\ub41c Projector</dt>
-                <dd>{selectedId ?? "-"}</dd>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\uB370\uC774\uD130 \uC0C1\uD0DC</h3>
+                <dl className="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+                  <div className="flex justify-between">
+                    <dt>\uC120\uD0DD\uB41C 프로젝터</dt>
+                    <dd>{selectedId ?? "-"}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>\uD3EC\uC778\uD2B8 \uC218</dt>
+                    <dd>{totalPoints.toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt>프로젝터 \uAC1C\uC218</dt>
+                    <dd>{projectors.length}</dd>
+                  </div>
+                </dl>
               </div>
-              <div className="flex justify-between">
-                <dt>\ud3ec\uc778\ud2b8 \uc218</dt>
-                <dd>{totalPoints.toLocaleString()}</dd>
+              {error ? (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-200">
+                  {error}
+                </div>
+              ) : null}
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\uD544\uD130</h3>
+                  <button
+                    type="button"
+                    className="text-xs text-sky-600 underline-offset-2 hover:underline dark:text-sky-400"
+                    onClick={() => {
+                      clearFilters();
+                      void refreshPoints();
+                    }}
+                    disabled={Object.keys(activeFilters).length === 0}
+                  >
+                    \uD544\uD130 \uCD08\uAE30\uD654
+                  </button>
+                </div>
+                {filters.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">\uD544\uD130\ub9c1 \uAC00\uB2A5\uD55C \uBA54\uD0C0\uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.</p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {filters.map((field) => {
+                      if (field.kind !== "categorical" || !field.values) {
+                        return (
+                          <li key={field.name} className="text-xs text-slate-500 dark:text-slate-400">
+                            {field.label} - \uC9C0\uC6D0 \uC900\uBE44 \uC911
+                          </li>
+                        );
+                      }
+                      const active = new Set(activeFilters[field.name] ?? []);
+                      return (
+                        <li key={field.name}>
+                          <p className="text-xs text-slate-600 dark:text-slate-300">{field.label}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {field.values.map((value) => {
+                              const selected = active.has(value);
+                              return (
+                                <button
+                                  key={value}
+                                  type="button"
+                                  className={`rounded-full border px-3 py-1 text-xs transition ${
+                                    selected
+                                      ? "border-sky-500 bg-sky-100 text-sky-700 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-200"
+                                      : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                                  }`}
+                                  onClick={() => {
+                                    toggleFilterValue(field.name, value);
+                                    void refreshPoints();
+                                  }}
+                                >
+                                  {value}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </div>
-              <div className="flex justify-between">
-                <dt>Projector \uac1c\uc218</dt>
-                <dd>{projectors.length}</dd>
-              </div>
-            </dl>
-          </div>
-          {error ? (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-400/40 dark:bg-red-500/10 dark:text-red-200">
-              {error}
-            </div>
-          ) : null}
-          <div>
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\ud544\ud130</h3>
-              <button
-                type="button"
-                className="text-xs text-sky-600 underline-offset-2 hover:underline dark:text-sky-400"
-                onClick={() => {
-                  clearFilters();
-                  void refreshPoints();
-                }}
-                disabled={Object.keys(activeFilters).length === 0}
-              >
-                \ud544\ud130 \ucd08\uae30\ud654
-              </button>
-            </div>
-            {filters.length === 0 ? (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">\ud544\ud130\ub9c1 \uac00\ub2a5\ud55c \uba54\ud0c0\ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {filters.map((field) => {
-                  if (field.kind !== "categorical" || !field.values) {
-                    return (
-                      <li key={field.name} className="text-xs text-slate-500 dark:text-slate-400">
-                        {field.label} - \uc9c0\uc6d0 \uc900\ube44 \uc911
+              {colorMode === 'cluster' && clusterLegend.length > 0 ? (
+                <div className="rounded-md border border-slate-200 bg-white/70 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">\uD074\uB7EC\uC2A4\uD130 \uC815\uBCF4</h4>
+                  <ul className="mt-2 space-y-1">
+                    {clusterLegend.map((entry) => (
+                      <li key={entry.id} className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-3 w-3 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="font-medium text-slate-700 dark:text-slate-200">{`\uD074\uB7EC\uC2A4\uD130 ${entry.id + 1}`}</span>
+                        <span className="text-slate-400 dark:text-slate-500">{`${entry.count.toLocaleString()} \uD3EC\uC778\uD2B8`}</span>
                       </li>
-                    );
-                  }
-                  const active = new Set(activeFilters[field.name] ?? []);
-                  return (
-                    <li key={field.name}>
-                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{field.label}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {field.values.map((value) => {
-                          const selected = active.has(value);
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              className={`rounded-full border px-3 py-1 text-xs transition ${
-                                selected
-                                  ? "border-sky-500 bg-sky-100 text-sky-700 dark:border-sky-400 dark:bg-sky-500/20 dark:text-sky-200"
-                                  : "border-slate-300 bg-white text-slate-600 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                              }`}
-                              onClick={() => {
-                                toggleFilterValue(field.name, value);
-                                void refreshPoints();
-                              }}
-                            >
-                              {value}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            <p>\ud544\ud130\uc640 \uc0c9\uc0c1 \ub9e4\ud551\uc740 \uc0c1\ud0dc\uc5d0 \ubc18\uc601\ub418\uc5b4 3D \ub80c\ub354\ub9c1\uacfc \uc9c0\ud45c \ud0ed\uc5d0\uc11c \uacf5\uc720\ub429\ub2c8\ub2e4.</p>
-            <p className="mt-1">\ub2e4\uc74c \ub2e8\uacc4\uc5d0\uc11c \uc2e4\uc81c TensorBoard \uc9c0\ud45c \ud0ed\uacfc \uc790\ub3d9 \uc5c5\ub370\uc774\ud2b8 \ub85c\uc9c1\uc744 \uc5f0\uacb0\ud560 \uc608\uc815\uc785\ub2c8\ub2e4.</p>
-          </div>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                <p>\uD544\uD130\uc640 \uC0C9\uC0C1 \uB9E4\uD551\uC740 \uC0C1\uD0DC\uC5D0 \uBC18\uC601\uB418\uC5B4 3D \uB80C\uB354\uB9C1\uACFC \uC9C0\uD45C \uD0ED\uC5D0\uC11C \uACF5\uC720\uB429\uB2C8\uB2E4.</p>
+                <p className="mt-1">\uB2E4\uC74C \uB2E8\uACC4\uC5D0\uC11C \uC2E4\uC81C TensorBoard \uC9C0\uD45C \uD0ED\uACFC \uC790\uB3D9 \uC5C5\uB370\uC774\uD2B8 \uB85C\uC9C1\uC744 \uC5F0\uACB0\uD560 \uC608\uC815\uC785\uB2C8\uB2E4.</p>
+              </div>
             </>
           )}
         </aside>
