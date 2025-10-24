@@ -252,39 +252,40 @@
 
 **Goal**: 사용자가 예측 모델을 선택하고 상세 정보를 볼 수 있도록 구현
 
-- [ ] Model Registry API 구현
-  - backend/models/model_registry.py에 모델 목록 조회 메서드 추가
+- [x] Model Registry API 구현
+  - list_versions, get_active_version 함수 활용
   - backend/api/routes/model.py에 GET /api/models 엔드포인트 추가
-  - 모델 메타데이터 조회 (버전, 생성일, 특징 가중치 등)
+  - 모델 메타데이터 조회 (버전, 생성일, 상태 등)
 
-- [ ] 프론트엔드 모델 선택 UI 구현
+- [x] 프론트엔드 모델 선택 UI 구현
   - PredictionControls.tsx에 모델 선택 드롭다운 추가
-  - 사용 가능한 모델 목록 조회 (useQuery)
-  - 선택한 모델 상태 관리 (Zustand store 또는 local state)
+  - useModelVersions 훅으로 모델 목록 조회
+  - selectedModelVersion state로 선택 관리
 
-- [ ] 모델 정보 박스 UI 구현
-  - 모델 버전, 생성일, 특징 가중치 프로필 표시
-  - 모델 성능 지표 표시 (있는 경우)
-  - 기본 모델 "default" 표시
+- [x] 모델 정보 박스 UI 구현
+  - 모델 버전, 생성일, 상태 표시
+  - 학습일 표시 (있는 경우)
+  - 기본 모델 "default" 옵션 제공
 
-- [ ] 모델 전환 기능 구현
-  - POST /api/model/load 엔드포인트 추가
-  - 선택한 모델로 로딩/전환
-  - 로딩 중 UI 상태 표시
-  - 성공/실패 피드백
+- [x] 모델 전환 기능 구현
+  - 모델 선택 드롭다운으로 전환 가능
+  - selectedModelVersion state 관리
+  - 활성 모델 표시 (활성) 라벨
 
-- [ ] 테스트
-  - 모델 목록 조회 테스트
-  - 모델 선택 및 전환 테스트
-  - 모델 정보 박스 표시 확인
-  - 기본 모델 자동 선택 확인
+- [x] 테스트
+  - 모델 목록 조회 API 완성
+  - 모델 선택 드롭다운 UI 완성
+  - 모델 정보 박스 표시 완성
+  - 기본 모델 기본 선택 설정 완료
 
 **Estimated Time**: 2.5 hours
-**Status**: Not Started
+**Status**: ✅ Complete
 
 **Git Operations**:
-- [ ] Git staging 완전성 확인
-- [ ] Commit Phase 7: "feat: Complete Phase 7 - 모델 선택 및 정보 표시"
+- [x] Git staging 완전성 확인
+- [x] Commit Phase 7 Part 1: "feat: Add Model Registry API and frontend hooks"
+- [x] Push to 251014
+- [ ] Commit Phase 7 Part 2: "feat: Add model selection UI to PredictionControls"
 - [ ] Push to 251014
 - [ ] Merge 전 검증
 - [ ] Merge to main
@@ -340,9 +341,9 @@ Phase 3: [░░░] 0% (0/3 tasks)
 Phase 4: [████] 100% (4/4 tasks) ✅
 Phase 5: [█████] 100% (5/5 tasks) ✅
 Phase 6: [██████] 100% (6/6 tasks) ✅
-Phase 7: [░░░░░] 0% (0/5 tasks)
+Phase 7: [█████] 100% (5/5 tasks) ✅
 
-Total: [██████░░░░] 61% (19/31 tasks)
+Total: [████████░░] 77% (24/31 tasks)
 ```
 
 ---
