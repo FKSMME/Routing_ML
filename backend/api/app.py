@@ -31,6 +31,7 @@ from backend.api.routes.health import router as health_router
 from backend.api.routes.items import router as items_router
 from backend.api.routes.logs import router as logs_router
 from backend.api.routes.master_data import router as master_data_router
+from backend.api.routes.model import router as model_router
 from backend.api.routes.mssql import router as mssql_router
 from backend.api.routes.metrics import (
     record_request_metrics,
@@ -141,6 +142,7 @@ def create_app() -> FastAPI:
     app.include_router(process_groups_router)
     app.include_router(routing_router)
     app.include_router(master_data_router)
+    app.include_router(model_router)
     app.include_router(mssql_router)
     app.include_router(rsl_router)
     app.include_router(algorithm_viz_router)

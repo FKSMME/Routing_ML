@@ -1,5 +1,6 @@
 import { hasItemCodesDragData, readItemCodesDragData } from "@lib/dragAndDrop";
 import { useModelStatus } from "@hooks/useModelStatus";
+import { useModelVersions } from "@hooks/useModelVersions";
 import { FormEvent, forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 
 interface PredictionControlsProps {
@@ -58,9 +59,13 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
 ) {
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
   const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedModelVersion, setSelectedModelVersion] = useState<string>("default");
 
   // Task 2.3: 모델 상태 조회
   const { data: modelStatus, isLoading: modelStatusLoading } = useModelStatus();
+
+  // Phase 7: 모델 버전 목록 조회
+  const { data: modelList, isLoading: modelsLoading } = useModelVersions();
 
   useEffect(() => {
     setInputValue(itemCodes.join("\n"));
@@ -221,6 +226,83 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
           </div>
         </div>
       )}
+
+      {/* Phase 7: 모델 선택 및 정보 표시 */}
+      <div className="space-y-3">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-accent-strong">예측 모델 선택</label>
+          <select
+            value={selectedModelVersion}
+            onChange={(e) => setSelectedModelVersion(e.target.value)}
+            className="input-field"
+            disabled={modelsLoading}
+          >
+            <option value="default">기본 모델 (default)</option>
+            {modelList?.models.map((model) => (
+              <option key={model.version_name} value={model.version_name}>
+                {model.version_name} {model.active_flag ? "(활성)" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* 선택된 모델 정보 박스 */}
+        {selectedModelVersion && (
+          <div className="rounded-md border border-slate-700 bg-slate-800/30 p-3">
+            <div className="text-xs font-semibold text-accent-strong mb-2">모델 정보</div>
+            <div className="space-y-1 text-xs text-slate-300">
+              {selectedModelVersion === "default" ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">버전:</span>
+                    <span className="font-mono">기본 모델</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">상태:</span>
+                    <span className="text-green-400">활성</span>
+                  </div>
+                </>
+              ) : (
+                (() => {
+                  const selectedModel = modelList?.models.find((m) => m.version_name === selectedModelVersion);
+                  return selectedModel ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">버전:</span>
+                        <span className="font-mono">{selectedModel.version_name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">생성일:</span>
+                        <span>{new Date(selectedModel.created_at).toLocaleDateString("ko-KR")}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">상태:</span>
+                        <span
+                          className={
+                            selectedModel.status === "active"
+                              ? "text-green-400"
+                              : selectedModel.status === "pending"
+                                ? "text-yellow-400"
+                                : "text-slate-400"
+                          }
+                        >
+                          {selectedModel.status === "active" ? "활성" : selectedModel.status === "pending" ? "대기 중" : "중지됨"}
+                        </span>
+                      </div>
+                      {selectedModel.trained_at && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">학습일:</span>
+                          <span>{new Date(selectedModel.trained_at).toLocaleDateString("ko-KR")}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : null;
+                })()
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <button type="submit" disabled={loading || !modelStatus?.loaded} className="btn-primary w-full">
         {loading ? "추천 불러오는 중..." : "추천 실행"}
