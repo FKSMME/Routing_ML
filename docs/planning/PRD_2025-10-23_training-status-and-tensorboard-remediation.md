@@ -56,6 +56,7 @@ Operators of the Training Frontend currently face usability and reliability issu
 - Training-status page contains only the two 3D cards with functional internal scrolling and interactions.  
 - Feature statistics endpoint supplies data or a deliberate “no data” state without console errors.  
 - TensorBoard embedding viewer lists projectors, loads points/metadata/T-SNE progress without recursion errors, and displays meaningful status.  
+- Analysts can switch between learned embedding axes and feature-driven axes (X/Y/Z), with similarity clusters surfaced via color/legend cues.  
 - Non-admin logins cannot initiate or configure training.  
 - Prediction quality monitoring is fully removed from navigation and codepath.  
 - Tests/build succeed and the checklist is 100% complete.  

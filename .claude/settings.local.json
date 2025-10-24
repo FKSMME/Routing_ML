@@ -7,7 +7,20 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 5 bash:*)",
+      "Bash(set PYTHONPATH=%CD%)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 3\")",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 10\")",
+      "Bash(.\\.venv\\Scripts\\python.exe:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []

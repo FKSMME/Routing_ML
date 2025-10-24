@@ -256,17 +256,21 @@
 **Git Operations**:
 - [x] **Git staging 완전성 확인** (필수!)
   - ✅ `git status` 실행
-  - ✅ `git add -A` 실행
+  - ✅ `git add` 실행 (relevant files only)
   - ✅ `git status` 재확인 → "Changes not staged" 없음
 - [x] Commit Phase 3: "feat: Complete Phase 3 - Integrate password change UI in Header"
-  - (다음 단계에서 실행)
-- [ ] Push to 251014
-- [ ] **Merge 전 검증** (필수!)
-  - `git diff main..251014` 확인
-  - 예상 범위 내 변경사항 확인
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+  - ✅ Commit: 892cbaf2
+- [x] Push to 251014
+  - ✅ Pushed successfully
+- [x] **Merge 전 검증** (필수!)
+  - ✅ `git diff main..251014` 확인
+  - ✅ 예상 범위 내 변경사항 (5 files, +205/-129)
+- [x] Merge to main
+  - ✅ Merged successfully (d21ec236)
+- [x] Push main
+  - ✅ Pushed to origin/main
+- [x] Return to 251014
+  - ✅ Switched back to 251014 branch
 
 ---
 
