@@ -20,7 +20,9 @@
       "Bash(powershell -Command \"Start-Sleep -Seconds 10\")",
       "Bash(.\\.venv\\Scripts\\python.exe:*)",
       "Bash(.venv/Scripts/python.exe:*)",
-      "Bash(powershell -Command:*)"
+      "Bash(powershell -Command:*)",
+      "Bash(git restore:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
