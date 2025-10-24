@@ -3,7 +3,6 @@ import { LiquidEther } from "@routing-ml/shared";
 import { useBackgroundSettings } from "@store/backgroundSettings";
 import { LogIn, UserPlus } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { ThemeToggle } from "../ThemeToggle";
 
@@ -28,27 +27,7 @@ function LoginBackground() {
     takeoverDuration,
     autoResumeDelay,
     autoRampDuration,
-  } = useBackgroundSettings((state) => ({
-    enabled: state.enabled,
-    opacity: state.opacity,
-    colors: state.colors,
-    mouseForce: state.mouseForce,
-    cursorSize: state.cursorSize,
-    resolution: state.resolution,
-    autoSpeed: state.autoSpeed,
-    autoIntensity: state.autoIntensity,
-    iterationsPoisson: state.iterationsPoisson,
-    isBounce: state.isBounce,
-    autoDemo: state.autoDemo,
-    isViscous: state.isViscous,
-    viscous: state.viscous,
-    iterationsViscous: state.iterationsViscous,
-    dt: state.dt,
-    bfecc: state.bfecc,
-    takeoverDuration: state.takeoverDuration,
-    autoResumeDelay: state.autoResumeDelay,
-    autoRampDuration: state.autoRampDuration,
-  }), shallow);
+  } = useBackgroundSettings();
 
   if (!enabled) {
     return null;
