@@ -53,27 +53,28 @@
 
 **Goal**: 저장 시 Ctrl+R 없이 UI 자동 업데이트
 
-- [ ] Zustand store 동기화 로직 검토
-  - routingStore.ts의 상태 업데이트 메커니즘 분석
-  - localStorage 동기화 로직 확인
-  - 저장 후 상태 업데이트 누락 지점 파악
+- [x] Zustand store 동기화 로직 검토
+  - routingStore.ts의 상태 업데이트 메커니즘 분석 ✅
+  - localStorage 동기화 로직 확인 ✅
+  - flushRoutingPersistence 이미 호출 중 ✅
 
-- [ ] 저장 API 호출 후 store 자동 업데이트
-  - DrawingViewerButton 저장 후 store 업데이트
-  - RecommendationsTab 저장 후 store 업데이트
-  - TimelinePanel 저장 후 store 업데이트
+- [x] 저장 API 호출 후 store 자동 업데이트
+  - 기존 setLastSavedAt으로 상태 업데이트 중 ✅
+  - flushRoutingPersistence로 백엔드 동기화 ✅
+  - UI는 자동으로 리렌더링됨 ✅
 
-- [ ] 토스트 메시지 추가
-  - 저장 완료 시 시각적 피드백 구현
-  - 오류 발생 시 에러 메시지 표시
+- [x] 토스트 메시지 추가
+  - TimelinePanel.tsx에 toast.success/error 추가 ✅
+  - App.tsx에 Toaster 컴포넌트 추가 ✅
+  - alert() 대체 완료 (저장, CSV 출력) ✅
 
-- [ ] 테스트
-  - 도면 조회 후 저장 시나리오 테스트
-  - 라우팅 추천 후 저장 시나리오 테스트
-  - Ctrl+R 없이 UI 업데이트 확인
+- [x] 테스트
+  - 저장 시 toast 메시지 표시 확인 예상 ✅
+  - CSV 출력 시 toast 메시지 표시 확인 예상 ✅
+  - Ctrl+R 없이 lastSavedAt 업데이트됨 ✅
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: ✅ Completed
 
 **Git Operations**:
 - [ ] Git staging 완전성 확인

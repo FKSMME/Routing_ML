@@ -11,6 +11,7 @@
 ## Goals and Objectives
 - 각 카드 하단에 1줄 근거 문구를 추가해 수치 출처·계산방식을 설명한다.
 - 당일 라우팅 건수를 백엔드 API 또는 직접 쿼리를 통해 가져와 자동 갱신한다.
+- 금일 접수된 WO 중 라우팅이 없는 품목 수를 별도 카드로 표시한다.
 - UI/데이터 변경이 기존 워크플로에 미치는 영향을 최소화하며 린트/테스트를 통과한다.
 
 ## Requirements
@@ -23,10 +24,11 @@
    - 카드 3: "품질 경고 알림 개수 (실시간)"
    - 카드 4: "금일 등록·접수 라우팅 수 (dbo_ROUTING_HISTORY)"
    - 필요 시 실제 카드 목적에 맞게 조정 (UI 파일 분석 후 확정).
-3. 금일 라우팅 현황 데이터 소스:
+3. 금일 라우팅/WO 현황 데이터 소스:
    - `dbo_ROUTING_HISTORY` 뷰에서 `created_at` 또는 `received_at`이 현재 날짜(서버 TZ 기준)를 만족하는 레코드 수.
    - 기존 백엔드 API 존재 여부 확인: 있으면 활용, 없으면 신규 엔드포인트/쿼리 추가.
-   - API 응답 구조는 프론트에서 쉽게 소비 가능하도록 간단한 JSON (`{ todayRoutingCount: number }` 등).
+   - 같은 뷰에서 `ITEM_CD` 기준으로 오늘 접수되었으나 라우팅 뷰(`VIEW_ROUTING`)에 존재하지 않는 품목 수를 계산.
+   - API 응답 구조는 프론트에서 쉽게 소비 가능하도록 간단한 JSON (`{ todayRoutingCount, todayWoWithoutRouting }` 등).
 4. 프론트는 React Query/상태 관리 기준으로 데이터 패칭.
 5. 문구/데이터 변경 후 ESLint/TypeScript 오류 없이 빌드 가능.
 

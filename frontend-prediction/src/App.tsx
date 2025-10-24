@@ -25,6 +25,7 @@ import { type AppRole, isMenuAllowedForRoles, type NavigationKey,useWorkspaceSto
 import axios from "axios";
 import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { Toaster } from "react-hot-toast";
 
 // Role-aware navigation configuration
 interface NavigationConfig extends MainNavigationItem {
@@ -392,6 +393,29 @@ export default function App() {
           {workspace}
         </div>
       </ErrorBoundary>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#1e293b',
+            color: '#f1f5f9',
+            border: '1px solid #475569',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#f1f5f9',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#f1f5f9',
+            },
+          },
+        }}
+      />
     </div>
   );
 }
