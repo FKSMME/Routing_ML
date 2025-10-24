@@ -16,6 +16,7 @@ import ReactFlow, {
 } from "reactflow";
 
 import { CandidateNodeTabs } from "./CandidateNodeTabs";
+import { CustomNodeList } from "./CustomNodeList";
 import { TimeEditModal } from "./TimeEditModal";
 
 const NODE_GAP = 240;
@@ -685,6 +686,9 @@ function RoutingCanvasView({
 
   return (
     <>
+      {/* Custom Process Nodes - User-managed custom nodes */}
+      <CustomNodeList className="mb-4" />
+
       {/* Candidate Node Tabs - Shows similar item candidates */}
       <CandidateNodeTabs className="mb-4" />
 
