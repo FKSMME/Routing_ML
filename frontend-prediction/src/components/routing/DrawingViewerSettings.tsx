@@ -69,6 +69,12 @@ export function DrawingViewerSettings({
     // localStorage에 저장
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+
+      // 같은 탭에서도 설정 변경을 감지할 수 있도록 custom event 발생
+      window.dispatchEvent(new CustomEvent("drawingViewerSettingsChanged", {
+        detail: config
+      }));
+
       alert("설정이 저장되었습니다.");
       onClose();
     } catch (error) {
