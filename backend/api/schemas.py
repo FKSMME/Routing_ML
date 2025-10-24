@@ -240,6 +240,10 @@ class PredictionRequest(BaseModel):
     weight_profile: Optional[str] = Field(
         default=None, description="Identifier of a predefined weight profile"
     )
+    model_version: Optional[str] = Field(
+        default=None,
+        description="Specific model version to use for prediction (default uses active model)",
+    )
     export_formats: Optional[List[str]] = Field(
         default=None,
         description="Optional export formats to generate immediately (csv|excel|txt|json|parquet)",

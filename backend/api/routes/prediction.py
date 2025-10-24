@@ -113,6 +113,7 @@ async def predict(
             mode=request.mode,
             feature_weights=request.feature_weights,
             weight_profile=request.weight_profile,
+            model_version=request.model_version,
             with_visualization=request.with_visualization,
         )
         exported_files: List[str] = []
