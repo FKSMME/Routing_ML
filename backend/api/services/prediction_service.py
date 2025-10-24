@@ -649,6 +649,7 @@ class PredictionService:
         mode: str,
         feature_weights: Optional[Dict[str, float]],
         weight_profile: Optional[str],
+        model_version: Optional[str] = None,
     ) -> Tuple[
         List[RoutingSummary],
         List[CandidateRouting],
@@ -665,12 +666,20 @@ class PredictionService:
                 profile_name=weight_profile,
             )
 
+        # Determine model directory based on version
+        if model_version:
+            from pathlib import Path
+            model_dir = Path(self.model_dir).parent / model_version
+            logger.info(f"[예측] 지정된 모델 버전 사용: {model_version} (경로: {model_dir})")
+        else:
+            model_dir = self.model_dir
+
         # Fixed: miss_thr (missing ratio threshold) should be separate from similarity_threshold
         # miss_thr controls how much missing data is acceptable in input item
         # similarity_threshold controls minimum similarity score for candidates
         routing_df, candidates_df = predict_items_with_ml_optimized(
             item_codes,
-            self.model_dir,
+            model_dir,
             top_k=top_k,
             miss_thr=0.5,  # Fixed at 50% - allows up to 50% missing attributes
             mode=mode,
@@ -696,6 +705,7 @@ class PredictionService:
             "returned_candidates": len(filtered_candidates),
             "total_candidates_before_filter": len(candidate_payload),
             "threshold": similarity_threshold,
+            "model_version": model_version or "default",
             "generated_at": utc_isoformat(),
         }
         if weight_snapshot:
@@ -727,16 +737,18 @@ class PredictionService:
         mode: str,
         feature_weights: Optional[Dict[str, float]] = None,
         weight_profile: Optional[str] = None,
+        model_version: Optional[str] = None,
         with_visualization: bool = False,
     ) -> Tuple[List[RoutingSummary], List[CandidateRouting], Dict[str, Any]]:
         """라우팅 예측 수행."""
         item_code_list = list(item_codes)
         logger.info(
-            "[예측] item=%s, top_k=%s, similarity_threshold=%.2f, mode=%s",
+            "[예측] item=%s, top_k=%s, similarity_threshold=%.2f, mode=%s, model_version=%s",
             item_code_list,
             top_k,
             similarity_threshold,
             mode,
+            model_version or "default",
         )
         (
             routing_payload,
@@ -751,6 +763,7 @@ class PredictionService:
             mode=mode,
             feature_weights=feature_weights,
             weight_profile=weight_profile,
+            model_version=model_version,
         )
 
         if with_visualization:
