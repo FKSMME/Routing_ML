@@ -56,6 +56,7 @@ export interface TensorboardConfig {
   projectorPath: string;
   projectorPathExists: boolean;
   modelDir: string;
+  mlArtifactsDir?: string;
 }
 
 export interface TensorboardTsnePoint {

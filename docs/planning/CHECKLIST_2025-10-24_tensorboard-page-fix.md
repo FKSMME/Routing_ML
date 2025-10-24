@@ -8,10 +8,10 @@
 
 ## Phase 1: API 계약 점검 및 데이터 파이프라인 복원
 
-- [ ] (1.5h) 백엔드 TensorBoard config/projector 엔드포인트 실제 응답 스키마 검증
-- [ ] (1.0h) `@app-types/tensorboard` 타입 정의와 API 응답 매핑 재작성
-- [ ] (1.5h) `@lib/apiClient` TensorBoard 관련 함수 에러 처리/재시도 로직 보강
-- [ ] (2.0h) 로컬 워크플로 설정(`workflow_settings.json`)과 모델 아티팩트 경로 점검
+- [x] (1.5h) 백엔드 TensorBoard config/projector 엔드포인트 실제 응답 스키마 검증
+- [x] (1.0h) `@app-types/tensorboard` 타입 정의와 API 응답 매핑 재작성
+- [x] (1.5h) `@lib/apiClient` TensorBoard 관련 함수 에러 처리/재시도 로직 보강
+- [x] (2.0h) 로컬 워크플로 설정(`workflow_settings.json`)과 모델 아티팩트 경로 점검
 
 **Estimated Time**: 6h  
 **Dependencies**: 백엔드 서비스 기동, 최신 모델 아티팩트(`models/default/tb_projector/`) 존재  
@@ -80,8 +80,8 @@
 
 ## Progress Tracking
 
-Phase 1: [..........] 0% (0/4 tasks)  
+Phase 1: [##########] 100% (4/4 tasks)  
 Phase 2: [..........] 0% (0/4 tasks)  
 Phase 3: [..........] 0% (0/4 tasks)
 
-Total: [..................] 0% (0/12 tasks)
+Total: [####............] 33% (4/12 tasks)

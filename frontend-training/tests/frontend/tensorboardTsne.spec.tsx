@@ -26,6 +26,7 @@ const apiClientMocks = vi.hoisted(() => ({
     projectorPath: "/tmp/projector",
     projectorPathExists: true,
     modelDir: "/tmp/model",
+    mlArtifactsDir: "/tmp/model",
   }),
 }));
 

@@ -22,8 +22,8 @@ def tensorboard_api_client(
     from backend.api.routes import tensorboard_projector as projector_module
 
     base_models_dir = tmp_path / "models"
-    projector_root = base_models_dir / "default" / "tb_projector"
-    projector_root.mkdir(parents=True)
+    default_projector_root = base_models_dir / "default" / "tb_projector"
+    archive_projector_root = base_models_dir / "archive" / "version_20251021083443" / "tb_projector"
 
     vectors = np.array(
         [
@@ -35,26 +35,30 @@ def tensorboard_api_client(
         ],
         dtype=np.float32,
     )
-    np.savetxt(projector_root / "vectors.tsv", vectors, fmt="%.6f", delimiter="\t")
-
-    metadata_path = projector_root / "metadata.tsv"
-    metadata_path.write_text(
+    metadata_payload = (
         "ITEM_CD\tPART_TYPE\n"
         "item-0\talpha\n"
         "item-1\tbeta\n"
         "item-2\talpha\n"
         "item-3\tbeta\n"
-        "item-4\talpha\n",
-        encoding="utf-8",
+        "item-4\talpha\n"
     )
-    (projector_root / "projector_config.json").write_text(
-        json.dumps({"embeddings": [{"tensorName": "embedding"}]}),
-        encoding="utf-8",
-    )
+
+    def seed_projector(root: Path, tensor_name: str) -> None:
+        root.mkdir(parents=True, exist_ok=True)
+        np.savetxt(root / "vectors.tsv", vectors, fmt="%.6f", delimiter="\t")
+        (root / "metadata.tsv").write_text(metadata_payload, encoding="utf-8")
+        (root / "projector_config.json").write_text(
+            json.dumps({"embeddings": [{"tensorName": tensor_name}]}),
+            encoding="utf-8",
+        )
+
+    seed_projector(default_projector_root, "embedding")
+    seed_projector(archive_projector_root, "embedding-archive")
 
     settings = Settings(
         model_directory=base_models_dir / "default",
-        tensorboard_projector_path=projector_root,
+        tensorboard_projector_path=default_projector_root,
     )
 
     class DummyPredictionService:
@@ -63,7 +67,7 @@ def tensorboard_api_client(
 
     monkeypatch.setattr(projector_module, "PredictionService", lambda: DummyPredictionService())
     monkeypatch.setattr(projector_module, "BASE_MODELS_DIR", base_models_dir)
-    monkeypatch.setattr(projector_module, "DEFAULT_PROJECTOR_PATH", projector_root)
+    monkeypatch.setattr(projector_module, "DEFAULT_PROJECTOR_PATH", default_projector_root)
     monkeypatch.setattr(projector_module, "get_settings", lambda: settings)
     projector_module._cached_projector.cache_clear()
 
@@ -84,7 +88,7 @@ def tensorboard_api_client(
     app.include_router(projector_module.router)
     client = TestClient(app)
     try:
-        yield client, projector_root
+        yield client, default_projector_root
     finally:
         projector_module._cached_projector.cache_clear()
 
@@ -138,3 +142,39 @@ def test_tsne_layout_applies_filters_and_stride(tensorboard_api_client: Tuple[Te
     for point in payload["points"]:
         assert point["metadata"]["PART_TYPE"] == "alpha"
         assert 0.0 <= point["progress"] <= 1.0
+
+
+def test_nested_projector_id_routes(tensorboard_api_client: Tuple[TestClient, Path]) -> None:
+    client, _ = tensorboard_api_client
+    nested_id = "archive/version_20251021083443"
+
+    projectors_response = client.get(
+        "/api/training/tensorboard/projectors",
+        headers={"Authorization": "Bearer test-token"},
+    )
+    assert projectors_response.status_code == 200, projectors_response.text
+    projector_ids = {item["id"] for item in projectors_response.json()}
+    assert nested_id in projector_ids
+
+    base_path = f"/api/training/tensorboard/projectors/{nested_id}"
+
+    points_response = client.get(f"{base_path}/points", headers={"Authorization": "Bearer test-token"})
+    assert points_response.status_code == 200, points_response.text
+    assert points_response.json()["projector_id"] == nested_id
+
+    filters_response = client.get(f"{base_path}/filters", headers={"Authorization": "Bearer test-token"})
+    assert filters_response.status_code == 200, filters_response.text
+
+    tsne_response = client.get(
+        f"{base_path}/tsne",
+        params={"limit": 500, "perplexity": 30, "iterations": 500, "steps": 6},
+        headers={"Authorization": "Bearer test-token"},
+    )
+    assert tsne_response.status_code == 200, tsne_response.text
+
+    metrics_response = client.get(
+        f"/api/training/tensorboard/metrics/{nested_id}",
+        headers={"Authorization": "Bearer test-token"},
+    )
+    assert metrics_response.status_code == 200, metrics_response.text
+    assert metrics_response.json(), "Expected metrics payload for nested projector id"
