@@ -283,14 +283,14 @@
 
 **Git Operations**:
 - [x] Git staging 완전성 확인
-- [x] Commit Phase 7 Part 1: "feat: Add Model Registry API and frontend hooks"
+- [x] Commit Phase 7 Part 1: "feat: Add Model Registry API and frontend hooks" (09a353a3)
 - [x] Push to 251014
-- [ ] Commit Phase 7 Part 2: "feat: Add model selection UI to PredictionControls"
-- [ ] Push to 251014
-- [ ] Merge 전 검증
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Commit Phase 7 Part 2: "feat: Add model selection UI to PredictionControls" (f5112112)
+- [x] Push to 251014
+- [x] Merge 전 검증
+- [x] Merge to main (0ee2cb54)
+- [x] Push main
+- [x] Return to 251014
 
 ---
 
