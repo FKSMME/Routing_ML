@@ -31,8 +31,8 @@ from tkinter import ttk, filedialog, messagebox, simpledialog
 import psutil
 
 # Version Information
-__version__ = "5.2.5"
-__build_date__ = "2025-10-20"
+__version__ = "5.7.0"
+__build_date__ = "2025-10-24"
 __author__ = "Routing ML Team"
 __app_name__ = "라우팅 자동생성 시스템 모니터"
 

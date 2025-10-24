@@ -47,6 +47,10 @@ class HNSWSearch:
         if vectors.dtype != np.float32:
             vectors = vectors.astype("float32", copy=False)
 
+        self.original_vectors = vectors.copy()
+
+        faiss.normalize_L2(vectors)                 # cosine �� L2 ��ȯ ����
+
         faiss.normalize_L2(vectors)                 # cosine ↔ L2 변환 전제
 
         self.item_codes = np.asarray(item_codes)
