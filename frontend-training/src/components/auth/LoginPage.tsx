@@ -2,7 +2,8 @@ import { CardShell } from "@components/common/CardShell";
 import { LiquidEther } from "@routing-ml/shared";
 import { useBackgroundSettings } from "@store/backgroundSettings";
 import { LogIn, UserPlus } from "lucide-react";
-import { type FormEvent, useEffect,useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { ThemeToggle } from "../ThemeToggle";
 
@@ -47,7 +48,7 @@ function LoginBackground() {
     takeoverDuration: state.takeoverDuration,
     autoResumeDelay: state.autoResumeDelay,
     autoRampDuration: state.autoRampDuration,
-  }));
+  }), shallow);
 
   if (!enabled) {
     return null;
