@@ -1,4 +1,5 @@
 import type { AuthenticatedUserPayload, ChangePasswordRequestPayload, ChangePasswordResponsePayload, LoginRequestPayload, LoginResponsePayload, RegisterRequestPayload, RegisterResponsePayload, UserSession, UserStatusResponsePayload } from "@app-types/auth";
+import type { CustomNode, CustomNodeCreatePayload, CustomNodeUpdatePayload } from "@app-types/customNodes";
 import type { MasterDataItemResponse, MasterDataLogsResponse, MasterDataTreeResponse } from "@app-types/masterData";
 import type { PredictionResponse } from "@app-types/routing";
 import type { TrainingStatusMetrics } from "@app-types/training";
@@ -1052,6 +1053,55 @@ export async function fetchModelVersions(limit?: number): Promise<ModelListRespo
 export async function fetchActiveModel(): Promise<ModelVersion | null> {
   const response = await api.get<ModelVersion | null>("/models/active");
   return response.data;
+}
+
+// ============================================================================
+// CUSTOM PROCESS NODES APIs (Phase 2)
+// ============================================================================
+
+/**
+ * 현재 사용자의 커스텀 프로세스 노드 목록을 조회합니다.
+ *
+ * @returns 커스텀 노드 목록
+ */
+export async function fetchCustomNodes(): Promise<CustomNode[]> {
+  const response = await api.get<CustomNode[]>("/custom-nodes");
+  return response.data;
+}
+
+/**
+ * 새로운 커스텀 프로세스 노드를 생성합니다.
+ *
+ * @param payload 생성할 노드 정보
+ * @returns 생성된 노드
+ */
+export async function createCustomNode(payload: CustomNodeCreatePayload): Promise<CustomNode> {
+  const response = await api.post<CustomNode>("/custom-nodes", payload);
+  return response.data;
+}
+
+/**
+ * 기존 커스텀 프로세스 노드를 업데이트합니다.
+ *
+ * @param nodeId 업데이트할 노드 ID
+ * @param payload 업데이트할 정보
+ * @returns 업데이트된 노드
+ */
+export async function updateCustomNode(
+  nodeId: string,
+  payload: CustomNodeUpdatePayload
+): Promise<CustomNode> {
+  const response = await api.put<CustomNode>(`/custom-nodes/${nodeId}`, payload);
+  return response.data;
+}
+
+/**
+ * 커스텀 프로세스 노드를 삭제합니다.
+ *
+ * @param nodeId 삭제할 노드 ID
+ */
+export async function deleteCustomNode(nodeId: string): Promise<void> {
+  await api.delete(`/custom-nodes/${nodeId}`);
 }
 
 
