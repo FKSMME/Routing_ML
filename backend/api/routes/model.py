@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.api.auth import get_current_user
+from backend.api.routes.auth import get_current_user
 from backend.config import Settings, get_settings
 from backend.maintenance.model_registry import (
     ModelVersion,

@@ -72,9 +72,23 @@ class RoutingMLDashboard:
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
 
-    def _ensure_api_client(self) -> bool:
-        """Ensure API client is available; surface authentication issues to the user."""
+    def _ensure_api_client(self, require_auth: bool = False) -> bool:
+        """Ensure API client is available; optionally require authentication.
+
+        Args:
+            require_auth: If True, require authenticated client. If False, allow unauthenticated client.
+
+        Returns:
+            True if client is available (and authenticated if required), False otherwise.
+        """
         if self.api_client is not None:
+            if require_auth and not self.api_client.authenticated:
+                messagebox.showwarning(
+                    "인증 필요",
+                    "이 기능은 관리자 인증이 필요합니다.\n"
+                    "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 설정해 주세요.",
+                )
+                return False
             return True
 
         try:
@@ -84,20 +98,28 @@ class RoutingMLDashboard:
                 MONITOR_ADMIN_PASSWORD or None,
                 timeout=API_TIMEOUT,
             )
+            if require_auth and not self.api_client.authenticated:
+                messagebox.showwarning(
+                    "인증 필요",
+                    "이 기능은 관리자 인증이 필요합니다.\n"
+                    "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 설정해 주세요.",
+                )
+                return False
         except ApiError as exc:
             self.api_client = None
-            messagebox.showerror(
-                "API 인증 실패",
-                "관리자 API에 연결하지 못했습니다.\n"
-                "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 확인해 주세요.\n\n"
-                f"상세: {exc}",
-            )
+            if require_auth:
+                messagebox.showerror(
+                    "API 인증 실패",
+                    "관리자 API에 연결하지 못했습니다.\n\n"
+                    f"상세: {exc}",
+                )
             if hasattr(self, "user_status_label"):
                 self.user_status_label.config(text=f"API 인증 실패: {exc}")
             return False
         except Exception as exc:
             self.api_client = None
-            messagebox.showerror("API 초기화 오류", str(exc))
+            if require_auth:
+                messagebox.showerror("API 초기화 오류", str(exc))
             if hasattr(self, "user_status_label"):
                 self.user_status_label.config(text=f"API 초기화 오류: {exc}")
             return False
@@ -565,13 +587,13 @@ class RoutingMLDashboard:
     # ========================================================================
 
     def _load_pending_users(self):
-        """Load pending users"""
+        """Load pending users - requires authentication"""
         self.user_status_label.config(text="회원 목록 로딩 중...")
 
         for widget in self.user_list_frame.winfo_children():
             widget.destroy()
 
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         try:
@@ -707,7 +729,8 @@ class RoutingMLDashboard:
 
 
     def _open_user_browser(self) -> None:
-        if not self._ensure_api_client():
+        """Open user browser - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         window = tk.Toplevel(self.root)
@@ -838,7 +861,8 @@ class RoutingMLDashboard:
         refresh_users()
 
     def _prompt_reset_password(self) -> None:
-        if not self._ensure_api_client():
+        """Prompt for password reset - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         username = simpledialog.askstring("비밀번호 초기화", "초기화할 사용자 ID를 입력하세요:")
@@ -873,7 +897,8 @@ class RoutingMLDashboard:
         )
 
     def _bulk_register_csv(self) -> None:
-        if not self._ensure_api_client():
+        """Bulk register users from CSV - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         file_path = filedialog.askopenfilename(
@@ -937,12 +962,12 @@ class RoutingMLDashboard:
         )
 
     def _approve_user(self, username: str, make_admin: bool):
-        """Approve user"""
+        """Approve user - requires authentication"""
         confirm = messagebox.askyesno("회원 승인", f"'{username}' 회원을 승인하시겠습니까?")
 
         if not confirm:
             return
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         payload = {"username": username, "make_admin": make_admin}
@@ -956,12 +981,12 @@ class RoutingMLDashboard:
         self._load_pending_users()
 
     def _reject_user(self, username: str):
-        """Reject user"""
+        """Reject user - requires authentication"""
         reason = simpledialog.askstring("회원 거절", f"'{username}' 회원 승인을 거절하시겠습니까?\n\n거절 사유 (선택 입력):")
 
         if reason is None:
             return
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         payload = {"username": username, "reason": (reason or "사유 없음")}
