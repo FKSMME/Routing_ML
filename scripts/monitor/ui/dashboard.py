@@ -589,15 +589,9 @@ class RoutingMLDashboard:
             else:
                 message = f"❌ 모든 프로세스 종료 실패 ({len(failed)}개)\n\n"
                 message += "실패한 PID: " + ", ".join(str(pid) for pid in failed)
-                message += "\n\n관리자 권한으로 실행하거나 수동으로 종료해주세요."
+                message += "\n\n수동으로 종료해주세요."
                 messagebox.showerror("서버 정지 실패", message)
 
-        except psutil.AccessDenied:
-            messagebox.showerror(
-                "권한 오류",
-                "프로세스 정보에 접근할 권한이 없습니다.\n\n"
-                "모니터를 관리자 권한으로 실행해주세요."
-            )
         except Exception as e:
             messagebox.showerror(
                 "서비스 중지 실패",

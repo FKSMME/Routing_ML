@@ -4,8 +4,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.api.routes.auth import get_current_user
-from backend.config import Settings, get_settings
+from backend.api.security import get_current_user
+from backend.api.config import Settings, get_settings
 from backend.maintenance.model_registry import (
     ModelVersion,
     get_active_version,
@@ -97,3 +97,5 @@ def get_active_model(
             status_code=500,
             detail=f"Failed to retrieve active model: {str(e)}",
         )
+
+
