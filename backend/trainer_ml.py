@@ -135,6 +135,8 @@ def _get_hnsw_params() -> Dict[str, Optional[int]]:
     }
 
 
+
+
 def _export_projector_fallback(
     tb_dir: Path,
     *,
@@ -143,16 +145,14 @@ def _export_projector_fallback(
     metadata_df: pd.DataFrame,
     metadata_cols: Optional[List[str]],
 ) -> None:
-    """Create minimal TensorBoard projector assets without TensorFlow."""
+    """Create TensorBoard projector assets without TensorFlow."""
 
     tb_dir.mkdir(parents=True, exist_ok=True)
 
     vectors_path = tb_dir / "vectors.tsv"
-    metadata_path = tb_dir / "metadata.tsv"
-    config_path = tb_dir / "projector_config.json"
-
     np.savetxt(vectors_path, vectors.astype(np.float32, copy=False), delimiter="\t", fmt="%.6f")
 
+    metadata_path = tb_dir / "metadata.tsv"
     columns: List[str] = ["ITEM_CD"]
     if metadata_cols:
         for col in metadata_cols:
@@ -163,26 +163,20 @@ def _export_projector_fallback(
     for col in columns:
         if col not in metadata.columns:
             metadata[col] = ""
-
     metadata = metadata.reindex(columns=columns)
-    # Reorder rows to match the embedding order using ITEM_CD values
     metadata = metadata.set_index("ITEM_CD").reindex(item_codes).reset_index()
-    metadata.to_csv(metadata_path, sep="\t", index=False)
+    metadata.to_csv(metadata_path, sep="\t", index=False, encoding="utf-8")
 
-    projector_config = {
-        "embeddings": [
-            {
-                "tensorName": "routing_ml_embeddings",
-                "tensorShape": [len(item_codes), int(vectors.shape[1])],
-                "tensorPath": vectors_path.name,
-                "metadataPath": metadata_path.name,
-            }
-        ]
-    }
-    config_path.write_text(json.dumps(projector_config, indent=2, ensure_ascii=False), encoding="utf-8")
+    config_lines = [
+        "embeddings {",
+        '  tensor_name: "routing_ml_embeddings"',
+        f'  tensor_path: "{vectors_path.name}"',
+        f'  metadata_path: "{metadata_path.name}"',
+        "}",
+    ]
+    (tb_dir / "projector_config.pbtxt").write_text("\n".join(config_lines) + "\n", encoding="utf-8")
 
     logger.info("TensorBoard Projector fallback assets created at: %s", tb_dir)
-
 
 def apply_trainer_runtime_config(config: TrainerRuntimeConfig) -> None:
     """워크플로우 저장소 런타임 설정을 트레이너에 반영한다."""

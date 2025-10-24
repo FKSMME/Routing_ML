@@ -14,7 +14,6 @@ if str(REPO_ROOT) not in sys.path:
 import joblib
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from tensorboard.plugins import projector
 
 # ===== 사용자 옵션 =====
@@ -69,28 +68,31 @@ def load_searcher(model_dir: Path):
 def extract_vectors_and_labels(searcher) -> Tuple[np.ndarray, List[str]]:
     item_codes = list(getattr(searcher, "item_codes", []))
     if not item_codes:
-        raise RuntimeError("item_codes를 찾을 수 없습니다. HNSWSearch가 item_codes를 보유해야 합니다.")
-    vecs = getattr(searcher, "vectors", None)
-    if isinstance(vecs, np.ndarray) and vecs.ndim == 2:
-        return vecs.astype(np.float32, copy=False), item_codes
+        raise RuntimeError("item_codes is empty. HNSWSearch.item_codes must be populated.")
+    for attr in ("original_vectors", "vectors"):
+        vecs = getattr(searcher, attr, None)
+        if isinstance(vecs, np.ndarray) and vecs.ndim == 2:
+            print(f"[INFO] Using stored vectors from searcher attribute '{attr}'.")
+            return vecs.astype(np.float32, copy=False), item_codes
 
     faiss_index = getattr(searcher, "index", None)
     if faiss_index is None or not hasattr(faiss_index, "reconstruct"):
-        raise RuntimeError("FAISS index가 없거나 reconstruct를 지원하지 않습니다.")
+        raise RuntimeError("FAISS index lacks reconstruct(). Re-train with updated HNSWSearch so original_vectors are persisted.")
+
     ntotal = int(getattr(faiss_index, "ntotal", 0))
     dim = int(getattr(faiss_index, "d", 0))
     if ntotal <= 0 or dim <= 0:
-        raise RuntimeError("FAISS index 정보가 올바르지 않습니다.")
+        raise RuntimeError("FAISS index dimensions are invalid.")
     if ntotal != len(item_codes):
-        print(f"[WARN] ntotal({ntotal}) != len(item_codes)({len(item_codes)}). 최소 길이에 맞춰 복원합니다.")
+        print(f"[WARN] ntotal({ntotal}) != len(item_codes)({len(item_codes)}). Adjusting to minimum length.")
 
     n = min(ntotal, len(item_codes))
-    X = np.empty((n, dim), dtype=np.float32)
+    vectors = np.empty((n, dim), dtype=np.float32)
     for i in range(n):
-        X[i] = faiss_index.reconstruct(i)
+        vectors[i] = faiss_index.reconstruct(i)
         if (i + 1) % 10000 == 0:
             print(f"  reconstructed {i+1}/{n}")
-    return X, item_codes[:n]
+    return vectors, item_codes[:n]
 
 def maybe_downsample(vectors: np.ndarray, labels: List[str]) -> Tuple[np.ndarray, List[str]]:
     sliced_vectors = vectors
@@ -291,63 +293,40 @@ def export_tensorboard_projector(
     vectors: np.ndarray, labels: List[str], out_dir: Path, metadata_df: Optional[pd.DataFrame] = None
 ):
     ensure_dir(out_dir)
-    for file in out_dir.glob("*"):
+    for file in out_dir.glob('*'):
         if file.is_file():
             file.unlink()
 
     print(f"[INFO] Exporting {len(labels)} embeddings with {vectors.shape[1]} dimensions")
 
+    vectors = np.asarray(vectors, dtype=np.float32)
+    tensor_path = out_dir / "vectors.tsv"
+    np.savetxt(tensor_path, vectors, delimiter="\t", fmt="%.6f")
+    print(f"[INFO] Saved embedding matrix: {tensor_path}")
+
     metadata_path = out_dir / "metadata.tsv"
     if metadata_df is None:
-        with open(metadata_path, 'w', encoding='utf-8') as f:
-            f.write("ITEM_CD\n")
+        with open(metadata_path, "w", encoding="utf-8") as handle:
+            handle.write("ITEM_CD\n")
             for label in labels:
-                f.write(f"{label}\n")
-        print(f"[INFO] Saved simple metadata (1 column): {metadata_path}")
+                handle.write(f"{label}\n")
+        print(f"[INFO] Saved simple metadata (ITEM_CD only): {metadata_path}")
     else:
-        print(f"[INFO] metadata columns(final): {list(metadata_df.columns)}")
-        if "PART_TYPE" not in metadata_df.columns:
-            print("[WARN] metadata.tsv에 PART_TYPE가 포함되지 않습니다!")
-        else:
-            nunique = metadata_df["PART_TYPE"].nunique(dropna=False)
-            print(f"[INFO] PART_TYPE nunique: {nunique}")
-            if nunique <= 1:
-                print("[WARN] PART_TYPE가 한 가지 값만 존재(예: 모두 Unknown). Projector 드롭다운에 숨겨질 수 있습니다.")
         metadata_df.to_csv(metadata_path, sep="\t", index=False, encoding="utf-8")
         print(f"[INFO] Saved detailed metadata: {metadata_path}")
 
-    import tensorflow.compat.v1 as tf_v1
-    tf_v1.disable_v2_behavior()
-    tf_v1.reset_default_graph()
-
-    with tf_v1.Session() as sess:
-        embedding = tf_v1.get_variable(
-            name=TENSOR_NAME,
-            shape=vectors.shape,
-            dtype=tf.float32,
-            initializer=tf_v1.constant_initializer(vectors),
-            trainable=False
-        )
-        sess.run(tf_v1.global_variables_initializer())
-        saver = tf_v1.train.Saver([embedding])
-        checkpoint_path = out_dir / "model.ckpt"
-        saver.save(sess, str(checkpoint_path))
-
     config = projector.ProjectorConfig()
     embedding_config = config.embeddings.add()
+    embedding_config.tensor_path = tensor_path.name
+    embedding_config.metadata_path = metadata_path.name
     embedding_config.tensor_name = TENSOR_NAME
-    embedding_config.metadata_path = "metadata.tsv"
 
     config_path = out_dir / "projector_config.pbtxt"
-    with open(config_path, 'w', encoding='utf-8') as f:
-        f.write(str(config))
-
-    writer = tf_v1.summary.FileWriter(str(out_dir))
-    writer.add_graph(tf_v1.get_default_graph())
-    writer.close()
+    with open(config_path, "w", encoding="utf-8") as handle:
+        handle.write(str(config))
+    print(f"[INFO] Saved projector config: {config_path}")
 
     print(f"[OK] Projector export complete: {out_dir}")
-
 
 def export_for_tensorboard_projector(
     *,
@@ -392,7 +371,7 @@ def export_for_tensorboard_projector(
         )
 
     export_tensorboard_projector(
-        np.asarray(vectors, dtype=np.float32, copy=False),
+        np.asarray(vectors, dtype=np.float32),
         labels,
         out_dir,
         metadata_df=prepared_metadata,
@@ -408,23 +387,24 @@ def verify_export(out_dir: Path):
     print(f"\n[VERIFY] Checking export in {out_dir}")
     for file in required_files:
         file_path = out_dir / file
-        print(("  ✓ " if file_path.exists() else "  ✗ ") + f"{file} ({'exists' if file_path.exists() else 'missing'})")
+        status = "OK" if file_path.exists() else "MISSING"
+        print(f"  - {file}: {status}")
     if checkpoint_files:
-        print(f"  ✓ Checkpoint files: {[f.name for f in checkpoint_files]}")
+        print(f"  - Checkpoint files: {[f.name for f in checkpoint_files]}")
     else:
-        print("  ✗ No checkpoint files found!")
+        print("  - No checkpoint files found (not required for TSV-based export).")
 
     metadata_path = out_dir / "metadata.tsv"
     if metadata_path.exists():
         try:
             df = pd.read_csv(metadata_path, sep="\t", dtype=str).fillna("")
-            print(f"  ✓ Metadata shape: {df.shape}, columns: {list(df.columns)}")
+            print(f"  - Metadata shape: {df.shape}, columns: {list(df.columns)}")
             if "PART_TYPE" in df.columns:
-                print(f"  ✓ PART_TYPE nunique: {df['PART_TYPE'].nunique(dropna=False)}; sample={df['PART_TYPE'].head(3).tolist()}")
+                print(f"  - PART_TYPE nunique: {df['PART_TYPE'].nunique(dropna=False)}; sample={df['PART_TYPE'].head(3).tolist()}")
             else:
-                print("  ✗ PART_TYPE column missing in metadata.tsv")
+                print("  - PART_TYPE column missing in metadata.tsv")
         except Exception as e:
-            print(f"  ✗ Error reading metadata: {e}")
+            print(f"  - Error reading metadata: {e}")
 
 # ===== 메인 =====
 def main() -> None:
