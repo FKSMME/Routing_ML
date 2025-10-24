@@ -17,7 +17,10 @@
       "Bash(npm run:*)",
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
-      "Bash(powershell -Command \"Start-Sleep -Seconds 10\")"
+      "Bash(powershell -Command \"Start-Sleep -Seconds 10\")",
+      "Bash(.\\.venv\\Scripts\\python.exe:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(powershell -Command:*)"
     ],
     "deny": [],
     "ask": []
