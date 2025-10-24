@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from backend.api.pydantic_compat import ensure_forward_ref_compat
 from common.datetime_utils import utc_now_naive
@@ -273,7 +273,11 @@ class OperationStep(BaseModel):
     mfg_lt: Optional[float] = Field(None, alias="MFG_LT")
     queue_time: Optional[float] = Field(None, alias="QUEUE_TIME")
     setup_time: Optional[float] = Field(None, alias="SETUP_TIME")
-    run_time: Optional[float] = Field(None, alias="MACH_WORKED_HOURS", serialization_alias="RUN_TIME")
+    run_time: Optional[float] = Field(
+        None,
+        validation_alias=AliasChoices("RUN_TIME", "MACH_WORKED_HOURS"),
+        serialization_alias="RUN_TIME"
+    )
     mach_worked_hours: Optional[float] = Field(None, alias="MACH_WORKED_HOURS")
     act_setup_time: Optional[float] = Field(None, alias="ACT_SETUP_TIME")
     act_run_time: Optional[float] = Field(None, alias="ACT_RUN_TIME")
