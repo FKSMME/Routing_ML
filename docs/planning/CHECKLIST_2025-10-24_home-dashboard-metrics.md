@@ -13,6 +13,9 @@
 - [ ] Implement supporting text components with design tokens (Est. 1.5h)  
   - Dependencies: Audit notes  
   - Acceptance: Text renders under each card, responsive and accessible.
+- [ ] Add KPI card for “금일 WO 발행 · 라우팅 미생성” (Est. 1.0h)  
+  - Dependencies: Supporting text components  
+  - Acceptance: Card shows value placeholder, aligned with other KPIs, includes footnote.
 - [ ] Copy review with stakeholders or design references (Est. 0.5h)  
   - Dependencies: Text implemented  
   - Acceptance: Final Korean copy confirmed/adjusted.
@@ -20,10 +23,10 @@
 ## Phase 3 – 금일 라우팅 데이터 연동
 - [ ] Validate availability of API / create backend query for `dbo_ROUTING_HISTORY` (Est. 1.5h)  
   - Dependencies: Phase 2 implementation ready  
-  - Acceptance: Confirmed endpoint or SQL that returns today’s counts.
+  - Acceptance: Confirmed endpoint or SQL that returns today’s routing counts and WO-without-routing counts.
 - [ ] Integrate frontend data fetching and state update (Est. 1.5h)  
   - Dependencies: API contract finalized  
-  - Acceptance: Card displays live count, handles loading/error.
+  - Acceptance: Cards display live counts, handle loading/error.
 - [ ] Unit/Integration tests or manual query validation (Est. 1.0h)  
   - Dependencies: Frontend integration  
   - Acceptance: Count matches manual DB check for sample date.
@@ -39,8 +42,8 @@
 ## Progress Tracking
 
 Phase 1: [##########] 100% (2/2 tasks)  
-Phase 2: [          ] 0% (0/3 tasks)  
+Phase 2: [          ] 0% (0/4 tasks)  
 Phase 3: [          ] 0% (0/3 tasks)  
 Phase 4: [          ] 0% (0/2 tasks)
 
-Total: [##        ] 20% (2/10 tasks)
+Total: [##        ] 18% (2/11 tasks)
