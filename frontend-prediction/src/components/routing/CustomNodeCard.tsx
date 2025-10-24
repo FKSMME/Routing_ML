@@ -25,18 +25,28 @@ export const CustomNodeCard: React.FC<CustomNodeCardProps> = ({
     if (!draggable) return;
 
     // Set drag data format compatible with existing drag & drop system
+    // Format: DraggableOperationPayload with OperationStep
     e.dataTransfer.effectAllowed = "copy";
-    e.dataTransfer.setData(
-      "application/json",
-      JSON.stringify({
-        type: "custom-node",
-        process_code: node.process_code,
-        process_name: node.process_name,
-        estimated_time: node.estimated_time,
+
+    const payload = {
+      itemCode: "custom", // Custom nodes are not tied to specific items
+      candidateId: `custom-${node.id}`,
+      operation: {
+        PROC_SEQ: 0, // Will be auto-assigned by insertOperation
+        PROC_CD: node.process_code,
+        PROC_DESC: node.process_name,
+        RUN_TIME: node.estimated_time,
+        SETUP_TIME: null,
+        WAIT_TIME: null,
+      },
+      metadata: {
+        source: "custom-node",
+        nodeId: node.id,
         color: node.color,
-        node_id: node.id,
-      })
-    );
+      },
+    };
+
+    e.dataTransfer.setData("application/routing-operation", JSON.stringify(payload));
   };
 
   const backgroundColor = node.color || "#6366f1";
