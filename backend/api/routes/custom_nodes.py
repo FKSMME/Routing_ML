@@ -15,7 +15,7 @@ from backend.api.security import require_auth
 from backend.api.schemas import AuthenticatedUser
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/custom-nodes", tags=["custom-nodes"])
+router = APIRouter(prefix="/api/custom-nodes", tags=["custom-nodes"])
 
 # Data storage path
 DATA_DIR = Path("data/custom_nodes")
