@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field
 
 from backend.api.security import require_auth
@@ -189,7 +189,7 @@ async def update_custom_node(
 async def delete_custom_node(
     node_id: str,
     current_user: AuthenticatedUser = Depends(require_auth),
-) -> None:
+) -> Response:
     """Delete a custom node."""
     nodes = _load_user_nodes(current_user.user_id)
 
@@ -206,3 +206,4 @@ async def delete_custom_node(
     _save_user_nodes(current_user.user_id, nodes)
 
     logger.info(f"User {current_user.username} deleted custom node: {node_id}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
