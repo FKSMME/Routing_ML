@@ -44,6 +44,7 @@ _VIEW_CACHE: Dict[str, str] | None = None
 _VIEW_ENV_KEYS: Dict[str, str] = {
     "item": "MSSQL_ITEM_VIEW",
     "routing": "MSSQL_ROUTING_VIEW",
+    "routing_history": "MSSQL_ROUTING_HISTORY_VIEW",
     "work_result": "MSSQL_WORK_RESULT_VIEW",
     "purchase_order": "MSSQL_PURCHASE_ORDER_VIEW",
 }

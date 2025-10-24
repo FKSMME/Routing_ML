@@ -3,6 +3,7 @@ import { flushRoutingPersistence } from "@routing-ml/shared/lib/persistence/inde
 import { useRoutingStore } from "@store/routingStore";
 import { BadgeCheck, Clock3, Download, Printer,Redo2, Save, Undo2 } from "lucide-react";
 import { useCallback,useMemo } from "react";
+import toast from "react-hot-toast";
 
 import { AnimatedCard } from "./AnimatedCard";
 import { RecommendationsTab } from "./routing/RecommendationsTab";
@@ -44,10 +45,16 @@ export function TimelinePanel() {
       // Flush routing persistence to sync with backend (if enabled)
       await flushRoutingPersistence("manual");
 
-      alert("라우팅 구성이 저장되었습니다.");
+      toast.success("라우팅 구성이 저장되었습니다.", {
+        duration: 3000,
+        position: "bottom-right",
+      });
     } catch (error) {
       console.error("Failed to save routing:", error);
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.", {
+        duration: 4000,
+        position: "bottom-right",
+      });
     }
   }, [timeline, activeProductId, setLastSavedAt]);
 
@@ -59,12 +66,18 @@ export function TimelinePanel() {
     }));
 
     if (items.length === 0 || items.every((item) => item.timeline.length === 0)) {
-      alert("내보낼 라우팅 데이터가 없습니다.");
+      toast.error("내보낼 라우팅 데이터가 없습니다.", {
+        duration: 3000,
+        position: "bottom-right",
+      });
       return;
     }
 
     exportAllItemsToCSV(items);
-    alert(`${items.length}개 품목의 CSV 파일이 다운로드되었습니다.`);
+    toast.success(`${items.length}개 품목의 CSV 파일이 다운로드되었습니다.`, {
+      duration: 3000,
+      position: "bottom-right",
+    });
   }, [productTabs]);
 
   const handlePrint = useCallback(() => {

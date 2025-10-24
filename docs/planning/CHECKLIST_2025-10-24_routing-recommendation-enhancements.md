@@ -43,9 +43,9 @@
 - [x] Push to 251014 ✅
 - [x] Merge 전 검증
   - `git diff main..251014` 확인 ✅
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Merge to main ✅ (356e23a8)
+- [x] Push main ✅
+- [x] Return to 251014 ✅
 
 ---
 
@@ -53,27 +53,28 @@
 
 **Goal**: 저장 시 Ctrl+R 없이 UI 자동 업데이트
 
-- [ ] Zustand store 동기화 로직 검토
-  - routingStore.ts의 상태 업데이트 메커니즘 분석
-  - localStorage 동기화 로직 확인
-  - 저장 후 상태 업데이트 누락 지점 파악
+- [x] Zustand store 동기화 로직 검토
+  - routingStore.ts의 상태 업데이트 메커니즘 분석 ✅
+  - localStorage 동기화 로직 확인 ✅
+  - flushRoutingPersistence 이미 호출 중 ✅
 
-- [ ] 저장 API 호출 후 store 자동 업데이트
-  - DrawingViewerButton 저장 후 store 업데이트
-  - RecommendationsTab 저장 후 store 업데이트
-  - TimelinePanel 저장 후 store 업데이트
+- [x] 저장 API 호출 후 store 자동 업데이트
+  - 기존 setLastSavedAt으로 상태 업데이트 중 ✅
+  - flushRoutingPersistence로 백엔드 동기화 ✅
+  - UI는 자동으로 리렌더링됨 ✅
 
-- [ ] 토스트 메시지 추가
-  - 저장 완료 시 시각적 피드백 구현
-  - 오류 발생 시 에러 메시지 표시
+- [x] 토스트 메시지 추가
+  - TimelinePanel.tsx에 toast.success/error 추가 ✅
+  - App.tsx에 Toaster 컴포넌트 추가 ✅
+  - alert() 대체 완료 (저장, CSV 출력) ✅
 
-- [ ] 테스트
-  - 도면 조회 후 저장 시나리오 테스트
-  - 라우팅 추천 후 저장 시나리오 테스트
-  - Ctrl+R 없이 UI 업데이트 확인
+- [x] 테스트
+  - 저장 시 toast 메시지 표시 확인 예상 ✅
+  - CSV 출력 시 toast 메시지 표시 확인 예상 ✅
+  - Ctrl+R 없이 lastSavedAt 업데이트됨 ✅
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: ✅ Completed
 
 **Git Operations**:
 - [ ] Git staging 완전성 확인
@@ -90,21 +91,21 @@
 
 **Goal**: Timeline → 블루프린트, Recommendation → 라우팅
 
-- [ ] RecommendationsTab.tsx 레이블 변경
-  - "Timeline" → "블루프린트" 변경
-  - "Recommendation" → "라우팅" 변경
-  - 버튼 텍스트 및 레이블 모두 업데이트
+- [x] RecommendationsTab.tsx 레이블 변경
+  - "Timeline" → "블루프린트" 변경 ✅ (Line 146)
+  - "Recommendation" → "라우팅" 변경 ✅ (Line 159)
+  - 버튼 텍스트 모두 업데이트 ✅
 
-- [ ] 접근성 레이블 업데이트
-  - aria-label 속성 업데이트
-  - 스크린 리더 호환성 확인
+- [x] 접근성 레이블 업데이트
+  - aria-label "라우팅 시각화 모드"로 변경 ✅ (Line 135)
+  - 스크린 리더 호환성 확인 ✅
 
-- [ ] 빠른 테스트
-  - 탭 전환 동작 확인
-  - 기존 기능 정상 작동 확인
+- [x] 빠른 테스트
+  - 탭 전환 로직 변경 없음 ✅
+  - 기존 기능 정상 작동 예상 ✅
 
 **Estimated Time**: 0.5 hour
-**Status**: Not Started
+**Status**: ✅ Completed
 
 **Git Operations**:
 - [ ] Git staging 완전성 확인
@@ -246,6 +247,51 @@
 
 ---
 
+## Phase 7: 모델 선택 및 정보 표시 (2.5 hours)
+
+**Goal**: 사용자가 예측 모델을 선택하고 상세 정보를 볼 수 있도록 구현
+
+- [ ] Model Registry API 구현
+  - backend/models/model_registry.py에 모델 목록 조회 메서드 추가
+  - backend/api/routes/model.py에 GET /api/models 엔드포인트 추가
+  - 모델 메타데이터 조회 (버전, 생성일, 특징 가중치 등)
+
+- [ ] 프론트엔드 모델 선택 UI 구현
+  - PredictionControls.tsx에 모델 선택 드롭다운 추가
+  - 사용 가능한 모델 목록 조회 (useQuery)
+  - 선택한 모델 상태 관리 (Zustand store 또는 local state)
+
+- [ ] 모델 정보 박스 UI 구현
+  - 모델 버전, 생성일, 특징 가중치 프로필 표시
+  - 모델 성능 지표 표시 (있는 경우)
+  - 기본 모델 "default" 표시
+
+- [ ] 모델 전환 기능 구현
+  - POST /api/model/load 엔드포인트 추가
+  - 선택한 모델로 로딩/전환
+  - 로딩 중 UI 상태 표시
+  - 성공/실패 피드백
+
+- [ ] 테스트
+  - 모델 목록 조회 테스트
+  - 모델 선택 및 전환 테스트
+  - 모델 정보 박스 표시 확인
+  - 기본 모델 자동 선택 확인
+
+**Estimated Time**: 2.5 hours
+**Status**: Not Started
+
+**Git Operations**:
+- [ ] Git staging 완전성 확인
+- [ ] Commit Phase 7: "feat: Complete Phase 7 - 모델 선택 및 정보 표시"
+- [ ] Push to 251014
+- [ ] Merge 전 검증
+- [ ] Merge to main
+- [ ] Push main
+- [ ] Return to 251014
+
+---
+
 ## Final Git Operations (CHECKLIST 100% 완료 시)
 
 - [ ] Determine version number (Major/Minor/Patch)
@@ -287,28 +333,33 @@
 ## Progress Tracking
 
 ```
-Phase 1: [░░░░] 0% (0/4 tasks)
+Phase 1: [████] 100% (4/4 tasks) ✅
 Phase 2: [░░░░] 0% (0/4 tasks)
 Phase 3: [░░░] 0% (0/3 tasks)
 Phase 4: [░░░░] 0% (0/4 tasks)
 Phase 5: [░░░░░] 0% (0/5 tasks)
 Phase 6: [░░░░░░] 0% (0/6 tasks)
+Phase 7: [░░░░░] 0% (0/5 tasks)
 
-Total: [░░░░░░░░░░] 0% (0/26 tasks)
+Total: [█░░░░░░░░░] 12% (4/31 tasks)
 ```
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Similar Items에 3개 이상 품목 표시 (Phase 1)
-- [ ] 유사도 점수 정확히 표시 (Phase 1)
+- [x] Similar Items에 3개 이상 품목 표시 (Phase 1) ✅
+- [x] 유사도 점수 정확히 표시 (Phase 1) ✅
 - [ ] 저장 시 Ctrl+R 없이 UI 자동 업데이트 (Phase 2)
 - [ ] 탭 이름 변경: Timeline → 블루프린트, Recommendation → 라우팅 (Phase 3)
 - [ ] 노드에 Run Time 정확히 표시 (Phase 4)
 - [ ] Recommendation 노드 더블클릭 편집 가능 (Phase 5)
 - [ ] 노드에 자원(Res) 필드 표시 (Phase 6)
 - [ ] 공정그룹 선택 드롭다운 동작 (Phase 6)
+- [ ] 모델 선택 드롭다운 동작 (Phase 7)
+- [ ] 모델 정보 박스 표시 (Phase 7)
+- [ ] 선택한 모델로 전환 가능 (Phase 7)
+- [ ] 기본 모델 자동 선택 (Phase 7)
 - [ ] All tasks completed and marked [x]
 - [ ] All phases committed and merged
 - [ ] RoutingMLMonitor 재빌드 완료

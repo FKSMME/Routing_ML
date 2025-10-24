@@ -132,7 +132,7 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
 
   return (
     <div className="timeline-view">
-      <div className="timeline-view__tabs" role="tablist" aria-label="Timeline view mode">
+      <div className="timeline-view__tabs" role="tablist" aria-label="라우팅 시각화 모드">
         <button
           id={timelineTabId}
           type="button"
@@ -143,7 +143,7 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
           onClick={handleSelectView("timeline")}
           data-testid="timeline-view-tab"
         >
-          Timeline
+          블루프린트
         </button>
         <button
           id={recommendationsTabId}
@@ -156,7 +156,7 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
           disabled={!hasRecommendations}
           data-testid="recommendations-view-tab"
         >
-          Recommendations
+          라우팅
         </button>
       </div>
 
