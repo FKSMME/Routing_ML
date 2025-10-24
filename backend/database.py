@@ -73,6 +73,7 @@ MSSQL_CONFIG = {
 # 뷰 이름 (MSSQL은 dbo. 스키마 사용)
 VIEW_ITEM_MASTER = "dbo.BI_ITEM_INFO_VIEW"
 VIEW_ROUTING     = "dbo.BI_ROUTING_VIEW"  # FIXED: BI_ROUTING_HIS_VIEW는 메타데이터만 포함, 실제 라우팅 공정은 BI_ROUTING_VIEW
+VIEW_ROUTING_HISTORY = "dbo.ROUTING_HISTORY"
 VIEW_WORK_RESULT = "dbo.BI_WORK_ORDER_RESULTS"
 VIEW_PURCHASE_ORDER = "dbo.BI_PUR_PO_VIEW"
 
@@ -359,11 +360,13 @@ def _build_view_cache_from_config(config: Optional["DataSourceConfig"]) -> Dict[
     return {
         "item": _normalize(getattr(config, "item_view", None), VIEW_ITEM_MASTER),
         "routing": _normalize(getattr(config, "routing_view", None), VIEW_ROUTING),
+        "routing_history": _normalize(getattr(config, "routing_history_view", None), VIEW_ROUTING_HISTORY),
         "work_result": _normalize(getattr(config, "work_result_view", None), VIEW_WORK_RESULT),
         "purchase_order": _normalize(
             getattr(config, "purchase_order_view", None), VIEW_PURCHASE_ORDER
         ),
     }
+
 
 
 def _update_view_cache(config: Optional["DataSourceConfig"]) -> None:
@@ -393,6 +396,10 @@ def get_item_view_name() -> str:
 
 def get_routing_view_name() -> str:
     return _ensure_view_cache()["routing"]
+
+
+def get_routing_history_view_name() -> str:
+    return _ensure_view_cache()["routing_history"]
 
 
 def get_work_result_view_name() -> str:
@@ -467,6 +474,7 @@ def update_mssql_runtime_config(
     trust_certificate: bool = True,
     item_view: Optional[str] = None,
     routing_view: Optional[str] = None,
+    routing_history_view: Optional[str] = None,
     work_result_view: Optional[str] = None,
     purchase_order_view: Optional[str] = None,
     persist: bool = True,
@@ -498,6 +506,8 @@ def update_mssql_runtime_config(
             config.item_view = (item_view or "").strip() or VIEW_ITEM_MASTER
         if routing_view is not None:
             config.routing_view = (routing_view or "").strip() or VIEW_ROUTING
+        if routing_history_view is not None:
+            config.routing_history_view = (routing_history_view or "").strip() or VIEW_ROUTING_HISTORY
         if work_result_view is not None:
             config.work_result_view = (work_result_view or "").strip() or VIEW_WORK_RESULT
         if purchase_order_view is not None:

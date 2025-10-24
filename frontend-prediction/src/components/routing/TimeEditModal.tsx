@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import React, { useEffect,useState } from "react";
+import { useRoutingStore } from "../../store/routingStore";
 
 interface TimeEditModalProps {
   isOpen: boolean;
@@ -9,7 +10,10 @@ interface TimeEditModalProps {
   currentSetupTime?: number;
   currentRunTime?: number;
   currentWaitTime?: number;
+  currentResourceGroupId?: string | null;
+  currentResourceGroupName?: string | null;
   onSave: (stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => void;
+  onSaveResourceGroup?: (stepId: string, resourceGroupId: string | null, resourceGroupName?: string | null) => void;
 }
 
 export function TimeEditModal({
@@ -20,25 +24,76 @@ export function TimeEditModal({
   currentSetupTime,
   currentRunTime,
   currentWaitTime,
+  currentResourceGroupId,
+  currentResourceGroupName,
   onSave,
+  onSaveResourceGroup,
 }: TimeEditModalProps) {
   const [setupTime, setSetupTime] = useState(currentSetupTime?.toString() ?? "");
   const [runTime, setRunTime] = useState(currentRunTime?.toString() ?? "");
   const [waitTime, setWaitTime] = useState(currentWaitTime?.toString() ?? "");
+  const [selectedResourceGroupId, setSelectedResourceGroupId] = useState<string>(currentResourceGroupId ?? "");
+  const [errors, setErrors] = useState<{ setup?: string; run?: string; wait?: string }>({});
+
+  const processGroups = useRoutingStore((state) => state.processGroups);
 
   useEffect(() => {
     setSetupTime(currentSetupTime?.toString() ?? "");
     setRunTime(currentRunTime?.toString() ?? "");
     setWaitTime(currentWaitTime?.toString() ?? "");
-  }, [currentSetupTime, currentRunTime, currentWaitTime, isOpen]);
+    setSelectedResourceGroupId(currentResourceGroupId ?? "");
+    setErrors({});
+  }, [currentSetupTime, currentRunTime, currentWaitTime, currentResourceGroupId, isOpen]);
+
+  const validateTime = (value: string, fieldName: string): string | undefined => {
+    if (!value.trim()) return undefined; // Empty is OK (will be undefined)
+
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+      return `${fieldName}은(는) 유효한 숫자여야 합니다`;
+    }
+    if (num < 0) {
+      return `${fieldName}은(는) 0 이상이어야 합니다`;
+    }
+    if (num > 10000) {
+      return `${fieldName}은(는) 10000 이하여야 합니다`;
+    }
+    return undefined;
+  };
 
   const handleSave = () => {
+    // Validate all fields
+    const setupError = validateTime(setupTime, "셋업시간");
+    const runError = validateTime(runTime, "가공시간");
+    const waitError = validateTime(waitTime, "대기시간");
+
+    if (setupError || runError || waitError) {
+      setErrors({
+        setup: setupError,
+        run: runError,
+        wait: waitError,
+      });
+      return;
+    }
+
     const times = {
-      setupTime: setupTime ? parseFloat(setupTime) : undefined,
-      runTime: runTime ? parseFloat(runTime) : undefined,
-      waitTime: waitTime ? parseFloat(waitTime) : undefined,
+      setupTime: setupTime.trim() ? parseFloat(setupTime) : undefined,
+      runTime: runTime.trim() ? parseFloat(runTime) : undefined,
+      waitTime: waitTime.trim() ? parseFloat(waitTime) : undefined,
     };
     onSave(stepId, times);
+
+    // Save resource group if changed and handler provided
+    if (onSaveResourceGroup) {
+      const resourceGroupId = selectedResourceGroupId || null;
+      const selectedGroup = processGroups.find(g => g.id === resourceGroupId);
+      const resourceGroupName = selectedGroup?.name ?? null;
+
+      if (resourceGroupId !== (currentResourceGroupId || null)) {
+        onSaveResourceGroup(stepId, resourceGroupId, resourceGroupName);
+      }
+    }
+
     onClose();
   };
 
@@ -100,41 +155,61 @@ export function TimeEditModal({
             <input
               type="number"
               step="0.1"
+              min="0"
+              max="10000"
               value={setupTime}
-              onChange={(e) => setSetupTime(e.target.value)}
+              onChange={(e) => {
+                setSetupTime(e.target.value);
+                setErrors((prev) => ({ ...prev, setup: undefined }));
+              }}
               style={{
                 width: "100%",
                 padding: "8px 12px",
                 backgroundColor: "#0f172a",
-                border: "1px solid #475569",
+                border: `1px solid ${errors.setup ? "#ef4444" : "#475569"}`,
                 borderRadius: "6px",
                 color: "#f1f5f9",
                 fontSize: "14px",
               }}
               placeholder="0.0"
             />
+            {errors.setup && (
+              <span style={{ display: "block", color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                {errors.setup}
+              </span>
+            )}
           </div>
 
           <div>
             <label style={{ display: "block", color: "#cbd5e1", fontSize: "13px", marginBottom: "6px" }}>
-              표준시간 (분)
+              가공시간 (분)
             </label>
             <input
               type="number"
               step="0.1"
+              min="0"
+              max="10000"
               value={runTime}
-              onChange={(e) => setRunTime(e.target.value)}
+              onChange={(e) => {
+                setRunTime(e.target.value);
+                setErrors((prev) => ({ ...prev, run: undefined }));
+              }}
               style={{
                 width: "100%",
                 padding: "8px 12px",
                 backgroundColor: "#0f172a",
-                border: "1px solid #475569",
+                border: `1px solid ${errors.run ? "#ef4444" : "#475569"}`,
                 borderRadius: "6px",
                 color: "#f1f5f9",
                 fontSize: "14px",
               }}
               placeholder="0.0"
             />
+            {errors.run && (
+              <span style={{ display: "block", color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                {errors.run}
+              </span>
+            )}
           </div>
 
           <div>
@@ -144,8 +219,38 @@ export function TimeEditModal({
             <input
               type="number"
               step="0.1"
+              min="0"
+              max="10000"
               value={waitTime}
-              onChange={(e) => setWaitTime(e.target.value)}
+              onChange={(e) => {
+                setWaitTime(e.target.value);
+                setErrors((prev) => ({ ...prev, wait: undefined }));
+              }}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                backgroundColor: "#0f172a",
+                border: `1px solid ${errors.wait ? "#ef4444" : "#475569"}`,
+                borderRadius: "6px",
+                color: "#f1f5f9",
+                fontSize: "14px",
+              }}
+              placeholder="0.0"
+            />
+            {errors.wait && (
+              <span style={{ display: "block", color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                {errors.wait}
+              </span>
+            )}
+          </div>
+
+          <div>
+            <label style={{ display: "block", color: "#cbd5e1", fontSize: "13px", marginBottom: "6px" }}>
+              자원(Res) 공정그룹
+            </label>
+            <select
+              value={selectedResourceGroupId}
+              onChange={(e) => setSelectedResourceGroupId(e.target.value)}
               style={{
                 width: "100%",
                 padding: "8px 12px",
@@ -154,9 +259,16 @@ export function TimeEditModal({
                 borderRadius: "6px",
                 color: "#f1f5f9",
                 fontSize: "14px",
+                cursor: "pointer",
               }}
-              placeholder="0.0"
-            />
+            >
+              <option value="">미지정</option>
+              {processGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name} ({group.type})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

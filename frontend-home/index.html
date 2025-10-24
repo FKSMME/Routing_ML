@@ -117,6 +117,11 @@
       font-size: 0.875rem;
       color: #9ca3af;
     }
+    .kpi-footnote {
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
 
     .chart-card {
       background: white;
@@ -423,44 +428,48 @@
 
     function renderKPICards(data) {
       const container = document.getElementById('kpi-cards');
+      
+
       const kpis = [
         {
           label: 'MSSQL 연결',
-          value: data.database.connected ? '연결됨' : '연결 끊김',
+          value: data.database.connected ? '정상' : '연결 끊김',
           subtitle: `${data.database.server}`,
+          footnote: 'test_connection 기반 실시간 점검',
           type: data.database.connected ? 'success' : 'danger'
         },
         {
           label: '전체 품목',
           value: data.items.total_items_in_db.toLocaleString(),
-          subtitle: `라우팅 보유: ${data.items.items_with_routing.toLocaleString()}`,
+          subtitle: `라우팅 구성: ${data.items.items_with_routing.toLocaleString()}`,
+          footnote: 'VIEW_ITEM_MASTER 기준 집계',
           type: 'info'
         },
         {
-          label: '오늘 라우팅',
-          value: data.routing.daily.toLocaleString(),
-          subtitle: `주간: ${data.routing.weekly.toLocaleString()}`,
+          label: '금일 라우팅 등록',
+          value: data.routing.today_history_total.toLocaleString(),
+          subtitle: `누적 라우팅: ${data.routing.total.toLocaleString()}`,
+          footnote: 'dbo_ROUTING_HISTORY (등록·접수 일자=금일)',
           type: 'success'
         },
         {
-          label: '총 라우팅',
-          value: data.routing.total.toLocaleString(),
-          subtitle: `월간: ${data.routing.monthly.toLocaleString()}`,
+          label: '금일 WO 라우팅 미생성',
+          value: data.routing.today_without_routing.toLocaleString(),
+          subtitle: `주간 라우팅 완료: ${data.routing.weekly.toLocaleString()}`,
+          footnote: 'dbo_ROUTING_HISTORY vs BI_ROUTING_VIEW 비교',
           type: 'warning'
         },
-        {
-          label: '학습 모델',
-          value: data.model.ml_version,
-          subtitle: `${data.model.total_items_trained.toLocaleString()}개 품목 학습`,
-          type: 'info'
-        }
       ];
+
+
+
 
       container.innerHTML = kpis.map(kpi => `
         <div class="kpi-card ${kpi.type}">
           <div class="kpi-label">${kpi.label}</div>
           <div class="kpi-value">${kpi.value}</div>
           <div class="kpi-subtitle">${kpi.subtitle}</div>
+          <div class="kpi-footnote">${kpi.footnote ?? ''}</div>
         </div>
       `).join('');
     }
@@ -475,7 +484,7 @@
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         labels.push(date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }));
-        const baseValue = data.routing.daily || 10;
+        const baseValue = data.routing.today_history_total || data.routing.daily || 10;
         values.push(Math.max(0, Math.floor(baseValue * (0.7 + Math.random() * 0.6))));
       }
 
@@ -756,3 +765,4 @@
   </script>
 </body>
 </html>
+
