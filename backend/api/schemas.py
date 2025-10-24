@@ -265,14 +265,15 @@ class PredictionRequest(BaseModel):
 class OperationStep(BaseModel):
     proc_seq: int = Field(..., alias="PROC_SEQ")
     inside_flag: Optional[str] = Field(None, alias="INSIDE_FLAG")
-    job_cd: Optional[str] = Field(None, alias="dbo_BI_ROUTING_VIEW_JOB_CD")
-    job_nm: Optional[str] = Field(None, alias="JOB_NM")
+    job_cd: Optional[str] = Field(None, alias="dbo_BI_ROUTING_VIEW_JOB_CD", serialization_alias="PROC_CD")
+    job_nm: Optional[str] = Field(None, alias="JOB_NM", serialization_alias="PROC_DESC")
     res_cd: Optional[str] = Field(None, alias="RES_CD")
     res_dis: Optional[str] = Field(None, alias="RES_DIS")
     time_unit: Optional[str] = Field(None, alias="TIME_UNIT")
     mfg_lt: Optional[float] = Field(None, alias="MFG_LT")
     queue_time: Optional[float] = Field(None, alias="QUEUE_TIME")
     setup_time: Optional[float] = Field(None, alias="SETUP_TIME")
+    run_time: Optional[float] = Field(None, alias="MACH_WORKED_HOURS", serialization_alias="RUN_TIME")
     mach_worked_hours: Optional[float] = Field(None, alias="MACH_WORKED_HOURS")
     act_setup_time: Optional[float] = Field(None, alias="ACT_SETUP_TIME")
     act_run_time: Optional[float] = Field(None, alias="ACT_RUN_TIME")
@@ -308,6 +309,24 @@ class OperationStep(BaseModel):
     program_remark: Optional[str] = Field(None, alias="PROGRAM_REMARK")
     op_draw_no: Optional[str] = Field(None, alias="OP_DRAW_NO")
     mtmg_numb: Optional[str] = Field(None, alias="MTMG_NUMB")
+
+    # Work order statistics fields
+    has_work_data: Optional[bool] = Field(None, alias="HAS_WORK_DATA")
+    work_order_count: Optional[int] = Field(None, alias="WORK_ORDER_COUNT")
+    work_order_confidence: Optional[float] = Field(None, alias="WORK_ORDER_CONFIDENCE")
+    outsourcing_replaced: Optional[bool] = Field(None, alias="OUTSOURCING_REPLACED")
+
+    # Time statistics fields
+    time_std: Optional[float] = Field(None, alias="TIME_STD")
+    time_cv: Optional[float] = Field(None, alias="TIME_CV")
+    setup_std: Optional[float] = Field(None, alias="SETUP_STD")
+    trim_mean: Optional[float] = Field(None, alias="TRIM_MEAN")
+    sample_count: Optional[int] = Field(None, alias="SAMPLE_COUNT")
+
+    # Additional time fields
+    optimal_time: Optional[float] = Field(None, alias="OPTIMAL_TIME")
+    standard_time: Optional[float] = Field(None, alias="STANDARD_TIME")
+    safe_time: Optional[float] = Field(None, alias="SAFE_TIME")
 
     model_config = {"populate_by_name": True}
 
