@@ -586,7 +586,7 @@ def _parse_filter_payload(raw_filters: Optional[str]) -> Dict[str, List[str]]:
     return normalized
 
 
-@router.get("/projectors/{projector_id}/points", response_model=ProjectorPointResponse)
+@router.get("/projectors/{projector_id:path}/points", response_model=ProjectorPointResponse)
 async def get_projector_points(
     projector_id: str,
     limit: int = Query(10000, ge=1, le=500000),
@@ -648,7 +648,7 @@ async def get_projector_points(
     )
 
 
-@router.get("/projectors/{projector_id}/tsne", response_model=TsneResponse)
+@router.get("/projectors/{projector_id:path}/tsne", response_model=TsneResponse)
 async def get_projector_tsne(
     projector_id: str,
     limit: int = Query(
@@ -749,14 +749,14 @@ async def get_projector_tsne(
     )
 
 
-@router.get("/projectors/{projector_id}/filters", response_model=FilterResponse)
+@router.get("/projectors/{projector_id:path}/filters", response_model=FilterResponse)
 async def get_projector_filters(projector_id: str) -> FilterResponse:
     """Expose filterable metadata fields for the projector."""
     projector = _get_projector(projector_id)
     return FilterResponse(projector_id=projector.id, fields=projector.filters)
 
 
-@router.get("/metrics/{run_id}", response_model=List[MetricSeries])
+@router.get("/metrics/{run_id:path}", response_model=List[MetricSeries])
 async def get_training_metrics(run_id: str) -> List[MetricSeries]:
     """Return per-metric timeseries for a specific run/projector."""
     projector = _get_projector(run_id)

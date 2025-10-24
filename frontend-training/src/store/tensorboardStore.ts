@@ -23,6 +23,15 @@ type TsneSettings = {
   stride: number | null;
 };
 
+type TensorboardStatus = "idle" | "loading" | "ready" | "error";
+
+const resolveErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && typeof error.message === "string" && error.message.trim().length > 0) {
+    return error.message;
+  }
+  return fallback;
+};
+
 interface TensorboardState {
   projectors: TensorboardProjectorSummary[];
   selectedId: string | null;
@@ -37,6 +46,8 @@ interface TensorboardState {
   loadingPoints: boolean;
   loadingMetrics: boolean;
   error: string | null;
+  status: TensorboardStatus;
+  statusMessage: string | null;
   initialize: () => Promise<void>;
   selectProjector: (id: string) => Promise<void>;
   reloadProjectors: () => Promise<void>;
@@ -75,6 +86,8 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
   loadingMetrics: false,
   loadingTsne: false,
   error: null,
+  status: "idle",
+  statusMessage: null,
   pointLimit: 10000,
   pointStride: 1,
   tsnePoints: [],
@@ -119,7 +132,7 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
     if (state.loadingProjectors) {
       return;
     }
-    set({ loadingProjectors: true, error: null });
+    set({ loadingProjectors: true, error: null, status: "loading", statusMessage: null });
     try {
       const projectors = await fetchTensorboardProjectors();
       const preferredProjector = projectors.find(
@@ -166,6 +179,9 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
         tsnePoints: [],
         tsneMeta: null,
         tsneError: null,
+        status: projectors.length > 0 ? "ready" : "idle",
+        statusMessage: null,
+        error: null,
       });
       if (selectedId) {
         await get().loadFilters();

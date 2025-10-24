@@ -22,6 +22,7 @@ from backend.api.routes.anomaly import router as anomaly_router  # ✅ PyODBC �
 from backend.api.routes.audit import router as audit_router
 from backend.api.routes.auth import router as auth_router
 from backend.api.routes.bulk_upload import router as bulk_upload_router
+from backend.api.routes.custom_nodes import router as custom_nodes_router
 from backend.api.routes.dashboard import router as dashboard_router
 from backend.api.routes.data_quality import router as data_quality_router
 from backend.api.routes.data_mapping import router as data_mapping_router
@@ -124,6 +125,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(logs_router)
     app.include_router(bulk_upload_router)
+    app.include_router(custom_nodes_router)
     app.include_router(data_quality_router)
     app.include_router(anomaly_router)  # ✅ PyODBC 리팩토링 완료
     # app.include_router(weekly_report_router)  # TODO: weekly_report_service 미구현

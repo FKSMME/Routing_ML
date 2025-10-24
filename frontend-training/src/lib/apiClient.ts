@@ -21,6 +21,56 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const delay = (ms: number) => new Promise<void>((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const TENSORBOARD_RETRY_ATTEMPTS = 3;
+const TENSORBOARD_RETRY_BASE_DELAY_MS = 200;
+
+const formatAxiosDetail = (error: unknown): string => {
+  if (!axios.isAxiosError(error)) {
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message;
+    }
+    return "알 수 없는 오류";
+  }
+  const data = error.response?.data;
+  if (typeof data === "string" && data.trim().length > 0) {
+    return data;
+  }
+  if (data && typeof data === "object") {
+    const detail = (data as Record<string, unknown>).detail;
+    if (typeof detail === "string" && detail.trim().length > 0) {
+      return detail;
+    }
+  }
+  return error.message;
+};
+
+async function withTensorboardRetry<T>(request: () => Promise<T>, context: string): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= TENSORBOARD_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await request();
+    } catch (error) {
+      lastError = error;
+      if (!axios.isAxiosError(error)) {
+        break;
+      }
+      const status = error.response?.status ?? 0;
+      const retriable = status === 0 || status === 429 || status >= 500;
+      if (!retriable || attempt >= TENSORBOARD_RETRY_ATTEMPTS) {
+        break;
+      }
+      const backoffMs = TENSORBOARD_RETRY_BASE_DELAY_MS * 2 ** (attempt - 1);
+      await delay(backoffMs);
+    }
+  }
+  const detail = formatAxiosDetail(lastError);
+  throw new Error(`[TensorBoard] ${context} 실패: ${detail}`);
+}
+
 // 401 Unauthorized 에러 핸들링 인터셉터
 api.interceptors.response.use(
   (response) => response,
@@ -101,10 +151,17 @@ const mapProjectorSummary = (payload: Record<string, any>): TensorboardProjector
 
 const mapTensorboardConfig = (payload: Record<string, any>): TensorboardConfig => {
   const normalized = normalizeUnicode(payload) as Record<string, any>;
+  const artifactsDir =
+    normalized.ml_artifacts_dir ??
+    normalized.mlArtifactsDir ??
+    normalized.model_dir ??
+    normalized.modelDir ??
+    "";
   return {
     projectorPath: normalized.projector_path ?? normalized.projectorPath ?? "",
     projectorPathExists: Boolean(normalized.projector_path_exists ?? normalized.projectorPathExists ?? false),
-    modelDir: normalized.model_dir ?? normalized.modelDir ?? "",
+    modelDir: artifactsDir,
+    mlArtifactsDir: artifactsDir,
   };
 };
 
@@ -704,13 +761,20 @@ export async function applyDataMapping(
 // ============================================================================
 
 export async function fetchTensorboardProjectors(): Promise<TensorboardProjectorSummary[]> {
-  const response = await api.get<Array<Record<string, any>>>("/training/tensorboard/projectors");
+  const response = await withTensorboardRetry(
+    () => api.get<Array<Record<string, any>>>("/training/tensorboard/projectors"),
+    "프로젝터 목록 조회",
+  );
   return response.data.map(mapProjectorSummary);
 }
 
 export async function fetchTensorboardProjectorFilters(projectorId: string): Promise<TensorboardFilterResponse> {
-  const response = await api.get<Record<string, any>>(
-    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/filters`
+  const response = await withTensorboardRetry(
+    () =>
+      api.get<Record<string, any>>(
+        `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/filters`
+      ),
+    "프로젝터 필터 조회",
   );
   return mapFilterResponse(response.data);
 }
@@ -736,15 +800,23 @@ export async function fetchTensorboardProjectorPoints(
     params.filters = JSON.stringify(options.filters);
   }
 
-  const response = await api.get<Record<string, any>>(
-    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/points`,
-    { params }
+  const response = await withTensorboardRetry(
+    () =>
+      api.get<Record<string, any>>(
+        `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/points`,
+        { params }
+      ),
+    "프로젝터 포인트 로딩",
   );
   return mapPointResponse(response.data);
 }
 
 export async function fetchTensorboardMetrics(runId: string): Promise<TensorboardMetricSeries[]> {
-  const response = await api.get<Array<Record<string, any>>>(`/training/tensorboard/metrics/${encodeURIComponent(runId)}`);
+  const response = await withTensorboardRetry(
+    () =>
+      api.get<Array<Record<string, any>>>(`/training/tensorboard/metrics/${encodeURIComponent(runId)}`),
+    "TensorBoard 메트릭 조회",
+  );
   return response.data.map(mapMetricSeries);
 }
 
@@ -772,9 +844,13 @@ export async function fetchTensorboardTsne(
     params.filters = JSON.stringify(options.filters);
   }
 
-  const response = await api.get<Record<string, any>>(
-    `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/tsne`,
-    { params }
+  const response = await withTensorboardRetry(
+    () =>
+      api.get<Record<string, any>>(
+        `/training/tensorboard/projectors/${encodeURIComponent(projectorId)}/tsne`,
+        { params }
+      ),
+    "T-SNE 데이터 계산",
   );
   return mapTsneResponse(response.data);
 }
@@ -782,12 +858,18 @@ export async function fetchTensorboardTsne(
 export async function exportTensorboardProjector(
   payload: ExportTensorboardProjectorPayload = {}
 ): Promise<Record<string, any>> {
-  const response = await api.post<Record<string, any>>("/training/tensorboard/projectors/export", payload);
+  const response = await withTensorboardRetry(
+    () => api.post<Record<string, any>>("/training/tensorboard/projectors/export", payload),
+    "프로젝터 내보내기",
+  );
   return response.data;
 }
 
 export async function fetchTensorboardConfig(): Promise<TensorboardConfig> {
-  const response = await api.get<Record<string, any>>("/training/tensorboard/config");
+  const response = await withTensorboardRetry(
+    () => api.get<Record<string, any>>("/training/tensorboard/config"),
+    "TensorBoard 설정 조회",
+  );
   return mapTensorboardConfig(response.data);
 }
 
