@@ -1005,5 +1005,50 @@ export async function fetchModelStatus(): Promise<ModelStatus> {
   return response.data;
 }
 
+// ============================================================================
+// MODEL VERSIONS API (Phase 7)
+// ============================================================================
+
+export interface ModelVersion {
+  version_name: string;
+  artifact_dir: string;
+  manifest_path: string;
+  status: string;
+  active_flag: boolean;
+  requested_by: string | null;
+  created_at: string;
+  trained_at: string | null;
+  activated_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ModelListResponse {
+  models: ModelVersion[];
+  active_model: ModelVersion | null;
+  total: number;
+}
+
+/**
+ * 사용 가능한 모델 버전 목록을 조회합니다.
+ *
+ * @param limit 조회할 최대 개수 (선택 사항)
+ * @returns 모델 버전 목록
+ */
+export async function fetchModelVersions(limit?: number): Promise<ModelListResponse> {
+  const params = limit ? { limit } : {};
+  const response = await api.get<ModelListResponse>("/models", { params });
+  return response.data;
+}
+
+/**
+ * 현재 활성화된 모델 버전을 조회합니다.
+ *
+ * @returns 활성 모델 버전 (없으면 null)
+ */
+export async function fetchActiveModel(): Promise<ModelVersion | null> {
+  const response = await api.get<ModelVersion | null>("/models/active");
+  return response.data;
+}
+
 
 export default api;
