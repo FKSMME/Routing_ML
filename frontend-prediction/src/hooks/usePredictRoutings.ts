@@ -9,6 +9,7 @@ interface UsePredictOptions {
   threshold: number;
   featureWeights?: Record<string, number>;
   weightProfile?: string | null;
+  modelVersion?: string | null;
   exportFormats?: string[];
   withVisualization?: boolean;
   enabled?: boolean;
@@ -20,6 +21,7 @@ export function usePredictRoutings({
   threshold,
   featureWeights,
   weightProfile,
+  modelVersion,
   exportFormats,
   withVisualization,
   enabled,
@@ -32,6 +34,7 @@ export function usePredictRoutings({
       threshold,
       featureWeights,
       weightProfile,
+      modelVersion,
       exportFormats,
       withVisualization,
     ],
@@ -42,6 +45,7 @@ export function usePredictRoutings({
         threshold,
         featureWeights,
         weightProfile,
+        modelVersion,
         exportFormats,
         withVisualization,
       }),

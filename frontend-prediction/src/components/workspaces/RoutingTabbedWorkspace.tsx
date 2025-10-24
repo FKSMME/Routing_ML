@@ -25,6 +25,8 @@ interface RoutingTabbedWorkspaceProps {
   onChangeTopK: (value: number) => void;
   threshold: number;
   onChangeThreshold: (value: number) => void;
+  selectedModelVersion: string;
+  onChangeModelVersion: (version: string) => void;
   loading: boolean;
   onSubmit: () => void;
   errorMessage?: string;
@@ -55,6 +57,8 @@ export function RoutingTabbedWorkspace({
   onChangeTopK,
   threshold,
   onChangeThreshold,
+  selectedModelVersion,
+  onChangeModelVersion,
   loading,
   onSubmit,
   errorMessage,
@@ -109,6 +113,8 @@ export function RoutingTabbedWorkspace({
                   onChangeTopK={onChangeTopK}
                   threshold={threshold}
                   onChangeThreshold={onChangeThreshold}
+                  selectedModelVersion={selectedModelVersion}
+                  onChangeModelVersion={onChangeModelVersion}
                   loading={loading}
                   onSubmit={onSubmit}
                   errorMessage={errorMessage}

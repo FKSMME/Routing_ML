@@ -128,6 +128,7 @@ export async function predictRoutings(params: {
   threshold: number;
   featureWeights?: Record<string, number>;
   weightProfile?: string | null;
+  modelVersion?: string | null;
   exportFormats?: string[];
   withVisualization?: boolean;
 }): Promise<PredictionResponse> {
@@ -142,6 +143,9 @@ export async function predictRoutings(params: {
   }
   if (params.weightProfile) {
     payload.weight_profile = params.weightProfile;
+  }
+  if (params.modelVersion) {
+    payload.model_version = params.modelVersion;
   }
   if (params.exportFormats && params.exportFormats.length > 0) {
     payload.export_formats = params.exportFormats;
