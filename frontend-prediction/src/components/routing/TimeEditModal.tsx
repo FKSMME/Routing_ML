@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import React, { useEffect,useState } from "react";
+import { useRoutingStore } from "../../store/routingStore";
 
 interface TimeEditModalProps {
   isOpen: boolean;
@@ -9,7 +10,10 @@ interface TimeEditModalProps {
   currentSetupTime?: number;
   currentRunTime?: number;
   currentWaitTime?: number;
+  currentResourceGroupId?: string | null;
+  currentResourceGroupName?: string | null;
   onSave: (stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => void;
+  onSaveResourceGroup?: (stepId: string, resourceGroupId: string | null, resourceGroupName?: string | null) => void;
 }
 
 export function TimeEditModal({
@@ -20,19 +24,26 @@ export function TimeEditModal({
   currentSetupTime,
   currentRunTime,
   currentWaitTime,
+  currentResourceGroupId,
+  currentResourceGroupName,
   onSave,
+  onSaveResourceGroup,
 }: TimeEditModalProps) {
   const [setupTime, setSetupTime] = useState(currentSetupTime?.toString() ?? "");
   const [runTime, setRunTime] = useState(currentRunTime?.toString() ?? "");
   const [waitTime, setWaitTime] = useState(currentWaitTime?.toString() ?? "");
+  const [selectedResourceGroupId, setSelectedResourceGroupId] = useState<string>(currentResourceGroupId ?? "");
   const [errors, setErrors] = useState<{ setup?: string; run?: string; wait?: string }>({});
+
+  const processGroups = useRoutingStore((state) => state.processGroups);
 
   useEffect(() => {
     setSetupTime(currentSetupTime?.toString() ?? "");
     setRunTime(currentRunTime?.toString() ?? "");
     setWaitTime(currentWaitTime?.toString() ?? "");
+    setSelectedResourceGroupId(currentResourceGroupId ?? "");
     setErrors({});
-  }, [currentSetupTime, currentRunTime, currentWaitTime, isOpen]);
+  }, [currentSetupTime, currentRunTime, currentWaitTime, currentResourceGroupId, isOpen]);
 
   const validateTime = (value: string, fieldName: string): string | undefined => {
     if (!value.trim()) return undefined; // Empty is OK (will be undefined)
@@ -71,6 +82,18 @@ export function TimeEditModal({
       waitTime: waitTime.trim() ? parseFloat(waitTime) : undefined,
     };
     onSave(stepId, times);
+
+    // Save resource group if changed and handler provided
+    if (onSaveResourceGroup) {
+      const resourceGroupId = selectedResourceGroupId || null;
+      const selectedGroup = processGroups.find(g => g.id === resourceGroupId);
+      const resourceGroupName = selectedGroup?.name ?? null;
+
+      if (resourceGroupId !== (currentResourceGroupId || null)) {
+        onSaveResourceGroup(stepId, resourceGroupId, resourceGroupName);
+      }
+    }
+
     onClose();
   };
 
@@ -219,6 +242,33 @@ export function TimeEditModal({
                 {errors.wait}
               </span>
             )}
+          </div>
+
+          <div>
+            <label style={{ display: "block", color: "#cbd5e1", fontSize: "13px", marginBottom: "6px" }}>
+              자원(Res) 공정그룹
+            </label>
+            <select
+              value={selectedResourceGroupId}
+              onChange={(e) => setSelectedResourceGroupId(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "8px 12px",
+                backgroundColor: "#0f172a",
+                border: "1px solid #475569",
+                borderRadius: "6px",
+                color: "#f1f5f9",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              <option value="">미지정</option>
+              {processGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name} ({group.type})
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

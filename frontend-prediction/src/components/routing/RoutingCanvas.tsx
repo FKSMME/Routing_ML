@@ -280,6 +280,9 @@ function TimelineNodeComponent({ data }: NodeProps<TimelineNodeData>) {
         <span className="timeline-node__meta-item">
           <strong>Wait:</strong> {step.waitTime ?? "-"}분
         </span>
+        <span className="timeline-node__meta-item">
+          <strong>자원(Res):</strong> {step.resourceGroupName || "미지정"}
+        </span>
       </div>
     </div>
   );
@@ -833,7 +836,12 @@ function RoutingCanvasView({
           currentSetupTime={editingStep.setupTime ?? undefined}
           currentRunTime={editingStep.runTime ?? undefined}
           currentWaitTime={editingStep.waitTime ?? undefined}
+          currentResourceGroupId={editingStep.resourceGroupId ?? undefined}
+          currentResourceGroupName={editingStep.resourceGroupName ?? undefined}
           onSave={handleSaveTimeEdit}
+          onSaveResourceGroup={(stepId, resourceGroupId, resourceGroupName) => {
+            updateStepResourceGroup(stepId, resourceGroupId, resourceGroupName);
+          }}
         />
       )}
     </>
@@ -847,6 +855,7 @@ export function RoutingCanvas(props: RoutingCanvasProps) {
   const insertOperation = useRoutingStore((state) => state.insertOperation);
   const removeStep = useRoutingStore((state) => state.removeStep);
   const updateStepTimes = useRoutingStore((state) => state.updateStepTimes);
+  const updateStepResourceGroup = useRoutingStore((state) => state.updateStepResourceGroup);
   const addConnection = useRoutingStore((state) => state.addConnection);
   const removeConnection = useRoutingStore((state) => state.removeConnection);
   const updateConnection = useRoutingStore((state) => state.updateConnection);

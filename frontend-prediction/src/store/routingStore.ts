@@ -92,6 +92,8 @@ export interface TimelineStep {
   branchCode?: string | null;
   branchLabel?: string | null;
   branchPath?: string | null;
+  resourceGroupId?: string | null;
+  resourceGroupName?: string | null;
   sqlValues?: Record<string, unknown> | null;
   metadata?: TimelineStepMetadata | null;
   hasWorkData?: boolean | null;
@@ -272,6 +274,7 @@ export interface RoutingStoreState {
   moveStep: (stepId: string, toIndex: number) => void;
   removeStep: (stepId: string) => void;
   updateStepTimes: (stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => void;
+  updateStepResourceGroup: (stepId: string, resourceGroupId: string | null, resourceGroupName?: string | null) => void;
   clearValidation: () => void;
   setValidationErrors: (errors: string[]) => void;
   pushValidationError: (message: string) => void;
@@ -1646,6 +1649,29 @@ const routingStateCreator: StateCreator<RoutingStoreState> = (set) => ({
         setupTime: times.setupTime !== undefined ? times.setupTime : timeline[index].setupTime,
         runTime: times.runTime !== undefined ? times.runTime : timeline[index].runTime,
         waitTime: times.waitTime !== undefined ? times.waitTime : timeline[index].waitTime,
+      };
+      const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(timeline));
+      return {
+        timeline,
+        productTabs: updatedTabs,
+        dirty: computeDirty(timeline, state.lastSuccessfulTimeline, activeProductId),
+      };
+    }),
+  updateStepResourceGroup: (stepId, resourceGroupId, resourceGroupName) =>
+    set((state) => {
+      const { activeProductId } = state;
+      if (!activeProductId) {
+        return state;
+      }
+      const index = state.timeline.findIndex((step) => step.id === stepId);
+      if (index === -1) {
+        return state;
+      }
+      const timeline = [...state.timeline];
+      timeline[index] = {
+        ...timeline[index],
+        resourceGroupId: resourceGroupId ?? null,
+        resourceGroupName: resourceGroupName ?? null,
       };
       const updatedTabs = updateTabTimeline(state.productTabs, activeProductId, () => cloneTimeline(timeline));
       return {
