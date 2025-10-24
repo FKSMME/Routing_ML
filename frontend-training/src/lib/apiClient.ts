@@ -62,64 +62,122 @@ interface ExportTensorboardProjectorPayload {
   max_rows?: number;
 }
 
-const mapProjectorSummary = (payload: Record<string, any>): TensorboardProjectorSummary => ({
-  id: payload.id,
-  versionLabel: payload.version_label ?? payload.versionLabel ?? null,
-  tensorName: payload.tensor_name ?? payload.tensorName ?? "",
-  sampleCount: payload.sample_count ?? payload.sampleCount ?? 0,
-  updatedAt: payload.updated_at ?? payload.updatedAt ?? null,
-});
+const decodeUnicodeString = (value: string): string => {
+  if (!value.includes("\\u")) {
+    return value;
+  }
+  return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+    String.fromCharCode(Number.parseInt(hex, 16)),
+  );
+};
 
-const mapTensorboardConfig = (payload: Record<string, any>): TensorboardConfig => ({
-  projectorPath: payload.projector_path ?? payload.projectorPath ?? "",
-  projectorPathExists: Boolean(payload.projector_path_exists ?? payload.projectorPathExists ?? false),
-  modelDir: payload.model_dir ?? payload.modelDir ?? "",
-});
+const normalizeUnicode = <T>(input: T): T => {
+  if (typeof input === "string") {
+    return decodeUnicodeString(input) as unknown as T;
+  }
+  if (Array.isArray(input)) {
+    return input.map((item) => normalizeUnicode(item)) as unknown as T;
+  }
+  if (input && typeof input === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+      result[key] = normalizeUnicode(value);
+    }
+    return result as unknown as T;
+  }
+  return input;
+};
 
-const mapFilterResponse = (payload: Record<string, any>): TensorboardFilterResponse => ({
-  projectorId: payload.projector_id ?? payload.projectorId ?? "",
-  fields: Array.isArray(payload.fields) ? payload.fields : [],
-});
+const mapProjectorSummary = (payload: Record<string, any>): TensorboardProjectorSummary => {
+  const normalized = normalizeUnicode(payload) as Record<string, any>;
+  return {
+    id: normalized.id,
+    versionLabel: normalized.version_label ?? normalized.versionLabel ?? null,
+    tensorName: normalized.tensor_name ?? normalized.tensorName ?? "",
+    sampleCount: normalized.sample_count ?? normalized.sampleCount ?? 0,
+    updatedAt: normalized.updated_at ?? normalized.updatedAt ?? null,
+  };
+};
 
-const mapPointResponse = (payload: Record<string, any>): TensorboardPointResponse => ({
-  projectorId: payload.projector_id ?? payload.projectorId ?? "",
-  total: payload.total ?? 0,
-  limit: payload.limit ?? 0,
-  offset: payload.offset ?? 0,
-  points: Array.isArray(payload.points) ? payload.points : [],
-});
+const mapTensorboardConfig = (payload: Record<string, any>): TensorboardConfig => {
+  const normalized = normalizeUnicode(payload) as Record<string, any>;
+  return {
+    projectorPath: normalized.projector_path ?? normalized.projectorPath ?? "",
+    projectorPathExists: Boolean(normalized.projector_path_exists ?? normalized.projectorPathExists ?? false),
+    modelDir: normalized.model_dir ?? normalized.modelDir ?? "",
+  };
+};
 
-const mapMetricSeries = (series: Record<string, any>): TensorboardMetricSeries => ({
-  runId: series.run_id ?? series.runId ?? "",
-  metric: series.metric ?? "",
-  points: Array.isArray(series.points)
-    ? series.points.map((point: Record<string, any>) => ({
-        step: point.step ?? 0,
-        value: point.value ?? 0,
-        timestamp: point.timestamp ?? null,
-      }))
-    : [],
-});
+const mapFilterResponse = (payload: Record<string, any>): TensorboardFilterResponse => {
+  const normalized = normalizeUnicode(payload) as Record<string, any>;
+  const fields = Array.isArray(normalized.fields)
+    ? normalized.fields.map((field: Record<string, any>) => normalizeUnicode(field))
+    : [];
+  return {
+    projectorId: normalized.projector_id ?? normalized.projectorId ?? "",
+    fields,
+  };
+};
 
-const mapTsneResponse = (payload: Record<string, any>): TensorboardTsneResponse => ({
-  projectorId: payload.projector_id ?? payload.projectorId ?? "",
-  total: payload.total ?? 0,
-  sampled: payload.sampled ?? (Array.isArray(payload.points) ? payload.points.length : 0),
-  requestedPerplexity: payload.requested_perplexity ?? payload.requestedPerplexity ?? 0,
-  effectivePerplexity: payload.effective_perplexity ?? payload.effectivePerplexity ?? 0,
-  iterations: payload.iterations ?? 0,
-  usedPcaFallback: Boolean(payload.used_pca_fallback ?? payload.usedPcaFallback ?? false),
-  points: Array.isArray(payload.points)
-    ? payload.points.map((point: Record<string, any>) => ({
-        id: point.id ?? "",
-        x: point.x ?? 0,
-        y: point.y ?? 0,
-        progress: point.progress ?? 0,
-        step: point.step ?? 0,
-        metadata: point.metadata ?? {},
-      }))
-    : [],
-});
+const mapPointResponse = (payload: Record<string, any>): TensorboardPointResponse => {
+  const normalized = normalizeUnicode(payload) as Record<string, any>;
+  const points = Array.isArray(normalized.points)
+    ? normalized.points.map((point: Record<string, any>) => normalizeUnicode(point))
+    : [];
+  return {
+    projectorId: normalized.projector_id ?? normalized.projectorId ?? "",
+    total: normalized.total ?? 0,
+    limit: normalized.limit ?? 0,
+    offset: normalized.offset ?? 0,
+    points,
+  };
+};
+
+const mapMetricSeries = (series: Record<string, any>): TensorboardMetricSeries => {
+  const normalizedSeries = normalizeUnicode(series) as Record<string, any>;
+  const points = Array.isArray(normalizedSeries.points)
+    ? normalizedSeries.points.map((point: Record<string, any>) => {
+        const normalizedPoint = normalizeUnicode(point) as Record<string, any>;
+        return {
+          step: normalizedPoint.step ?? 0,
+          value: normalizedPoint.value ?? 0,
+          timestamp: normalizedPoint.timestamp ?? null,
+        };
+      })
+    : [];
+  return {
+    runId: normalizedSeries.run_id ?? normalizedSeries.runId ?? "",
+    metric: normalizedSeries.metric ?? "",
+    points,
+  };
+};
+
+const mapTsneResponse = (payload: Record<string, any>): TensorboardTsneResponse => {
+  const normalized = normalizeUnicode(payload) as Record<string, any>;
+  const points = Array.isArray(normalized.points)
+    ? normalized.points.map((point: Record<string, any>) => {
+        const normalizedPoint = normalizeUnicode(point) as Record<string, any>;
+        return {
+          id: normalizedPoint.id ?? "",
+          x: normalizedPoint.x ?? 0,
+          y: normalizedPoint.y ?? 0,
+          progress: normalizedPoint.progress ?? 0,
+          step: normalizedPoint.step ?? 0,
+          metadata: normalizedPoint.metadata ?? {},
+        };
+      })
+    : [];
+  return {
+    projectorId: normalized.projector_id ?? normalized.projectorId ?? "",
+    total: normalized.total ?? 0,
+    sampled: normalized.sampled ?? (Array.isArray(points) ? points.length : 0),
+    requestedPerplexity: normalized.requested_perplexity ?? normalized.requestedPerplexity ?? 0,
+    effectivePerplexity: normalized.effective_perplexity ?? normalized.effectivePerplexity ?? 0,
+    iterations: normalized.iterations ?? 0,
+    usedPcaFallback: Boolean(normalized.used_pca_fallback ?? normalized.usedPcaFallback ?? false),
+    points,
+  };
+};
 
 export async function registerUser(payload: RegisterRequestPayload): Promise<RegisterResponsePayload> {
   const response = await api.post<RegisterResponsePayload>("/auth/register", {

@@ -374,6 +374,19 @@ const HeatmapChart = () => {
     return { cells, labels, matrixSize, planeSize };
   }, [points]);
 
+  const planeMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+
+  useEffect(() => {
+    const material = planeMaterialRef.current;
+    if (!material) {
+      return;
+    }
+    if (material.side !== THREE.DoubleSide) {
+      material.side = THREE.DoubleSide;
+      material.needsUpdate = true;
+    }
+  }, []);
+
   if (heatmap.matrixSize === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-slate-500 dark:text-slate-300">
@@ -401,7 +414,7 @@ const HeatmapChart = () => {
         <group>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
             <planeGeometry args={[heatmap.planeSize, heatmap.planeSize]} />
-            <meshStandardMaterial color="#0f172a" side={THREE.DoubleSide} />
+            <meshStandardMaterial ref={planeMaterialRef} color="#0f172a" />
           </mesh>
           <Grid
             position={[0, 0.001, 0]}
@@ -885,7 +898,7 @@ const PointCloud = ({
       buffer[offset + 2] = item.z;
     }
     return buffer;
-  }, [points]);
+  }, [points, positionsOverride]);
 
   const colors = useMemo(() => {
     if (colorOverride && colorOverride.length > 0) {
@@ -916,7 +929,7 @@ const PointCloud = ({
       colorBuffer[offset + 2] = rgb[2];
     }
     return colorBuffer;
-  }, [points, colorField]);
+  }, [points, colorField, colorOverride]);
 
   const scaledPointSize = useMemo(() => {
     const count = points.length;
@@ -982,6 +995,7 @@ export const TensorboardEmbeddingPanel = () => {
     pointStride,
     setPointLimit,
     setPointStride,
+    points,
   } = useTensorboardStore();
 
   const [exporting, setExporting] = useState(false);
@@ -1536,7 +1550,7 @@ export const TensorboardEmbeddingPanel = () => {
             {!initializedOnce ? (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-300">
                 <span>\uB370\uC774\uD130\uB97C \uBD88\uB7EC\uC624\uBA74 \uC2DC\uAC01\uD654\uAC00 \uCD9C\uB825\uB429\uB2C8\uB2E4.</span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">\uC0C1\uB2E8\uc758 "\uB370\uC774\uD130 \uBD88\uB7EC\uC624\uAE30" \ubc84\ud2bc\uc744 \ud074\ub9ad\ud574 \uc8fc\uc138\uc694.</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">\uC0C1\uB2E8\uc758 ‘\uB370\uC774\uD130 \uBD88\uB7EC\uC624\uAE30’ \ubc84\ud2bc\uc744 \ud074\ub9ad\ud574 \uc8fc\uc138\uc694.</span>
               </div>
             ) : visualizationMode === '3d' ? (
               <>
