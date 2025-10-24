@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Eye, EyeOff, Lock, CheckCircle2, XCircle } from "lucide-react";
-import { changePassword } from "@lib/apiClient";
 import type { ChangePasswordRequestPayload } from "@app-types/auth";
+import { changePassword } from "@lib/apiClient";
+import { CheckCircle2, Eye, EyeOff, Lock, XCircle } from "lucide-react";
+import { useState } from "react";
 
 interface PasswordStrength {
   score: number; // 0-3
@@ -75,7 +75,7 @@ export function ChangePassword() {
         confirm_password: confirmPassword,
       };
 
-      const response = await changePassword(payload);
+      await changePassword(payload);
 
       setSuccess(true);
       setError(null);

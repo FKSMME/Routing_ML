@@ -1,7 +1,9 @@
 ﻿import { useAuthStore } from "@store/authStore";
-import { Home,LogOut } from "lucide-react";
+import { Home, KeyRound,LogOut } from "lucide-react";
+import { useState } from "react";
 
 import { AnimatedLogo3D } from "./AnimatedLogo3D";
+import { ChangePassword } from "./auth/ChangePassword";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface HeaderProps {
@@ -16,6 +18,7 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
   const username = useAuthStore((state) => state.username);
   const logout = useAuthStore((state) => state.logout);
   const homeUrl = `${window.location.protocol}//${window.location.hostname}:5176`;
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -39,6 +42,14 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
             <p className="text-xs text-muted">{username}</p>
           </div>
           <ThemeToggle />
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="btn-secondary flex items-center gap-2"
+            title="비밀번호 변경"
+          >
+            <KeyRound size={16} />
+            <span>비밀번호 변경</span>
+          </button>
           <a
             href={homeUrl}
             className="btn-secondary flex items-center gap-2"
@@ -60,6 +71,28 @@ export function Header({ onRefresh, loading, title, description }: HeaderProps) 
           </button>
         </div>
       </div>
+      {showChangePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="relative max-w-2xl w-full mx-4">
+            <button
+              onClick={() => setShowChangePassword(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-surface hover:bg-surface-dim text-foreground transition-colors"
+              aria-label="닫기"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <ChangePassword />
+          </div>
+        </div>
+      )}
     </header>
   );
 }
