@@ -51,7 +51,6 @@ class HNSWSearch:
 
         faiss.normalize_L2(vectors)                 # cosine �� L2 ��ȯ ����
 
-        faiss.normalize_L2(vectors)                 # cosine ↔ L2 변환 전제
 
         self.item_codes = np.asarray(item_codes)
 
