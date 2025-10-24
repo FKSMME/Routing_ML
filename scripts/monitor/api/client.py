@@ -30,6 +30,7 @@ class ApiClient:
         self.password = password
         self.timeout = timeout
         self.context = ssl.create_default_context()
+        self.authenticated = False
 
         # Configure SSL verification based on environment variable
         if not VERIFY_SSL:
@@ -48,13 +49,12 @@ class ApiClient:
             "User-Agent": USER_AGENT,
             "Content-Type": "application/json",
         }
-        if not self.username or not self.password:
-            raise ApiError(
-                "Admin API credentials are missing. Set MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD."
-            )
-        self._authenticate()
+        # Authentication is now optional - only authenticate if credentials are provided
+        if self.username and self.password:
+            self._authenticate()
 
     def _authenticate(self) -> None:
+        """Authenticate with the API server using username and password."""
         payload = json.dumps(
             {"username": self.username, "password": self.password}
         ).encode("utf-8")
@@ -68,6 +68,7 @@ class ApiClient:
             with self.opener.open(request, timeout=self.timeout) as response:
                 if response.status != 200:
                     raise ApiError(f"Login failed (HTTP {response.status})")
+                self.authenticated = True
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="ignore")
             raise ApiError(f"Login failed: {exc.reason} ({exc.code}) {detail}") from exc

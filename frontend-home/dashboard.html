@@ -293,11 +293,37 @@
     Chart.defaults.font.size = 12;
     Chart.defaults.color = '#6b7280';
 
+    function decodeUnicodeString(value) {
+      if (typeof value !== 'string' || !value.includes('\\u')) {
+        return value;
+      }
+      return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    }
+
+    function normalizeUnicode(input) {
+      if (typeof input === 'string') {
+        return decodeUnicodeString(input);
+      }
+      if (Array.isArray(input)) {
+        return input.map(normalizeUnicode);
+      }
+      if (input && typeof input === 'object') {
+        const result = {};
+        for (const [key, value] of Object.entries(input)) {
+          result[key] = normalizeUnicode(value);
+        }
+        return result;
+      }
+      return input;
+    }
+
+
     async function fetchDashboardMetrics() {
       try {
         const response = await fetch(\`\${API_BASE}/api/dashboard/metrics\`);
         if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
-        const data = await response.json();
+        const raw = await response.json();
+        const data = normalizeUnicode(raw);
         renderDashboard(data);
         updateLastRefresh();
       } catch (error) {

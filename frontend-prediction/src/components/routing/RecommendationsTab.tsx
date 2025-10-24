@@ -52,19 +52,16 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
     console.log("[RecommendationsTab] 뷰 상태 변경:", view);
   }, [view]);
 
+  // Task 3.3: Initialize view based on recommendations
   useEffect(() => {
-    if (!hasRecommendations) {
-      if (view !== "timeline") {
-        console.log("[RecommendationsTab] 추천 데이터 없음 - Timeline 뷰로 강제 전환");
-        setView("timeline");
-      }
-      return;
+    // 추천 데이터가 없으면 Timeline 뷰로만 제한
+    if (!hasRecommendations && view !== "timeline") {
+      console.log("[RecommendationsTab] 추천 데이터 없음 - Timeline 뷰로 강제 전환");
+      setView("timeline");
     }
-    if (initialView === "recommendations" && view === "timeline") {
-      console.log("[RecommendationsTab] initialView=recommendations이므로 Recommendations 뷰로 전환");
-      setView("recommendations");
-    }
-  }, [hasRecommendations, initialView, view]);
+    // initialView는 초기 진입 시에만 적용 (이후 사용자 선택 존중)
+    // 무한 루프 방지를 위해 제거
+  }, [hasRecommendations, view]);
 
   const handleSelectView = useCallback((mode: ViewMode) => () => {
     // Task 3.3: Canvas 탭 전환 로그 추가

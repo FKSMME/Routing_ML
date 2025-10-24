@@ -24,7 +24,6 @@ export type NavigationKey =
   | "data-mapping"
   | "data-relationship"
   | "profile-management"
-  | "data-quality"
   | "quality-monitor"
   | "training-monitor"
   | "training-settings"
@@ -46,7 +45,6 @@ export const NAVIGATION_ACCESS: Record<NavigationKey, AppRole[]> = {
   "data-mapping": ["admin"],
   "data-relationship": ["admin"],
   "profile-management": ["admin"],
-  "data-quality": ["admin"],
   "quality-monitor": ["admin"],
   "training-monitor": ["admin"],
   "training-settings": ["admin"],

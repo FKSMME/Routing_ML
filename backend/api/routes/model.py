@@ -4,14 +4,14 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.api.auth import get_current_user
-from backend.config import Settings, get_settings
+from backend.api.security import get_current_user
+from backend.api.config import Settings, get_settings
+from backend.api.schemas import AuthenticatedUser
 from backend.maintenance.model_registry import (
     ModelVersion,
     get_active_version,
     list_versions,
 )
-from backend.models.user import User
 
 router = APIRouter(prefix="/models", tags=["models"])
 
@@ -46,7 +46,7 @@ class ModelListResponse(BaseModel):
 def list_model_versions(
     limit: Optional[int] = None,
     settings: Settings = Depends(get_settings),
-    current_user: User = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     List all available model versions.
@@ -80,7 +80,7 @@ def list_model_versions(
 @router.get("/active", response_model=Optional[ModelVersionResponse])
 def get_active_model(
     settings: Settings = Depends(get_settings),
-    current_user: User = Depends(get_current_user),
+    current_user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get the currently active model version.
@@ -97,3 +97,5 @@ def get_active_model(
             status_code=500,
             detail=f"Failed to retrieve active model: {str(e)}",
         )
+
+

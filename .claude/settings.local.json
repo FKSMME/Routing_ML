@@ -22,7 +22,9 @@
       "Bash(.venv/Scripts/python.exe:*)",
       "Bash(powershell -Command:*)",
       "Bash(git restore:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(move:*)",
+      "Bash(timeout 15 .\\.venv\\Scripts\\python.exe:*)"
     ],
     "deny": [],
     "ask": []

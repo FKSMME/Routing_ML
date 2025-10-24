@@ -22,7 +22,6 @@ export type NavigationKey =
   | "algorithm"
   | "algorithm-viz"
   | "model-training"
-  | "training-status"
   | "tensorboard"
   | "quality-monitor"
   | "training-monitor"

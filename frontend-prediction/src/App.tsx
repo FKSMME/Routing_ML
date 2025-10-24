@@ -13,7 +13,6 @@ const MasterDataSimpleWorkspace = lazy(() => import("@components/workspaces/Mast
 const RoutingTabbedWorkspace = lazy(() => import("@components/workspaces/RoutingTabbedWorkspace").then(m => ({ default: m.RoutingTabbedWorkspace })));
 const DataRelationshipManager = lazy(() => import("@components/admin/DataRelationshipManager").then(m => ({ default: m.DataRelationshipManager })));
 const ProfileManagementWorkspace = lazy(() => import("@components/workspaces/ProfileManagementWorkspace").then(m => ({ default: m.ProfileManagementWorkspace })));
-const DataQualityWorkspace = lazy(() => import("@components/workspaces/DataQualityWorkspace").then(m => ({ default: m.default })));
 import ErrorBoundary from "@components/ErrorBoundary";
 import { HeroBanner } from "@components/HeroBanner";
 import { usePredictRoutings } from "@hooks/usePredictRoutings";
@@ -23,7 +22,7 @@ import { useAuthStore } from "@store/authStore";
 import { type RoutingProductTab,useRoutingStore } from "@store/routingStore";
 import { type AppRole, isMenuAllowedForRoles, type NavigationKey,useWorkspaceStore } from "@store/workspaceStore";
 import axios from "axios";
-import { Activity, Database, Menu, Settings2, Table, Workflow } from "lucide-react";
+import { Database, Menu, Settings2, Table, Workflow } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
@@ -67,13 +66,6 @@ const NAVIGATION_CONFIG: NavigationConfig[] = [
     label: "프로필 관리",
     description: "가중치와 환경 프로필을 구성원별로 관리합니다.",
     icon: <Settings2 size={18} />,
-  },
-  {
-    key: "data-quality",
-    id: "data-quality",
-    label: "데이터 품질 대시보드",
-    description: "실적 지표와 이상 징후를 모니터링합니다.",
-    icon: <Activity size={18} />,
   },
 ];
 const PREDICTION_DELAY_MESSAGE = "Server response delayed. Please try again in a moment.";
@@ -342,9 +334,6 @@ export default function App() {
       break;
     case "profile-management":
       workspace = <Suspense fallback={loadingFallback}><ProfileManagementWorkspace /></Suspense>;
-      break;
-    case "data-quality":
-      workspace = <Suspense fallback={loadingFallback}><DataQualityWorkspace /></Suspense>;
       break;
     default:
       workspace = <HeroBanner activeMenu={activeMenu} onNavigate={setActiveMenu} />;

@@ -47,8 +47,9 @@ export function useDrawingViewerSettings(): DrawingViewerConfig {
     return DEFAULT_CONFIG;
   });
 
-  // localStorage 변경 감지 (다른 탭에서 설정 변경 시)
+  // localStorage 변경 감지
   useEffect(() => {
+    // 다른 탭에서 설정 변경 시
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY && event.newValue) {
         try {
@@ -60,8 +61,21 @@ export function useDrawingViewerSettings(): DrawingViewerConfig {
       }
     };
 
+    // 같은 탭에서 설정 변경 시 (custom event)
+    const handleCustomEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<DrawingViewerConfig>;
+      if (customEvent.detail) {
+        setConfig({ ...DEFAULT_CONFIG, ...customEvent.detail });
+      }
+    };
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("drawingViewerSettingsChanged", handleCustomEvent);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("drawingViewerSettingsChanged", handleCustomEvent);
+    };
   }, []);
 
   return config;

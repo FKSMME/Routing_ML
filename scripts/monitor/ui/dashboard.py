@@ -8,6 +8,7 @@ import json
 import subprocess
 import threading
 import time
+import urllib.parse
 from pathlib import Path
 from queue import Empty, Queue
 from typing import Dict, List, Optional, Set, Tuple
@@ -72,9 +73,23 @@ class RoutingMLDashboard:
         self.worker = threading.Thread(target=self._poll_loop, daemon=True)
         self.worker.start()
 
-    def _ensure_api_client(self) -> bool:
-        """Ensure API client is available; surface authentication issues to the user."""
+    def _ensure_api_client(self, require_auth: bool = False) -> bool:
+        """Ensure API client is available; optionally require authentication.
+
+        Args:
+            require_auth: If True, require authenticated client. If False, allow unauthenticated client.
+
+        Returns:
+            True if client is available (and authenticated if required), False otherwise.
+        """
         if self.api_client is not None:
+            if require_auth and not self.api_client.authenticated:
+                messagebox.showwarning(
+                    "인증 필요",
+                    "이 기능은 관리자 인증이 필요합니다.\n"
+                    "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 설정해 주세요.",
+                )
+                return False
             return True
 
         try:
@@ -84,20 +99,28 @@ class RoutingMLDashboard:
                 MONITOR_ADMIN_PASSWORD or None,
                 timeout=API_TIMEOUT,
             )
+            if require_auth and not self.api_client.authenticated:
+                messagebox.showwarning(
+                    "인증 필요",
+                    "이 기능은 관리자 인증이 필요합니다.\n"
+                    "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 설정해 주세요.",
+                )
+                return False
         except ApiError as exc:
             self.api_client = None
-            messagebox.showerror(
-                "API 인증 실패",
-                "관리자 API에 연결하지 못했습니다.\n"
-                "MONITOR_ADMIN_USERNAME / MONITOR_ADMIN_PASSWORD 환경 변수를 확인해 주세요.\n\n"
-                f"상세: {exc}",
-            )
+            if require_auth:
+                messagebox.showerror(
+                    "API 인증 실패",
+                    "관리자 API에 연결하지 못했습니다.\n\n"
+                    f"상세: {exc}",
+                )
             if hasattr(self, "user_status_label"):
                 self.user_status_label.config(text=f"API 인증 실패: {exc}")
             return False
         except Exception as exc:
             self.api_client = None
-            messagebox.showerror("API 초기화 오류", str(exc))
+            if require_auth:
+                messagebox.showerror("API 초기화 오류", str(exc))
             if hasattr(self, "user_status_label"):
                 self.user_status_label.config(text=f"API 초기화 오류: {exc}")
             return False
@@ -392,14 +415,16 @@ class RoutingMLDashboard:
         # Status label
         self.user_status_label = tk.Label(
             self.user_tab,
-            text="대기 중인 회원 로딩 중...",
+            text="회원 관리 기능은 관리자 인증이 필요합니다. '새로 고침' 버튼을 클릭하세요.",
             font=("Segoe UI", 10),
             fg=TEXT_SECONDARY,
             bg=BG_PRIMARY
         )
         self.user_status_label.pack(side="bottom", fill="x", padx=20, pady=16)
 
-        self._load_pending_users()
+        # Don't auto-load on startup - wait for user to click refresh
+        # This prevents authentication popup on startup
+        self._show_auth_required_message()
 
     # ========================================================================
     # Service Management
@@ -453,14 +478,25 @@ class RoutingMLDashboard:
             return
 
         try:
+            # Collect target ports from services
             target_ports = set()
             for service in self.services:
-                parsed = urllib.parse.urlparse(service.check_url)
-                if parsed.port:
-                    target_ports.add(parsed.port)
+                try:
+                    parsed = urllib.parse.urlparse(service.check_url)
+                    if parsed.port:
+                        target_ports.add(parsed.port)
+                except Exception as e:
+                    # Skip if URL parsing fails
+                    continue
 
+            # Add hardcoded ports
             target_ports.update({8000, 8001, 8002, 5173, 5174, 5176})
 
+            if not target_ports:
+                messagebox.showwarning("경고", "종료할 대상 포트를 찾을 수 없습니다.")
+                return
+
+            # Find processes using target ports
             active_pids = set()
             for conn in psutil.net_connections(kind="inet"):
                 try:
@@ -469,6 +505,13 @@ class RoutingMLDashboard:
                 except Exception:
                     continue
 
+            if not active_pids:
+                message = f"대상 포트({', '.join(str(p) for p in sorted(target_ports))})를 사용하는 프로세스를 찾지 못했습니다.\n\n"
+                message += "서비스가 이미 중지되었거나 다른 포트를 사용 중일 수 있습니다."
+                messagebox.showinfo("서버 정지", message)
+                return
+
+            # Filter allowed processes
             project_root = Path(self.selected_folder).resolve()
             allowed_names = {
                 "python.exe",
@@ -501,30 +544,60 @@ class RoutingMLDashboard:
                         continue
 
                     candidate_pids.add(pid)
+                    # Add child processes
                     for child in proc.children(recursive=True):
                         if child.pid != os.getpid():
                             candidate_pids.add(child.pid)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
+            if not candidate_pids:
+                message = f"대상 포트({', '.join(str(p) for p in sorted(target_ports))})를 사용하는 프로세스를 찾았으나,\n"
+                message += "안전을 위해 종료할 수 없는 프로세스입니다."
+                messagebox.showwarning("서버 정지", message)
+                return
+
+            # Terminate processes
             terminated = []
+            failed = []
             for pid in sorted(candidate_pids):
                 if pid == os.getpid():
                     continue
                 try:
-                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
-                    terminated.append(pid)
+                    result = subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(pid)],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if result.returncode == 0:
+                        terminated.append(pid)
+                    else:
+                        failed.append(pid)
                 except Exception:
+                    failed.append(pid)
                     continue
 
-            if not terminated:
-                message = "종료할 서버 프로세스를 찾지 못했습니다. 이미 내려가 있거나 다른 계정에서 실행 중일 수 있습니다."
+            # Show result
+            if terminated:
+                message = f"✅ {len(terminated)}개 프로세스 종료 완료\n\n"
+                message += "종료된 PID: " + ", ".join(str(pid) for pid in terminated)
+                if failed:
+                    message += f"\n\n⚠️ 종료 실패: {', '.join(str(pid) for pid in failed)}"
+                message += f"\n\n대상 포트: {', '.join(str(port) for port in sorted(target_ports))}"
+                messagebox.showinfo("서버 정지 완료", message)
             else:
-                message = "다음 PID를 포함한 프로세스를 종료했습니다:\n" + ", ".join(str(pid) for pid in terminated)
-            message += "\n대상 포트: " + ", ".join(str(port) for port in sorted(target_ports))
-            messagebox.showinfo("서버 정지", message)
+                message = f"❌ 모든 프로세스 종료 실패 ({len(failed)}개)\n\n"
+                message += "실패한 PID: " + ", ".join(str(pid) for pid in failed)
+                message += "\n\n수동으로 종료해주세요."
+                messagebox.showerror("서버 정지 실패", message)
+
         except Exception as e:
-            messagebox.showerror("오류", f"서비스 중지 실패:\n{e}")
+            messagebox.showerror(
+                "서비스 중지 실패",
+                f"예상치 못한 오류가 발생했습니다:\n\n{type(e).__name__}: {str(e)}\n\n"
+                f"디버그 정보:\n- 프로젝트 폴더: {self.selected_folder}"
+            )
 
     def _clear_cache(self):
         """Clear Vite cache"""
@@ -564,14 +637,62 @@ class RoutingMLDashboard:
     # User Management
     # ========================================================================
 
+    def _show_auth_required_message(self):
+        """Show message that authentication is required for user management"""
+        for widget in self.user_list_frame.winfo_children():
+            widget.destroy()
+
+        msg_frame = tk.Frame(self.user_list_frame, bg=BG_PRIMARY)
+        msg_frame.pack(fill="both", expand=True, pady=50)
+
+        icon_label = tk.Label(
+            msg_frame,
+            text="🔐",
+            font=("Segoe UI", 48),
+            fg=TEXT_PRIMARY,
+            bg=BG_PRIMARY
+        )
+        icon_label.pack(pady=10)
+
+        title_label = tk.Label(
+            msg_frame,
+            text="관리자 인증 필요",
+            font=("Segoe UI", 16, "bold"),
+            fg=TEXT_PRIMARY,
+            bg=BG_PRIMARY
+        )
+        title_label.pack(pady=5)
+
+        info_label = tk.Label(
+            msg_frame,
+            text="회원 관리 기능을 사용하려면 관리자 인증이 필요합니다.\n\n"
+                 "환경 변수를 설정하고 '새로 고침' 버튼을 클릭하세요:\n"
+                 "MONITOR_ADMIN_USERNAME\n"
+                 "MONITOR_ADMIN_PASSWORD",
+            font=("Segoe UI", 11),
+            fg=TEXT_SECONDARY,
+            bg=BG_PRIMARY,
+            justify="center"
+        )
+        info_label.pack(pady=10)
+
+        note_label = tk.Label(
+            msg_frame,
+            text="💡 대시보드 모니터링 기능은 인증 없이 사용 가능합니다",
+            font=("Segoe UI", 10),
+            fg=ACCENT_INFO,
+            bg=BG_PRIMARY
+        )
+        note_label.pack(pady=15)
+
     def _load_pending_users(self):
-        """Load pending users"""
+        """Load pending users - requires authentication"""
         self.user_status_label.config(text="회원 목록 로딩 중...")
 
         for widget in self.user_list_frame.winfo_children():
             widget.destroy()
 
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         try:
@@ -707,7 +828,8 @@ class RoutingMLDashboard:
 
 
     def _open_user_browser(self) -> None:
-        if not self._ensure_api_client():
+        """Open user browser - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         window = tk.Toplevel(self.root)
@@ -838,7 +960,8 @@ class RoutingMLDashboard:
         refresh_users()
 
     def _prompt_reset_password(self) -> None:
-        if not self._ensure_api_client():
+        """Prompt for password reset - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         username = simpledialog.askstring("비밀번호 초기화", "초기화할 사용자 ID를 입력하세요:")
@@ -873,7 +996,8 @@ class RoutingMLDashboard:
         )
 
     def _bulk_register_csv(self) -> None:
-        if not self._ensure_api_client():
+        """Bulk register users from CSV - requires authentication"""
+        if not self._ensure_api_client(require_auth=True):
             return
 
         file_path = filedialog.askopenfilename(
@@ -937,12 +1061,12 @@ class RoutingMLDashboard:
         )
 
     def _approve_user(self, username: str, make_admin: bool):
-        """Approve user"""
+        """Approve user - requires authentication"""
         confirm = messagebox.askyesno("회원 승인", f"'{username}' 회원을 승인하시겠습니까?")
 
         if not confirm:
             return
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         payload = {"username": username, "make_admin": make_admin}
@@ -956,12 +1080,12 @@ class RoutingMLDashboard:
         self._load_pending_users()
 
     def _reject_user(self, username: str):
-        """Reject user"""
+        """Reject user - requires authentication"""
         reason = simpledialog.askstring("회원 거절", f"'{username}' 회원 승인을 거절하시겠습니까?\n\n거절 사유 (선택 입력):")
 
         if reason is None:
             return
-        if not self._ensure_api_client():
+        if not self._ensure_api_client(require_auth=True):
             return
 
         payload = {"username": username, "reason": (reason or "사유 없음")}
