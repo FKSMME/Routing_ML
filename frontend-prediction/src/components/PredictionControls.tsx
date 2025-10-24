@@ -10,6 +10,8 @@ interface PredictionControlsProps {
   onChangeTopK: (value: number) => void;
   threshold: number;
   onChangeThreshold: (value: number) => void;
+  selectedModelVersion: string;
+  onChangeModelVersion: (version: string) => void;
   loading: boolean;
   onSubmit: () => void;
   errorMessage?: string | null;
@@ -51,6 +53,8 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
     onChangeTopK,
     threshold,
     onChangeThreshold,
+    selectedModelVersion,
+    onChangeModelVersion,
     loading,
     onSubmit,
     errorMessage,
@@ -59,7 +63,6 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
 ) {
   const [inputValue, setInputValue] = useState(itemCodes.join("\n"));
   const [isDragOver, setIsDragOver] = useState(false);
-  const [selectedModelVersion, setSelectedModelVersion] = useState<string>("default");
 
   // Task 2.3: 모델 상태 조회
   const { data: modelStatus, isLoading: modelStatusLoading } = useModelStatus();
@@ -233,7 +236,7 @@ export const PredictionControls = forwardRef<PredictionControlsHandle, Predictio
           <label className="text-xs font-semibold text-accent-strong">예측 모델 선택</label>
           <select
             value={selectedModelVersion}
-            onChange={(e) => setSelectedModelVersion(e.target.value)}
+            onChange={(e) => onChangeModelVersion(e.target.value)}
             className="input-field"
             disabled={modelsLoading}
           >

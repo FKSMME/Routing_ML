@@ -188,6 +188,7 @@ export default function App() {
     threshold,
     featureWeights: featureWeights.manualWeights,
     weightProfile: featureWeights.profile,
+    modelVersion: selectedModelVersion === "default" ? null : selectedModelVersion,
     exportFormats: exportProfile.formats,
     withVisualization: exportProfile.withVisualization,
     enabled: predictQueryEnabled,
@@ -197,6 +198,9 @@ export default function App() {
   const selectedCandidateId = useRoutingStore((state) => state.selectedCandidateId);
   const selectedCandidate = data?.candidates
     ?.find((candidate) => candidate.CANDIDATE_ITEM_CD === selectedCandidateId) ?? null;
+
+  // Model version selection for predictions
+  const [selectedModelVersion, setSelectedModelVersion] = useState<string>("default");
 
   const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
 
@@ -287,6 +291,8 @@ export default function App() {
           onChangeTopK={updateTopK}
           threshold={threshold}
           onChangeThreshold={updateThreshold}
+          selectedModelVersion={selectedModelVersion}
+          onChangeModelVersion={setSelectedModelVersion}
           loading={isLoading || isFetching}
           onSubmit={handlePredictionSubmit}
           errorMessage={predictionControlsError}
