@@ -8,6 +8,7 @@ import json
 import subprocess
 import threading
 import time
+import urllib.parse
 from pathlib import Path
 from queue import Empty, Queue
 from typing import Dict, List, Optional, Set, Tuple
@@ -477,14 +478,25 @@ class RoutingMLDashboard:
             return
 
         try:
+            # Collect target ports from services
             target_ports = set()
             for service in self.services:
-                parsed = urllib.parse.urlparse(service.check_url)
-                if parsed.port:
-                    target_ports.add(parsed.port)
+                try:
+                    parsed = urllib.parse.urlparse(service.check_url)
+                    if parsed.port:
+                        target_ports.add(parsed.port)
+                except Exception as e:
+                    # Skip if URL parsing fails
+                    continue
 
+            # Add hardcoded ports
             target_ports.update({8000, 8001, 8002, 5173, 5174, 5176})
 
+            if not target_ports:
+                messagebox.showwarning("경고", "종료할 대상 포트를 찾을 수 없습니다.")
+                return
+
+            # Find processes using target ports
             active_pids = set()
             for conn in psutil.net_connections(kind="inet"):
                 try:
@@ -493,6 +505,13 @@ class RoutingMLDashboard:
                 except Exception:
                     continue
 
+            if not active_pids:
+                message = f"대상 포트({', '.join(str(p) for p in sorted(target_ports))})를 사용하는 프로세스를 찾지 못했습니다.\n\n"
+                message += "서비스가 이미 중지되었거나 다른 포트를 사용 중일 수 있습니다."
+                messagebox.showinfo("서버 정지", message)
+                return
+
+            # Filter allowed processes
             project_root = Path(self.selected_folder).resolve()
             allowed_names = {
                 "python.exe",
@@ -525,30 +544,66 @@ class RoutingMLDashboard:
                         continue
 
                     candidate_pids.add(pid)
+                    # Add child processes
                     for child in proc.children(recursive=True):
                         if child.pid != os.getpid():
                             candidate_pids.add(child.pid)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
 
+            if not candidate_pids:
+                message = f"대상 포트({', '.join(str(p) for p in sorted(target_ports))})를 사용하는 프로세스를 찾았으나,\n"
+                message += "안전을 위해 종료할 수 없는 프로세스입니다."
+                messagebox.showwarning("서버 정지", message)
+                return
+
+            # Terminate processes
             terminated = []
+            failed = []
             for pid in sorted(candidate_pids):
                 if pid == os.getpid():
                     continue
                 try:
-                    subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True)
-                    terminated.append(pid)
+                    result = subprocess.run(
+                        ["taskkill", "/F", "/T", "/PID", str(pid)],
+                        capture_output=True,
+                        text=True,
+                        timeout=5
+                    )
+                    if result.returncode == 0:
+                        terminated.append(pid)
+                    else:
+                        failed.append(pid)
                 except Exception:
+                    failed.append(pid)
                     continue
 
-            if not terminated:
-                message = "종료할 서버 프로세스를 찾지 못했습니다. 이미 내려가 있거나 다른 계정에서 실행 중일 수 있습니다."
+            # Show result
+            if terminated:
+                message = f"✅ {len(terminated)}개 프로세스 종료 완료\n\n"
+                message += "종료된 PID: " + ", ".join(str(pid) for pid in terminated)
+                if failed:
+                    message += f"\n\n⚠️ 종료 실패: {', '.join(str(pid) for pid in failed)}"
+                message += f"\n\n대상 포트: {', '.join(str(port) for port in sorted(target_ports))}"
+                messagebox.showinfo("서버 정지 완료", message)
             else:
-                message = "다음 PID를 포함한 프로세스를 종료했습니다:\n" + ", ".join(str(pid) for pid in terminated)
-            message += "\n대상 포트: " + ", ".join(str(port) for port in sorted(target_ports))
-            messagebox.showinfo("서버 정지", message)
+                message = f"❌ 모든 프로세스 종료 실패 ({len(failed)}개)\n\n"
+                message += "실패한 PID: " + ", ".join(str(pid) for pid in failed)
+                message += "\n\n관리자 권한으로 실행하거나 수동으로 종료해주세요."
+                messagebox.showerror("서버 정지 실패", message)
+
+        except psutil.AccessDenied:
+            messagebox.showerror(
+                "권한 오류",
+                "프로세스 정보에 접근할 권한이 없습니다.\n\n"
+                "모니터를 관리자 권한으로 실행해주세요."
+            )
         except Exception as e:
-            messagebox.showerror("오류", f"서비스 중지 실패:\n{e}")
+            messagebox.showerror(
+                "서비스 중지 실패",
+                f"예상치 못한 오류가 발생했습니다:\n\n{type(e).__name__}: {str(e)}\n\n"
+                f"디버그 정보:\n- 프로젝트 폴더: {self.selected_folder}"
+            )
 
     def _clear_cache(self):
         """Clear Vite cache"""
