@@ -414,14 +414,16 @@ class RoutingMLDashboard:
         # Status label
         self.user_status_label = tk.Label(
             self.user_tab,
-            text="대기 중인 회원 로딩 중...",
+            text="회원 관리 기능은 관리자 인증이 필요합니다. '새로 고침' 버튼을 클릭하세요.",
             font=("Segoe UI", 10),
             fg=TEXT_SECONDARY,
             bg=BG_PRIMARY
         )
         self.user_status_label.pack(side="bottom", fill="x", padx=20, pady=16)
 
-        self._load_pending_users()
+        # Don't auto-load on startup - wait for user to click refresh
+        # This prevents authentication popup on startup
+        self._show_auth_required_message()
 
     # ========================================================================
     # Service Management
@@ -585,6 +587,54 @@ class RoutingMLDashboard:
     # ========================================================================
     # User Management
     # ========================================================================
+
+    def _show_auth_required_message(self):
+        """Show message that authentication is required for user management"""
+        for widget in self.user_list_frame.winfo_children():
+            widget.destroy()
+
+        msg_frame = tk.Frame(self.user_list_frame, bg=BG_PRIMARY)
+        msg_frame.pack(fill="both", expand=True, pady=50)
+
+        icon_label = tk.Label(
+            msg_frame,
+            text="🔐",
+            font=("Segoe UI", 48),
+            fg=TEXT_PRIMARY,
+            bg=BG_PRIMARY
+        )
+        icon_label.pack(pady=10)
+
+        title_label = tk.Label(
+            msg_frame,
+            text="관리자 인증 필요",
+            font=("Segoe UI", 16, "bold"),
+            fg=TEXT_PRIMARY,
+            bg=BG_PRIMARY
+        )
+        title_label.pack(pady=5)
+
+        info_label = tk.Label(
+            msg_frame,
+            text="회원 관리 기능을 사용하려면 관리자 인증이 필요합니다.\n\n"
+                 "환경 변수를 설정하고 '새로 고침' 버튼을 클릭하세요:\n"
+                 "MONITOR_ADMIN_USERNAME\n"
+                 "MONITOR_ADMIN_PASSWORD",
+            font=("Segoe UI", 11),
+            fg=TEXT_SECONDARY,
+            bg=BG_PRIMARY,
+            justify="center"
+        )
+        info_label.pack(pady=10)
+
+        note_label = tk.Label(
+            msg_frame,
+            text="💡 대시보드 모니터링 기능은 인증 없이 사용 가능합니다",
+            font=("Segoe UI", 10),
+            fg=ACCENT_INFO,
+            bg=BG_PRIMARY
+        )
+        note_label.pack(pady=15)
 
     def _load_pending_users(self):
         """Load pending users - requires authentication"""
