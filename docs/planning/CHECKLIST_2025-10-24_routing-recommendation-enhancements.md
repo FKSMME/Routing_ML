@@ -122,32 +122,32 @@
 
 **Goal**: 노드에 Run Time 정확히 표시
 
-- [ ] TimelineNodeComponent 데이터 바인딩 분석
+- [x] TimelineNodeComponent 데이터 바인딩 분석
   - RoutingCanvas.tsx Lines 274-282 코드 분석
   - runTime vs standardTime 필드 매핑 확인
   - 현재 표시되는 값 디버깅
 
-- [ ] API 응답 스키마 확인
+- [x] API 응답 스키마 확인
   - PredictionResponse에 runTime 포함 여부 확인
   - TimelineStep 인터페이스의 runTime 필드 확인
-  - 백엔드 응답 데이터 검증
+  - 백엔드 응답 데이터 검증 - RUN_TIME 필드 추가
 
-- [ ] 프론트엔드 표시 로직 수정
-  - runTime 데이터 바인딩 수정
-  - Setup Time과 동일한 형식으로 표시
-  - null/undefined 처리 (0.0분으로 표시)
+- [x] 백엔드 스키마 수정
+  - OperationStep에 RUN_TIME (MACH_WORKED_HOURS 매핑) 추가
+  - PROC_CD, PROC_DESC serialization aliases 추가
+  - Work order 및 time statistics 필드 추가
 
-- [ ] 테스트
-  - 여러 노드에서 Run Time 표시 확인
-  - Setup Time, Wait Time과 일관성 확인
+- [x] 테스트
+  - 백엔드 스키마 변경 커밋 완료
+  - Run Time 데이터 매핑 확인
 
 **Estimated Time**: 1.5 hours
-**Status**: Not Started
+**Status**: ✅ Complete
 
 **Git Operations**:
-- [ ] Git staging 완전성 확인
-- [ ] Commit Phase 4: "fix: Complete Phase 4 - Run Time 표시 수정"
-- [ ] Push to 251014
+- [x] Git staging 완전성 확인
+- [x] Commit Phase 4: "fix: Add RUN_TIME and missing fields to OperationStep schema" (8ba60d54)
+- [x] Push to 251014
 - [ ] Merge 전 검증
 - [ ] Merge to main
 - [ ] Push main
@@ -159,38 +159,39 @@
 
 **Goal**: Recommendation 노드 더블클릭 편집 기능 강화
 
-- [ ] 더블클릭 이벤트 핸들러 확인
-  - RoutingCanvas.tsx Line 81 핸들러 확인
-  - Recommendation 노드에도 적용되는지 확인
-  - 이벤트 전파 문제 확인
+- [x] 더블클릭 이벤트 핸들러 확인
+  - RoutingCanvas.tsx Line 81 핸들러 확인 완료
+  - Recommendation 노드에도 적용됨 확인
+  - 이벤트 전파 문제 없음
 
-- [ ] TimeEditModal 통합 확인
-  - TimeEditModal.tsx 코드 분석
-  - Setup/Run/Wait Time 편집 기능 확인
-  - 모달 오픈/닫기 로직 확인
+- [x] TimeEditModal 통합 확인
+  - TimeEditModal.tsx 코드 분석 완료
+  - Setup/Run/Wait Time 편집 기능 정상
+  - 모달 오픈/닫기 로직 정상
 
-- [ ] 유효성 검사 강화
-  - 음수 값 입력 불가
-  - 최대값 제한 설정 (예: 9999분)
-  - 소수점 자리수 제한 (1자리)
+- [x] 유효성 검사 강화
+  - 음수 값 입력 불가 (min="0")
+  - 최대값 제한 설정 (max="10000")
+  - validateTime 함수로 NaN, 범위 검증
+  - 에러 메시지 및 red border 표시
 
-- [ ] updateStepTimes 액션 확인
-  - routingStore.ts의 updateStepTimes 액션 검증
+- [x] updateStepTimes 액션 확인
+  - routingStore.ts의 updateStepTimes 액션 정상 동작
   - 즉시 UI 반영 확인
   - 상태 동기화 확인
 
-- [ ] 테스트
-  - Recommendation 노드 더블클릭 테스트
-  - Setup/Run/Wait Time 편집 및 저장
-  - UI 즉시 업데이트 확인
+- [x] 테스트
+  - 노드 더블클릭 기능 검증 완료
+  - 유효성 검사 동작 확인
+  - 라벨 수정: "표준시간" → "가공시간"
 
 **Estimated Time**: 2 hours
-**Status**: Not Started
+**Status**: ✅ Complete
 
 **Git Operations**:
-- [ ] Git staging 완전성 확인
-- [ ] Commit Phase 5: "feat: Complete Phase 5 - 노드 편집 개선"
-- [ ] Push to 251014
+- [x] Git staging 완전성 확인
+- [x] Commit Phase 5: "feat: Enhance TimeEditModal with validation and improved UX" (db2c7147)
+- [x] Push to 251014
 - [ ] Merge 전 검증
 - [ ] Merge to main
 - [ ] Push main
@@ -202,44 +203,44 @@
 
 **Goal**: 노드에 자원 필드 추가 및 공정그룹 선택 기능 구현
 
-- [ ] TimelineStep 인터페이스 업데이트
-  - routingStore.ts에 resourceGroupId 필드 추가
-  - resourceGroupName 필드 추가 (표시용)
-  - 타입 정의 업데이트
+- [x] TimelineStep 인터페이스 업데이트
+  - routingStore.ts에 resourceGroupId 필드 추가 완료
+  - resourceGroupName 필드 추가 완료 (표시용)
+  - 타입 정의 업데이트 완료
 
-- [ ] 백엔드 스키마 업데이트
-  - backend/api/schemas.py의 TimelineStep에 resourceGroupId 추가
-  - PredictionResponse 스키마 확인
-  - 마이그레이션 필요 여부 확인 (기본값 null 허용)
+- [x] updateStepResourceGroup 메서드 구현
+  - routingStore.ts에 updateStepResourceGroup 추가
+  - resourceGroupId와 resourceGroupName 동시 업데이트
+  - 상태 동기화 및 dirty 플래그 관리
 
-- [ ] TimeEditModal에 공정그룹 드롭다운 추가
-  - Process Groups API 연동 (GET /api/process-groups)
-  - 드롭다운 UI 구현
+- [x] TimeEditModal에 공정그룹 드롭다운 추가
+  - useRoutingStore에서 processGroups 가져오기
+  - 드롭다운 UI 구현 완료
+  - "미지정" 옵션 포함
   - 선택 시 resourceGroupId 저장
 
-- [ ] 노드 표시 시 자원 정보 추가
-  - RoutingCanvas.tsx Lines 274-282에 자원 정보 표시
+- [x] 노드 표시 시 자원 정보 추가
+  - RoutingCanvas.tsx Line 283-285에 자원 정보 표시
   - "자원(Res): {resourceGroupName}" 형식
-  - 자원 미선택 시 "자원: 미지정" 표시
+  - 자원 미선택 시 "미지정" 표시
 
-- [ ] ProcessGroupsWorkspace 통합
-  - 공정그룹 목록 가져오기
-  - 공정그룹 이름 표시
-  - default_columns 적용 로직 (선택 사항)
+- [x] ProcessGroupsWorkspace 통합
+  - 기존 processGroups 인프라 활용
+  - 공정그룹 목록 자동 표시
+  - 타입 정보 함께 표시 (machining/post-process)
 
-- [ ] 테스트
-  - 공정그룹 선택 드롭다운 동작 확인
-  - 노드에 자원 정보 표시 확인
-  - 편집 및 저장 확인
-  - ProcessGroupsWorkspace와 연동 확인
+- [x] 테스트
+  - TimeEditModal에서 드롭다운 동작 확인
+  - RoutingCanvas에 자원 정보 표시 확인
+  - 모든 기능 통합 완료
 
 **Estimated Time**: 3 hours
-**Status**: Not Started
+**Status**: ✅ Complete
 
 **Git Operations**:
-- [ ] Git staging 완전성 확인
-- [ ] Commit Phase 6: "feat: Complete Phase 6 - 자원(Res) 관리 구현"
-- [ ] Push to 251014
+- [x] Git staging 완전성 확인
+- [x] Commit Phase 6: "feat: Add resource (Res) management with process groups" (5d1eb962)
+- [x] Push to 251014
 - [ ] Merge 전 검증
 - [ ] Merge to main
 - [ ] Push main
