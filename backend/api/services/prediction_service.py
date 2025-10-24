@@ -665,21 +665,36 @@ class PredictionService:
                 profile_name=weight_profile,
             )
 
+        # Fixed: miss_thr (missing ratio threshold) should be separate from similarity_threshold
+        # miss_thr controls how much missing data is acceptable in input item
+        # similarity_threshold controls minimum similarity score for candidates
         routing_df, candidates_df = predict_items_with_ml_optimized(
             item_codes,
             self.model_dir,
             top_k=top_k,
-            miss_thr=1.0 - similarity_threshold,
+            miss_thr=0.5,  # Fixed at 50% - allows up to 50% missing attributes
             mode=mode,
         )
 
         routing_payload = self._serialize_routing(routing_df)
         candidate_payload = self._serialize_candidates(candidates_df)
 
+        # Filter candidates by similarity threshold
+        filtered_candidates = [
+            cand for cand in candidate_payload
+            if cand.similarity_score and cand.similarity_score >= similarity_threshold
+        ]
+
+        logger.info(
+            f"[예측] 유사도 필터링: {len(candidate_payload)}개 → {len(filtered_candidates)}개 "
+            f"(threshold: {similarity_threshold:.1%})"
+        )
+
         metrics = {
             "requested_items": len(item_codes),
             "returned_routings": len(routing_payload),
-            "returned_candidates": len(candidate_payload),
+            "returned_candidates": len(filtered_candidates),
+            "total_candidates_before_filter": len(candidate_payload),
             "threshold": similarity_threshold,
             "generated_at": utc_isoformat(),
         }
@@ -687,7 +702,7 @@ class PredictionService:
             metrics["feature_weights"] = weight_snapshot
 
         metrics = self._attach_cache_metrics(metrics)
-        return routing_payload, candidate_payload, metrics, routing_df, candidates_df
+        return routing_payload, filtered_candidates, metrics, routing_df, candidates_df
 
     def _attach_cache_metrics(self, metrics: Dict[str, Any]) -> Dict[str, Any]:
         enriched = dict(metrics)

@@ -8,7 +8,6 @@ import { ResponsiveNavigationDrawer } from "@components/ResponsiveNavigationDraw
 import { AlgorithmVisualizationWorkspace } from "@components/workspaces/AlgorithmVisualizationWorkspace";
 import { OptionsWorkspace } from "@components/workspaces/OptionsWorkspace";
 import { TensorboardWorkspace } from "@components/workspaces/TensorboardWorkspace";
-import { TrainingStatusWorkspace } from "@components/workspaces/TrainingStatusWorkspace";
 import { useResponsiveNav } from "@hooks/useResponsiveNav";
 import { useTheme } from "@hooks/useTheme";
 import { LiquidEther } from "@routing-ml/shared";
@@ -16,7 +15,7 @@ import { useAuthStore } from "@store/authStore";
 import { useBackgroundSettings } from "@store/backgroundSettings";
 import type { NavigationKey } from "@store/workspaceStore";
 import { useWorkspaceStore } from "@store/workspaceStore";
-import { Activity, BarChart3, Brain, Menu, Route, ScatterChart, Settings, Settings2 } from "lucide-react";
+import { Activity, Brain, Menu, Route, ScatterChart, Settings, Settings2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 // Training-related components (lazy loaded)
@@ -32,12 +31,6 @@ const BASE_NAVIGATION_ITEMS = [
     label: "알고리즘",
     description: "블루프린트 그래프와 알고리즘 흐름을 한눈에 확인",
     icon: <Route size={18} />,
-  },
-  {
-    id: "training-status",
-    label: "훈련 상태 현황",
-    description: "모델 버전 카드와 TensorBoard 지표를 모니터링",
-    icon: <BarChart3 size={18} />,
   },
   {
     id: "tensorboard",
@@ -82,6 +75,11 @@ const BASE_NAVIGATION_ITEMS = [
     icon: <Activity size={18} />,
   },
 ];
+
+const DEPRECATED_MENU_REDIRECT: Record<string, NavigationKey> = {
+  "training-status": "tensorboard",
+};
+
 
 function LiquidEtherBackdrop() {
   const {
@@ -187,12 +185,24 @@ export default function App() {
         const paramCandidate = (url.searchParams.get("menu") ?? "").trim();
         const candidate = paramCandidate || hashCandidate;
         const currentMenu = useWorkspaceStore.getState().activeMenu;
-        if (
-          candidate &&
-          candidate !== currentMenu &&
-          navigationItems.some((item) => item.id === candidate)
-        ) {
-          setActiveMenu(candidate as NavigationKey);
+        const normalizedCandidate =
+          candidate && (DEPRECATED_MENU_REDIRECT[candidate] ?? candidate);
+        const matchedItem = normalizedCandidate
+          ? navigationItems.find((item) => item.id === normalizedCandidate)
+          : undefined;
+        if (matchedItem) {
+          const target = matchedItem.id as NavigationKey;
+          if (target !== currentMenu) {
+            setActiveMenu(target);
+          }
+          if (candidate && normalizedCandidate !== candidate) {
+            url.searchParams.set("menu", target);
+            window.history.replaceState(
+              null,
+              "",
+              `${url.pathname}?${url.searchParams.toString()}#${target}`,
+            );
+          }
         }
       } catch {
         // ignore URL parsing errors
@@ -236,9 +246,6 @@ export default function App() {
   switch (activeMenu) {
     case "algorithm":
       workspace = <AlgorithmVisualizationWorkspace />;
-      break;
-    case "training-status":
-      workspace = <TrainingStatusWorkspace />;
       break;
     case "tensorboard":
       workspace = <TensorboardWorkspace />;

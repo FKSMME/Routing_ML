@@ -281,15 +281,20 @@ async def get_item_statistics():
             cursor = conn.cursor()
 
             # Total items in database
-            cursor.execute(f"SELECT COUNT(*) FROM {VIEW_ITEM_MASTER}")
+            item_view = _qualify_table_name(VIEW_ITEM_MASTER)
+            routing_view = _qualify_table_name(get_routing_view_name())
+
+            cursor.execute(f"SELECT COUNT(*) FROM {item_view}")
             total_items = cursor.fetchone()[0]
 
             # Items with routing
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT COUNT(DISTINCT i.ITEM_CD)
-                FROM {VIEW_ITEM_MASTER} i
-                INNER JOIN {VIEW_ROUTING} r ON i.ITEM_CD = r.ITEM_CD
-            """)
+                FROM {item_view} i
+                INNER JOIN {routing_view} r ON i.ITEM_CD = r.ITEM_CD
+                """
+            )
             items_with_routing = cursor.fetchone()[0]
 
             # Items without routing
@@ -298,11 +303,13 @@ async def get_item_statistics():
             # New items today (based on INSRT_DT column if exists)
             try:
                 today = datetime.now().strftime("%Y-%m-%d")
-                cursor.execute(f"""
+                cursor.execute(
+                    f"""
                     SELECT COUNT(*)
-                    FROM {VIEW_ITEM_MASTER}
+                    FROM {item_view}
                     WHERE CAST(INSRT_DT AS DATE) = '{today}'
-                """)
+                    """
+                )
                 new_items_today = cursor.fetchone()[0]
             except Exception:
                 # If INSRT_DT doesn't exist or query fails
