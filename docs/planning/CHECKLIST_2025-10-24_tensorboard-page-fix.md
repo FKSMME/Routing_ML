@@ -32,7 +32,7 @@
 
 ## Phase 2: 프런트엔드 상태 및 시각화 개선
 
-- [ ] (2.0h) `useTensorboardStore` 상태 머신 리팩터링(로딩/에러/ready 플래그, 폴링 주기)
+- [x] (2.0h) `useTensorboardStore` 상태 머신 리팩터링(로딩/에러/ready 플래그, 폴링 주기)
 - [ ] (3.0h) `TensorboardEmbeddingPanel` 3D/히트맵 컴포넌트 데이터 파이프라인 정리 및 렌더링 복구
 - [ ] (2.0h) Export 버튼, 상태 알림 토스트, Projector 리스트 새로고침 연결
 - [ ] (3.0h) Metrics 차트(ReactECharts) 실데이터 연결 및 빈 상태/에러 UI 구현
@@ -81,7 +81,7 @@
 ## Progress Tracking
 
 Phase 1: [##########] 100% (4/4 tasks)  
-Phase 2: [..........] 0% (0/4 tasks)  
+Phase 2: [##........] 25% (1/4 tasks)  
 Phase 3: [..........] 0% (0/4 tasks)
 
-Total: [####............] 33% (4/12 tasks)
+Total: [####......] 42% (5/12 tasks)
