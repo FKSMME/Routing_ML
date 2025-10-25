@@ -148,7 +148,7 @@ export function RoutingTabbedWorkspace({
                   title="도면 조회 설정"
                   aria-label="도면 조회 설정 열기"
                 >
-                  <Settings size={16} className="text-slate-400 hover:text-slate-200" />
+                  <Settings size={16} className="text-white hover:text-blue-300" />
                 </button>
               </div>
               <DrawingViewerButton
