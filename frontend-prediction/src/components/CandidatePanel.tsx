@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { AnimatedCandidateCard } from "./AnimatedCandidateCard";
 import { CandidateSettingsModal } from "./CandidateSettingsModal";
+import { CandidateDetailModal } from "./CandidateDetailModal";
 
 interface OperationBucket {
   itemCode: string;
@@ -53,6 +54,8 @@ export function CandidatePanel() {
   const [filter, setFilter] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pendingEditId, setPendingEditId] = useState<string | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<CandidateOperation | null>(null);
 
   const bucket = useMemo<OperationBucket | null>(() => {
     if (!activeProductId) {
@@ -152,11 +155,23 @@ export function CandidatePanel() {
     event.dataTransfer.setData("text/plain", `${operation.PROC_CD}`);
   };
 
-  const handleDoubleClick = (operation: OperationStep) => () => {
-    if (!bucket) {
+  const handleDoubleClick = (item: CandidateOperation) => () => {
+    setSelectedOperation(item);
+    setDetailModalOpen(true);
+  };
+
+  const handleAddToTimeline = () => {
+    if (!bucket || !selectedOperation) {
       return;
     }
-    insertOperation({ itemCode: bucket.itemCode, candidateId: bucket.candidateId, operation });
+    insertOperation({ itemCode: bucket.itemCode, candidateId: bucket.candidateId, operation: selectedOperation.operation });
+  };
+
+  const handleSaveCustomOperation = (operation: OperationStep) => {
+    if (!selectedOperation?.entryId) {
+      return;
+    }
+    updateCustomRecommendation(selectedOperation.entryId, operation);
   };
 
   const handleEditCustom = (entryId: string) => {
@@ -272,7 +287,19 @@ export function CandidatePanel() {
             : "등록된 후보 공정이 없습니다. 사용자 정의 공정을 추가해 보세요."}
         </div>
       ) : (
-        <div className="candidate-list responsive-grid responsive-grid--auto-fit" role="list" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', overflowX: 'hidden' }}>
+        <div
+          className="candidate-list responsive-grid responsive-grid--auto-fit"
+          role="list"
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            overflowX: 'hidden',
+            maxHeight: '600px',
+            overflowY: 'auto',
+            paddingRight: '0.5rem'
+          }}
+        >
           {visibleOperations.map((item, index) => (
             <AnimatedCandidateCard
               key={item.id}
@@ -283,95 +310,47 @@ export function CandidatePanel() {
               draggable
               onClick={handleCardClick(item)}
               onDragStart={handleDragStart(item.operation)}
-              onDoubleClick={handleDoubleClick(item.operation)}
+              onDoubleClick={handleDoubleClick(item)}
               tabIndex={0}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  handleDoubleClick(item.operation)();
+                  handleDoubleClick(item)();
                 }
               }}
             >
-              <div className="timeline-node candidate-node">
-                <header className="timeline-node__header">
-                  <div className="timeline-node__title-group">
-                    <span className="timeline-node__seq">#{item.operation.PROC_SEQ}</span>
-                    <span className="timeline-node__title">{item.operation.PROC_CD}</span>
-                    {item.operation.OUTSOURCING_REPLACED ? (
-                      <span className="candidate-node__badge" style={{ backgroundColor: '#f97316', color: '#0f172a' }}>
-                        사내전환
+              <div className="timeline-node candidate-node" style={{ padding: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '18px', fontWeight: '600', color: '#f1f5f9' }}>
+                      {item.operation.PROC_CD}
+                    </span>
+                    {item.source === "custom" && (
+                      <span style={{
+                        marginLeft: '8px',
+                        fontSize: '11px',
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        padding: '2px 6px',
+                        borderRadius: '4px'
+                      }}>
+                        사용자
                       </span>
-                    ) : null}
-                    {item.operation.HAS_WORK_DATA === false || item.operation.HAS_WORK_DATA === "N" ? (
-                      <span className="candidate-node__badge" style={{ backgroundColor: '#64748b' }}>
-                        실적없음
-                      </span>
-                    ) : null}
+                    )}
                   </div>
-                  <div className="timeline-node__actions">
-                    {item.source === "custom" ? (
-                      <span className="candidate-node__badge">사용자 정의</span>
-                    ) : null}
-                  </div>
-                </header>
-                <p className="timeline-node__desc">{item.operation.PROC_DESC ?? "설명 없음"}</p>
-                <div className="timeline-node__meta candidate-node__metrics">
-                  <span className="timeline-node__meta-item">
-                    <strong>Setup:</strong> {item.operation.SETUP_TIME ?? "-"}
-                  </span>
-                  <span className="timeline-node__meta-item">
-                    <strong>Run:</strong> {item.operation.RUN_TIME ?? "-"}
-                  </span>
-                  <span className="timeline-node__meta-item">
-                    <strong>Wait:</strong> {item.operation.WAIT_TIME ?? "-"}
-                  </span>
-                  {(item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT) ? (
-                    <span className="timeline-node__meta-item">
-                      <strong>샘플:</strong> {item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT}
-                      {(item.operation.SAMPLE_COUNT ?? item.operation.WORK_ORDER_COUNT ?? 0) < 3 && <span style={{ color: '#f59e0b', marginLeft: '2px' }} title="샘플 부족">⚠️</span>}
-                    </span>
-                  ) : null}
-                  {item.operation.WORK_ORDER_CONFIDENCE !== undefined &&
-                  item.operation.WORK_ORDER_CONFIDENCE !== null ? (
-                    <span className="timeline-node__meta-item">
-                      <strong>신뢰도:</strong> {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100)}%
-                      {Math.round(item.operation.WORK_ORDER_CONFIDENCE * 100) >= 80 && <span style={{ color: '#10b981', marginLeft: '2px' }} title="고신뢰도">✓</span>}
-                    </span>
-                  ) : null}
-                  {item.operation.TRIM_MEAN !== undefined && item.operation.TRIM_MEAN !== null ? (
-                    <span className="timeline-node__meta-item" title="Trim-평균 (이상치 제거)">
-                      <strong>Trim:</strong> {item.operation.TRIM_MEAN.toFixed(2)}분
-                    </span>
-                  ) : null}
-                </div>
-                <div className="candidate-node__footer">
-                  <div className="candidate-node__actions">
-                    {item.source === "custom" && item.entryId ? (
-                      <button
-                        type="button"
+                  <button
+                    type="button"
                     className="candidate-node__action btn-responsive"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (item.entryId) {
-                        handleEditCustom(item.entryId);
-                      }
-                    }}
-                    aria-label="사용자 정의 공정 편집"
+                    onClick={handleRemoveOperation(item)}
+                    aria-label={item.source === "custom" ? "사용자 정의 공정 삭제" : "추천 공정 숨기기"}
+                    style={{ padding: '4px 8px', fontSize: '12px' }}
                   >
-                        <Edit3 size={14} /> 편집
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="candidate-node__action btn-responsive"
-                      onClick={handleRemoveOperation(item)}
-                      aria-label={item.source === "custom" ? "사용자 정의 공정 삭제" : "추천 공정 숨기기"}
-                    >
-                      <Trash2 size={14} /> {item.source === "custom" ? "삭제" : "숨기기"}
-                    </button>
-                  </div>
-                  <p className="candidate-node__hint">드래그 또는 더블 클릭으로 추가</p>
+                    <Trash2 size={12} />
+                  </button>
                 </div>
+                <p style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px' }}>
+                  더블클릭하여 상세 정보 보기
+                </p>
               </div>
             </AnimatedCandidateCard>
           ))}
@@ -393,6 +372,20 @@ export function CandidatePanel() {
         restoreAllRecommendations={restoreAllRecommendations}
         initialEditId={pendingEditId}
       />
+
+      {selectedOperation && (
+        <CandidateDetailModal
+          isOpen={detailModalOpen}
+          onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedOperation(null);
+          }}
+          operation={selectedOperation.operation}
+          isCustom={selectedOperation.source === "custom"}
+          onSave={selectedOperation.source === "custom" ? handleSaveCustomOperation : undefined}
+          onAddToTimeline={handleAddToTimeline}
+        />
+      )}
     </section>
   );
 }
