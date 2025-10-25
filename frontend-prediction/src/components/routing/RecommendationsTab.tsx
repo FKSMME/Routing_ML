@@ -2,6 +2,7 @@ import { useRoutingStore } from "@store/routingStore";
 import { type DragEvent,useCallback, useEffect, useId, useMemo, useState } from "react";
 
 import { RoutingCanvas, type RoutingCanvasProps } from "./RoutingCanvas";
+import { TimeEditModal } from "./TimeEditModal";
 
 type ViewMode = "timeline" | "recommendations";
 
@@ -9,13 +10,27 @@ interface RecommendationsTabProps extends RoutingCanvasProps {
   initialView?: ViewMode;
 }
 
+interface OperationWithStepId {
+  stepId: string;
+  PROC_SEQ: number;
+  PROC_CD: string;
+  PROC_DESC?: string;
+  SETUP_TIME?: number;
+  RUN_TIME?: number;
+  WAIT_TIME?: number;
+  metadata?: unknown;
+}
+
 export function RecommendationsTab({ initialView = "recommendations", ...canvasProps }: RecommendationsTabProps) {
   const activeProductId = useRoutingStore((state) => state.activeProductId);
   const productTabs = useRoutingStore((state) => state.productTabs);
   const insertOperation = useRoutingStore((state) => state.insertOperation);
+  const updateStepTimes = useRoutingStore((state) => state.updateStepTimes);
 
   const [view, setView] = useState<ViewMode>(initialView);
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedOperation, setSelectedOperation] = useState<OperationWithStepId | null>(null);
   const baseId = useId();
 
   // Read from productTabs instead of recommendations for automatic sync
@@ -25,7 +40,8 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
       if (!tab) return null;
 
       // Convert timeline steps back to operations for display
-      const operations = tab.timeline.map(step => ({
+      const operations: OperationWithStepId[] = tab.timeline.map(step => ({
+        stepId: step.id,
         PROC_SEQ: step.seq,
         PROC_CD: step.processCode,
         PROC_DESC: step.description ?? undefined,
@@ -46,6 +62,25 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
 
   const operations = activeBucket?.operations ?? [];
   const hasRecommendations = operations.length > 0;
+
+  // Handle double-click to edit times
+  const handleOperationDoubleClick = useCallback((operation: OperationWithStepId) => {
+    setSelectedOperation(operation);
+    setEditModalOpen(true);
+  }, []);
+
+  // Handle modal save
+  const handleSaveTimeEdit = useCallback((stepId: string, times: { setupTime?: number; runTime?: number; waitTime?: number }) => {
+    updateStepTimes(stepId, times);
+    setEditModalOpen(false);
+    setSelectedOperation(null);
+  }, [updateStepTimes]);
+
+  // Handle modal close
+  const handleCloseTimeEdit = useCallback(() => {
+    setEditModalOpen(false);
+    setSelectedOperation(null);
+  }, []);
 
   // Task 3.3: 뷰 상태 변경 추적
   useEffect(() => {
@@ -197,7 +232,12 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
                           }} />
                         </li>
                       )}
-                      <li className="timeline-recommendations__item">
+                      <li
+                        className="timeline-recommendations__item"
+                        onDoubleClick={() => handleOperationDoubleClick(operation)}
+                        style={{ cursor: "pointer" }}
+                        title="더블클릭하여 시간 수정"
+                      >
                         <span className="timeline-recommendations__seq">#{operation.PROC_SEQ}</span>
                         <div>
                           <p className="timeline-recommendations__code">{operation.PROC_CD}</p>
@@ -227,6 +267,20 @@ export function RecommendationsTab({ initialView = "recommendations", ...canvasP
           </div>
         )}
       </div>
+
+      {/* Time Edit Modal */}
+      {selectedOperation && (
+        <TimeEditModal
+          isOpen={editModalOpen}
+          onClose={handleCloseTimeEdit}
+          stepId={selectedOperation.stepId}
+          processCode={selectedOperation.PROC_CD}
+          currentSetupTime={selectedOperation.SETUP_TIME}
+          currentRunTime={selectedOperation.RUN_TIME}
+          currentWaitTime={selectedOperation.WAIT_TIME}
+          onSave={handleSaveTimeEdit}
+        />
+      )}
     </div>
   );
 }

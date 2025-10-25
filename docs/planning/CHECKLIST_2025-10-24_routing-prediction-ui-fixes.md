@@ -29,18 +29,18 @@
 - Issue #5: topK=10 already set in workspaceStore.ts:262, need to verify display
 
 **Git Operations**:
-- [ ] Git staging completeness check
+- [x] Git staging completeness check
   - `git status` executed
   - `git add -A` executed
   - `git status` re-confirmed → "Changes not staged" section empty
-- [ ] Commit Phase 1
-- [ ] Push to 251014
-- [ ] Merge validation pre-check
+- [x] Commit Phase 1
+- [x] Push to 251014
+- [x] Merge validation pre-check
   - `git diff main..251014` confirmed
   - No unexpected changes verified
-- [ ] Merge to main
-- [ ] Push main
-- [ ] Return to 251014
+- [x] Merge to main
+- [x] Push main
+- [x] Return to 251014
 
 ---
 
@@ -50,14 +50,22 @@
 
 ### Issue #1: Recommended Flow Nodes - Time Editing
 
-- [ ] Create TimeEditModal.tsx component (Est. 0.5h)
+- [x] Create TimeEditModal.tsx component (Est. 0.5h)
   - Input fields for setup/run/wait times
   - Validation for non-negative numbers
   - Save/Cancel buttons
   - Escape key handler
-- [ ] Add double-click handler to recommended nodes in RecommendationsTab.tsx (Est. 0.3h)
-- [ ] Implement time update logic in routingStore.ts (Est. 0.2h)
-- [ ] Test time editing functionality (Est. 0.2h)
+  - **Note**: Component already existed, verified implementation
+- [x] Add double-click handler to recommended nodes in RecommendationsTab.tsx (Est. 0.3h)
+  - Added handleOperationDoubleClick callback
+  - Updated operation mapping to include stepId
+  - Added onDoubleClick event to list items
+- [x] Implement time update logic in routingStore.ts (Est. 0.2h)
+  - **Note**: updateStepTimes already existed in store
+- [x] Test time editing functionality (Est. 0.2h)
+  - Modal opens on double-click
+  - Times are editable
+  - Changes save to store
 
 ### Issue #2: Candidate Process Nodes - Manual Input & Scrollbar
 
