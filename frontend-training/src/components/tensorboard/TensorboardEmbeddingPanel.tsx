@@ -1186,6 +1186,13 @@ export const TensorboardEmbeddingPanel = () => {
     }
   }, [initializing, initialize, loadTensorboardConfig]);
 
+  useEffect(() => {
+    if (initializedOnce || initializing) {
+      return;
+    }
+    void handleInitialLoad();
+  }, [handleInitialLoad, initializedOnce, initializing]);
+
   const statusSignatureRef = useRef<string | null>(null);
   useEffect(() => {
     if (!initializedOnce) {

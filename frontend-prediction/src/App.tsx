@@ -182,6 +182,9 @@ export default function App() {
   const hasSearchItems = itemCodes.length > 0;
   const predictQueryEnabled = isAuthenticated && !isAuthenticating && hasSearchItems;
 
+  // Model version selection for predictions
+  const [selectedModelVersion, setSelectedModelVersion] = useState<string>("default");
+
   const { data, isLoading, isFetching, error, refetch } = usePredictRoutings({
     itemCodes,
     topK,
@@ -198,9 +201,6 @@ export default function App() {
   const selectedCandidateId = useRoutingStore((state) => state.selectedCandidateId);
   const selectedCandidate = data?.candidates
     ?.find((candidate) => candidate.CANDIDATE_ITEM_CD === selectedCandidateId) ?? null;
-
-  // Model version selection for predictions
-  const [selectedModelVersion, setSelectedModelVersion] = useState<string>("default");
 
   const [predictionError, setPredictionError] = useState<PredictionErrorInfo | null>(null);
 
@@ -414,7 +414,6 @@ export default function App() {
     </div>
   );
 }
-
 
 
 

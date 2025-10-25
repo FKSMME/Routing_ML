@@ -190,8 +190,9 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to reload tensorboard projectors", error);
+      const message = resolveErrorMessage(error, "TensorBoard ������Ʈ�� �ҷ����� ���߽��ϴ�.");
       set({
-        error: "TensorBoard 프로젝트를 불러오지 못했습니다.",
+        error: message,
         projectors: [],
         selectedId: null,
         points: [],
@@ -201,8 +202,11 @@ export const useTensorboardStore = create<TensorboardState>()((set, get) => ({
         activeMetric: null,
         tsnePoints: [],
         tsneMeta: null,
-        tsneError: "T-SNE 좌표를 불러오지 못했습니다.",
+        tsneError: "T-SNE ��ǥ�� �ҷ����� ���߽��ϴ�.",
+        status: "error",
+        statusMessage: message,
       });
+      throw error;
     } finally {
       set({ loadingProjectors: false });
     }

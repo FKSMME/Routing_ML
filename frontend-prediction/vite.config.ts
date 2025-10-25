@@ -2,11 +2,37 @@ import { fileURLToPath, URL } from "node:url";
 import fs from "node:fs";
 import path from "node:path";
 
-import { defineConfig } from "vite";
+import { defineConfig, type HmrOptions } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const CHUNK_LIMIT = Number(process.env.VITE_CHUNK_LIMIT ?? "2000");
+const CERT_KEY_PATH = path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key");
+const CERT_CERT_PATH = path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt");
+const isVitest = Boolean(process.env.VITEST);
+
+const toNumber = (value: string | undefined): number | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const defaultDevPort = 5173;
+const hmrHost = process.env.VITE_HMR_HOST ?? "rtml.ksm.co.kr";
+const hmrProtocol = (process.env.VITE_HMR_PROTOCOL ?? "wss") as HmrOptions["protocol"];
+const hmrPort = toNumber(process.env.VITE_HMR_PORT) ?? defaultDevPort;
+const hmrClientPort = toNumber(process.env.VITE_HMR_CLIENT_PORT) ?? defaultDevPort;
+
+const hmrOptions: HmrOptions | false = isVitest
+  ? false
+  : {
+      protocol: hmrProtocol,
+      host: hmrHost,
+      port: hmrPort,
+      clientPort: hmrClientPort,
+    };
 
 const isReactModule = (id: string) =>
   /node_modules\/(react|react-dom)\//.test(id) || id.includes("node_modules/react/index");
@@ -65,9 +91,10 @@ export default defineConfig({
     port: 5173,
     open: false,
     https: {
-      key: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key")),
-      cert: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt")),
+      key: fs.readFileSync(CERT_KEY_PATH),
+      cert: fs.readFileSync(CERT_CERT_PATH),
     },
+    hmr: hmrOptions,
     fs: {
       allow: ["..", "../tests"],
     },
@@ -88,8 +115,8 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     https: {
-      key: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.key")),
-      cert: fs.readFileSync(path.resolve(__dirname, "../certs/rtml.ksm.co.kr.crt")),
+      key: fs.readFileSync(CERT_KEY_PATH),
+      cert: fs.readFileSync(CERT_CERT_PATH),
     },
   },
   test: {
